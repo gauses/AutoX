@@ -102,6 +102,7 @@ import org.autojs.autojs.ui.compose.widget.MyIcon
 import org.autojs.autojs.ui.compose.widget.SearchBox2
 import org.autojs.autojs.ui.explorer.ExplorerViewKt
 import org.autojs.autojs.ui.floating.FloatyWindowManger
+import org.autojs.autojs.ui.log.LogActivityKt
 import org.autojs.autojs.ui.main.components.DocumentPageMenuButton
 import org.autojs.autojs.ui.main.components.LogButton
 import org.autojs.autojs.ui.main.drawer.DrawerPage
@@ -301,6 +302,7 @@ class MainActivity : FragmentActivity() {
             if (!TextUtils.isEmpty(it)) {
                 val scriptFilePath = NestUtils.appendNameToScript(this, it)
                 ScriptIntents.handleIntent(this, intent.setData(Uri.parse(scriptFilePath?.path)))
+                LogActivityKt.start(this)
             }
         }
     }

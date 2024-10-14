@@ -21,6 +21,9 @@ adb shell pm grant org.autojs.autoxjs android.permission.READ_EXTERNAL_STORAGE
 
 adb shell pm grant org.autojs.autoxjs android.permission.SYSTEM_ALERT_WINDOW
 
+//截图权限
+adb shell appops set org.autojs.autoxjs PROJECT_MEDIA allow
+
 
 4、开始启动，并传递参数：(FB_gerenfawen就是需要执行的任务对应的文件名字)
 adb shell am force-stop org.autojs.autoxjs
