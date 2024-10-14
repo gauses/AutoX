@@ -13,6 +13,7 @@ import android.os.Bundle
 import android.os.Environment
 import android.os.Process
 import android.provider.Settings
+import android.text.TextUtils
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.setContent
@@ -84,11 +85,14 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.stardust.app.permission.DrawOverlaysPermission
+import com.stardust.autojs.execution.ExecutionConfig
+import com.stardust.autojs.script.ScriptSource
 import com.stardust.toast
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.autojs.autojs.Pref
 import org.autojs.autojs.autojs.AutoJs
+import org.autojs.autojs.external.ScriptIntents
 import org.autojs.autojs.external.foreground.ForegroundService
 import org.autojs.autojs.timing.TimedTaskScheduler
 import org.autojs.autojs.ui.build.ProjectConfigActivity
@@ -104,9 +108,11 @@ import org.autojs.autojs.ui.main.drawer.DrawerPage
 import org.autojs.autojs.ui.main.scripts.ScriptListFragment
 import org.autojs.autojs.ui.main.task.TaskManagerFragmentKt
 import org.autojs.autojs.ui.main.web.EditorAppManager
+import org.autojs.autojs.ui.nestjs.NestUtils
 import org.autojs.autojs.ui.util.launchActivity
 import org.autojs.autojs.ui.widget.fillMaxSize
 import org.autojs.autoxjs.R
+import java.io.File
 
 
 data class BottomNavigationItem(val icon: Int, val label: String)
@@ -134,6 +140,8 @@ class MainActivity : FragmentActivity() {
         Log.i("MainActivity", "Pid: ${Process.myPid()}")
         if (Pref.isForegroundServiceEnabled()) ForegroundService.start(this)
         else ForegroundService.stop(this)
+
+        NestUtils.writeFileToSd(this)
 
         if (Pref.isFloatingMenuShown() && !FloatyWindowManger.isCircularMenuShowing()) {
             if (DrawOverlaysPermission.isCanDrawOverlays(this)) FloatyWindowManger.showCircularMenu()
@@ -188,6 +196,7 @@ class MainActivity : FragmentActivity() {
             }
         }
         checkNoticePermission()
+
     }
 
     private fun checkNoticePermission() {
@@ -286,6 +295,14 @@ class MainActivity : FragmentActivity() {
     override fun onResume() {
         super.onResume()
         TimedTaskScheduler.ensureCheckTaskWorks(application)
+
+        intent.getStringExtra("net_script_name")?.let {
+            Log.d("sb", "MainActivity script name = $it")
+            if (!TextUtils.isEmpty(it)) {
+                val scriptFilePath = NestUtils.appendNameToScript(this, it)
+                ScriptIntents.handleIntent(this, intent.setData(Uri.parse(scriptFilePath?.path)))
+            }
+        }
     }
 
     @SuppressLint("MissingSuperCall")
