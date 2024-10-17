@@ -85,6 +85,7 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.stardust.app.permission.DrawOverlaysPermission
+import com.stardust.autojs.core.console.LogFileUtils
 import com.stardust.autojs.execution.ExecutionConfig
 import com.stardust.autojs.script.ScriptSource
 import com.stardust.toast
@@ -142,7 +143,7 @@ class MainActivity : FragmentActivity() {
         if (Pref.isForegroundServiceEnabled()) ForegroundService.start(this)
         else ForegroundService.stop(this)
 
-        NestUtils.writeFileToSd(this)
+//        NestUtils.writeFileToSd(this)
 
         if (Pref.isFloatingMenuShown() && !FloatyWindowManger.isCircularMenuShowing()) {
             if (DrawOverlaysPermission.isCanDrawOverlays(this)) FloatyWindowManger.showCircularMenu()
@@ -300,6 +301,10 @@ class MainActivity : FragmentActivity() {
         intent.getStringExtra("net_script_name")?.let {
             Log.d("sb", "MainActivity script name = $it")
             if (!TextUtils.isEmpty(it)) {
+
+                //初始化保存日志到本地的文件
+                LogFileUtils.initLogFileName()
+
                 val scriptFilePath = NestUtils.appendNameToScript(this, it)
                 ScriptIntents.handleIntent(this, intent.setData(Uri.parse(scriptFilePath?.path)))
                 LogActivityKt.start(this)

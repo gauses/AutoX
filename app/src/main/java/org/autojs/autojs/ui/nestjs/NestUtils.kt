@@ -1,13 +1,19 @@
 package org.autojs.autojs.ui.nestjs
 
 import android.content.Context
-import android.util.Log
-import com.google.gson.Gson
-import java.io.File
 import android.os.Environment
+import android.util.Log
+import java.io.File
+import java.io.FileWriter
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 //Nest相关的工具类
 object NestUtils {
+
+
+    var taskLogFileName = ""
 
 
     //获取SD卡的根目录
@@ -20,13 +26,11 @@ object NestUtils {
         }
         return null
     }
-    fun writeFileToSd(context: Context){
+
+    fun writeFileToSd(context: Context, log: String){
         getDownloadDirectory()?.let {
             Log.d("sb", "download path=$it")
-            val x = "Nest"
-            var json = Gson().toJson(x)
-            Log.d("sb", "json=${json}")
-            java.io.File("$it/writeFileToSd.txt").writeText(json)
+            java.io.File("$it/writeFileToSd.txt").writeText(log)
         }?:{
             Log.e("sb", "external path=null")
         }

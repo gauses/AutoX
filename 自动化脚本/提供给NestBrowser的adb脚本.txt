@@ -27,6 +27,7 @@ adb shell appops set org.autojs.autoxjs PROJECT_MEDIA allow
 
 4、开始启动，并传递参数：(FB_gerenfawen就是需要执行的任务对应的文件名字)
 adb shell am force-stop org.autojs.autoxjs
+adb shell am force-stop com.facebook.katana
 adb shell am start -W -n org.autojs.autoxjs/org.autojs.autojs.ui.main.MainActivity --es "net_script_name" "FB_gerenfawen"
 
 

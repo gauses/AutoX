@@ -1,5 +1,7 @@
 package com.stardust.autojs.core.console;
 
+import android.util.Log;
+
 import com.stardust.util.UiHandler;
 
 import org.apache.log4j.Level;
@@ -30,6 +32,9 @@ public class GlobalConsole extends ConsoleImpl {
                 DATE_FORMAT.format(new Date()), getLevelChar(level), charSequence.toString());
         LOGGER.log(toLog4jLevel(level), log);
         android.util.Log.d(LOG_tAG, log);
+
+        LogFileUtils.INSTANCE.appendToLogFileWithTimestamp(log );
+
         super.println(level, log);
         return log;
     }
