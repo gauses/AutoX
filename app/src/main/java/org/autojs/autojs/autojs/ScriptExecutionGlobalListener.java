@@ -1,6 +1,7 @@
 package org.autojs.autojs.autojs;
 
 import com.stardust.app.GlobalAppContext;
+import com.stardust.autojs.core.console.LogFileUtils;
 import com.stardust.autojs.execution.ScriptExecution;
 import com.stardust.autojs.execution.ScriptExecutionListener;
 
@@ -23,6 +24,7 @@ public class ScriptExecutionGlobalListener implements ScriptExecutionListener {
         onFinish(execution);
     }
 
+    //执行完成
     private void onFinish(ScriptExecution execution) {
         Long millis = (Long) execution.getEngine().getTag(ENGINE_TAG_START_TIME);
         if (millis == null)
@@ -30,6 +32,10 @@ public class ScriptExecutionGlobalListener implements ScriptExecutionListener {
         double seconds = (System.currentTimeMillis() - millis) / 1000.0;
         AutoJs.getInstance().getScriptEngineService().getGlobalConsole()
                 .verbose(GlobalAppContext.getString(R.string.text_execution_finished), execution.getSource().toString(), seconds);
+
+        //上传文件
+        LogFileUtils.INSTANCE.uploadLogFileToServer();
+
     }
 
     @Override

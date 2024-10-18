@@ -12,8 +12,8 @@ adb shell am force-stop org.autojs.autoxjs
 adb push FB_gerenfawen.js /sdcard/Download
 
 
-3、配置权限：
-adb shell settings put secure enabled_accessibility_services org.autojs.autoxjs/com.stardust.autojs.core.accessibility.AccessibilityService
+3、配置权限：adb shell settings put secure enabled_accessibility_services org.autojs.autoxjs/com.stardust.autojs.core.accessibility.AccessibilityService
+
 adb shell settings put secure accessibility_enabled 1
 
 adb shell appops set --uid org.autojs.autoxjs MANAGE_EXTERNAL_STORAGE allow

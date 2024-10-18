@@ -33,6 +33,7 @@ public class GlobalConsole extends ConsoleImpl {
         LOGGER.log(toLog4jLevel(level), log);
         android.util.Log.d(LOG_tAG, log);
 
+        //保存log到本地
         LogFileUtils.INSTANCE.appendToLogFileWithTimestamp(log );
 
         super.println(level, log);
