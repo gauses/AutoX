@@ -16,7 +16,13 @@ var taskLogImgName = "nest_task_log.png"
 
 
 //用户需要输入的评论内容
-const FB_input_text = "$${输入文案}"
+// const TT_input_text = "$${评论输入文案}"
+const TT_input_text = "COOL..."
+const TT_Like_Count = 10 //点赞概率
+const TT_Save_Count = 10 //收藏概率
+const TT_Comment_Count = 10 //评论概率
+const TT_Watch_Author_Page= 100 //查看作者主页的概率
+const TT_Watch_Count = 1045 //观看视频个数
 
 
 //1.autox.js侧边栏的打开USB调试先打开
@@ -46,67 +52,167 @@ if (runningEngines.length > 1) {
   })
 }
 
-taskLog("准备启动Facebook...")
+taskLog("准备启动TikTok...")
 sleep(5000)
 app.startActivity({
     action: "android.intent.action.VIEW",
-    packageName: "com.facebook.katana",
-    className: "com.facebook.katana.activity.FbMainTabActivity"
+    packageName: "com.zhiliaoapp.musically",
+    className: "com.ss.android.ugc.aweme.main.MainActivity"
 });
 
 
 
-taskLog("打开Facebook成功...")
+taskLog("打开TikTok成功...")
+sleep(10000)
+
+
+//开始观看
+var count = 1;
+do {
+    // 将 count 加 1
+    taskLog("开始观看第"+count+"个TikTok视频")
+    count++;
+
+    sleep(random(10000, 25000))
+
+    if (Math.random() * 100 < TT_Like_Count)  {
+        taskLog("开始触发点赞概率")
+        click_Like_Btn()
+        sleep(random(5000, 8000))
+    }
+    if (Math.random() * 100 < TT_Save_Count)  {
+        taskLog("开始触发保存视频概率")
+        click_Like_Btn()
+        sleep(random(5000, 8000))
+    }
+    if (Math.random() * 100 < TT_Comment_Count)  {
+        taskLog("开始触发评论视频概率")
+        click_Comment_Btn()
+        sleep(random(5000, 8000))
+    }
+
+    if (Math.random() * 100 < TT_Watch_Author_Page)  {
+        taskLog("开始触发查看作者主页的概率")
+        click_Author_Page_Btn()
+        sleep(random(5000, 8000))
+    }
+
+
+    // 获取设备屏幕的宽高
+    var width = device.width;
+    var height = device.height;
+
+    // 生成随机起始点
+    var startX = random(0, width);
+    var startY = random(height * 3 / 4, height);
+
+    // 生成随机结束点
+    var endX = random(0, width);
+    var endY = random(0, height / 4);
+
+    // 屏幕上滑操作
+    swipe(startX, startY, endX, endY, 500);
+    taskLog("开始滑动位置，x = "+startX+"；y = " + startY)
+    taskLog("结束滑动位置，x = "+endX+"；y = " + endY)
 
 
 
-
-taskLog("准备点击‘分享新鲜事 在 Facebook 发帖’按钮...");
-////点击界面的“准备点击‘分享新鲜事 在 Facebook 发帖’按钮...”按钮，界面元素会变化
-//className("android.widget.Button").text("分享新鲜事 在 Facebook 发帖").findOne(1000);
-// className("android.widget.Button").text("What's on your mind? Create a post on Facebook").findOne().click()
-find_btn_Text_base("分享新鲜事 在 Facebook 发帖", 
-    "在想些什麼？ Make a post on Facebook" , 
-    "What's on your mind? Make a post on Facebook",
-    "What's on your mind? Create a post on Facebook")
+} while (count < TT_Watch_Count); // 当 count 小于 TT_Watch_Count 时继续循环
 
 
 
-sleep(5000)
-// 获取屏幕的宽度和高度
-let screenWidth = device.width;
-let screenHeight = device.height;
-taskLog("屏幕区域的宽高坐标: (" + screenWidth + ", " + screenHeight + ")");
- // 计算屏幕上方2/3区域的底部位置
- let twoThirdsHeight = screenHeight * (2/3);
- // 计算该区域的中心点坐标
- let centerX = screenWidth / 2;
- let centerY = twoThirdsHeight - (screenHeight / 3) / 2;
-// 打印屏幕上方2/3区域的中心点坐标
-taskLog("准备点击屏幕上方2/3区域的中心点坐标: (" + centerX + ", " + centerY + ")");
-click(centerX,centerY)
+function clickId(a) {
+    obj_ID = id(a).boundsInside(5, 5, device.width - 5, device.height - 5);
+    
+    // 检查是否找到了元素
+    if (obj_ID.find().empty()) {
+        return; // 如果没有找到，直接返回
+    }
+    //一旦找到元素，获取该元素的中心坐标 X 和 Y。
+    X = obj_ID.find().get(0).bounds().centerX(), 
+    Y = obj_ID.find().get(0).bounds().centerY(),
+    //生成一个随机偏差（Deviation），范围从 -10 到 10，以避免点击时总是点击到相同的坐标。
+    Deviation = random(-10, 10), 
+    X1 = X - Deviation, 
+    Y1 = Y - Deviation;
 
-
-taskLog("准备输入分享内容....");
-id("(name removed)").className("android.widget.AutoCompleteTextView").findOne(5000).setText(FB_input_text)
-
-
-
-taskLog("准备点击下一步....");
-sleep(5000)
-find_btn_desc_base("下一步", "下一步" , "NEXT")
+    device.sdkInt < 24 ? ra.tap(X1, Y1) : click(X1, Y1);
+}
 
 
 
+//点击个人主页
+function click_Author_Page_Btn(){
+    taskLog("开始准备查看个人主页")
+    clickId("qza")
+    sleep(random(5000,8000))
 
-taskLog("准备点击分享....");
-sleep(5000)
-find_btn_desc_base("分享", "分享" , "Share")
+    // 获取屏幕宽高
+    var width = device.width;
+    var height = device.height;
+
+    // 定义上下滑动的距离
+    var swipeDistance = random(200, 400); // 随机滑动200到400像素
+
+    // 随机选择滑动方向：上滑或下滑
+    for (var i = 0; i < 2; i++) {
+        var direction = random(0, 1) === 0 ? 'up' : 'down';
+
+        if (direction === 'up') {
+            // 从下往上滑动
+            swipe(width / 2, height - random(100, 200), width / 2, random(100, 300), 500);
+        } else {
+            // 从上往下滑动
+            swipe(width / 2, random(100, 300), width / 2, height - random(100, 200), 500);
+        }
+        
+        // 暂停一段时间，避免滑动过快
+        sleep(random(3000,5000));
+    }
+
+    back();
+}
+
+//点击点赞按钮
+function click_Like_Btn(){
+    taskLog("开始准备点赞视频")
+    clickId("dc7")
+}
 
 
-taskLog("等待分享结果，大约30s左右....");
-sleep(30000)
-stopCurrentTask()
+//点击评论按钮
+function click_Comment_Btn(){
+    taskLog("开始准备评论视频")
+    clickId("cd7")
+
+    sleep(5000)
+    var autoCompleteTextViews = className("android.widget.EditText").find();
+    for(var i = 0; i < autoCompleteTextViews.size(); i++) {
+        var textView = autoCompleteTextViews.get(i);
+        if(textView) {
+            taskLog("找到TextView控件-Text："+ textView.text());
+            sleep(1000)
+            taskLog("TextView控件，设置内容：" +TT_input_text );
+            textView.setText(TT_input_text)
+            sleep(2000)
+            clickId("cey") //点击发布评论
+
+        }
+    }
+    // clickText("")
+    back();
+}
+
+//点击收藏按钮
+function click_Save_Btn(){
+    taskLog("开始准备收藏视频")
+    // id("egc").className("android.widget.ImageView").findOne().click()
+    clickId("egc")
+
+}
+
+
+
 
 
 //打印日志
@@ -156,11 +262,7 @@ function writeLog(a) {
     }
 }
 
-function clickId(a) {
-    for (obj_ID = id(a).boundsInside(5, 5, device.width-5, device.height-5); obj_ID.find().empty(); ) sleep(1e3);
-    X = obj_ID.find().get(0).bounds().centerX(), Y = obj_ID.find().get(0).bounds().centerY(),
-    Deviation = random(-10, 10), X1 = X - Deviation, Y1 = Y - Deviation, device.sdkInt<24?ra.tap(X1,Y1):click(X1,Y1);
-}
+
 function clickText(a) {
     for (obj_Text = text(a).boundsInside(5, 5, device.width-5, device.height-5); obj_Text.find().empty(); ) sleep(1e3);
     X = obj_Text.find().get(0).bounds().centerX(), Y = obj_Text.find().get(0).bounds().centerY(),

@@ -4,7 +4,7 @@ importClass(java.io.PrintWriter);
 importClass(java.io.FileWriter);
 
 //******************************************************************
-//***********************Facebook個人發文*************************
+//***********************Facebook首页点赞(没有留言)*************************
 //******************************************************************
 
 
@@ -15,15 +15,15 @@ var taskLogFileName = "nest_task_log.txt"
 var taskLogImgName = "nest_task_log.png"
 
 
-//用户需要输入的评论内容
-const FB_input_text = "$${输入文案}"
+//用户需要点赞的次数
+//const FB_like_count = "${{输入点赞次数}}"
+const FB_like_count = 10
 
 
 //1.autox.js侧边栏的打开USB调试先打开
 //2.vscode ctrl+shift+p 输入start all server 确定
 //3.远程连接成功
 
-//个人发文
 
 //会在在无障碍服务启动后继续运行。
 auto.waitFor();
@@ -60,60 +60,41 @@ taskLog("打开Facebook成功...")
 
 
 
+for (var i = 1; i <= FB_like_count; i++) {
+    taskLog("准备点赞，第 " + i + "次" );
 
-taskLog("准备点击‘分享新鲜事 在 Facebook 发帖’按钮...");
-////点击界面的“准备点击‘分享新鲜事 在 Facebook 发帖’按钮...”按钮，界面元素会变化
-//className("android.widget.Button").text("分享新鲜事 在 Facebook 发帖").findOne(1000);
-// className("android.widget.Button").text("What's on your mind? Create a post on Facebook").findOne().click()
-find_btn_Text_base("分享新鲜事 在 Facebook 发帖", 
-    "在想些什麼？ Make a post on Facebook" , 
-    "What's on your mind? Make a post on Facebook",
-    "What's on your mind? Create a post on Facebook")
+    sleep(5000)
 
+    taskLog("准备上滑，起始x坐标: " + device.width / 2 );
+    taskLog("准备上滑，起始y坐标: " + device.height * 3 / 4 );
+    taskLog("准备上滑，结束x坐标: " + device.width / 2 );
+    taskLog("准备上滑，结束Y坐标: " + device.height / 4 );
 
-
-sleep(5000)
-// 获取屏幕的宽度和高度
-let screenWidth = device.width;
-let screenHeight = device.height;
-taskLog("屏幕区域的宽高坐标: (" + screenWidth + ", " + screenHeight + ")");
- // 计算屏幕上方2/3区域的底部位置
- let twoThirdsHeight = screenHeight * (2/3);
- // 计算该区域的中心点坐标
- let centerX = screenWidth / 2;
- let centerY = twoThirdsHeight - (screenHeight / 3) / 2;
-// 打印屏幕上方2/3区域的中心点坐标
-taskLog("准备点击屏幕上方2/3区域的中心点坐标: (" + centerX + ", " + centerY + ")");
-click(centerX,centerY)
+    swipe(device.width / 2, device.height * 3 / 4, device.width / 2, device.height / 4, 500);
 
 
-taskLog("准备输入分享内容....");
-id("(name removed)").className("android.widget.AutoCompleteTextView").findOne(5000).setText(FB_input_text)
+    //点赞：className("android.widget.Button").desc("Like. Double tap and hold to react.").findOne().click()
+    taskLog("准备点击点赞按钮....");
+    sleep(5000)
+    find_btn_desc_base("Like. Double tap and hold to react.", "Like. Double tap and hold to react." , "Like. Double tap and hold to react.")
+
+}
 
 
 
-taskLog("准备点击下一步....");
-sleep(5000)
-find_btn_desc_base("下一步", "下一步" , "NEXT")
-
-
-
-
-taskLog("准备点击分享....");
-sleep(5000)
-find_btn_desc_base("分享", "分享" , "Share")
-
-
-taskLog("等待分享结果，大约30s左右....");
+taskLog("等待首页点赞结果，大约30s左右....");
 sleep(30000)
 stopCurrentTask()
+
+
+
+
 
 
 //打印日志
 function taskLog(_log){
     console.log(getSystemDate("df") +":" +_log)
 }
-
 
 
 //无论成功或者失败，最后截图一张
@@ -193,8 +174,7 @@ function stopCurrentTask(){
 
 
 //通过Button的Text
-function find_btn_Text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US, findText_EN_UK){
-
+function find_btn_Text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
 
         var loopCount  = 0
 
@@ -210,12 +190,11 @@ function find_btn_Text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US, find
                 break;
              }
 
+
              // 查找控件
              var button1 = className("android.widget.Button").text(findText_ZH_CN).findOne(1000);
              var button2 = className("android.widget.Button").text(findText_ZH_TW).findOne(1000);
              var button3 = className("android.widget.Button").text(findText_EN_US).findOne(1000);
-             var button4 = className("android.widget.Button").text(findText_EN_UK).findOne(1000);
-
              if (button1) {
                  taskLog("找到" + findText_ZH_CN);
                  button1.click();
@@ -228,11 +207,7 @@ function find_btn_Text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US, find
                  taskLog("找到" + findText_EN_US);
                  button3.click();
                  break; // 跳出循环
-             }else if(button4){
-                taskLog("找到" + findText_EN_UK);
-                button4.click();
-                break; // 跳出循环
-            }
+             }
 
              sleep(1000)
 

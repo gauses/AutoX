@@ -4,7 +4,9 @@ import { log } from '../utils/log';
 import { nestBrowser } from './nest-browser';
 import { existsSync, writeFileSync } from 'fs';
 import { normalize, join } from 'path';
-
+import {
+  DEFAULT_PLUGINS_AUTOXJS_APK,
+} from '~/constants/common';
 
 
 import { exec } from 'child_process';
@@ -39,13 +41,51 @@ export class NestAdb {
         nstep = 1;
         break;
       }
+	  
+	  
+	  // 设置adb install不校验签名，并且安装autoxjs
+      args = [];
+      args.push('settings');
+      args.push('put');
+      args.push('global');
+      args.push('verifier_verify_adb_installs');
+      args.push('0');
+      res = await this.executeShell(url, args);
+      if (res === 'error') {
+        nstep = 2;
+        break;
+      }
+
+      args = [];
+      args.push('settings');
+      args.push('put');
+      args.push('global');
+      args.push('package_verifier_enable');
+      args.push('0');
+      res = await this.executeShell(url, args);
+      if (res === 'error') {
+        nstep = 3;
+        break;
+      }
+	  
+	  
+	  //安装autoxjs
+      const autojs = normalize(
+        join(app.getPath('userData'), 'cores', DEFAULT_PLUGINS_AUTOXJS_APK),
+      );
+      if (!existsSync(autojs)) {
+        nstep = 4;
+        break;
+      }
+	  
+	  
      
       args = [];
       args.push(scriptFile);
       args.push('/sdcard/Download');
       res = await this.pushFile(url, args);
       if (res === '') {
-        nstep = 2;
+        nstep = 5;
         break;
       }
 	  
@@ -57,7 +97,17 @@ export class NestAdb {
       args.push('org.autojs.autoxjs');
       res = await this.executeShell(url, args);
       if (res === 'error') {
-        nstep = 3;
+        nstep = 6;
+        break;
+      }
+
+      args = [];
+      args.push('am');
+      args.push('force-stop');
+      args.push('com.facebook.katana');
+      res = await this.executeShell(url, args);
+      if (res === 'error') {
+        nstep = 7;
         break;
       }
 
@@ -74,7 +124,7 @@ export class NestAdb {
       );
       res = await this.executeShell(url, args);
       if (res === 'error') {
-        nstep = 4;
+        nstep = 8;
         break;
       }
 
@@ -86,7 +136,7 @@ export class NestAdb {
       args.push('1');
       res = await this.executeShell(url, args);
       if (res === 'error') {
-        nstep = 5;
+        nstep = 9;
         break;
       }
 	  
@@ -100,7 +150,7 @@ export class NestAdb {
 	  args.push('allow');
       res = await this.executeShell(url, args);
       if (res === 'error') {
-        nstep = 6;
+        nstep = 10;
         break;
       }
 	  
@@ -113,7 +163,7 @@ export class NestAdb {
       args.push('android.permission.READ_EXTERNAL_STORAGE');
       res = await this.executeShell(url, args);
       if (res === 'error') {
-        nstep = 7;
+        nstep = 11;
         break;
       }
 
@@ -125,7 +175,7 @@ export class NestAdb {
       args.push('android.permission.SYSTEM_ALERT_WINDOW');
       res = await this.executeShell(url, args);
       if (res === 'error') {
-        nstep = 8;
+        nstep = 12;
         break;
       }
 
@@ -133,12 +183,13 @@ export class NestAdb {
       args = [];
       args.push('appops');
       args.push('set');
+	  args.push('--uid');
       args.push('org.autojs.autoxjs');
       args.push('PROJECT_MEDIA');
 	  args.push('allow');
       res = await this.executeShell(url, args);
       if (res === 'error') {
-        nstep = 9;
+        nstep = 13;
         break;
       }
 
@@ -156,7 +207,7 @@ export class NestAdb {
 	  args.push(net_phone_script_name);
       res = await this.executeShell(url, args);
       if (res === 'error') {
-        nstep = 10;
+        nstep = 14;
         break;
       }
 
