@@ -20,8 +20,8 @@ var taskLogImgName = "nest_task_log.png"
 const TT_input_text = "COOL..."
 const TT_Like_Count = 10 //点赞概率
 const TT_Save_Count = 10 //收藏概率
-const TT_Comment_Count = 10 //评论概率
-const TT_Watch_Author_Page= 100 //查看作者主页的概率
+const TT_Comment_Count = 100 //评论概率
+const TT_Watch_Author_Page= 10 //查看作者主页的概率
 const TT_Watch_Count = 1045 //观看视频个数
 
 
@@ -51,6 +51,8 @@ if (runningEngines.length > 1) {
     }
   })
 }
+
+
 
 taskLog("准备启动TikTok...")
 sleep(5000)
@@ -99,19 +101,19 @@ do {
 
 
     // 获取设备屏幕的宽高
-    var width = device.width;
-    var height = device.height;
+    var width = device.width;
+    var height = device.height;
 
-    // 生成随机起始点
-    var startX = random(0, width);
-    var startY = random(height * 3 / 4, height);
+    // 生成随机起始点
+    var startX = random(width / 3 , width * 2 / 3);
+    var startY = random(height * 2 / 3, height * 3 / 4);
 
-    // 生成随机结束点
-    var endX = random(0, width);
-    var endY = random(0, height / 4);
+    // 生成随机结束点
+    var endX = random(width / 3 , width * 2 / 3);
+    var endY = random(height * 1 / 3, height * 1 / 4);
 
-    // 屏幕上滑操作
-    swipe(startX, startY, endX, endY, 500);
+    // 屏幕上滑操作
+    swipe(startX, startY, endX, endY, 500);
     taskLog("开始滑动位置，x = "+startX+"；y = " + startY)
     taskLog("结束滑动位置，x = "+endX+"；y = " + endY)
 
@@ -126,13 +128,14 @@ function clickId(a) {
     
     // 检查是否找到了元素
     if (obj_ID.find().empty()) {
+        taskLog("没有找到元素ID ：" + a)
         return; // 如果没有找到，直接返回
     }
     //一旦找到元素，获取该元素的中心坐标 X 和 Y。
     X = obj_ID.find().get(0).bounds().centerX(), 
     Y = obj_ID.find().get(0).bounds().centerY(),
     //生成一个随机偏差（Deviation），范围从 -10 到 10，以避免点击时总是点击到相同的坐标。
-    Deviation = random(-10, 10), 
+    Deviation = random(-5, 5), 
     X1 = X - Deviation, 
     Y1 = Y - Deviation;
 
@@ -150,9 +153,14 @@ function click_Author_Page_Btn(){
     // 获取屏幕宽高
     var width = device.width;
     var height = device.height;
+    
+        // 生成随机起始点
+    var startX = random(width / 3 , width * 2 / 3);
+    var startY = random(height * 2 / 3, height * 3 / 4);
 
-    // 定义上下滑动的距离
-    var swipeDistance = random(200, 400); // 随机滑动200到400像素
+    // 生成随机结束点
+    var endX = random(width / 3 , width * 2 / 3);
+    var endY = random(height * 1 / 3, height * 1 / 4);
 
     // 随机选择滑动方向：上滑或下滑
     for (var i = 0; i < 2; i++) {
@@ -160,16 +168,18 @@ function click_Author_Page_Btn(){
 
         if (direction === 'up') {
             // 从下往上滑动
-            swipe(width / 2, height - random(100, 200), width / 2, random(100, 300), 500);
+            swipe(startX, startY, endX, endY, 500);
         } else {
             // 从上往下滑动
-            swipe(width / 2, random(100, 300), width / 2, height - random(100, 200), 500);
+            swipe(startX, startY, endX, endY, 500);
         }
         
         // 暂停一段时间，避免滑动过快
         sleep(random(3000,5000));
     }
 
+    taskLog("从视频作者主页返回")
+    sleep(random(3000,5000));
     back();
 }
 
@@ -195,7 +205,10 @@ function click_Comment_Btn(){
             taskLog("TextView控件，设置内容：" +TT_input_text );
             textView.setText(TT_input_text)
             sleep(2000)
-            clickId("cey") //点击发布评论
+            clickId("cey") //如果主页已经有别人评论过：id = cey ， 点击发布评论
+            sleep(1000)
+            clickId("bgi") //如果主页没有评论过：id = bgi ， 点击发布评论
+            sleep(20000)
 
         }
     }
