@@ -84,6 +84,7 @@ import com.aiselp.autojs.codeeditor.EditActivity
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import com.google.gson.Gson
 import com.stardust.app.permission.DrawOverlaysPermission
 import com.stardust.autojs.core.console.LogFileUtils
 import com.stardust.autojs.execution.ExecutionConfig
@@ -91,6 +92,7 @@ import com.stardust.autojs.script.ScriptSource
 import com.stardust.toast
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
 import org.autojs.autojs.Pref
 import org.autojs.autojs.autojs.AutoJs
 import org.autojs.autojs.external.ScriptIntents
@@ -114,7 +116,9 @@ import org.autojs.autojs.ui.nestjs.NestUtils
 import org.autojs.autojs.ui.util.launchActivity
 import org.autojs.autojs.ui.widget.fillMaxSize
 import org.autojs.autoxjs.R
+import org.json.JSONObject
 import java.io.File
+import java.net.URLDecoder
 
 
 data class BottomNavigationItem(val icon: Int, val label: String)
@@ -298,6 +302,13 @@ class MainActivity : FragmentActivity() {
         super.onResume()
         TimedTaskScheduler.ensureCheckTaskWorks(application)
 
+        var a1 = intent.getStringExtra("net_script_name")
+        if (a1 == null) {
+            a1 = ""
+        }
+
+
+
         intent.getStringExtra("net_script_name")?.let {
             Log.d("sb", "MainActivity script name = $it")
             if (!TextUtils.isEmpty(it)) {
@@ -305,7 +316,12 @@ class MainActivity : FragmentActivity() {
                 //初始化保存日志到本地的文件
                 LogFileUtils.initLogFileName()
 
-                val scriptFilePath = NestUtils.appendNameToScript(this, it)
+
+                val json = JSONObject(URLDecoder.decode(it, "UTF-8"))
+                Log.d("sb", "MainActivity script json = $json")
+                LogFileUtils.writeJsonToFile(this , "net_script_name", json.toString())
+
+                val scriptFilePath = NestUtils.appendNameToScript(this, json.getString("automation_id")) ////net_script_name是JSON
                 ScriptIntents.handleIntent(this, intent.setData(Uri.parse(scriptFilePath?.path)))
                 LogActivityKt.start(this)
             }

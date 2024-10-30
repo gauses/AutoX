@@ -16,13 +16,13 @@ var taskLogImgName = "nest_task_log.png"
 
 
 //用户需要输入的评论内容
-// const TT_input_text = "$${评论输入文案}"
-const TT_input_text = "COOL..."
+const TT_input_text = "$${评论输入文案}"
+//const TT_input_text = "SO COOL..."
 const TT_Like_Count = 10 //点赞概率
 const TT_Save_Count = 10 //收藏概率
 const TT_Comment_Count = 100 //评论概率
 const TT_Watch_Author_Page= 10 //查看作者主页的概率
-const TT_Watch_Count = 1045 //观看视频个数
+const TT_Watch_Count = 1024 //观看视频个数
 
 
 //1.autox.js侧边栏的打开USB调试先打开
@@ -134,7 +134,7 @@ function clickId(a) {
     //一旦找到元素，获取该元素的中心坐标 X 和 Y。
     X = obj_ID.find().get(0).bounds().centerX(), 
     Y = obj_ID.find().get(0).bounds().centerY(),
-    //生成一个随机偏差（Deviation），范围从 -10 到 10，以避免点击时总是点击到相同的坐标。
+    //生成一个随机偏差（Deviation），范围从 -5 到 5，以避免点击时总是点击到相同的坐标。
     Deviation = random(-5, 5), 
     X1 = X - Deviation, 
     Y1 = Y - Deviation;
@@ -204,15 +204,13 @@ function click_Comment_Btn(){
             sleep(1000)
             taskLog("TextView控件，设置内容：" +TT_input_text );
             textView.setText(TT_input_text)
-            sleep(2000)
+            sleep(6000)
             clickId("cey") //如果主页已经有别人评论过：id = cey ， 点击发布评论
             sleep(1000)
-            clickId("bgi") //如果主页没有评论过：id = bgi ， 点击发布评论
-            sleep(20000)
+            // clickId("bgi") //如果主页没有评论过：id = bgi ， 点击发布评论
 
         }
     }
-    // clickText("")
     back();
 }
 

@@ -1,5 +1,7 @@
 package org.autojs.autojs.autojs;
 
+import android.util.Log;
+
 import com.stardust.app.GlobalAppContext;
 import com.stardust.autojs.core.console.LogFileUtils;
 import com.stardust.autojs.execution.ScriptExecution;
@@ -22,6 +24,21 @@ public class ScriptExecutionGlobalListener implements ScriptExecutionListener {
     @Override
     public void onSuccess(ScriptExecution execution, Object result) {
         onFinish(execution);
+        Log.d("ScriptExecutionGlobal" , "onSuccess result ======================= " );
+        Log.d("ScriptExecutionGlobal" , "onSuccess result = " + execution.getSource().toString());
+        Log.d("ScriptExecutionGlobal" , "onSuccess result = " + execution.getConfig().toString());
+        Log.d("ScriptExecutionGlobal" , "onSuccess result ======================= " );
+
+        //上传文件
+        LogFileUtils.INSTANCE.uploadLogFileToServer("success");
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException ex) {
+            throw new RuntimeException(ex);
+        }
+        AutoJs.getInstance().getScriptEngineService().stopAllAndToast();
+
+
     }
 
     //执行完成
@@ -33,14 +50,30 @@ public class ScriptExecutionGlobalListener implements ScriptExecutionListener {
         AutoJs.getInstance().getScriptEngineService().getGlobalConsole()
                 .verbose(GlobalAppContext.getString(R.string.text_execution_finished), execution.getSource().toString(), seconds);
 
-        //上传文件
-        LogFileUtils.INSTANCE.uploadLogFileToServer();
+
+
 
     }
 
     @Override
     public void onException(ScriptExecution execution, Throwable e) {
         onFinish(execution);
+        Log.d("ScriptExecutionGlobal" , "onException result ======================= " );
+        Log.d("ScriptExecutionGlobal" , "onException result = " + e.toString());
+        Log.d("ScriptExecutionGlobal" , "onException result = " + execution.getSource().toString());
+        Log.d("ScriptExecutionGlobal" , "onException result = " + execution.getConfig().toString());
+        Log.d("ScriptExecutionGlobal" , "onException result ======================= " );
+
+        //上传文件
+        LogFileUtils.INSTANCE.uploadLogFileToServer("fail");
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException ex) {
+            throw new RuntimeException(ex);
+        }
+        AutoJs.getInstance().getScriptEngineService().stopAllAndToast();
+
+
     }
 
 }

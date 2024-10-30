@@ -66,5 +66,7 @@ dependencies {
     api(libs.text.recognition.devanagari)
     api(libs.text.recognition.japanese)
     api(libs.text.recognition.korean)
+    implementation ("com.squareup.okhttp3:okhttp:4.10.0") // 或者最新版本
+    implementation ("com.squareup.okhttp3:logging-interceptor:4.10.0") // 或者最新版本
 }
 
