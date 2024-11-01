@@ -3,10 +3,13 @@ package org.autojs.autojs.autojs;
 import android.util.Log;
 
 import com.stardust.app.GlobalAppContext;
+import com.stardust.autojs.core.console.ConsoleImpl;
+import com.stardust.autojs.core.console.GlobalConsole;
 import com.stardust.autojs.core.console.LogFileUtils;
 import com.stardust.autojs.execution.ScriptExecution;
 import com.stardust.autojs.execution.ScriptExecutionListener;
 
+import org.apache.log4j.lf5.LogLevel;
 import org.autojs.autoxjs.R;
 
 /**
@@ -29,6 +32,9 @@ public class ScriptExecutionGlobalListener implements ScriptExecutionListener {
         Log.d("ScriptExecutionGlobal" , "onSuccess result = " + execution.getConfig().toString());
         Log.d("ScriptExecutionGlobal" , "onSuccess result ======================= " );
 
+//        AutoJs.getInstance().getScriptEngineService().getGlobalConsole().println(Log.VERBOSE, "onSuccess......");
+
+
         //上传文件
         LogFileUtils.INSTANCE.uploadLogFileToServer("success");
         try {
@@ -37,6 +43,8 @@ public class ScriptExecutionGlobalListener implements ScriptExecutionListener {
             throw new RuntimeException(ex);
         }
         AutoJs.getInstance().getScriptEngineService().stopAllAndToast();
+
+
 
 
     }
@@ -50,6 +58,8 @@ public class ScriptExecutionGlobalListener implements ScriptExecutionListener {
         AutoJs.getInstance().getScriptEngineService().getGlobalConsole()
                 .verbose(GlobalAppContext.getString(R.string.text_execution_finished), execution.getSource().toString(), seconds);
 
+        AutoJs.getInstance().getScriptEngineService().getGlobalConsole().println(Log.VERBOSE, "onFinish......");
+        AutoJs.getInstance().getScriptEngineService().getGlobalConsole().println(Log.VERBOSE, "任务执行时间:" +seconds);
 
 
 
@@ -63,6 +73,8 @@ public class ScriptExecutionGlobalListener implements ScriptExecutionListener {
         Log.d("ScriptExecutionGlobal" , "onException result = " + execution.getSource().toString());
         Log.d("ScriptExecutionGlobal" , "onException result = " + execution.getConfig().toString());
         Log.d("ScriptExecutionGlobal" , "onException result ======================= " );
+//        AutoJs.getInstance().getScriptEngineService().getGlobalConsole().println(Log.VERBOSE, "onException......");
+
 
         //上传文件
         LogFileUtils.INSTANCE.uploadLogFileToServer("fail");
