@@ -53,13 +53,8 @@ if (runningEngines.length > 1) {
   })
 }
 
-// taskLog("准备强杀TikTok...")
-// app.openAppSetting("com.zhiliaoapp.musically")
-// sleep(5000)
-// find_btn_desc_base("FORCE STOP","FORCE STOP","FORCE STOP")
-// sleep(5000)
 
-
+forceStop_titkok()
 
 
 taskLog("准备启动TikTok...")
@@ -155,12 +150,10 @@ if (search_text_array.length > 0) {
         taskLog("开始准备点击首页搜索按钮")
 
         // 计算右上角区域的点击坐标(找不到按钮，所以只能是点击坐标)
-        var clickX = device.width - 50; 
-        var clickY = random(30 , 50); 
-        taskLog("开始准备点击首页搜索按钮 clickX = " + clickX)
-        taskLog("开始准备点击首页搜索按钮 clickY = " + clickY)
-        click(clickX, clickY);
+        click_search_btn()
         sleep(random(5000, 8000))
+        // click(id("fv0").findOne().bounds.centerX() ,id("fv0").findOne().bounds.centerY() )
+        // clickId("fv0")
 
 
         var search_edits = className("android.widget.EditText").find();
@@ -174,27 +167,22 @@ if (search_text_array.length > 0) {
                 sleep(random(5000, 8000))
                 
                 taskLog("开始点击Search按钮")
-                // id("qpp").findOne().click();
-                id("moh").findOne().click()
-        
+                //各种方式都找不到元素，只好以坐标为准
+                click_search_btn()
+                // find_btn_Text_base("搜索","搜尋","Search")
+
+
                 //开始观看视频
                 sleep(random(5000, 8000))
+                taskLog("开始点击视频Tab按钮")
+                find_textview_text_base("视频","影片","Videos")
 
-                //直接观看第一个即可,整个frame的id是：
-                // id("hxw").findOne().children().forEach(child => {
-                //     var target = child.findOne(id("m9u"));
-                //     target.click();
-                //     });
-                var video_frames = className("android.widget.FrameLayout").find();
-                for(var j = 0; j < search_edits.size(); j++) { 
-                    var video_frame = video_frames.get(j);
-                    if(video_frame.id = "m9u") {
-                        video_frame.click()
-                    }
-                }
+                sleep(random(5000, 8000))
+                click_left_top_screen()//直接观看第一个即可
+                
+
+                sleep(random(5000, 8000))
                 watch_TT_video()
-        
-    
     
             }
         }
@@ -206,6 +194,107 @@ if (search_text_array.length > 0) {
     taskLog("- 没有可用的搜索关键字文案, 忽略 - ");
   }
 
+
+//强制停止TikTok 
+function forceStop_titkok(){
+    taskLog("准备强杀TikTok...")
+    app.openAppSetting("com.zhiliaoapp.musically")
+    sleep(5000)
+
+    //繁体
+    if (text("強制停止").exists()) {
+        let forceStopBtn = text("強制停止").findOne();
+        if (forceStopBtn && forceStopBtn.clickable()) {
+            forceStopBtn.click();
+            sleep(1000);
+            // 确认操作
+            if (text("確定").exists()) {
+                text("確定").findOne().click();
+            }
+        } else {
+            taskLog("未找到可点击的‘強制停止’按钮");
+        }
+    } else {
+        taskLog("未找到‘強制停止’按钮");
+    }
+    sleep(5000)
+    home()
+
+    //简体
+    if (text("强制停止").exists()) {
+        let forceStopBtn = text("强制停止").findOne();
+        if (forceStopBtn && forceStopBtn.clickable()) {
+            forceStopBtn.click();
+            sleep(1000);
+            // 确认操作
+            if (text("确定").exists()) {
+                text("确定").findOne().click();
+            }
+        } else {
+            taskLog("未找到可点击的‘强行停止’按钮");
+        }
+    } else {
+        taskLog("未找到‘强行停止’按钮");
+    }
+
+    sleep(5000)
+    home()
+
+
+    //英语
+    if (text("Force stop").exists()) {
+        let forceStopBtn = text("Force stop").findOne();
+        if (forceStopBtn && forceStopBtn.clickable()) {
+            forceStopBtn.click();
+            sleep(1000);
+            // 确认操作
+            if (text("OK").exists()) {
+                text("OK").findOne().click();
+            }
+        } else {
+            taskLog("未找到可点击的‘Force stop’按钮");
+        }
+    } else {
+        taskLog("未找到‘Force stop’按钮");
+    }
+    sleep(5000)
+    home()
+
+}
+
+
+// 计算右上角区域的点击坐标(找不到按钮，所以只能是点击坐标)
+// 整个脚本一共有两个地方使用这个方法
+function click_search_btn(){
+    var clickX = device.width - 50; 
+    var clickY = random(40 , 50); 
+    taskLog("开始准备点击首页搜索确认按钮 clickX = " + clickX)
+    taskLog("开始准备点击首页搜索确认按钮 clickY = " + clickY)
+    click(clickX, clickY);
+    sleep(random(5000, 8000))
+}
+
+//点击屏幕左上方
+function click_left_top_screen(){
+    // 获取屏幕宽度和高度
+    var width = device.width;
+    var height = device.height;
+
+    // 定义左上角区域的边界
+    var left = 200;
+    var top = 200;
+    var right = width / 2; // 左上区域的右边界
+    var bottom = height / 2; // 左上区域的下边界
+
+    // 生成随机坐标
+    var randomX = Math.random() * (right - left) + left; // 随机 x 坐标
+    var randomY = Math.random() * (bottom - top) + top; // 随机 y 坐标
+
+    // 点击随机坐标
+    click(randomX, randomY);
+
+
+}
 
 
 
@@ -345,17 +434,6 @@ function click_Like_Btn(){
 
 
 
-function find_send_btn(){
-    var allButtons = className("android.widget.Button").find();
-    for(var i = 0; i < allButtons.size(); i++) {
-        var button = allButtons.get(i);
-        if(button) {
-            taskLog("找到button控件-Text："+ button.text() + ";ID = " + button.id());
-        }
-    }
-}
-
-
 //点击评论按钮
 function click_Comment_Btn(commentText){
     taskLog("开始准备评论视频")
@@ -373,24 +451,20 @@ function click_Comment_Btn(commentText){
             sleep(10000)
 
 
-            clickId("cey") //如果主页已经有别人评论过：id = cey ， 点击发布评论
-            sleep(1000)
+            // clickId("cey") //如果主页已经有别人评论过：id = cey ， 点击发布评论
+            // sleep(1000)
 
-            find_send_btn()
-            sleep(5000)
-            clickId("bgi") //如果主页已经有别人评论过：id = cey ， 点击发布评论
+            // find_send_btn()
+            // sleep(5000)
+            // clickId("bgi") //如果主页已经有别人评论过：id = cey ， 点击发布评论
+
+            find_btn_desc_base("发布评论","發佈評論","Post comment")
 
 
         }
     }
     back();
-
-
-
     sleep(3000)
-    // clickId("cg_") //如果主页已经有别人评论过：id = cg_ ， 点击发布评论
-    sleep(3000)
-    find_btn_desc_base("Post comment","Post comment","Post comment")
 
 
 }
@@ -461,12 +535,13 @@ function writeLog(a) {
 function clickText(a) {
     for (obj_Text = text(a).boundsInside(5, 5, device.width-5, device.height-5); obj_Text.find().empty(); ) sleep(1e3);
     X = obj_Text.find().get(0).bounds().centerX(), Y = obj_Text.find().get(0).bounds().centerY(),
-    Deviation = random(-10, 10), X1 = X - Deviation, Y1 = Y - Deviation, device.sdkInt<24?ra.tap(X1,Y1):click(X1,Y1);
+    Deviation = random(-5, 5), X1 = X - Deviation, Y1 = Y - Deviation, device.sdkInt<24?ra.tap(X1,Y1):click(X1,Y1);
 }
+
 function clickDesc(a) {
     for (obj_Desc = desc(a).boundsInside(5, 5, device.width-5, device.height-5); obj_Desc.find().empty(); ) sleep(1e3);
     X = obj_Desc.find().get(0).bounds().centerX(), Y = obj_Desc.find().get(0).bounds().centerY(),
-    Deviation = random(-10, 10), X1 = X - Deviation, Y1 = Y - Deviation, device.sdkInt<24?ra.tap(X1,Y1):click(X1,Y1);
+    Deviation = random(-5, 5), X1 = X - Deviation, Y1 = Y - Deviation, device.sdkInt<24?ra.tap(X1,Y1):click(X1,Y1);
 }
 
 //========================================================================================================================
@@ -490,7 +565,7 @@ function stopCurrentTask(){
 
 
 //通过Button的Text
-function find_btn_Text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US, findText_EN_UK){
+function find_btn_Text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
 
 
         var loopCount  = 0
@@ -511,26 +586,29 @@ function find_btn_Text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US, find
              var button1 = className("android.widget.Button").text(findText_ZH_CN).findOne(1000);
              var button2 = className("android.widget.Button").text(findText_ZH_TW).findOne(1000);
              var button3 = className("android.widget.Button").text(findText_EN_US).findOne(1000);
-             var button4 = className("android.widget.Button").text(findText_EN_UK).findOne(1000);
 
              if (button1) {
                  taskLog("找到" + findText_ZH_CN);
-                 button1.click();
+                 taskLog("找到button1 = " + button1.clickable() );
+                 clickText(findText_ZH_CN)
                  break; // 跳出循环
              }else if(button2){
                  taskLog("找到" + findText_ZH_TW);
-                 button2.click();
+                 taskLog("找到button2 = " + button2.clickable() );
+                 clickText(findText_ZH_TW)
                  break; // 跳出循环
              }else if(button3){
                  taskLog("找到" + findText_EN_US);
-                 button3.click();
+                 taskLog("找到button3 = " + button3.clickable() );
+                //  if(button3.clickable()) {
+                //     sleep(1000);
+                //     button3.click()
+                //  }else{
+                    clickText(findText_EN_US)
+                //  }
+                 
                  break; // 跳出循环
-             }else if(button4){
-                taskLog("找到" + findText_EN_UK);
-                button4.click();
-                break; // 跳出循环
-            }
-
+             }
              sleep(1000)
 
          }
@@ -562,20 +640,69 @@ function find_btn_desc_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
              var button3 = className("android.widget.Button").desc(findText_EN_US).findOne(1000);
              if (button1) {
                  taskLog("找到" + findText_ZH_CN);
-                 button1.click();
+                 taskLog("找到button1 = " + button1.clickable() );
+                 clickDesc(findText_ZH_CN)
                  break; // 跳出循环
              }else if(button2){
                  taskLog("找到" + findText_ZH_TW);
-                 button2.click();
+                 taskLog("找到button2 = " + button2.clickable() );
+                 clickDesc(findText_ZH_TW)
                  break; // 跳出循环
              }else if(button3){
                  taskLog("找到" + findText_EN_US);
-                 button3.click();
+                 taskLog("找到button3 = " + button3.clickable() );
+                 clickDesc(findText_EN_US)
                  break; // 跳出循环
              }
 
              sleep(1000)
 
          }
+}
+
+
+
+
+//通过TextView的text
+function find_textview_text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
+
+    var loopCount  = 0
+
+     while (true) {
+         taskLog(findText_ZH_CN + " - 循环寻找执行：" + (++loopCount));
+         // 检查计数器是否达到3
+         if (loopCount >= 3) {
+             // 打印一条消息并退出循环
+             taskLog("循环已执行3次，即将退出循环。");
+
+             //不能抛出异常，因为可能Facebook记忆功能，自动跳转到输入页面
+//                 throw new Error(findText_ZH_CN +"按钮没有找到");
+            break;
+         }
+
+         // 查找控件
+         var button1 = className("android.widget.TextView").text(findText_ZH_CN).findOne(1000);
+         var button2 = className("android.widget.TextView").text(findText_ZH_TW).findOne(1000);
+         var button3 = className("android.widget.TextView").text(findText_EN_US).findOne(1000);
+         if (button1 ) {
+             taskLog("找到" + findText_ZH_CN);
+             taskLog("找到" + button1.clickable());
+             clickText(findText_ZH_CN)
+             break; // 跳出循环
+         }else if(button2){
+             taskLog("找到" + findText_ZH_TW);
+             taskLog("找到" + button2.clickable());
+             clickText(findText_ZH_TW)
+             break; // 跳出循环
+         }else if(button3){
+             taskLog("找到" + findText_EN_US);
+             taskLog("找到" + button3.clickable());
+             clickText(findText_EN_US)
+             break; // 跳出循环
+         }
+
+         sleep(1000)
+
+     }
 }
 
