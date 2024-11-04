@@ -57,6 +57,8 @@ if (runningEngines.length > 1) {
   })
 }
 
+forceStop_titkok()
+
 taskLog("准备启动TikTok...")
 sleep(5000)
 app.startActivity({
@@ -263,12 +265,13 @@ function click_Comment_Btn(commentText){
             sleep(10000)
 
 
-            clickId("cey") //如果主页已经有别人评论过：id = cey ， 点击发布评论
-            sleep(1000)
+            // clickId("cey") //如果主页已经有别人评论过：id = cey ， 点击发布评论
+            // sleep(1000)
 
-            find_send_btn()
-            sleep(5000)
-            clickId("bgi") //如果主页已经有别人评论过：id = cey ， 点击发布评论
+            // find_send_btn()
+            // sleep(5000)
+            // clickId("bgi") //如果主页已经有别人评论过：id = cey ， 点击发布评论
+            find_btn_desc_base("发布评论","發佈評論","Post comment")
 
 
         }
@@ -278,9 +281,9 @@ function click_Comment_Btn(commentText){
 
 
     sleep(3000)
-    // clickId("cg_") //如果主页已经有别人评论过：id = cg_ ， 点击发布评论
-    sleep(3000)
-    find_btn_desc_base("Post comment","Post comment","Post comment")
+    // // clickId("cg_") //如果主页已经有别人评论过：id = cg_ ， 点击发布评论
+    // sleep(3000)
+    // find_btn_desc_base("Post comment","Post comment","Post comment")
 
 
 }
@@ -451,21 +454,92 @@ function find_btn_desc_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
              var button2 = className("android.widget.Button").desc(findText_ZH_TW).findOne(1000);
              var button3 = className("android.widget.Button").desc(findText_EN_US).findOne(1000);
              if (button1) {
-                 taskLog("找到" + findText_ZH_CN);
-                 button1.click();
-                 break; // 跳出循环
-             }else if(button2){
-                 taskLog("找到" + findText_ZH_TW);
-                 button2.click();
-                 break; // 跳出循环
-             }else if(button3){
-                 taskLog("找到" + findText_EN_US);
-                 button3.click();
-                 break; // 跳出循环
-             }
+                taskLog("找到" + findText_ZH_CN);
+                taskLog("找到button1 = " + button1.clickable() );
+                clickDesc(findText_ZH_CN)
+                break; // 跳出循环
+            }else if(button2){
+                taskLog("找到" + findText_ZH_TW);
+                taskLog("找到button2 = " + button2.clickable() );
+                clickDesc(findText_ZH_TW)
+                break; // 跳出循环
+            }else if(button3){
+                taskLog("找到" + findText_EN_US);
+                taskLog("找到button3 = " + button3.clickable() );
+                clickDesc(findText_EN_US)
+                break; // 跳出循环
+            }
 
              sleep(1000)
 
          }
+}
+
+
+//强制停止TikTok 
+function forceStop_titkok(){
+    taskLog("准备强杀TikTok...")
+    app.openAppSetting("com.zhiliaoapp.musically")
+    sleep(5000)
+
+    //繁体
+    if (text("強制停止").exists()) {
+        let forceStopBtn = text("強制停止").findOne();
+        if (forceStopBtn && forceStopBtn.clickable()) {
+            forceStopBtn.click();
+            sleep(1000);
+            // 确认操作
+            if (text("確定").exists()) {
+                text("確定").findOne().click();
+            }
+        } else {
+            taskLog("未找到可点击的‘強制停止’按钮");
+        }
+    } else {
+        taskLog("未找到‘強制停止’按钮");
+    }
+    sleep(5000)
+    home()
+
+    //简体
+    if (text("强制停止").exists()) {
+        let forceStopBtn = text("强制停止").findOne();
+        if (forceStopBtn && forceStopBtn.clickable()) {
+            forceStopBtn.click();
+            sleep(1000);
+            // 确认操作
+            if (text("确定").exists()) {
+                text("确定").findOne().click();
+            }
+        } else {
+            taskLog("未找到可点击的‘强行停止’按钮");
+        }
+    } else {
+        taskLog("未找到‘强行停止’按钮");
+    }
+
+    sleep(5000)
+    home()
+
+
+    //英语
+    if (text("Force stop").exists()) {
+        let forceStopBtn = text("Force stop").findOne();
+        if (forceStopBtn && forceStopBtn.clickable()) {
+            forceStopBtn.click();
+            sleep(1000);
+            // 确认操作
+            if (text("OK").exists()) {
+                text("OK").findOne().click();
+            }
+        } else {
+            taskLog("未找到可点击的‘Force stop’按钮");
+        }
+    } else {
+        taskLog("未找到‘Force stop’按钮");
+    }
+    sleep(5000)
+    home()
+
 }
 
