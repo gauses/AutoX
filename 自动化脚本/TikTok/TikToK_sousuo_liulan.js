@@ -17,8 +17,8 @@ var taskLogImgName = "nest_task_log.png"
 
 
 //用户需要输入的评论内容
-const TT_searchFile = '$${搜索的关键字文案}';
-const TT_commentFile = '$${评论文案}';
+const TT_searchFile = '$${T_搜索的关键字文案}';
+const TT_commentFile = '$${T_评论文案}';
 const TT_Like_Count = "$${点赞概率}" //点赞概率
 const TT_Save_Count = 0 //收藏概率
 const TT_Watch_Author_Page= 0 //查看作者主页的概率
@@ -260,6 +260,26 @@ function forceStop_titkok(){
     sleep(5000)
     home()
 
+
+    //英语
+    if (text("FORCE STOP").exists()) {
+        let forceStopBtn = text("FORCE STOP").findOne();
+        if (forceStopBtn && forceStopBtn.clickable()) {
+            forceStopBtn.click();
+            sleep(1000);
+            // 确认操作
+            if (text("OK").exists()) {
+                text("OK").findOne().click();
+            }
+        } else {
+            taskLog("未找到可点击的‘FORCE STOP’按钮");
+        }
+    } else {
+        taskLog("未找到‘FORCE STOP’按钮");
+    }
+    sleep(5000)
+    home()
+
 }
 
 
@@ -457,7 +477,6 @@ function click_Comment_Btn(commentText){
             // find_send_btn()
             // sleep(5000)
             // clickId("bgi") //如果主页已经有别人评论过：id = cey ， 点击发布评论
-
             find_btn_desc_base("发布评论","發佈評論","Post comment")
 
 
@@ -635,9 +654,14 @@ function find_btn_desc_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
 
 
              // 查找控件
-             var button1 = className("android.widget.Button").desc(findText_ZH_CN).findOne(1000);
-             var button2 = className("android.widget.Button").desc(findText_ZH_TW).findOne(1000);
-             var button3 = className("android.widget.Button").desc(findText_EN_US).findOne(1000);
+            //  var button1 = className("android.widget.Button").desc(findText_ZH_CN).findOne(1000);
+            //  var button2 = className("android.widget.Button").desc(findText_ZH_TW).findOne(1000);
+            //  var button3 = className("android.widget.Button").desc(findText_EN_US).findOne(1000);
+            var button1 = desc(findText_ZH_CN).findOne(1000);
+            var button2 = desc(findText_ZH_TW).findOne(1000);
+            var button3 = desc(findText_EN_US).findOne(1000);
+
+
              if (button1) {
                  taskLog("找到" + findText_ZH_CN);
                  taskLog("找到button1 = " + button1.clickable() );

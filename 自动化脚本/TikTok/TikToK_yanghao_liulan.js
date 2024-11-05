@@ -22,7 +22,7 @@ var taskLogImgName = "nest_task_log.png"
 // const TT_Comment_Count = 100 //评论概率
 // const TT_Watch_Author_Page= 10 //查看作者主页的概率
 // const TT_Watch_Count = 1024 //观看视频个数
-const TT_commentFile = '$${评论文案}';
+const TT_commentFile = '$${T_评论文案}';
 const TT_Like_Count = "$${点赞概率}" //点赞概率
 const TT_Save_Count = 0 //收藏概率
 const TT_Watch_Author_Page= 0 //查看作者主页的概率
@@ -71,6 +71,8 @@ app.startActivity({
 taskLog("打开TikTok成功...")
 sleep(10000)
 
+close_friend_suggest()
+
 
 // 用于存储评论的数组
 let comments = [];
@@ -112,6 +114,8 @@ do {
     // 将 count 加 1
     taskLog("开始观看第"+count+"个TikTok视频")
     count++;
+
+    close_friend_suggest()
 
     sleep(random(10000, 25000))
 
@@ -264,26 +268,16 @@ function click_Comment_Btn(commentText){
             textView.setText(commentText)
             sleep(10000)
 
-
-            // clickId("cey") //如果主页已经有别人评论过：id = cey ， 点击发布评论
-            // sleep(1000)
-
-            // find_send_btn()
-            // sleep(5000)
-            // clickId("bgi") //如果主页已经有别人评论过：id = cey ， 点击发布评论
             find_btn_desc_base("发布评论","發佈評論","Post comment")
 
 
         }
     }
+    sleep(3000)
     back();
 
 
 
-    sleep(3000)
-    // // clickId("cg_") //如果主页已经有别人评论过：id = cg_ ， 点击发布评论
-    // sleep(3000)
-    // find_btn_desc_base("Post comment","Post comment","Post comment")
 
 
 }
@@ -450,9 +444,12 @@ function find_btn_desc_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
 
 
              // 查找控件
-             var button1 = className("android.widget.Button").desc(findText_ZH_CN).findOne(1000);
-             var button2 = className("android.widget.Button").desc(findText_ZH_TW).findOne(1000);
-             var button3 = className("android.widget.Button").desc(findText_EN_US).findOne(1000);
+            //  var button1 = className("android.widget.Button").desc(findText_ZH_CN).findOne(1000);
+            //  var button2 = className("android.widget.Button").desc(findText_ZH_TW).findOne(1000);
+            //  var button3 = className("android.widget.Button").desc(findText_EN_US).findOne(1000);
+            var button1 = desc(findText_ZH_CN).findOne(1000);
+            var button2 = desc(findText_ZH_TW).findOne(1000);
+            var button3 = desc(findText_EN_US).findOne(1000);
              if (button1) {
                 taskLog("找到" + findText_ZH_CN);
                 taskLog("找到button1 = " + button1.clickable() );
@@ -541,5 +538,33 @@ function forceStop_titkok(){
     sleep(5000)
     home()
 
+    //英语
+    if (text("FORCE STOP").exists()) {
+        let forceStopBtn = text("FORCE STOP").findOne();
+        if (forceStopBtn && forceStopBtn.clickable()) {
+            forceStopBtn.click();
+            sleep(1000);
+            // 确认操作
+            if (text("OK").exists()) {
+                text("OK").findOne().click();
+            }
+        } else {
+            taskLog("未找到可点击的‘FORCE STOP’按钮");
+        }
+    } else {
+        taskLog("未找到‘FORCE STOP’按钮");
+    }
+    sleep(5000)
+    home()
+
 }
 
+
+
+//推荐好友的弹窗，直接关闭
+function close_friend_suggest(){
+    if(id("c67").exists()){
+        sleep(3000)
+        id("c67").click()
+    }
+}
