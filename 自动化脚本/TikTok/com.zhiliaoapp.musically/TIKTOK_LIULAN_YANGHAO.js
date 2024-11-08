@@ -61,11 +61,20 @@ forceStop_titkok()
 
 taskLog("准备启动TikTok...")
 sleep(5000)
+// app.startActivity({
+//     action: "android.intent.action.VIEW",
+//     packageName: "com.zhiliaoapp.musically",
+//     className: "com.ss.android.ugc.aweme.main.MainActivity"
+// });
+
+taskLog("准备启动TikTok...")
+sleep(5000)
 app.startActivity({
     action: "android.intent.action.VIEW",
-    packageName: "com.zhiliaoapp.musically",
+    packageName: "com.ss.android.ugc.trill",
     className: "com.ss.android.ugc.aweme.main.MainActivity"
 });
+
 
 
 taskLog("打开TikTok成功...")
@@ -77,6 +86,7 @@ close_friend_suggest()
 // 用于存储评论的数组
 let comments = [];
 // 检查文件是否存在
+taskLog("评论文案地址 =  " + TT_commentFile)
 const file = new java.io.File(TT_commentFile);
 if (file.exists() && file.isFile()) {
     try {
@@ -131,10 +141,19 @@ do {
     }
     if (Math.random() * 100 < TT_Comment_Count)  {
         taskLog("开始触发评论视频概率")
+        taskLog("评论文案的总个数："+comments.length)
         if (comments.length > 0) {
+            //如果评论概率不是0，那么直接报错
+            taskLog("comments.includes = "+ comments.includes("T_评论文案"))
+
+            if(TT_Comment_Count > 0 && comments.includes("T_评论文案")) {
+                throw new Error("评论概率不是0，但评论内容是空，所以报错");
+            }
+
             taskLog("- 找到可用评论文案, 开始评论 - ");
-            const randIdx = random(0, comments.length - 1);
-            const commentText = comments[randIdx];
+            var randIdx = random(0, comments.length - 1)
+            taskLog("评论文案的下标randIdx："+randIdx)
+            var commentText = comments[randIdx];
             taskLog("随机评论文案 :" + commentText);
             click_Comment_Btn(commentText)
             sleep(random(5000, 8000))
@@ -495,8 +514,7 @@ function forceStop_titkok(){
     } else {
         taskLog("未找到‘強制停止’按钮");
     }
-    sleep(5000)
-    home()
+    sleep(3000)
 
     //简体
     if (text("强制停止").exists()) {
@@ -515,8 +533,7 @@ function forceStop_titkok(){
         taskLog("未找到‘强行停止’按钮");
     }
 
-    sleep(5000)
-    home()
+    sleep(3000)
 
 
     //英语
@@ -535,8 +552,7 @@ function forceStop_titkok(){
     } else {
         taskLog("未找到‘Force stop’按钮");
     }
-    sleep(5000)
-    home()
+    sleep(3000)
 
     //英语
     if (text("FORCE STOP").exists()) {
@@ -554,7 +570,9 @@ function forceStop_titkok(){
     } else {
         taskLog("未找到‘FORCE STOP’按钮");
     }
-    sleep(5000)
+    sleep(3000)
+
+
     home()
 
 }

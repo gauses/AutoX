@@ -17,7 +17,7 @@ var taskLogImgName = "nest_task_log.png"
 
 
 //用户需要输入的评论内容
-const TT_searchFile = '$${T_搜索的关键字文案}';
+const TT_searchFile = '$${T_搜索关键字文案}';
 const TT_commentFile = '$${T_评论文案}';
 const TT_Like_Count = "$${点赞概率}" //点赞概率
 const TT_Save_Count = 0 //收藏概率
@@ -68,6 +68,8 @@ app.startActivity({
 
 taskLog("打开TikTok成功...")
 sleep(10000)
+
+close_friend_suggest()
 
 
 //******************************************************************
@@ -145,15 +147,13 @@ taskLog(search_text_array);
 if (search_text_array.length > 0) {
     taskLog("- 找到可用的搜索关键字文案, 开始搜索观看 - ");
     for (var randIdx = 0; randIdx < search_text_array.length; randIdx++) {
-        const commentText = search_text_array[randIdx];
+        var commentText = search_text_array[randIdx];
         taskLog("- 找到可用的搜索关键字文案: "+commentText+", 开始搜索观看 - ");
         taskLog("开始准备点击首页搜索按钮")
 
         // 计算右上角区域的点击坐标(找不到按钮，所以只能是点击坐标)
         click_search_btn()
         sleep(random(5000, 8000))
-        // click(id("fv0").findOne().bounds.centerX() ,id("fv0").findOne().bounds.centerY() )
-        // clickId("fv0")
 
 
         var search_edits = className("android.widget.EditText").find();
@@ -217,8 +217,7 @@ function forceStop_titkok(){
     } else {
         taskLog("未找到‘強制停止’按钮");
     }
-    sleep(5000)
-    home()
+    sleep(3000)
 
     //简体
     if (text("强制停止").exists()) {
@@ -237,8 +236,7 @@ function forceStop_titkok(){
         taskLog("未找到‘强行停止’按钮");
     }
 
-    sleep(5000)
-    home()
+    sleep(3000)
 
 
     //英语
@@ -257,9 +255,7 @@ function forceStop_titkok(){
     } else {
         taskLog("未找到‘Force stop’按钮");
     }
-    sleep(5000)
-    home()
-
+    sleep(3000)
 
     //英语
     if (text("FORCE STOP").exists()) {
@@ -277,10 +273,23 @@ function forceStop_titkok(){
     } else {
         taskLog("未找到‘FORCE STOP’按钮");
     }
-    sleep(5000)
+    sleep(3000)
+
+
     home()
 
 }
+
+
+
+//推荐好友的弹窗，直接关闭
+function close_friend_suggest(){
+    if(id("c67").exists()){
+        sleep(3000)
+        id("c67").click()
+    }
+}
+
 
 
 // 计算右上角区域的点击坐标(找不到按钮，所以只能是点击坐标)
@@ -327,6 +336,8 @@ function watch_TT_video(){
         taskLog("开始观看第"+count+"个TikTok视频")
         count++;
 
+        close_friend_suggest()
+
         sleep(random(10000, 25000))
 
         if (Math.random() * 100 < TT_Like_Count)  {
@@ -341,16 +352,29 @@ function watch_TT_video(){
         }
         if (Math.random() * 100 < TT_Comment_Count)  {
             taskLog("开始触发评论视频概率")
+            taskLog("评论文案的总个数："+comments.length)
             if (comments.length > 0) {
+
+                //如果评论概率不是0，那么直接报错
+                if(TT_Comment_Count > 0 && comments.includes("T_评论文案")) {
+                    throw new Error("评论概率不是0，但评论内容是空，所以报错");
+                }
+
                 taskLog("- 找到可用评论文案, 开始评论 - ");
-                const randIdx = random(0, comments.length - 1);
-                const commentText = comments[randIdx];
+                var randIdx = random(0, comments.length - 1)
+                taskLog("评论文案的下标randIdx："+randIdx)
+                var commentText = comments[randIdx];
                 taskLog("随机评论文案 :" + commentText);
                 click_Comment_Btn(commentText)
                 sleep(random(5000, 8000))
-            }else{
+              }else{
                 taskLog(`- 没有可用评论文案, 忽略 - `);
-            }
+
+                //如果评论概率不是0，那么直接报错
+                if(TT_Comment_Count > 0) {
+                    throw new Error("评论概率不是0，但评论内容是空，所以报错");
+                }
+              }
         }
 
         if (Math.random() * 100 < TT_Watch_Author_Page)  {
@@ -705,9 +729,10 @@ function find_textview_text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US)
          }
 
          // 查找控件
-         var button1 = className("android.widget.TextView").text(findText_ZH_CN).findOne(1000);
-         var button2 = className("android.widget.TextView").text(findText_ZH_TW).findOne(1000);
-         var button3 = className("android.widget.TextView").text(findText_EN_US).findOne(1000);
+        var button1 = className("android.widget.TextView").text(findText_ZH_CN).findOne(1000);
+        var button2 = className("android.widget.TextView").text(findText_ZH_TW).findOne(1000);
+        var button3 = className("android.widget.TextView").text(findText_EN_US).findOne(1000);
+
          if (button1 ) {
              taskLog("找到" + findText_ZH_CN);
              taskLog("找到" + button1.clickable());
@@ -721,7 +746,8 @@ function find_textview_text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US)
          }else if(button3){
              taskLog("找到" + findText_EN_US);
              taskLog("找到" + button3.clickable());
-             clickText(findText_EN_US)
+            //  clickText(findText_EN_US)
+            click(button3.bounds().centerX(), button3.bounds().centerY())
              break; // 跳出循环
          }
 
