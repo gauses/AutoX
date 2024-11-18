@@ -40,3 +40,5 @@ adb shell am start -W -n org.autojs.autoxjs/org.autojs.autojs.ui.main.MainActivi
 adb shell am start -W -n org.autojs.autoxjs/org.autojs.autojs.ui.main.MainActivity --es "net_script_name" "{\"rpa_uuid\":\"任务id\",\"account_uuid\":\"82c4541d-ac70-495d-b2e3-d288fb41d360\",\"account_id\":0,\"automation_id\":\"脚本ID\",\"automation_name\":\"TikToK_yanghao_liulan\",\"success\":\"success\",\"rpa_type\":\"NEST_RPA_CM_SCRIPTS\",\"variables\":\"\",\"msg\":\"NEST_RPA_CM_SCRIPTS\",\"Token\":\"Token\"}"
 
 
+adb shell am force-stop com.kiwibrowser.browser
+adb shell pm clear com.kiwibrowser.browser

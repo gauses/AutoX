@@ -1,0 +1,757 @@
+// 导入SimpleDateFormat类
+importClass(java.text.SimpleDateFormat);
+importClass(java.io.PrintWriter);
+importClass(java.io.FileWriter);
+
+//******************************************************************
+//***********************Tiktok关注*************************
+//******************************************************************
+
+
+
+
+//保证Java层和JS代码两边的日志文件一致
+var taskLogFileName = "nest_task_log.txt"
+var taskLogImgName = "nest_task_log.png"
+
+
+//用户需要输入的关注用户ID列表
+const TT_Like_User_ID_GROUP = '$${T_关注用户ID列表}';
+
+
+
+//1.autox.js侧边栏的打开USB调试先打开
+//2.vscode ctrl+shift+p 输入start all server 确定
+//3.远程连接成功
+
+//个人发文
+
+//会在在无障碍服务启动后继续运行。
+auto.waitFor();
+
+//显示控制窗：https://github.com/kkevsekk1/AutoX/issues/868
+console.show()
+
+
+taskLog("开始强制关闭同名的脚本...")
+let currentEngine = engines.myEngine()
+let runningEngines = engines.all()
+let currentSource = currentEngine.getSource() + ''
+if (runningEngines.length > 1) {
+  runningEngines.forEach(compareEngine => {
+    let compareSource = compareEngine.getSource() + ''
+    if (currentEngine.id !== compareEngine.id && compareSource === currentSource) {
+      // 强制关闭同名的脚本
+      compareEngine.forceStop()
+    }
+  })
+}
+
+forceStop_titkok()
+
+sleep(3000)
+taskLog("准备启动TikTok...")
+sleep(5000)
+app.startActivity({
+    action: "android.intent.action.VIEW",
+    packageName: "com.ss.android.ugc.trill",
+    className: "com.ss.android.ugc.aweme.main.MainActivity"
+});
+
+
+
+taskLog("打开TikTok成功...")
+sleep(10000)
+
+close_friend_suggest()
+
+
+// 用于存储评论的数组
+let comments = [];
+// 检查文件是否存在
+taskLog("评论文案地址 =  " + TT_Like_User_ID_GROUP)
+const file = new java.io.File(TT_Like_User_ID_GROUP);
+if (file.exists() && file.isFile()) {
+    try {
+        // 读取文件内容
+        const reader = new java.io.BufferedReader(new java.io.FileReader(file));
+        let line;
+        while ((line = reader.readLine()) !== null) {
+            comments.push(line);
+        }
+        reader.close();
+    } catch (e) {
+        taskLog("读取文件时发生错误：" + e.message);
+    }
+} else {
+    // 如果文件不存在，将文件名添加到数组中
+    comments.push(TT_Like_User_ID_GROUP);
+}
+
+// 如果TT_Like_User_ID_GROUP等于'off'，则清空用户USER_ID列表
+if (TT_Like_User_ID_GROUP == 'off') {
+    comments = [];
+}
+
+// 输出结果，用于调试
+taskLog(comments);
+
+
+
+
+
+
+
+//******************************************************************
+//******************************************************************
+//******************************************************************
+
+// 计算右上角区域的点击坐标(找不到按钮，所以只能是点击坐标)
+click_search_btn()
+sleep(random(5000, 8000))
+
+// 按照顺序开始执行搜索User-ID
+if (comments.length > 0) {
+    taskLog("- 找到可用的搜索关键字文案, 开始搜索观看 - ");
+    for (var randIdx = 0; randIdx < comments.length; randIdx++) {
+        var commentText = comments[randIdx];
+        taskLog("- 找到可用的搜索用户ID: "+commentText+", 开始搜索 - ");
+        taskLog("开始准备点击首页搜索按钮")
+
+
+        var search_edits = className("android.widget.EditText").find();
+        for(var i = 0; i < search_edits.size(); i++) {
+            var search_edit = search_edits.get(i);
+            if(search_edit) {
+                taskLog("找到TextView控件-Text："+ search_edit.text());
+                sleep(1000)
+                taskLog("搜索控件，设置内容：" +commentText );
+                search_edit.setText(commentText)    
+                sleep(random(5000, 8000))
+                
+                taskLog("开始点击Search按钮")
+                //各种方式都找不到元素，只好以坐标为准
+                click_search_btn()
+
+
+                //开始观看视频
+                sleep(random(5000, 8000))
+                taskLog("开始点击视频Tab按钮")
+                find_textview_text_base("用户","使用者","Users")
+
+                sleep(random(5000, 8000))
+                //直接点击第一个关注按钮
+                // click_left_top_screen()
+                find_btn_Text_base("关注","關注","Follow")//text("關注")
+                
+                sleep(random(2000, 4000))
+                click_back_btn()
+                sleep(random(2000, 4000))
+    
+            }
+        }
+
+
+    }
+    
+  }else{
+    taskLog("- 没有可用的搜索关键字文案, 忽略 - ");
+  }
+
+
+//强制停止TikTok 
+function forceStop_titkok(){
+    taskLog("准备强杀TikTok...")
+    app.openAppSetting("com.zhiliaoapp.musically")
+    sleep(5000)
+
+    //繁体
+    if (text("強制停止").exists()) {
+        let forceStopBtn = text("強制停止").findOne();
+        if (forceStopBtn && forceStopBtn.clickable()) {
+            forceStopBtn.click();
+            sleep(1000);
+            // 确认操作
+            if (text("確定").exists()) {
+                text("確定").findOne().click();
+            }
+        } else {
+            taskLog("未找到可点击的‘強制停止’按钮");
+        }
+    } else {
+        taskLog("未找到‘解除安裝’按钮");
+    }
+    sleep(3000)
+
+    //简体
+    if (text("强制停止").exists()) {
+        let forceStopBtn = text("强制停止").findOne();
+        if (forceStopBtn && forceStopBtn.clickable()) {
+            forceStopBtn.click();
+            sleep(1000);
+            // 确认操作
+            if (text("确定").exists()) {
+                text("确定").findOne().click();
+            }
+        } else {
+            taskLog("未找到可点击的‘强行停止’按钮");
+        }
+    } else {
+        taskLog("未找到‘强行停止’按钮");
+    }
+
+    sleep(3000)
+
+
+    //英语
+    if (text("Force stop").exists()) {
+        let forceStopBtn = text("Force stop").findOne();
+        if (forceStopBtn && forceStopBtn.clickable()) {
+            forceStopBtn.click();
+            sleep(1000);
+            // 确认操作
+            if (text("OK").exists()) {
+                text("OK").findOne().click();
+            }
+        } else {
+            taskLog("未找到可点击的‘Force stop’按钮");
+        }
+    } else {
+        taskLog("未找到‘Force stop’按钮");
+    }
+    sleep(3000)
+
+    //英语
+    if (text("FORCE STOP").exists()) {
+        let forceStopBtn = text("FORCE STOP").findOne();
+        if (forceStopBtn && forceStopBtn.clickable()) {
+            forceStopBtn.click();
+            sleep(1000);
+            // 确认操作
+            if (text("OK").exists()) {
+                text("OK").findOne().click();
+            }
+        } else {
+            taskLog("未找到可点击的‘FORCE STOP’按钮");
+        }
+    } else {
+        taskLog("未找到‘FORCE STOP’按钮");
+    }
+    sleep(3000)
+
+
+    home()
+
+}
+
+
+
+//推荐好友的弹窗，直接关闭
+function close_friend_suggest(){
+    if(id("c67").exists()){
+        sleep(3000)
+        id("c67").click()
+    }
+}
+
+
+
+// 计算右上角区域的点击坐标(找不到按钮，所以只能是点击坐标)
+// 整个脚本一共有两个地方使用这个方法
+function click_search_btn(){
+    var clickX = device.width - 50; 
+    var clickY = random(40 , 50); 
+    taskLog("开始准备点击首页搜索确认按钮 clickX = " + clickX)
+    taskLog("开始准备点击首页搜索确认按钮 clickY = " + clickY)
+    click(clickX, clickY);
+    sleep(random(5000, 8000))
+}
+
+function click_back_btn(){
+    var clickX =  50; 
+    var clickY = random(40 , 50); 
+    taskLog("开始准备点击首页返回按钮 clickX = " + clickX)
+    taskLog("开始准备点击首页返回按钮 clickY = " + clickY)
+    click(clickX, clickY);
+    sleep(random(5000, 8000))
+}
+
+//点击屏幕左上方
+function click_left_top_screen(){
+    // 获取屏幕宽度和高度
+    var width = device.width;
+    var height = device.height;
+
+    // 定义左上角区域的边界
+    var left = 200;
+    var top = 200;
+    var right = width / 2; // 左上区域的右边界
+    var bottom = height / 2; // 左上区域的下边界
+
+    // 生成随机坐标
+    var randomX = Math.random() * (right - left) + left; // 随机 x 坐标
+    var randomY = Math.random() * (bottom - top) + top; // 随机 y 坐标
+
+    // 点击随机坐标
+    click(randomX, randomY);
+
+
+}
+
+
+
+//开始观看视频
+function watch_TT_video(){
+
+    console.show()
+
+    //开始观看
+    var count = 1;
+    do {
+        // 将 count 加 1
+        taskLog("开始观看第"+count+"个TikTok视频")
+        count++;
+
+        close_friend_suggest()
+
+        sleep(random(10000, 25000))
+
+        if (Math.random() * 100 < TT_Like_Count)  {
+            taskLog("开始触发点赞概率")
+            click_Like_Btn()
+            sleep(random(5000, 8000))
+        }
+        if (Math.random() * 100 < TT_Save_Count)  {
+            taskLog("开始触发保存视频概率")
+            click_Save_Btn()
+            sleep(random(5000, 8000))
+        }
+        if (Math.random() * 100 < TT_Comment_Count)  {
+            taskLog("开始触发评论视频概率")
+            taskLog("评论文案的总个数："+comments.length)
+            if (comments.length > 0) {
+
+                //如果评论概率不是0，那么直接报错
+                if(TT_Comment_Count > 0 && comments.includes("T_评论文案")) {
+                    throw new Error("评论概率不是0，但评论内容是空，所以报错");
+                }
+
+                taskLog("- 找到可用评论文案, 开始评论 - ");
+                var randIdx = random(0, comments.length - 1)
+                taskLog("评论文案的下标randIdx："+randIdx)
+                var commentText = comments[randIdx];
+                taskLog("随机评论文案 :" + commentText);
+                click_Comment_Btn(commentText)
+                sleep(random(5000, 8000))
+              }else{
+                taskLog(`- 没有可用评论文案, 忽略 - `);
+
+                //如果评论概率不是0，那么直接报错
+                if(TT_Comment_Count > 0) {
+                    throw new Error("评论概率不是0，但评论内容是空，所以报错");
+                }
+              }
+        }
+
+        if (Math.random() * 100 < TT_Watch_Author_Page)  {
+            taskLog("开始触发查看作者主页的概率")
+            click_Author_Page_Btn()
+            sleep(random(5000, 8000))
+        }
+
+
+        // 获取设备屏幕的宽高
+        var width = device.width;
+        var height = device.height;
+
+        // 生成随机起始点
+        var startX = random(width / 3 , width * 2 / 3);
+        var startY = random(height * 2 / 3, height * 3 / 4);
+
+        // 生成随机结束点
+        var endX = random(width / 3 , width * 2 / 3);
+        var endY = random(height * 1 / 3, height * 1 / 4);
+
+        // 屏幕上滑操作
+        swipe(startX, startY, endX, endY, 2000);
+        taskLog("开始滑动位置，x = "+startX+"；y = " + startY)
+        taskLog("结束滑动位置，x = "+endX+"；y = " + endY)
+
+
+
+    } while (count < TT_Watch_Count); // 当 count 小于 TT_Watch_Count 时继续循环
+}
+
+
+
+
+
+function clickId(a) {
+    taskLog("开始点击元素ID ：" + a);
+
+    let obj_ID = id(a).boundsInside(5, 5, device.width - 5, device.height - 5);
+    
+    // 检查是否找到元素
+    let elements = obj_ID.find();
+    if (elements.empty()) {
+        taskLog("没有找到元素ID ：" + a);
+        return false;
+    }
+    
+    // 获取第一个匹配的元素
+    let element = elements.get(0);
+    let X = element.bounds().centerX();
+    let Y = element.bounds().centerY();
+    
+    // 验证 X 和 Y 是否为正数
+    if (X < 0 || Y < 0) {
+        taskLog("坐标无效，中心点X或Y为负值: X=" + X + ", Y=" + Y);
+        return false;
+    }
+
+    // 生成随机偏差
+    let Deviation = random(-2, 2);
+    let X1 = X - Deviation;
+    let Y1 = Y - Deviation;
+
+    // 防止偏差导致负值
+    X1 = Math.max(0, X1);
+    Y1 = Math.max(0, Y1);
+
+    try {
+        device.sdkInt < 24 ? ra.tap(X1, Y1) : click(X1, Y1);
+    } catch (e) {
+        taskLog("点击操作失败：" + e.message);
+    }
+}
+
+
+//点击个人主页
+function click_Author_Page_Btn(){
+    taskLog("开始准备查看个人主页")
+    clickId("qza")
+    sleep(random(5000,8000))
+
+    // 获取屏幕宽高
+    var width = device.width;
+    var height = device.height;
+    
+     // 生成随机起始点
+     var startX = random(width / 3 , width * 2 / 3);
+     var startY = random(height * 2 / 3, height * 3 / 4);
+
+     // 生成随机结束点
+     var endX = random(width / 3 , width * 2 / 3);
+     var endY = random(height * 1 / 3, height * 1 / 4);
+
+    // 随机选择滑动方向：上滑或下滑
+    for (var i = 0; i < 2; i++) {
+        var direction = random(0, 1) === 0 ? 'up' : 'down';
+
+        if (direction === 'up') {
+            // 从下往上滑动
+            swipe(startX, startY, endX, endY, 500);
+        } else {
+            // 从上往下滑动
+            swipe(startX, startY, endX, endY, 500);
+        }
+        
+        // 暂停一段时间，避免滑动过快
+        sleep(random(3000,5000));
+    }
+
+    taskLog("从视频作者主页返回")
+    sleep(random(3000,5000));
+    back();
+}
+
+//点击点赞按钮
+function click_Like_Btn(){
+    taskLog("开始准备点赞视频")
+    clickId("dh4") 
+}
+
+
+
+//点击评论按钮
+function click_Comment_Btn(commentText){
+    taskLog("开始准备评论视频")
+    clickId("cgq")
+
+    sleep(5000)
+    var autoCompleteTextViews = className("android.widget.EditText").find();
+    for(var i = 0; i < autoCompleteTextViews.size(); i++) {
+        var textView = autoCompleteTextViews.get(i);
+        if(textView) {
+            taskLog("找到TextView控件-Text："+ textView.text());
+            sleep(1000)
+            taskLog("评论控件，设置内容：" +commentText );
+            textView.setText(commentText)
+            sleep(10000)
+
+            var flag = clickId("cik") //发送按钮
+            // if(flag){
+            //     sleep(3000)
+            //     back();
+            // }
+
+            sleep(2000)
+            // clickId("aru") //评论区右上角关闭按钮
+
+            var clickX = device.width  - 100 ; 
+            var clickY = device.width /4; 
+            taskLog("开始准备点击屏幕 clickX = " + clickX)
+            taskLog("开始准备点击屏幕 clickY = " + clickY)
+            click(clickX, clickY);
+            
+            
+        }
+    }
+   
+
+}
+
+//点击收藏按钮
+function click_Save_Btn(){
+    taskLog("开始准备收藏视频")
+    // id("egc").className("android.widget.ImageView").findOne().click()
+    clickId("egc")
+
+}
+
+
+
+
+
+//打印日志
+function taskLog(_log){
+    console.log(getSystemDate("df") +":" +_log)
+
+    //通过日志判断任务有没有结束：
+
+}
+
+
+
+//无论成功或者失败，最后截图一张
+function saveImg(){
+    taskLog("开始截图...");
+
+    var toPath = "/sdcard/Download/" + taskLogImgName ;
+    if (files.exists(toPath) ){
+        taskLog("旧图片文件存在，删除");
+        files.remove(toPath);
+    } else {
+        taskLog("旧图片文件存在");
+    }
+
+
+    if(!requestScreenCapture()){
+        taskLog("请求截图失败...");
+        toast("请求截图失败");
+    }else{
+        toast("请求截图");
+    }
+    //截图并保存
+    taskLog("请求截图开始保存...");
+    images.saveImage(captureScreen(), toPath);
+}
+
+
+function getSystemDate(a) {
+    var b = new SimpleDateFormat("HH:mm:ss"), c = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+    return "tf" == a ? b.format(new java.util.Date()) :"df" == a ? c.format(new java.util.Date()) :void 0;
+}
+function writeLog(a) {
+    var c, b = "/sdcard/Download/log/Info_" + getSystemDate("df") + ".log";
+    files.ensureDir("/sdcard/Download/log/"), files.exists(b) || files.create(b);
+    try {
+        c = new PrintWriter(new FileWriter(b, !0)), c.println("[" + getSystemDate("tf") + "] " + a),
+        c.flush(), c.close();
+    } catch (d) {
+        log(d);
+    }
+}
+
+
+function clickText(a) {
+    for (obj_Text = text(a).boundsInside(5, 5, device.width-5, device.height-5); obj_Text.find().empty(); ) sleep(1e3);
+    X = obj_Text.find().get(0).bounds().centerX(), Y = obj_Text.find().get(0).bounds().centerY(),
+    Deviation = random(-5, 5), X1 = X - Deviation, Y1 = Y - Deviation, device.sdkInt<24?ra.tap(X1,Y1):click(X1,Y1);
+}
+
+function clickDesc(a) {
+    for (obj_Desc = desc(a).boundsInside(5, 5, device.width-5, device.height-5); obj_Desc.find().empty(); ) sleep(1e3);
+    X = obj_Desc.find().get(0).bounds().centerX(), Y = obj_Desc.find().get(0).bounds().centerY(),
+    Deviation = random(-5, 5), X1 = X - Deviation, Y1 = Y - Deviation, device.sdkInt<24?ra.tap(X1,Y1):click(X1,Y1);
+}
+
+//========================================================================================================================
+
+
+//结束当前任务
+function stopCurrentTask(){
+    saveImg()
+
+    sleep(3000)
+//    //将task的截图上报
+//    var res = http.postMultipart(url, {
+//        taskId: "xxxxxxxxxxx",
+//        file: open("/sdcard/Download/" + taskLogImgName)
+//    });
+//    log(res.body.string());
+
+    console.hide()
+
+}
+
+
+//通过Button的Text
+function find_btn_Text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
+
+
+        var loopCount  = 0
+
+         while (true) {
+             taskLog(findText_ZH_CN + " - 循环寻找执行：" + (++loopCount));
+             // 检查计数器是否达到3
+             if (loopCount >= 3) {
+                 // 打印一条消息并退出循环
+                 taskLog("循环已执行3次，即将退出循环。");
+
+                 //不能抛出异常，因为可能Facebook记忆功能，自动跳转到输入页面
+//                 throw new Error(findText_ZH_CN +"按钮没有找到");
+                break;
+             }
+
+             // 查找控件
+             var button1 = className("android.widget.Button").text(findText_ZH_CN).findOne(1000);
+             var button2 = className("android.widget.Button").text(findText_ZH_TW).findOne(1000);
+             var button3 = className("android.widget.Button").text(findText_EN_US).findOne(1000);
+
+             if (button1) {
+                 taskLog("找到" + findText_ZH_CN);
+                 taskLog("找到button1 = " + button1.clickable() );
+                 clickText(findText_ZH_CN)
+                 break; // 跳出循环
+             }else if(button2){
+                 taskLog("找到" + findText_ZH_TW);
+                 taskLog("找到button2 = " + button2.clickable() );
+                 clickText(findText_ZH_TW)
+                 break; // 跳出循环
+             }else if(button3){
+                 taskLog("找到" + findText_EN_US);
+                 taskLog("找到button3 = " + button3.clickable() );
+                //  if(button3.clickable()) {
+                //     sleep(1000);
+                //     button3.click()
+                //  }else{
+                    clickText(findText_EN_US)
+                //  }
+                 
+                 break; // 跳出循环
+             }
+             sleep(1000)
+
+         }
+}
+
+
+
+//通过Button的Desc
+function find_btn_desc_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
+
+        var loopCount  = 0
+
+         while (true) {
+             taskLog(findText_ZH_CN + " - 循环寻找执行：" + (++loopCount));
+             // 检查计数器是否达到3
+             if (loopCount >= 3) {
+                 // 打印一条消息并退出循环
+                 taskLog("循环已执行3次，即将退出循环。");
+
+                 //不能抛出异常，因为可能Facebook记忆功能，自动跳转到输入页面
+//                 throw new Error(findText_ZH_CN +"按钮没有找到");
+                break;
+             }
+
+
+             // 查找控件
+            //  var button1 = className("android.widget.Button").desc(findText_ZH_CN).findOne(1000);
+            //  var button2 = className("android.widget.Button").desc(findText_ZH_TW).findOne(1000);
+            //  var button3 = className("android.widget.Button").desc(findText_EN_US).findOne(1000);
+            var button1 = desc(findText_ZH_CN).findOne(1000);
+            var button2 = desc(findText_ZH_TW).findOne(1000);
+            var button3 = desc(findText_EN_US).findOne(1000);
+
+
+             if (button1) {
+                 taskLog("找到" + findText_ZH_CN);
+                 taskLog("找到button1 = " + button1.clickable() );
+                 clickDesc(findText_ZH_CN)
+                 break; // 跳出循环
+             }else if(button2){
+                 taskLog("找到" + findText_ZH_TW);
+                 taskLog("找到button2 = " + button2.clickable() );
+                 clickDesc(findText_ZH_TW)
+                 break; // 跳出循环
+             }else if(button3){
+                 taskLog("找到" + findText_EN_US);
+                 taskLog("找到button3 = " + button3.clickable() );
+                 clickDesc(findText_EN_US)
+                 break; // 跳出循环
+             }
+
+             sleep(1000)
+
+         }
+}
+
+
+
+
+//通过TextView的text
+function find_textview_text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
+
+    var loopCount  = 0
+
+     while (true) {
+         taskLog(findText_ZH_CN + " - 循环寻找执行：" + (++loopCount));
+         // 检查计数器是否达到3
+         if (loopCount >= 3) {
+             // 打印一条消息并退出循环
+             taskLog("循环已执行3次，即将退出循环。");
+
+             //不能抛出异常，因为可能Facebook记忆功能，自动跳转到输入页面
+//                 throw new Error(findText_ZH_CN +"按钮没有找到");
+            break;
+         }
+
+         // 查找控件
+        var button1 = className("android.widget.TextView").text(findText_ZH_CN).findOne(1000);
+        var button2 = className("android.widget.TextView").text(findText_ZH_TW).findOne(1000);
+        var button3 = className("android.widget.TextView").text(findText_EN_US).findOne(1000);
+
+         if (button1 ) {
+             taskLog("找到" + findText_ZH_CN);
+             taskLog("找到" + button1.clickable());
+             clickText(findText_ZH_CN)
+             break; // 跳出循环
+         }else if(button2){
+             taskLog("找到" + findText_ZH_TW);
+             taskLog("找到" + button2.clickable());
+             clickText(findText_ZH_TW)
+             break; // 跳出循环
+         }else if(button3){
+             taskLog("找到" + findText_EN_US);
+             taskLog("找到" + button3.clickable());
+            //  clickText(findText_EN_US)
+            click(button3.bounds().centerX(), button3.bounds().centerY())
+             break; // 跳出循环
+         }
+
+         sleep(1000)
+
+     }
+}
+
