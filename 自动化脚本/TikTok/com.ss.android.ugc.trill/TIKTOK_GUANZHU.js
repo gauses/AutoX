@@ -166,11 +166,51 @@ if (comments.length > 0) {
                 sleep(random(5000, 8000))
                 //直接点击第一个关注按钮
                 // click_left_top_screen()
-                find_btn_Text_base("关注","關注","Follow")//text("關注")
-                
+                // find_btn_Text_base("关注","關注","Follow")//text("關注")
+                sleep(random(5000, 8000))
+                //直接点击第一个关注按钮
+                // 等待RecyclerView出现
+                let recyclerView = className("androidx.recyclerview.widget.RecyclerView").findOne(5000); // 5秒超时
+                if(!recyclerView) {
+                    console.log("未找到RecyclerView");
+                    click_back_btn()
+                    break
+                }
+
+                // 等待内容加载
+                sleep(2000);
+
+                // 获取size并打印
+                let size = recyclerView.childCount();
+                taskLog("列表大小: " + size);
+
                 sleep(random(2000, 4000))
+
+
+                // 确保有item后再点击
+                if(size > 0) {
+                    recyclerView.child(0).click();
+                    // 或者用坐标点击
+                    // let firstItem = recyclerView.child(0);
+                    // click(firstItem.bounds().centerX(), firstItem.bounds().centerY());
+                }
+
+                sleep(random(2000, 4000))
+
+                // console.show()
+                //text("消息")：点击User的主页的"消息"按钮，准备发信息
+                var findMSGTextResult = find_textview_text_base("关注","關注","Follow")
+                if(!findMSGTextResult) {
+                    taskLog("没有找到消息控件，终止本次操作，开始下一个用户的私信行为！！！");
+                }
+
+                sleep(3000)
+                click_back_btn()
+                sleep(1000)
                 click_back_btn()
                 sleep(random(2000, 4000))
+
+
     
             }
         }
@@ -719,6 +759,10 @@ function find_btn_desc_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
 //通过TextView的text
 function find_textview_text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
 
+    //是否找到该TextView，找到：true / 未找到：false
+    var findText_result = false
+
+
     var loopCount  = 0
 
      while (true) {
@@ -742,22 +786,26 @@ function find_textview_text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US)
              taskLog("找到" + findText_ZH_CN);
              taskLog("找到" + button1.clickable());
              clickText(findText_ZH_CN)
+             findText_result = true
              break; // 跳出循环
          }else if(button2){
              taskLog("找到" + findText_ZH_TW);
              taskLog("找到" + button2.clickable());
              clickText(findText_ZH_TW)
+             findText_result = true
              break; // 跳出循环
          }else if(button3){
              taskLog("找到" + findText_EN_US);
              taskLog("找到" + button3.clickable());
-            //  clickText(findText_EN_US)
-            click(button3.bounds().centerX(), button3.bounds().centerY())
+             clickText(findText_EN_US)
+            findText_result = true
+            // click(button3.bounds().centerX(), button3.bounds().centerY())
              break; // 跳出循环
          }
 
          sleep(1000)
 
      }
+     return findText_result
 }
 
