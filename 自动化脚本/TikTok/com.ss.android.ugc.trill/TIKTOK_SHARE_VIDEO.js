@@ -37,21 +37,32 @@ auto.waitFor();
 
 // 注册退出事件监听器
 events.on('exit', function() {
-    console.show()
+    console.hide()
     forceStop_titkok()
     sleep(1000)
     console.error("<<<<<<<<<<<<<<<");
-    console.error("<<<<<<<<<<<<<<<");
-    console.error("<<<<<<<<<<<<<<<");
-    console.error("<<<<<<<<<<<<<<<");
-
     console.error("脚本已经执行退出！！！！！");
     console.error("已经实现功能：指定視屏點愛心.留言.分享給用戶");
     console.error("脚本执行完成时间：" + new Date().toLocaleString());
     console.error(">>>>>>>>>>>>>>>");
+    console.error(">>>>>>>>>>>>>>>");
+    console.error(">>>>>>>>>>>>>>>");
+    console.error(">>>>>>>>>>>>>>>");
+    console.error(">>>>>>>>>>>>>>>");
 
-
+    openLogActivity();
 });
+
+//打开Autojs的Log activity
+function openLogActivity() {
+    var intent = {
+        action: "android.intent.action.MAIN",
+        packageName: "org.autojs.autoxjs",
+        className: "org.autojs.autojs.ui.log.LogActivityKt"
+    };
+    app.startActivity(intent);
+}
+
 
 
 //显示控制窗：https://github.com/kkevsekk1/AutoX/issues/868
@@ -105,9 +116,8 @@ extras: {
 taskLog("打开浏览器成功...")
 sleep(20000)
 
-
-
-// find_textview_text_base("開啟應用程式","開啟應用程式","開啟應用程式")
+//可能需要点击一下浏览器界面的“開啟 TikTok”
+find_textview_text_base("打开应用","開啟應用程式","Open app")
 
 
 taskLog("打开TikTok成功...")
