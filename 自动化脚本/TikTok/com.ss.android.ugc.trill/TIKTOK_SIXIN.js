@@ -35,24 +35,33 @@ auto.waitFor();
 
 
 
-
 // 注册退出事件监听器
 events.on('exit', function() {
-    console.show()
+    console.hide()
     forceStop_titkok()
     sleep(1000)
     console.error("<<<<<<<<<<<<<<<");
-    console.error("<<<<<<<<<<<<<<<");
-    console.error("<<<<<<<<<<<<<<<");
-    console.error("<<<<<<<<<<<<<<<");
-
     console.error("脚本已经执行退出！！！！！");
+    console.error("已经实现功能：Tiktok私信");
     console.error("脚本执行完成时间：" + new Date().toLocaleString());
     console.error(">>>>>>>>>>>>>>>");
+    console.error(">>>>>>>>>>>>>>>");
+    console.error(">>>>>>>>>>>>>>>");
+    console.error(">>>>>>>>>>>>>>>");
+    console.error(">>>>>>>>>>>>>>>");
 
-
+    openLogActivity();
 });
 
+//打开Autojs的Log activity
+function openLogActivity() {
+    var intent = {
+        action: "android.intent.action.MAIN",
+        packageName: "org.autojs.autoxjs",
+        className: "org.autojs.autojs.ui.log.LogActivityKt"
+    };
+    app.startActivity(intent);
+}
 
 
 taskLog("开始强制关闭同名的脚本...")
@@ -156,7 +165,7 @@ taskLog(messages);
 //******************************************************************
 //******************************************************************
 
-click_search_btn()
+click_home_search_btn()
 sleep(random(2000, 4000))
 
 
@@ -184,7 +193,7 @@ if (comments.length > 0) {
                 sleep(random(5000, 8000))
                 
                 taskLog("开始点击Search按钮")
-                find_btn_Text_base("搜索","搜尋","Search")
+                click_Second_search_btn()
 
 
 
@@ -200,34 +209,9 @@ if (comments.length > 0) {
                     break
                 }
 
-
                 sleep(random(5000, 8000))
                 //直接点击第一个关注按钮
-                // 等待RecyclerView出现
-                let recyclerView = className("androidx.recyclerview.widget.RecyclerView").findOne(5000); // 5秒超时
-                if(!recyclerView) {
-                    console.log("未找到RecyclerView");
-                    click_back_btn()
-                    break
-                }
-
-                // 等待内容加载
-                sleep(2000);
-
-                // 获取size并打印
-                let size = recyclerView.childCount();
-                taskLog("列表大小: " + size);
-
-                sleep(random(2000, 4000))
-
-
-                // 确保有item后再点击
-                if(size > 0) {
-                    recyclerView.child(0).click();
-                    // 或者用坐标点击
-                    // let firstItem = recyclerView.child(0);
-                    // click(firstItem.bounds().centerX(), firstItem.bounds().centerY());
-                }
+                click_LinearLayout_GUANZHU()
 
                 sleep(random(2000, 4000))
 
@@ -419,34 +403,130 @@ function close_friend_suggest(){
 
 
 
-// 计算右上角区域的点击坐标(找不到按钮，所以只能是点击坐标)
-// 整个脚本一共有两个地方使用这个方法
-function click_search_btn(){
 
-    // 获取所有相同id的控件（因为上方有两个相同ID的ImageView）
-    let targets = id("g3f").find();
-    // 通过索引获取指定的那个，比如第二个就是[1]
-    let target = targets[1];
-    if (target) {
-        taskLog("已经找到首页搜索确认按钮 " )
-        // 获取控件的坐标信息
-        let bounds = target.bounds();
-        
-        // 计算控件中心点坐标
-        let centerX = bounds.centerX();
-        let centerY = bounds.centerY();
-        
-        // 使用click函数模拟点击中心点位置
-        taskLog("找到首页搜索确认按钮 centerX = " +centerX)
-        taskLog("找到首页搜索确认按钮 centerY = " +centerY)
-        click(centerX, centerY);
-        
-        // 或者使用press函数来模拟按压
-        // press(centerX, centerY, 100); // 100是按压时长(毫秒)
-    }else{
-        taskLog("没有找到首页搜索确认按钮 " )
+//点击首页的右上角Search按钮
+function click_home_search_btn(){
+
+    var find_search_btn_count = 0
+    if(find_search_btn_count > 5){
+        console.error("首页寻找‘搜索’按钮超过5次，抛出异常")
+        throw new error("首页寻找‘搜索’按钮超过5次，抛出异常")
     }
+    sleep(random(2000, 5000))
+
+    var allImages = className("android.widget.ImageView").find();
+    if (allImages && allImages.size() > 0) {
+        for (var i = 0; i < allImages.size(); i++) {
+            var img = allImages.get(i);
+            if (img) {
+                taskLog("找到Image控件-Text：" + img.text() + ";ID = " + img.id());
+                
+                // 检查ID是否为"en4"
+                if (img.id() == (TikTokPackageName +":id/en4")) {
+                    // 正确调用bounds()方法并点击
+                    taskLog("找到Image控件: 首页搜索框！" );
+                    taskLog("找到Image控件: 首页搜索框，属性 = " +  img.clickable());
+
+                    var bounds = img.bounds();
+                    taskLog("找到Image控件: 首页搜索框，centerX属性 = " +  bounds.centerX());
+                    taskLog("找到Image控件: 首页搜索框，centerY属性 = " +  bounds.centerY());
+
+                    click(bounds.centerX(), bounds.centerY());
+                    // 找到并点击后可以跳出循环
+                    break;
+                }
+            }
+        }
+    }else{
+        //有可能是正在直播，需要滑到下一个
+        swipe_to_up()
+        find_search_btn_count ++ 
+    }
+    sleep(random(2000, 5000))
 }
+
+
+
+//屏幕上滑
+function swipe_to_up(){
+    // 获取设备屏幕的宽高
+    var width = device.width;
+    var height = device.height;
+
+    // 生成随机起始点
+    var startX = random(width / 3 , width * 2 / 3);
+    var startY = random(height * 2 / 3, height * 3 / 4);
+
+    // 生成随机结束点
+    var endX = random(width / 3 , width * 2 / 3);
+    var endY = random(height * 1 / 3, height * 1 / 4);
+
+    // 屏幕上滑操作
+    swipe(startX, startY, endX, endY, 500);
+    taskLog("开始滑动位置，x = "+startX+"；y = " + startY)
+    taskLog("结束滑动位置，x = "+endX+"；y = " + endY)
+
+}
+
+//点击第二页的右上角Search按钮
+function click_Second_search_btn(){
+
+    sleep(random(2000, 5000))
+    var allButtons = className("android.widget.Button").find();
+    if (allButtons && allButtons.size() > 0) {
+        for (var i = 0; i < allButtons.size(); i++) {
+            var btn = allButtons.get(i);
+            if (btn) {
+                // taskLog("找到Button控件-Text：" + btn.text() + ";ID = " + btn.id());
+                
+                // 检查ID是否为"r7e"
+                if (btn.id() == (TikTokPackageName +":id/r7e")) {
+                    // 正确调用bounds()方法并点击
+                    taskLog("找到Button控件: 第二个页面的搜索框！" );
+
+                    var bounds = btn.bounds();
+                    click(bounds.centerX(), bounds.centerY());
+                    // 找到并点击后可以跳出循环
+                    break;
+                }
+            }
+        }
+    }
+    sleep(random(2000, 5000))
+}
+
+
+//输入需要私信用户ID之后，找到第一个User的LinearLayout
+function click_LinearLayout_GUANZHU(){
+
+    sleep(random(2000, 5000))
+    var allLinearLayout = className("android.widget.LinearLayout").find();
+    if (allLinearLayout && allLinearLayout.size() > 0) {
+        for (var i = 0; i < allLinearLayout.size(); i++) {
+            var linearLayout = allLinearLayout.get(i);
+            if (linearLayout) {
+                taskLog("找到linearLayout控件-Text：" + linearLayout.text() + ";ID = " + linearLayout.id());
+                
+                // 检查ID是否为"hvl"
+                if (linearLayout.id() == (TikTokPackageName +":id/hvl")) {
+                    // 正确调用bounds()方法并点击
+                    taskLog("找到LinearLayout控件:开始点击第一个" );
+
+                    var x = linearLayout.bounds().centerX()
+                    var y = linearLayout.bounds().centerY()
+                    // 找到并点击后可以跳出循环
+                    if(x > 0 && y > 0) {
+                        click(x, y);
+                    }     
+                    break;
+                }
+            }
+        }
+    }
+    sleep(random(2000, 5000))
+}
+
+
 
 function click_back_btn(){
     // 获取所有相同id的控件（
