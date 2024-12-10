@@ -38,7 +38,7 @@ events.on('exit', function() {
     sleep(1000)
     console.error("<<<<<<<<<<<<<<<");
     console.error("脚本已经执行退出！！！！！");
-    console.error("已经实现功能：Tiktok首页搜索养号");
+    console.error("已经实现功能：Tiktok根据提供USERID进行关注");
     console.error("脚本执行完成时间：" + new Date().toLocaleString());
     console.error(">>>>>>>>>>>>>>>");
     console.error(">>>>>>>>>>>>>>>");

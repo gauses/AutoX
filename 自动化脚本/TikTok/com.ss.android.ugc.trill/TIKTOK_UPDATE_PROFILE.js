@@ -36,24 +36,36 @@ auto.waitFor();
 
 // 注册退出事件监听器
 events.on('exit', function() {
-    console.show()
+    console.hide()
     forceStop_titkok()
     sleep(1000)
     console.error("<<<<<<<<<<<<<<<");
-    console.error("<<<<<<<<<<<<<<<");
-    console.error("<<<<<<<<<<<<<<<");
-    console.error("<<<<<<<<<<<<<<<");
-
     console.error("脚本已经执行退出！！！！！");
+    console.error("已经实现功能：自動修改簡介(頭像.名稱.使用者名稱.個人簡介.)");
     console.error("脚本执行完成时间：" + new Date().toLocaleString());
     console.error(">>>>>>>>>>>>>>>");
+    console.error(">>>>>>>>>>>>>>>");
+    console.error(">>>>>>>>>>>>>>>");
+    console.error(">>>>>>>>>>>>>>>");
+    console.error(">>>>>>>>>>>>>>>");
 
-
+    openLogActivity();
 });
+
+//打开Autojs的Log activity
+function openLogActivity() {
+    var intent = {
+        action: "android.intent.action.MAIN",
+        packageName: "org.autojs.autoxjs",
+        className: "org.autojs.autojs.ui.log.LogActivityKt"
+    };
+    app.startActivity(intent);
+}
+
 
 
 //显示控制窗：https://github.com/kkevsekk1/AutoX/issues/868
-console.show()
+// console.show()
 
 
 taskLog("开始强制关闭同名的脚本...")
