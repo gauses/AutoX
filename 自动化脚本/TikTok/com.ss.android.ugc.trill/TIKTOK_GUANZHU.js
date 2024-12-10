@@ -33,20 +33,33 @@ auto.waitFor();
 
 // 注册退出事件监听器
 events.on('exit', function() {
-    console.show()
+    console.hide()
     forceStop_titkok()
     sleep(1000)
     console.error("<<<<<<<<<<<<<<<");
-    console.error("<<<<<<<<<<<<<<<");
-    console.error("<<<<<<<<<<<<<<<");
-    console.error("<<<<<<<<<<<<<<<");
-
     console.error("脚本已经执行退出！！！！！");
+    console.error("已经实现功能：Tiktok首页搜索养号");
     console.error("脚本执行完成时间：" + new Date().toLocaleString());
     console.error(">>>>>>>>>>>>>>>");
+    console.error(">>>>>>>>>>>>>>>");
+    console.error(">>>>>>>>>>>>>>>");
+    console.error(">>>>>>>>>>>>>>>");
+    console.error(">>>>>>>>>>>>>>>");
 
-
+    openLogActivity();
 });
+
+//打开Autojs的Log activity
+function openLogActivity() {
+    var intent = {
+        action: "android.intent.action.MAIN",
+        packageName: "org.autojs.autoxjs",
+        className: "org.autojs.autojs.ui.log.LogActivityKt"
+    };
+    app.startActivity(intent);
+}
+
+
 
 
 //显示控制窗：https://github.com/kkevsekk1/AutoX/issues/868
@@ -71,7 +84,7 @@ forceStop_titkok()
 
 sleep(3000)
 taskLog("准备启动TikTok...")
-sleep(5000)
+sleep(3000)
 app.startActivity({
     action: "android.intent.action.VIEW",
     packageName: TikTokPackageName,
@@ -119,22 +132,23 @@ taskLog(comments);
 
 
 
-
-
-
 //******************************************************************
 //******************************************************************
 //******************************************************************
 
 // 计算右上角区域的点击坐标(找不到按钮，所以只能是点击坐标)
-click_search_btn()
+click_home_search_btn()
 sleep(random(2000, 4000))
+
+
+// throw new Error("手动创建错误");
 
 
 
 // 按照顺序开始执行搜索User-ID
+taskLog("- 找到可用的搜索用户ID, 一共的数量有： " + comments.length);
 if (comments.length > 0) {
-    taskLog("- 找到可用的搜索关键字文案, 开始搜索观看 - ");
+    taskLog("- 找到可用的搜索用户ID, 开始搜索观看 - ");
     for (var randIdx = 0; randIdx < comments.length; randIdx++) {
         var commentText = comments[randIdx];
         taskLog("- 找到可用的搜索用户ID: "+commentText+", 开始搜索 - ");
@@ -152,9 +166,7 @@ if (comments.length > 0) {
                 sleep(random(5000, 8000))
                 
                 taskLog("开始点击Search按钮")
-                //各种方式都找不到元素，只好以坐标为准
-                // click_search_btn()
-                find_btn_Text_base("搜索","搜尋","Search")
+                click_Second_search_btn()
 
 
 
@@ -163,41 +175,32 @@ if (comments.length > 0) {
                 taskLog("开始点击视频Tab按钮")
                 find_textview_text_base("用户","使用者","Users")
 
-                sleep(random(5000, 8000))
-                //直接点击第一个关注按钮
-                // click_left_top_screen()
-                // find_btn_Text_base("关注","關注","Follow")//text("關注")
-                sleep(random(5000, 8000))
-                //直接点击第一个关注按钮
-                // 等待RecyclerView出现
-                let recyclerView = className("androidx.recyclerview.widget.RecyclerView").findOne(5000); // 5秒超时
-                if(!recyclerView) {
-                    console.log("未找到RecyclerView");
-                    click_back_btn()
-                    break
-                }
+                sleep(random(3000, 5000))
 
-                // 等待内容加载
-                sleep(2000);
+                // // 等待RecyclerView出现
+                // let recyclerView = className("androidx.recyclerview.widget.RecyclerView").findOne(5000); // 5秒超时
+                // if(!recyclerView) {
+                //     console.log("未找到RecyclerView");
+                //     click_back_btn()
+                //     break
+                // }
 
-                // 获取size并打印
-                let size = recyclerView.childCount();
-                taskLog("列表大小: " + size);
+                // // 等待内容加载
+                // sleep(2000);
 
-                sleep(random(2000, 4000))
+                // // 获取size并打印
+                // let size = recyclerView.childCount();
+                // taskLog("列表大小: " + size);
+                // sleep(random(2000, 4000))
+                // // 确保有item后再点击
+                // if(size > 0) {
+                //     recyclerView.child(0).click();
+                // }
+
+                // sleep(random(2000, 4000))
+                click_LinearLayout_GUANZHU()
 
 
-                // 确保有item后再点击
-                if(size > 0) {
-                    recyclerView.child(0).click();
-                    // 或者用坐标点击
-                    // let firstItem = recyclerView.child(0);
-                    // click(firstItem.bounds().centerX(), firstItem.bounds().centerY());
-                }
-
-                sleep(random(2000, 4000))
-
-                // console.show()
                 //text("消息")：点击User的主页的"消息"按钮，准备发信息
                 var findMSGTextResult = find_textview_text_base("关注","關注","Follow")
                 if(!findMSGTextResult) {
@@ -219,29 +222,25 @@ if (comments.length > 0) {
     }
     
   }else{
-    taskLog("- 没有可用的搜索关键字文案, 忽略 - ");
+    taskLog("- 没有可用的搜索用户ID, 忽略 - ");
+    throw new error("没有可用的搜索用户ID，无法关注，所以报错")
   }
 
 
 //强制停止TikTok 
 function forceStop_titkok(){
     taskLog("准备强杀TikTok...")
-    // 先启动应用
-    // app.launchPackage(TikTokPackageName);
-    // 等待应用启动
-    sleep(1000);
     app.openAppSetting(TikTokPackageName)
     sleep(5000)
 
     //繁体
-    if (text("強行停止").exists()) {
-        let forceStopBtn = text("強行停止").findOne();
+    if (text("強制停止").exists()) {
+        let forceStopBtn = text("強制停止").findOne();
         if (forceStopBtn && forceStopBtn.clickable()) {
             forceStopBtn.click();
             sleep(1000);
             // 确认操作
             if (text("確定").exists()) {
-                taskLog("已经找到可点击的‘強行停止’按钮！！！！！！！！！！");
                 text("確定").findOne().click();
             }
         } else {
@@ -253,8 +252,8 @@ function forceStop_titkok(){
     sleep(3000)
 
     //简体
-    if (text("强行停止").exists()) {
-        let forceStopBtn = text("强行停止").findOne();
+    if (text("强制停止").exists()) {
+        let forceStopBtn = text("强制停止").findOne();
         if (forceStopBtn && forceStopBtn.clickable()) {
             forceStopBtn.click();
             sleep(1000);
@@ -325,34 +324,131 @@ function close_friend_suggest(){
 
 
 
-// 计算右上角区域的点击坐标(找不到按钮，所以只能是点击坐标)
-// 整个脚本一共有两个地方使用这个方法
-function click_search_btn(){
 
-    // 获取所有相同id的控件（因为上方有两个相同ID的ImageView）
-    let targets = id("g3f").find();
-    // 通过索引获取指定的那个，比如第二个就是[1]
-    let target = targets[1];
-    if (target) {
-        taskLog("已经找到首页搜索确认按钮 " )
-        // 获取控件的坐标信息
-        let bounds = target.bounds();
-        
-        // 计算控件中心点坐标
-        let centerX = bounds.centerX();
-        let centerY = bounds.centerY();
-        
-        // 使用click函数模拟点击中心点位置
-        taskLog("找到首页搜索确认按钮 centerX = " +centerX)
-        taskLog("找到首页搜索确认按钮 centerY = " +centerY)
-        click(centerX, centerY);
-        
-        // 或者使用press函数来模拟按压
-        // press(centerX, centerY, 100); // 100是按压时长(毫秒)
-    }else{
-        taskLog("没有找到首页搜索确认按钮 " )
+//点击首页的右上角Search按钮
+function click_home_search_btn(){
+
+    var find_search_btn_count = 0
+    if(find_search_btn_count > 5){
+        console.error("首页寻找‘搜索’按钮超过5次，抛出异常")
+        throw new error("首页寻找‘搜索’按钮超过5次，抛出异常")
     }
+    sleep(random(2000, 5000))
+
+    var allImages = className("android.widget.ImageView").find();
+    if (allImages && allImages.size() > 0) {
+        for (var i = 0; i < allImages.size(); i++) {
+            var img = allImages.get(i);
+            if (img) {
+                taskLog("找到Image控件-Text：" + img.text() + ";ID = " + img.id());
+                
+                // 检查ID是否为"en4"
+                if (img.id() == (TikTokPackageName +":id/en4")) {
+                    // 正确调用bounds()方法并点击
+                    taskLog("找到Image控件: 首页搜索框！" );
+                    taskLog("找到Image控件: 首页搜索框，属性 = " +  img.clickable());
+
+                    var bounds = img.bounds();
+                    taskLog("找到Image控件: 首页搜索框，centerX属性 = " +  bounds.centerX());
+                    taskLog("找到Image控件: 首页搜索框，centerY属性 = " +  bounds.centerY());
+
+                    click(bounds.centerX(), bounds.centerY());
+                    // 找到并点击后可以跳出循环
+                    break;
+                }
+            }
+        }
+    }else{
+        //有可能是正在直播，需要滑到下一个
+        swipe_to_up()
+        find_search_btn_count ++ 
+    }
+    sleep(random(2000, 5000))
 }
+
+
+
+//屏幕上滑
+function swipe_to_up(){
+    // 获取设备屏幕的宽高
+    var width = device.width;
+    var height = device.height;
+
+    // 生成随机起始点
+    var startX = random(width / 3 , width * 2 / 3);
+    var startY = random(height * 2 / 3, height * 3 / 4);
+
+    // 生成随机结束点
+    var endX = random(width / 3 , width * 2 / 3);
+    var endY = random(height * 1 / 3, height * 1 / 4);
+
+    // 屏幕上滑操作
+    swipe(startX, startY, endX, endY, 500);
+    taskLog("开始滑动位置，x = "+startX+"；y = " + startY)
+    taskLog("结束滑动位置，x = "+endX+"；y = " + endY)
+
+}
+
+//点击第二页的右上角Search按钮
+function click_Second_search_btn(){
+
+    sleep(random(2000, 5000))
+    var allButtons = className("android.widget.Button").find();
+    if (allButtons && allButtons.size() > 0) {
+        for (var i = 0; i < allButtons.size(); i++) {
+            var btn = allButtons.get(i);
+            if (btn) {
+                // taskLog("找到Button控件-Text：" + btn.text() + ";ID = " + btn.id());
+                
+                // 检查ID是否为"r7e"
+                if (btn.id() == (TikTokPackageName +":id/r7e")) {
+                    // 正确调用bounds()方法并点击
+                    taskLog("找到Button控件: 第二个页面的搜索框！" );
+
+                    var bounds = btn.bounds();
+                    click(bounds.centerX(), bounds.centerY());
+                    // 找到并点击后可以跳出循环
+                    break;
+                }
+            }
+        }
+    }
+    sleep(random(2000, 5000))
+}
+
+
+//输入需要关注的用户ID之后，找到第一个User的LinearLayout
+function click_LinearLayout_GUANZHU(){
+
+    sleep(random(2000, 5000))
+    var allLinearLayout = className("android.widget.LinearLayout").find();
+    if (allLinearLayout && allLinearLayout.size() > 0) {
+        for (var i = 0; i < allLinearLayout.size(); i++) {
+            var linearLayout = allLinearLayout.get(i);
+            if (linearLayout) {
+                taskLog("找到linearLayout控件-Text：" + linearLayout.text() + ";ID = " + linearLayout.id());
+                
+                // 检查ID是否为"hvl"
+                if (linearLayout.id() == (TikTokPackageName +":id/hvl")) {
+                    // 正确调用bounds()方法并点击
+                    taskLog("找到LinearLayout控件:开始点击第一个" );
+
+                    var x = linearLayout.bounds().centerX()
+                    var y = linearLayout.bounds().centerY()
+                    // 找到并点击后可以跳出循环
+                    if(x > 0 && y > 0) {
+                        click(x, y);
+                    }     
+                    break;
+                }
+            }
+        }
+    }
+    sleep(random(2000, 5000))
+}
+
+
+
 
 function click_back_btn(){
     // 获取所有相同id的控件（
@@ -704,54 +800,6 @@ function find_btn_Text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
 
 
 
-//通过Button的Desc
-function find_btn_desc_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
-
-        var loopCount  = 0
-
-         while (true) {
-             taskLog(findText_ZH_CN + " - 循环寻找执行：" + (++loopCount));
-             // 检查计数器是否达到3
-             if (loopCount >= 3) {
-                 // 打印一条消息并退出循环
-                 taskLog("循环已执行3次，即将退出循环。");
-
-                 //不能抛出异常，因为可能Facebook记忆功能，自动跳转到输入页面
-//                 throw new Error(findText_ZH_CN +"按钮没有找到");
-                break;
-             }
-
-
-             // 查找控件
-            //  var button1 = className("android.widget.Button").desc(findText_ZH_CN).findOne(1000);
-            //  var button2 = className("android.widget.Button").desc(findText_ZH_TW).findOne(1000);
-            //  var button3 = className("android.widget.Button").desc(findText_EN_US).findOne(1000);
-            var button1 = desc(findText_ZH_CN).findOne(1000);
-            var button2 = desc(findText_ZH_TW).findOne(1000);
-            var button3 = desc(findText_EN_US).findOne(1000);
-
-
-             if (button1) {
-                 taskLog("找到" + findText_ZH_CN);
-                 taskLog("找到button1 = " + button1.clickable() );
-                 clickDesc(findText_ZH_CN)
-                 break; // 跳出循环
-             }else if(button2){
-                 taskLog("找到" + findText_ZH_TW);
-                 taskLog("找到button2 = " + button2.clickable() );
-                 clickDesc(findText_ZH_TW)
-                 break; // 跳出循环
-             }else if(button3){
-                 taskLog("找到" + findText_EN_US);
-                 taskLog("找到button3 = " + button3.clickable() );
-                 clickDesc(findText_EN_US)
-                 break; // 跳出循环
-             }
-
-             sleep(1000)
-
-         }
-}
 
 
 
@@ -768,9 +816,9 @@ function find_textview_text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US)
      while (true) {
          taskLog(findText_ZH_CN + " - 循环寻找执行：" + (++loopCount));
          // 检查计数器是否达到3
-         if (loopCount >= 3) {
+         if (loopCount >= 6) {
              // 打印一条消息并退出循环
-             taskLog("循环已执行3次，即将退出循环。");
+             taskLog("循环已执行6次，即将退出循环。");
 
              //不能抛出异常，因为可能Facebook记忆功能，自动跳转到输入页面
 //                 throw new Error(findText_ZH_CN +"按钮没有找到");
@@ -782,26 +830,51 @@ function find_textview_text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US)
         var button2 = className("android.widget.TextView").text(findText_ZH_TW).findOne(1000);
         var button3 = className("android.widget.TextView").text(findText_EN_US).findOne(1000);
 
-         if (button1 ) {
-             taskLog("找到" + findText_ZH_CN);
-             taskLog("找到" + button1.clickable());
-             clickText(findText_ZH_CN)
-             findText_result = true
-             break; // 跳出循环
-         }else if(button2){
-             taskLog("找到" + findText_ZH_TW);
-             taskLog("找到" + button2.clickable());
-             clickText(findText_ZH_TW)
-             findText_result = true
-             break; // 跳出循环
-         }else if(button3){
-             taskLog("找到" + findText_EN_US);
-             taskLog("找到" + button3.clickable());
-             clickText(findText_EN_US)
-            findText_result = true
-            // click(button3.bounds().centerX(), button3.bounds().centerY())
-             break; // 跳出循环
-         }
+        if (button1) {
+            taskLog("找到" + findText_ZH_CN);
+            taskLog("找到button1 = " + button1.clickable() );
+
+            var X1 = button1.bounds().centerX();
+            var Y1 = button1.bounds().centerY();
+            
+            // 验证 X 和 Y 是否为正数
+            if (X1 >= 0 && Y1 >= 0) {
+               click(X1, Y1)
+            }else{
+               taskLog("坐标无效，中心点X或Y为负值: X=" + X1 + ", Y=" + Y1);
+            }
+            break; // 跳出循环
+        }else if(button2){
+            taskLog("找到" + findText_ZH_TW);
+            taskLog("找到button2 = " + button2.clickable() );
+
+           //  clickText(findText_ZH_TW)
+           var X2 = button2.bounds().centerX();
+           var Y2 = button2.bounds().centerY();
+           
+           // 验证 X 和 Y 是否为正数
+           if (X2 >= 0 && Y2 >= 0) {
+              click(X2, Y2)
+           }else{
+              taskLog("坐标无效，中心点X或Y为负值: X=" + X2 + ", Y=" + Y2);
+           }
+            break; // 跳出循环
+        }else if(button3){
+            taskLog("找到" + findText_EN_US);
+           //  clickText(findText_EN_US)
+           var X3 = button3.bounds().centerX();
+           var Y3 = button3.bounds().centerY();
+           taskLog("找到button3 X= " + X3);
+           taskLog("找到button3 Y= " + Y3);
+
+           // 验证 X 和 Y 是否为正数
+           if (X3 >= 0 && Y3 >= 0) {
+              click(X3, Y3)
+           }else{
+              taskLog("坐标无效，中心点X或Y为负值: X=" + X3 + ", Y=" + Y3);
+           }
+            break; // 跳出循环
+        }
 
          sleep(1000)
 
