@@ -34,23 +34,38 @@ var TikTokPackageName = 'com.ss.android.ugc.trill';
 auto.waitFor();
 
 
-// 注册退出事件监听器
-events.on('exit', function() {
-    console.hide()
-    forceStop_titkok()
-    sleep(1000)
-    console.error("<<<<<<<<<<<<<<<");
-    console.error("脚本已经执行退出！！！！！");
-    console.error("已经实现功能：自動修改簡介(頭像.名稱.使用者名稱.個人簡介.)");
-    console.error("脚本执行完成时间：" + new Date().toLocaleString());
-    console.error(">>>>>>>>>>>>>>>");
-    console.error(">>>>>>>>>>>>>>>");
-    console.error(">>>>>>>>>>>>>>>");
-    console.error(">>>>>>>>>>>>>>>");
-    console.error(">>>>>>>>>>>>>>>");
 
+//出现异常错误时，打印的日志错误信息
+var handleErrorFlag = false //默认没有错误，如果出现异常，那么该值是true
+
+// 注册退出事件监听器
+ events.on('exit', function(){
+    console.hide()
+    sleep(1000)
+
+    if(handleErrorFlag){
+        console.error("-----------------脚本执行出现异常---------------");
+        console.error("Tiktok根據關鍵字，搜尋影片瀏覽養號，評論，點讚---------------");
+        console.error("脚本执行时间：" + new Date().toLocaleString());
+    }else{
+        forceStop_titkok()
+        console.log("-----------------脚本功能执行结束：---------------");
+        console.log("Tiktok根據關鍵字，搜尋影片瀏覽養號，評論，點讚---------------");
+        console.log("脚本执行时间：" + new Date().toLocaleString());
+    }
     openLogActivity();
 });
+
+function handleError(e) {
+    handleErrorFlag = true
+    forceStop_titkok()
+    console.error("===错误报告开始===");
+    console.error("错误信息：" + e);
+    console.error("错误堆栈：" + e.stack);
+    console.error("===错误报告结束===");
+    exit()
+}
+
 
 //打开Autojs的Log activity
 function openLogActivity() {
@@ -61,6 +76,8 @@ function openLogActivity() {
     };
     app.startActivity(intent);
 }
+
+
 
 
 
@@ -98,32 +115,6 @@ app.startActivity({
 taskLog("打开TikTok成功...")
 sleep(10000)
 
-close_friend_suggest()
-
-//Tab：点击 FrameLayout("Profile")
-find_btn_desc_base("主页","個人資料","Profile")
-
-//点击：text("Edit profile")
-find_textview_text_base("编辑主页","編輯個人資料","Edit profile")
-
-
-//点击：text("Name")
-find_textview_text_base("名字","名稱","Name")
-sleep(5000) //延迟5S，否则可能找不到EditText
-//点击：EditText，输入Name
-var search_name_edits = className("android.widget.EditText").find();
-    for(var i = 0; i < search_name_edits.size(); i++) {
-        var search_name_edit = search_name_edits.get(i);
-        if(search_name_edit) {
-            taskLog("找到TextView控件-Text："+ search_name_edit.text());
-            sleep(1000)
-            search_name_edit.setText(TT_PROFILE_NAME)
-            sleep(3000)
-        }
-    }
-
-sleep(3000)
-back()
 
 
 
@@ -746,4 +737,34 @@ function find_textview_text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US)
 }
 
 
+try {
+    
+    close_friend_suggest()
 
+    //Tab：点击 FrameLayout("Profile")
+    find_btn_desc_base("主页","個人資料","Profile")
+
+    //点击：text("Edit profile")
+    find_textview_text_base("编辑主页","編輯個人資料","Edit profile")
+
+
+    //点击：text("Name")
+    find_textview_text_base("名字","名稱","Name")
+    sleep(5000) //延迟5S，否则可能找不到EditText
+    //点击：EditText，输入Name
+    var search_name_edits = className("android.widget.EditText").find();
+        for(var i = 0; i < search_name_edits.size(); i++) {
+            var search_name_edit = search_name_edits.get(i);
+            if(search_name_edit) {
+                taskLog("找到TextView控件-Text："+ search_name_edit.text());
+                sleep(1000)
+                search_name_edit.setText(TT_PROFILE_NAME)
+                sleep(3000)
+            }
+        }
+
+    sleep(3000)
+    back()
+} catch (e) {
+    handleError(e);
+}

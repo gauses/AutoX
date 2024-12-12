@@ -36,21 +36,36 @@ const TT_Watch_Count = "$${瀏覽數量}" //观看视频个数
 
 //个人发文
 
-//会在在无障碍服务启动后继续运行。
-auto.waitFor();
+//出现异常错误时，打印的日志错误信息
+var handleErrorFlag = false //默认没有错误，如果出现异常，那么该值是true
 
 // 注册退出事件监听器
-events.on('exit', function() {
+ events.on('exit', function(){
     console.hide()
-    forceStop_titkok()
     sleep(1000)
-    console.error("<<<<<<<<<<<<<<<");
-    console.error("脚本已经执行退出！！！！！");
-    console.error("已经实现功能：Tiktok首页浏览养号");
-    console.error("脚本执行完成时间：" + new Date().toLocaleString());
-    console.error(">>>>>>>>>>>>>>>");
+
+    if(handleErrorFlag){
+        console.error("-----------------脚本执行出现异常---------------");
+        console.error("Tiktok根據推薦影片，自動瀏覽養號.評論.點讚---------------");
+        console.error("脚本执行时间：" + new Date().toLocaleString());
+    }else{
+        forceStop_titkok()
+        console.log("-----------------脚本功能执行结束：---------------");
+        console.log("Tiktok根據推薦影片，自動瀏覽養號.評論.點讚---------------");
+        console.log("脚本执行时间：" + new Date().toLocaleString());
+    }
     openLogActivity();
 });
+
+function handleError(e) {
+    handleErrorFlag = true
+    forceStop_titkok()
+    console.error("===错误报告开始===");
+    console.error("错误信息：" + e);
+    console.error("错误堆栈：" + e.stack);
+    console.error("===错误报告结束===");
+    exit()
+}
 
 
 //打开Autojs的Log activity
@@ -64,9 +79,8 @@ function openLogActivity() {
 }
 
 
-
 //显示控制窗：https://github.com/kkevsekk1/AutoX/issues/868
-console.show()
+// console.show()
 
 
 taskLog("开始强制关闭同名的脚本...")
@@ -83,6 +97,7 @@ if (runningEngines.length > 1) {
   })
 }
 
+
 forceStop_titkok()
 
 sleep(3000)
@@ -98,115 +113,6 @@ app.startActivity({
 
 taskLog("打开TikTok成功...")
 sleep(10000)
-
-close_friend_suggest()
-
-
-// 用于存储评论的数组
-let comments = [];
-// 检查文件是否存在
-taskLog("评论文案地址 =  " + TT_commentFile)
-const file = new java.io.File(TT_commentFile);
-if (file.exists() && file.isFile()) {
-    try {
-        // 读取文件内容
-        const reader = new java.io.BufferedReader(new java.io.FileReader(file));
-        let line;
-        while ((line = reader.readLine()) !== null) {
-            comments.push(line);
-        }
-        reader.close();
-    } catch (e) {
-        taskLog("读取文件时发生错误：" + e.message);
-    }
-} else {
-    // 如果文件不存在，将文件名添加到数组中
-    comments.push(TT_commentFile);
-}
-
-// 如果TT_commentFile等于'off'，则清空评论数组
-if (TT_commentFile == 'off') {
-    comments = [];
-}
-
-// 输出结果，用于调试
-taskLog(comments);
-
-
-
-
-
-//开始观看
-var count = 1;
-do {
-    // 将 count 加 1
-    taskLog("开始观看第"+count+"个TikTok视频")
-    count++;
-
-    close_friend_suggest()
-
-    sleep(random(10000, 25000))
-
-    if (Math.random() * 100 < TT_Like_Count)  {
-        taskLog("开始触发点赞概率")
-        click_Like_Btn()
-        sleep(random(5000, 8000))
-    }
-    if (Math.random() * 100 < TT_Save_Count)  {
-        taskLog("开始触发保存视频概率")
-        click_Like_Btn()
-        sleep(random(5000, 8000))
-    }
-    if (Math.random() * 100 < TT_Comment_Count)  {
-        taskLog("开始触发评论视频概率")
-        taskLog("评论文案的总个数："+comments.length)
-        if (comments.length > 0) {
-            //如果评论概率不是0，那么直接报错
-            taskLog("comments.includes = "+ comments.includes("T_评论文案"))
-
-            if(TT_Comment_Count > 0 && comments.includes("T_评论文案")) {
-                throw new Error("评论概率不是0，但评论内容是空，所以报错");
-            }
-
-            taskLog("- 找到可用评论文案, 开始评论 - ");
-            var randIdx = random(0, comments.length - 1)
-            taskLog("评论文案的下标randIdx："+randIdx)
-            var commentText = comments[randIdx];
-            taskLog("随机评论文案 :" + commentText);
-            click_Comment_Btn(commentText)
-            sleep(random(5000, 8000))
-          }else{
-            taskLog(`- 没有可用评论文案, 忽略 - `);
-          }
-    }
-
-    if (Math.random() * 100 < TT_Watch_Author_Page)  {
-        taskLog("开始触发查看作者主页的概率")
-        click_Author_Page_Btn()
-        sleep(random(5000, 8000))
-    }
-
-
-    // 获取设备屏幕的宽高
-     var width = device.width;
-     var height = device.height;
-
-     // 生成随机起始点
-     var startX = random(width / 3 , width * 2 / 3);
-     var startY = random(height * 2 / 3, height * 3 / 4);
-
-     // 生成随机结束点
-     var endX = random(width / 3 , width * 2 / 3);
-     var endY = random(height * 1 / 3, height * 1 / 4);
-
-     // 屏幕上滑操作
-     swipe(startX, startY, endX, endY, 500);
-    taskLog("开始滑动位置，x = "+startX+"；y = " + startY)
-    taskLog("结束滑动位置，x = "+endX+"；y = " + endY)
-
-
-
-} while (count < TT_Watch_Count); // 当 count 小于 TT_Watch_Count 时继续循环
 
 
 
@@ -717,4 +623,122 @@ function close_friend_suggest(){
         sleep(3000)
         id("c9n").click()
     }
+}
+
+
+
+try {
+    
+    close_friend_suggest()
+
+
+    // 用于存储评论的数组
+    let comments = [];
+    // 检查文件是否存在
+    taskLog("评论文案地址 =  " + TT_commentFile)
+    const file = new java.io.File(TT_commentFile);
+    if (file.exists() && file.isFile()) {
+        try {
+            // 读取文件内容
+            const reader = new java.io.BufferedReader(new java.io.FileReader(file));
+            let line;
+            while ((line = reader.readLine()) !== null) {
+                comments.push(line);
+            }
+            reader.close();
+        } catch (e) {
+            taskLog("读取文件时发生错误：" + e.message);
+        }
+    } else {
+        // 如果文件不存在，将文件名添加到数组中
+        comments.push(TT_commentFile);
+    }
+
+    // 如果TT_commentFile等于'off'，则清空评论数组
+    if (TT_commentFile == 'off') {
+        comments = [];
+    }
+
+    // 输出结果，用于调试
+    taskLog(comments);
+
+
+
+
+
+    //开始观看
+    var count = 1;
+    do {
+        // 将 count 加 1
+        taskLog("开始观看第"+count+"个TikTok视频")
+        count++;
+
+        close_friend_suggest()
+
+        sleep(random(10000, 25000))
+
+        if (Math.random() * 100 < TT_Like_Count)  {
+            taskLog("开始触发点赞概率")
+            click_Like_Btn()
+            sleep(random(5000, 8000))
+        }
+        if (Math.random() * 100 < TT_Save_Count)  {
+            taskLog("开始触发保存视频概率")
+            click_Like_Btn()
+            sleep(random(5000, 8000))
+        }
+        if (Math.random() * 100 < TT_Comment_Count)  {
+            taskLog("开始触发评论视频概率")
+            taskLog("评论文案的总个数："+comments.length)
+            if (comments.length > 0) {
+                //如果评论概率不是0，那么直接报错
+                taskLog("comments.includes = "+ comments.includes("T_评论文案"))
+
+                if(TT_Comment_Count > 0 && comments.includes("T_评论文案")) {
+                    throw new Error("评论概率不是0，但评论内容是空，所以报错");
+                }
+
+                taskLog("- 找到可用评论文案, 开始评论 - ");
+                var randIdx = random(0, comments.length - 1)
+                taskLog("评论文案的下标randIdx："+randIdx)
+                var commentText = comments[randIdx];
+                taskLog("随机评论文案 :" + commentText);
+                click_Comment_Btn(commentText)
+                sleep(random(5000, 8000))
+            }else{
+                taskLog(`- 没有可用评论文案, 忽略 - `);
+            }
+        }
+
+        if (Math.random() * 100 < TT_Watch_Author_Page)  {
+            taskLog("开始触发查看作者主页的概率")
+            click_Author_Page_Btn()
+            sleep(random(5000, 8000))
+        }
+
+
+        // 获取设备屏幕的宽高
+        var width = device.width;
+        var height = device.height;
+
+        // 生成随机起始点
+        var startX = random(width / 3 , width * 2 / 3);
+        var startY = random(height * 2 / 3, height * 3 / 4);
+
+        // 生成随机结束点
+        var endX = random(width / 3 , width * 2 / 3);
+        var endY = random(height * 1 / 3, height * 1 / 4);
+
+        // 屏幕上滑操作
+        swipe(startX, startY, endX, endY, 500);
+        taskLog("开始滑动位置，x = "+startX+"；y = " + startY)
+        taskLog("结束滑动位置，x = "+endX+"；y = " + endY)
+
+
+
+    } while (count < TT_Watch_Count); // 当 count 小于 TT_Watch_Count 时继续循环
+
+
+} catch (e) {
+    handleError(e);
 }

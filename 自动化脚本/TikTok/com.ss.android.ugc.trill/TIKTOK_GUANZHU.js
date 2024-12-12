@@ -31,32 +31,35 @@ var TikTokPackageName = 'com.ss.android.ugc.trill';
 auto.waitFor();
 
 
-// 注册退出事件监听器
-events.on('exit', function() {
-    console.hide()
-    forceStop_titkok()
-    sleep(1000)
-    console.error("<<<<<<<<<<<<<<<");
-    console.error("脚本已经执行退出！！！！！");
-    console.error("已经实现功能：Tiktok根据提供USERID进行关注");
-    console.error("脚本执行完成时间：" + new Date().toLocaleString());
-    console.error(">>>>>>>>>>>>>>>");
-    console.error(">>>>>>>>>>>>>>>");
-    console.error(">>>>>>>>>>>>>>>");
-    console.error(">>>>>>>>>>>>>>>");
-    console.error(">>>>>>>>>>>>>>>");
+//出现异常错误时，打印的日志错误信息
+var handleErrorFlag = false //默认没有错误，如果出现异常，那么该值是true
 
+// 注册退出事件监听器
+ events.on('exit', function(){
+    console.hide()
+    sleep(1000)
+
+    if(handleErrorFlag){
+        console.error("-----------------脚本执行出现异常---------------");
+        console.error("Tiktok关注：根據關注列表UID的順序，去關注用戶---------------");
+        console.error("脚本执行时间：" + new Date().toLocaleString());
+    }else{
+        forceStop_titkok()
+        console.log("-----------------脚本功能执行结束：---------------");
+        console.error("Tiktok关注：根據關注列表UID的順序，去關注用戶---------------");
+        console.log("脚本执行时间：" + new Date().toLocaleString());
+    }
     openLogActivity();
 });
 
-//打开Autojs的Log activity
-function openLogActivity() {
-    var intent = {
-        action: "android.intent.action.MAIN",
-        packageName: "org.autojs.autoxjs",
-        className: "org.autojs.autojs.ui.log.LogActivityKt"
-    };
-    app.startActivity(intent);
+function handleError(e) {
+    handleErrorFlag = true
+    forceStop_titkok()
+    console.error("===错误报告开始===");
+    console.error("错误信息：" + e);
+    console.error("错误堆栈：" + e.stack);
+    console.error("===错误报告结束===");
+    exit()
 }
 
 
@@ -90,141 +93,6 @@ app.startActivity({
     packageName: TikTokPackageName,
     className: "com.ss.android.ugc.aweme.main.MainActivity"
 });
-
-
-
-taskLog("打开TikTok成功...")
-sleep(10000)
-
-close_friend_suggest()
-
-
-// 用于存储评论的数组
-let comments = [];
-// 检查文件是否存在
-taskLog("评论文案地址 =  " + TT_Like_User_ID_GROUP)
-const file = new java.io.File(TT_Like_User_ID_GROUP);
-if (file.exists() && file.isFile()) {
-    try {
-        // 读取文件内容
-        const reader = new java.io.BufferedReader(new java.io.FileReader(file));
-        let line;
-        while ((line = reader.readLine()) !== null) {
-            comments.push(line);
-        }
-        reader.close();
-    } catch (e) {
-        taskLog("读取文件时发生错误：" + e.message);
-    }
-} else {
-    // 如果文件不存在，将文件名添加到数组中
-    comments.push(TT_Like_User_ID_GROUP);
-}
-
-// 如果TT_Like_User_ID_GROUP等于'off'，则清空用户USER_ID列表
-if (TT_Like_User_ID_GROUP == 'off') {
-    comments = [];
-}
-
-// 输出结果，用于调试
-taskLog(comments);
-
-
-
-
-//******************************************************************
-//******************************************************************
-//******************************************************************
-
-// 计算右上角区域的点击坐标(找不到按钮，所以只能是点击坐标)
-click_home_search_btn()
-sleep(random(2000, 4000))
-
-
-// throw new Error("手动创建错误");
-
-
-
-// 按照顺序开始执行搜索User-ID
-taskLog("- 找到可用的搜索用户ID, 一共的数量有： " + comments.length);
-if (comments.length > 0) {
-    taskLog("- 找到可用的搜索用户ID, 开始搜索观看 - ");
-    for (var randIdx = 0; randIdx < comments.length; randIdx++) {
-        var commentText = comments[randIdx];
-        taskLog("- 找到可用的搜索用户ID: "+commentText+", 开始搜索 - ");
-        taskLog("开始准备点击首页搜索按钮")
-
-
-        var search_edits = className("android.widget.EditText").find();
-        for(var i = 0; i < search_edits.size(); i++) {
-            var search_edit = search_edits.get(i);
-            if(search_edit) {
-                taskLog("找到TextView控件-Text："+ search_edit.text());
-                sleep(1000)
-                taskLog("搜索控件，设置内容：" +commentText );
-                search_edit.setText(commentText)    
-                sleep(random(5000, 8000))
-                
-                taskLog("开始点击Search按钮")
-                click_Second_search_btn()
-
-
-
-                //开始观看视频
-                sleep(random(5000, 8000))
-                taskLog("开始点击视频Tab按钮")
-                find_textview_text_base("用户","使用者","Users")
-
-                sleep(random(3000, 5000))
-
-                // // 等待RecyclerView出现
-                // let recyclerView = className("androidx.recyclerview.widget.RecyclerView").findOne(5000); // 5秒超时
-                // if(!recyclerView) {
-                //     console.log("未找到RecyclerView");
-                //     click_back_btn()
-                //     break
-                // }
-
-                // // 等待内容加载
-                // sleep(2000);
-
-                // // 获取size并打印
-                // let size = recyclerView.childCount();
-                // taskLog("列表大小: " + size);
-                // sleep(random(2000, 4000))
-                // // 确保有item后再点击
-                // if(size > 0) {
-                //     recyclerView.child(0).click();
-                // }
-
-                // sleep(random(2000, 4000))
-                click_LinearLayout_GUANZHU()
-
-
-                //text("消息")：点击User的主页的"消息"按钮，准备发信息
-                var findMSGTextResult = find_textview_text_base("关注","關注","Follow")
-                if(!findMSGTextResult) {
-                    taskLog("没有找到消息控件，终止本次操作，开始下一个用户的私信行为！！！");
-                }
-
-                sleep(3000)
-                click_back_btn()
-                sleep(1000)
-                click_back_btn()
-                sleep(random(2000, 4000))
-
-
-    
-            }
-        }
-
-
-    }
-    
-  }else{
-    taskLog("- 没有可用的搜索用户ID, 忽略 - ");
-    throw new error("没有可用的搜索用户ID，无法关注，所以报错")
-  }
 
 
 //强制停止TikTok 
@@ -882,3 +750,144 @@ function find_textview_text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US)
      return findText_result
 }
 
+
+
+try{
+    
+
+taskLog("打开TikTok成功...")
+sleep(10000)
+
+close_friend_suggest()
+
+
+// 用于存储评论的数组
+let comments = [];
+// 检查文件是否存在
+taskLog("评论文案地址 =  " + TT_Like_User_ID_GROUP)
+const file = new java.io.File(TT_Like_User_ID_GROUP);
+if (file.exists() && file.isFile()) {
+    try {
+        // 读取文件内容
+        const reader = new java.io.BufferedReader(new java.io.FileReader(file));
+        let line;
+        while ((line = reader.readLine()) !== null) {
+            comments.push(line);
+        }
+        reader.close();
+    } catch (e) {
+        taskLog("读取文件时发生错误：" + e.message);
+    }
+} else {
+    // 如果文件不存在，将文件名添加到数组中
+    comments.push(TT_Like_User_ID_GROUP);
+}
+
+// 如果TT_Like_User_ID_GROUP等于'off'，则清空用户USER_ID列表
+if (TT_Like_User_ID_GROUP == 'off') {
+    comments = [];
+}
+
+// 输出结果，用于调试
+taskLog(comments);
+
+
+
+
+//******************************************************************
+//******************************************************************
+//******************************************************************
+
+// 计算右上角区域的点击坐标(找不到按钮，所以只能是点击坐标)
+click_home_search_btn()
+sleep(random(2000, 4000))
+
+
+// throw new Error("手动创建错误");
+
+
+
+// 按照顺序开始执行搜索User-ID
+taskLog("- 找到可用的搜索用户ID, 一共的数量有： " + comments.length);
+if (comments.length > 0) {
+    taskLog("- 找到可用的搜索用户ID, 开始搜索观看 - ");
+    for (var randIdx = 0; randIdx < comments.length; randIdx++) {
+        var commentText = comments[randIdx];
+        taskLog("- 找到可用的搜索用户ID: "+commentText+", 开始搜索 - ");
+        taskLog("开始准备点击首页搜索按钮")
+
+
+        var search_edits = className("android.widget.EditText").find();
+        for(var i = 0; i < search_edits.size(); i++) {
+            var search_edit = search_edits.get(i);
+            if(search_edit) {
+                taskLog("找到TextView控件-Text："+ search_edit.text());
+                sleep(1000)
+                taskLog("搜索控件，设置内容：" +commentText );
+                search_edit.setText(commentText)    
+                sleep(random(5000, 8000))
+                
+                taskLog("开始点击Search按钮")
+                click_Second_search_btn()
+
+
+
+                //开始观看视频
+                sleep(random(5000, 8000))
+                taskLog("开始点击视频Tab按钮")
+                find_textview_text_base("用户","使用者","Users")
+
+                sleep(random(3000, 5000))
+
+                // // 等待RecyclerView出现
+                // let recyclerView = className("androidx.recyclerview.widget.RecyclerView").findOne(5000); // 5秒超时
+                // if(!recyclerView) {
+                //     console.log("未找到RecyclerView");
+                //     click_back_btn()
+                //     break
+                // }
+
+                // // 等待内容加载
+                // sleep(2000);
+
+                // // 获取size并打印
+                // let size = recyclerView.childCount();
+                // taskLog("列表大小: " + size);
+                // sleep(random(2000, 4000))
+                // // 确保有item后再点击
+                // if(size > 0) {
+                //     recyclerView.child(0).click();
+                // }
+
+                // sleep(random(2000, 4000))
+                click_LinearLayout_GUANZHU()
+
+
+                //text("消息")：点击User的主页的"消息"按钮，准备发信息
+                var findMSGTextResult = find_textview_text_base("关注","關注","Follow")
+                if(!findMSGTextResult) {
+                    taskLog("没有找到消息控件，终止本次操作，开始下一个用户的私信行为！！！");
+                }
+
+                sleep(3000)
+                click_back_btn()
+                sleep(1000)
+                click_back_btn()
+                sleep(random(2000, 4000))
+
+
+    
+            }
+        }
+
+
+    }
+    
+  }else{
+    taskLog("- 没有可用的搜索用户ID, 忽略 - ");
+    throw new error("没有可用的搜索用户ID，无法关注，所以报错")
+  }
+
+}catch(e) {
+    handleError(e);
+}

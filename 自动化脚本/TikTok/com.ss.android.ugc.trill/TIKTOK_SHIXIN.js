@@ -19,9 +19,6 @@ const TT_Message_GROUP = '$${T_私信用户文案列表}';
 
 var TikTokPackageName = 'com.ss.android.ugc.trill';
 
-//出现异常错误时，打印的日志错误信息
-var handleErrorFlag = false //默认没有错误，如果出现异常，那么该值是true
-
 
 
 //1.autox.js侧边栏的打开USB调试先打开
@@ -36,6 +33,8 @@ auto.waitFor();
 //显示控制窗：https://github.com/kkevsekk1/AutoX/issues/868
 // console.show()
 
+//出现异常错误时，打印的日志错误信息
+var handleErrorFlag = false //默认没有错误，如果出现异常，那么该值是true
 
 // 注册退出事件监听器
  events.on('exit', function(){
@@ -902,7 +901,11 @@ try {
                     var findMSGTextResult = find_textview_text_base("消息", "訊息", "Message")
                     if(!findMSGTextResult) {
                         taskLog("没有找到消息控件，终止本次操作，开始下一个用户的私信行为！！！");
+                        sleep(3000)
                         click_back_btn()
+                        sleep(1000)
+                        click_back_btn()
+                        sleep(3000)
                         break
                     }
                     sleep(random(2000, 4000))

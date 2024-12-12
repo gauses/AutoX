@@ -34,24 +34,37 @@ var TikTokPackageName = 'com.ss.android.ugc.trill';
 //会在在无障碍服务启动后继续运行。
 auto.waitFor();
 
+//出现异常错误时，打印的日志错误信息
+var handleErrorFlag = false //默认没有错误，如果出现异常，那么该值是true
 
 // 注册退出事件监听器
-events.on('exit', function() {
+ events.on('exit', function(){
     console.hide()
-    forceStop_titkok()
     sleep(1000)
-    console.error("<<<<<<<<<<<<<<<");
-    console.error("脚本已经执行退出！！！！！");
-    console.error("已经实现功能：指定視屏點愛心.留言.分享給用戶");
-    console.error("脚本执行完成时间：" + new Date().toLocaleString());
-    console.error(">>>>>>>>>>>>>>>");
-    console.error(">>>>>>>>>>>>>>>");
-    console.error(">>>>>>>>>>>>>>>");
-    console.error(">>>>>>>>>>>>>>>");
-    console.error(">>>>>>>>>>>>>>>");
 
+    if(handleErrorFlag){
+        console.error("-----------------脚本执行出现异常---------------");
+        console.error("Tiktok根據關鍵字，搜尋影片瀏覽養號，評論，點讚---------------");
+        console.error("脚本执行时间：" + new Date().toLocaleString());
+    }else{
+        forceStop_titkok()
+        console.log("-----------------脚本功能执行结束：---------------");
+        console.log("Tiktok根據關鍵字，搜尋影片瀏覽養號，評論，點讚---------------");
+        console.log("脚本执行时间：" + new Date().toLocaleString());
+    }
     openLogActivity();
 });
+
+function handleError(e) {
+    handleErrorFlag = true
+    forceStop_titkok()
+    console.error("===错误报告开始===");
+    console.error("错误信息：" + e);
+    console.error("错误堆栈：" + e.stack);
+    console.error("===错误报告结束===");
+    exit()
+}
+
 
 //打开Autojs的Log activity
 function openLogActivity() {
@@ -66,7 +79,7 @@ function openLogActivity() {
 
 
 //显示控制窗：https://github.com/kkevsekk1/AutoX/issues/868
-console.show()
+// console.show()
 
 
 taskLog("开始强制关闭同名的脚本...")
@@ -112,36 +125,6 @@ extras: {
 }
 });
 
-
-taskLog("打开浏览器成功...")
-sleep(20000)
-
-//可能需要点击一下浏览器界面的“開啟 TikTok”
-find_textview_text_base("打开应用","開啟應用程式","Open app")
-
-
-taskLog("打开TikTok成功...")
-sleep(10000)
-
-close_friend_suggest()
-
-//点赞
-taskLog("开始点击点赞按钮..")
-clickId("dh4")
-sleep(5000)
-
-
-
-//转发
-taskLog("开始点击转发按钮..")
-clickId("nlq")
-sleep(5000)
-
-// var aomLayouts = id("jmt").className("android.widget.Button").find();
-// 使用示例
-var number = TT_VIDEO_SHARE_FRIENDS_NUMBER;  // 目标点击数量
-var clickedCount = findAndClickAomLayouts(number);
-taskLog("找到的所有好友转发个数是："+clickedCount)
 
 /**
  * 滑动查找并点击指定数量的aom布局，保持已选中状态
@@ -232,19 +215,6 @@ function swipeRightToLeft() {
 
 
 
-
-sleep(5000)
-taskLog("开始寫下訊息...");
-id("jfq").findOne().setText(TT_VIDEO_SHARE_TEXT)
-
-
-
-
-sleep(5000)
-taskLog("开始点击传送按钮...");
-clickId("nfe")
-
-sleep(5000)
 
 //******************************************************************
 //******************************************************************
@@ -810,4 +780,52 @@ function find_textview_text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US)
 }
 
 
+try {
 
+        
+    taskLog("打开浏览器成功...")
+    sleep(5000)
+
+    //可能需要点击一下浏览器界面的“開啟 TikTok”
+    find_textview_text_base("打开应用","開啟應用程式","Open app")
+    sleep(5000)
+    find_textview_text_base("打开应用","開啟 TikTok","Open app")
+
+
+    taskLog("打开TikTok成功...")
+    sleep(5000)
+
+    close_friend_suggest()
+
+    //点赞
+    taskLog("开始点击点赞按钮..")
+    clickId("dh4")
+    sleep(5000)
+
+
+
+    //转发
+    taskLog("开始点击转发按钮..")
+    clickId("nlq")
+    sleep(5000)
+
+    // 使用示例
+    var number = TT_VIDEO_SHARE_FRIENDS_NUMBER;  // 目标点击数量
+    var clickedCount = findAndClickAomLayouts(number);
+    taskLog("找到的所有好友转发个数是："+clickedCount)
+
+
+    sleep(5000)
+    taskLog("开始寫下訊息...");
+    id("jfq").findOne().setText(TT_VIDEO_SHARE_TEXT)
+
+
+    sleep(5000)
+    taskLog("开始点击传送按钮...");
+    clickId("nfe")
+
+    sleep(5000)
+    
+} catch (e) {
+    handleError(e);
+}
