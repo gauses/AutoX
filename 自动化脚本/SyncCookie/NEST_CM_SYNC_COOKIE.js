@@ -1,4 +1,5 @@
 
+//Date:11-26  11：03
 // 导入SimpleDateFormat类
 importClass(java.text.SimpleDateFormat);
 importClass(java.io.PrintWriter);
@@ -39,6 +40,7 @@ forceStop_netbrowser()
 //第三步：启动Kiwi
 home()
 sleep(3000)
+
 app.startActivity({
   action: "android.intent.action.VIEW",
   packageName: chromePackageName,
@@ -55,20 +57,24 @@ if (id('button1').exists()) {
 }
 
 //点击欢迎界面的“continue”按钮
-sleep(3000);
-className('androidx.recyclerview.widget.RecyclerView')
-  .findOne(5000)
-  .children()
-  .forEach((child) => {
-    var target = child.findOne(id('signin_fre_continue_button'));
-    //console.log
-    console.log('点击欢迎界面的“continue”按钮');
-    toast('点击欢迎界面的“continue”按钮');
-    //第一次打开
-    if (target) {
-      target.click();
-    }
-  });
+try {
+    sleep(3000);
+    className('androidx.recyclerview.widget.RecyclerView')
+      .findOne(5000)
+      .children()
+      .forEach((child) => {
+        var target = child.findOne(id('signin_fre_continue_button'));
+        //console.log
+        console.log('点击欢迎界面的“continue”按钮');
+        toast('点击欢迎界面的“continue”按钮');
+        //第一次打开
+        if (target) {
+          target.click();
+        }
+      });
+} catch (error) {
+}
+
 
 /////////////////////////////正式开始/////////////////////////////
 
@@ -366,14 +372,12 @@ function find_btn_Text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
 
    while (true) {
        taskLog(findText_ZH_CN + " - 循环寻找执行：" + (++loopCount));
-       // 检查计数器是否达到5
-       if (loopCount >= 5) {
+       // 检查计数器是否达到20
+       if (loopCount >= 20) {
            // 打印一条消息并退出循环
-           taskLog("循环已执行5次，即将退出循环。");
-
-           //不能抛出异常，因为可能Facebook记忆功能，自动跳转到输入页面
-                // throw new Error(findText_ZH_CN +"按钮没有找到");
-          break;
+           taskLog("循环已执行20次，即将退出循环。");////
+           throw new Error(findText_ZH_CN +"按钮没有找到");
+           break;
        }
 
        // 查找控件
@@ -381,25 +385,27 @@ function find_btn_Text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
        var button2 = className("android.widget.Button").text(findText_ZH_TW).findOne(1000);
        var button3 = className("android.widget.Button").text(findText_EN_US).findOne(1000);
 
-       if (button1) {
+       if (button1 && button1.enabled()) {
            taskLog("找到" + findText_ZH_CN);
            taskLog("找到button1 = " + button1.clickable() );
            clickText(findText_ZH_CN)
+           sleep(1000)
+           button1.click()
            break; // 跳出循环
-       }else if(button2){
+       }else if(button2 && button2.enabled()){
            taskLog("找到" + findText_ZH_TW);
            taskLog("找到button2 = " + button2.clickable() );
            clickText(findText_ZH_TW)
+           sleep(1000)
+           button2.click()
            break; // 跳出循环
-       }else if(button3){
+       }else if(button3 && button3.enabled()){
            taskLog("找到" + findText_EN_US);
            taskLog("找到button3 = " + button3.clickable() );
-          //  if(button3.clickable()) {
-          //     sleep(1000);
-          //     button3.click()
-          //  }else{
-              clickText(findText_EN_US)
-          //  }
+           clickText(findText_EN_US)
+           sleep(1000)
+           button3.click()
+
            
            break; // 跳出循环
        }

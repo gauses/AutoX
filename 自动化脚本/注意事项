@@ -1,0 +1,5 @@
+1.
+//使用button1.bounds()可能会有异常：坐标值是负数，导致click崩溃
+//java.lang.lllegalArgumentException: Path boundsmust not be negative
+
+2.界面可能有两个相同id的button或者imageview

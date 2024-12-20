@@ -16,12 +16,15 @@ var taskLogImgName = "nest_task_log.png"
 
 
 //名稱.使用者名稱.個人簡介
+const TT_PROFILE_HEAD_IMAGE = '$${T_個人頭像地址}';
 const TT_PROFILE_NAME = '$${名稱}';
 const TT_PROFILE_USERNAME = '$${使用者名稱}';
 const TT_PROFILE_BIO = '$${個人簡介}';
 
 
 var TikTokPackageName = 'com.ss.android.ugc.trill';
+//将需要处理的多媒体图片，单独copy一份放到这个文件夹里面，后面处理完成之后，再删除这个文件夹
+var A_NEST_TikTok_MEDIA = 'A_NEST_TikTok_MEDIA'; 
 
 
 //1.autox.js侧边栏的打开USB调试先打开
@@ -85,6 +88,7 @@ function openLogActivity() {
 // console.show()
 
 
+
 taskLog("开始强制关闭同名的脚本...")
 let currentEngine = engines.myEngine()
 let runningEngines = engines.all()
@@ -103,7 +107,7 @@ forceStop_titkok()
 
 sleep(3000)
 taskLog("准备启动TikTok...")
-sleep(5000)
+sleep(3000)
 app.startActivity({
     action: "android.intent.action.VIEW",
     packageName: TikTokPackageName,
@@ -113,67 +117,528 @@ app.startActivity({
 
 
 taskLog("打开TikTok成功...")
+refreshMedia("/storage/emulated/0/Download/")
+
 sleep(10000)
+taskLog("头像地址：" + TT_PROFILE_HEAD_IMAGE)
+sleep(3000)
 
+//******************************************************************
+//******************************************************************
+//******************************************************************
 
-
-
-//点击：text("Bio")
-find_textview_text_base("个人简介","個人簡介","Bio")
-//点击：EditText，输入Bio
-sleep(5000) //延迟5S，否则可能找不到EditText
-var search_Bio_edits = className("android.widget.EditText").find();
-    taskLog("找到BIO："+ search_Bio_edits.size());
-    for(var i = 0; i < search_Bio_edits.size(); i++) {
-        var search_Bio_edit = search_Bio_edits.get(i);
-        if(search_Bio_edit) {
-            taskLog("找到TextView控件-Text："+ search_Bio_edit.text());
-            taskLog("准备输入BIO："+ TT_PROFILE_BIO);
-
-            sleep(1000)
-            search_Bio_edit.setText(TT_PROFILE_BIO)
-            sleep(5000)
-
-        }
+//转移头像图片到Nest临时文件夹
+function transferHeadImageToNest(fileName){
+    let imagePath = null;
+    if (files.exists(fileName)) {
+        imagePath = fileName;
     }
-sleep(5000)
-find_btn_Text_base("保存","儲存","Save")
-sleep(5000)
-
-
-
-//点击：text("Username")
-find_textview_text_base("用户名","使用者名稱","Username")
-//点击：EditText，输入Username
-sleep(5000) //延迟5S，否则可能找不到EditText
-var search_Username_edits = className("android.widget.EditText").find();
-    for(var i = 0; i < search_Username_edits.size(); i++) {
-        var search_Username_edit = search_Username_edits.get(i);
-        if(search_Username_edit) {
-            taskLog("找到TextView控件-Text："+ search_Username_edit.text());
-            sleep(1000)
-            search_Username_edit.setText(TT_PROFILE_USERNAME)
-            sleep(3000)
-
-        }
+    
+    if (!imagePath) {
+        console.error("未找到指定图片：" + fileName);
+        toast("未找到指定图片：" + fileName);
+        return;
     }
-sleep(5000)
-var findText_result = find_btn_Text_base("保存","儲存","Save")
-if(findText_result) {
-    sleep(3000)
-    find_btn_Text_base("设置用户名","設定使用者名稱","Set username")
-    sleep(3000)
-    back()
+
+
+    //开始拷贝一份，到本地自己的文件夹来单独处理，不处理原来的图片，
+    // 创建文件夹(如果不存在)
+    const newFolder = "/storage/emulated/0/Download/" + A_NEST_TikTok_MEDIA;  // 替换成你想要的文件夹路径
+    if(!files.exists(newFolder)){
+        files.ensureDir(newFolder);
+        console.log("创建文件夹: " + newFolder);
+    }
+    // 目标图片路径(在新文件夹中)
+    const targetFileName = files.getName(imagePath);
+    const targetPath = newFolder + "/" + targetFileName;
+    console.log("新图片文件的绝对路径: " + targetPath);
+    // 复制图片文件
+    try {
+        files.copy(imagePath, targetPath);
+        console.log("复制成功!");
+        console.log("新图片路径: " + targetPath);
+    } catch(e) {
+        console.error("复制失败: " + e);
+    }
+
+    sleep(3000);
+
+
+    refreshMedia(newFolder)
+    sleep(10000);
+
+
+    // 创建文件对象并获取URI
+    let file = new java.io.File(targetPath);
+    let uri = app.getUriForFile(targetPath);
+    
+    // 创建打开图片的 Intent
+    let intent = new Intent(Intent.ACTION_VIEW);
+    intent.setDataAndType(uri, "image/*");
+    // 添加必要的权限标志
+    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+    // 指定使用系统默认的图库应用
+    intent.setPackage("com.android.gallery3d");  // 系统默认图库的包名
+    // 如果上面的包名不生效，可以尝试：
+    // intent.setPackage("com.google.android.apps.photos");  // Google Photos
+    // intent.setPackage("com.sec.android.gallery3d");  // 三星图库
+    // intent.setPackage("com.miui.gallery");  // 小米图库
+
+    // 启动图片查看Activity
+    // context.startActivity(intent);
+    // 等待界面加载
+    sleep(3000);
+
+    return targetPath
+
+
 }
-sleep(5000)
-back()
+
+
+//删除本地临时文件夹
+function deleteNestMediaFile(tempFloder){
+    if(files.exists(tempFloder)) {
+        files.removeDir(tempFloder);
+        console.log("文件夹删除成功");
+    } else {
+        console.log("文件夹不存在");
+    }
+}
+
+
+//点击个人头像
+function click_update_profile_head_image(){
+
+    sleep(random(2000, 5000))
+    var allImages = className("android.widget.ImageView").find();
+    if (allImages && allImages.size() > 0) {
+        for (var i = 0; i < allImages.size(); i++) {
+            var img = allImages.get(i);
+            if (img) {
+                console.log("准备找Image控件: img ID = " + img.id() );
+
+                if (img.id() == (TikTokPackageName +":id/fzc")) {
+                    // 正确调用bounds()方法并点击
+                    taskLog("找到Image控件: 个人头像修改按钮" );
+
+                    var bounds = img.bounds();
+                    click(bounds.centerX(), bounds.centerY());
+                    // 找到并点击后可以跳出循环
+                    break;
+                }
+            }
+        }
+    }
+    sleep(random(2000, 5000))
+}
 
 
 
+//点击个人头像的第二个选项 - 从图片库中选择
+function click_update_profile_head_image_from_photos(){
 
-//******************************************************************
-//******************************************************************
-//******************************************************************
+    sleep(random(2000, 5000))
+    var allImages = className("android.widget.TextView").find();
+    if (allImages && allImages.size() > 0) {
+        for (var i = 0; i < allImages.size(); i++) {
+            var img = allImages.get(i);
+            if (img) {
+                
+                // 检查ID是否为"u3"
+                if (img.id() == (TikTokPackageName +":id/u3")) {
+                    // 正确调用bounds()方法并点击
+                    if(i == 1){
+                        taskLog("找到Image控件: 从图片库中选择" );
+                    
+                        var bounds = img.bounds();
+                        click(bounds.centerX(), bounds.centerY());
+                        // 找到并点击后可以跳出循环
+                        break;
+
+                    }
+                    
+                }
+            }
+        }
+    }
+    sleep(random(2000, 5000))
+}
+
+/**
+ * 通过指定按钮选择图片
+ * @param {string} fileName 要选择的图片文件名
+ */
+function selectImageByButton(fileName) {
+    // 首先找到图片的完整路径
+    // const possiblePaths = [
+    //     "/storage/emulated/0/DCIM/Camera/",
+    //     "/storage/emulated/0/Pictures/",
+    //     "/storage/emulated/0/DCIM/Screenshots/",
+    //     "/storage/emulated/0/Download/"
+    // ];
+    
+    // // 查找图片完整路径
+    // let imagePath = null;
+    // for (let basePath of possiblePaths) {
+    //     let fullPath = basePath + fileName;
+    //     console.error("寻找指定图片：" + fullPath);
+    //     console.error("寻找指定图片结果：" + files.exists(fullPath));
+    //     if (files.exists(fullPath)) {
+    //         imagePath = fullPath;
+    //         break;
+    //     }
+    // }
+
+    // let imagePath = null;
+    // if (files.exists(fileName)) {
+    //     imagePath = fileName;
+    // }
+    
+    // if (!imagePath) {
+    //     console.error("未找到指定图片：" + fileName);
+    //     toast("未找到指定图片：" + fileName);
+    //     return;
+    // }
+
+
+    // //开始拷贝一份，到本地自己的文件夹来单独处理，不处理原来的图片，
+    // // 创建文件夹(如果不存在)
+    // const newFolder = "/storage/emulated/0/Download/" + A_NEST_TikTok_MEDIA;  // 替换成你想要的文件夹路径
+    // if(!files.exists(newFolder)){
+    //     files.ensureDir(newFolder);
+    //     console.log("创建文件夹: " + newFolder);
+    // }
+    // // 目标图片路径(在新文件夹中)
+    // const targetFileName = files.getName(imagePath);
+    // const targetPath = newFolder + "/" + targetFileName;
+    // console.log("新图片文件的绝对路径: " + targetPath);
+    // // 复制图片文件
+    // try {
+    //     files.copy(imagePath, targetPath);
+    //     console.log("复制成功!");
+    //     console.log("新图片路径: " + targetPath);
+    // } catch(e) {
+    //     console.error("复制失败: " + e);
+    // }
+
+    // sleep(3000);
+
+
+    // refreshMedia(newFolder)
+    // sleep(10000);
+
+
+
+    
+    // // 创建文件对象并获取URI
+    // let file = new java.io.File(targetPath);
+    // let uri = app.getUriForFile(targetPath);
+    
+    // // 创建打开图片的 Intent
+    // let intent = new Intent(Intent.ACTION_VIEW);
+    // intent.setDataAndType(uri, "image/*");
+    // // 添加必要的权限标志
+    // intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    // intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+    // // 指定使用系统默认的图库应用
+    // intent.setPackage("com.android.gallery3d");  // 系统默认图库的包名
+    // // 如果上面的包名不生效，可以尝试：
+    // // intent.setPackage("com.google.android.apps.photos");  // Google Photos
+    // // intent.setPackage("com.sec.android.gallery3d");  // 三星图库
+    // // intent.setPackage("com.miui.gallery");  // 小米图库
+
+    try {
+        // 启动图片查看Activity
+        // context.startActivity(intent);
+        // 等待界面加载
+        // sleep(3000);
+        // back()
+        // sleep(3000);
+
+        //点击顶部按钮：全部
+        //TextView全部：fullId("com.ss.android.ugc.trill:id/rcg")
+        var allTextView = className("android.widget.TextView").find();
+        taskLog("找到allTextView: 全部 = "  + allTextView.size());
+        if (allTextView && allTextView.size() > 0) {
+            for (var i = 0; i < allTextView.size(); i++) {
+                var textView = allTextView.get(i);
+                if (textView) {
+                    taskLog("找到textView控件-Text：" + textView.text());
+                    
+                    if (textView.id() == (TikTokPackageName +":id/rcg")) {
+                        // 正确调用bounds()方法并点击
+                        taskLog("找到顶部控件: 全部" );
+                        var bounds = textView.bounds();
+                        click(bounds.centerX(), bounds.centerY());
+                        // 找到并点击后可以跳出循环
+                        break;
+                    }
+                }
+            }
+        }
+
+        sleep(3000)
+
+        //点击对应的targetPath：A_NEST_TikTok_MEDIA
+        var allListTextView = className("android.widget.TextView").find();
+        taskLog("找到allListTextView: 全部 = "  + allListTextView.size());
+        if (allListTextView && allListTextView.size() > 0) {
+            for (var i = 0; i < allListTextView.size(); i++) {
+                var listTextView = allListTextView.get(i);
+                if (listTextView) {
+                    taskLog("找到listTextView控件-Text：" + listTextView.text());
+                    
+                    // 检查text是否为"A_NEST_TikTok_MEDIA"
+                    if (listTextView.text() == "A_NEST_TikTok_MEDIA") {
+                        // 正确调用bounds()方法并点击
+                        taskLog("找到对应目录" );
+                        var bounds = listTextView.bounds();
+                        click(bounds.centerX(), bounds.centerY());
+                        // 找到并点击后可以跳出循环
+                        break;
+                    }
+                }
+            }
+        }else{
+            return
+        }
+
+
+        sleep(3000);
+        
+        // 查找并点击指定按钮（其实只需要点击第一个图片的按钮就行了，因为肯定就是第一张图片）
+        let selectButton = className("android.widget.Button")
+            .id("com.ss.android.ugc.trill:id/gkg")
+            .findOne(5000);  // 等待最多5秒
+            
+        if (selectButton) {
+            // 点击选择按钮
+            selectButton.click();
+            console.log("成功点击选择按钮");
+
+            sleep(5000)
+            //点击下一步
+            id("oy5").findOne().click()
+            sleep(5000)
+            //点击储存并发布
+            id("qke").findOne().click()
+            sleep(30000) //上传需要耗时
+
+            //删除临时媒体文件夹
+            deleteNestMediaFile(newFolder)
+
+            return true;
+        } else {
+            console.error("未找到选择按钮");
+            return false;
+        }
+        
+    } catch (e) {
+        console.error("操作失败：" + e);
+        return false;
+    }
+}
+
+// 添加重试机制的版本
+function selectImageWithRetry(fileName) {
+    var maxRetries = 1
+    for (let i = 0; i < maxRetries; i++) {
+        console.log("尝试第" + (i + 1) + "次选择图片");
+        
+        if (selectImageByButton(fileName)) {
+            return true;
+        }
+        
+        // 如果失败，等待一段时间后重试
+        sleep(2000);
+    }
+    
+    console.error("在" + maxRetries + "次尝试后仍未能选择图片");
+    return false;
+}
+
+
+// 检查完整路径
+function checkPath(fileName) {
+    const path = "/storage/emulated/0/Download/" + fileName;
+    console.log("checkPath 完整路径: " + path);
+    console.log("checkPath 文件是否存在1111: " + files.exists(path));
+    let file = new java.io.File(path);
+    console.log("checkPath 文件是否存在2222: " + file.exists());
+
+    // 列出目录下所有文件
+    // let fileList = files.listDir("/storage/emulated/0/Download/");
+    // console.log("目录下的文件: " + fileList.join("\n"));
+}
+
+// 遍历并打印出实际的文件名
+function listAllFiles(dirPath) {
+    let files = new java.io.File(dirPath).listFiles();
+    for(let file of files) {
+        console.log("文件名: " + file.getName());
+        // 打印文件名的每个字符的编码
+        let name = file.getName();
+        for(let i = 0; i < name.length; i++) {
+            console.log(name[i] + ": " + name.charCodeAt(i));
+        }
+    }
+}
+
+function debugImageFind(fileName) {
+    const possiblePaths = [
+        // "/storage/emulated/0/DCIM/Camera/",
+        // "/storage/emulated/0/Pictures/",
+        // "/storage/emulated/0/DCIM/Screenshots/",
+        "/storage/emulated/0/Download/"
+    ];
+    
+    // 使用 java.io.File 来检查权限
+    function checkFileAccess(path) {
+        let file = new java.io.File(path);
+        console.log("路径: " + path);
+        console.log("存在: " + file.exists());
+        console.log("是文件夹: " + file.isDirectory());
+        console.log("可读: " + file.canRead());
+        
+        if (file.isDirectory()) {
+            try {
+                let fileList = files.listDir(path);
+                console.log("文件列表:");
+                fileList.forEach(f => console.log("- " + f));
+            } catch (e) {
+                console.log("列举文件失败: " + e);
+            }
+        }
+    }
+    
+    // 检查每个可能的路径
+    for (let basePath of possiblePaths) {
+        console.log("\n debugImageFind - 检查目录: " + basePath);
+        checkFileAccess(basePath);
+        
+        // 检查完整文件路径
+        let fullPath = basePath + fileName;
+        console.log("\n debugImageFind - 检查文件: " + fullPath);
+        checkFileAccess(fullPath);
+    }
+}
+
+// 刷新指定路径的媒体库
+function refreshMedia(path) {
+    toast("开始刷新媒体库，用时5秒钟....");
+    // 发送媒体扫描广播
+    media.scanFile(path);
+    // 等待扫描完成
+    sleep(5000);
+    toast("媒体库刷新完成，开始下一步任务...");
+}
+
+// 刷新整个存储的媒体库
+function refreshAllMedia() {
+    toast("开始刷新媒体库，用时5秒钟....");
+    // 获取外部存储路径
+    let storage = files.externalStorage();
+    // 发送媒体扫描广播
+    media.scanFile(storage);
+    // 等待扫描完成
+    sleep(5000);
+    toast("媒体库刷新完成，开始下一步任务...");
+}
+
+function checkDownloadFiles(targetFileName) {
+    const DOWNLOAD_PATH = "/storage/emulated/0/Download/";
+    
+    // 检查文件是否包含目标文件名（不区分大小写）
+    function checkFileName(fileName, targetName) {
+        return fileName.toLowerCase().includes(targetName.toLowerCase());
+    }
+    
+    // 详细检查单个文件
+    function examineFile(path) {
+        let file = new java.io.File(path);
+        return {
+            name: file.getName(),
+            path: file.getAbsolutePath(),
+            size: file.length(),
+            lastModified: new Date(file.lastModified()),
+            isFile: file.isFile(),
+            isDirectory: file.isDirectory(),
+            canRead: file.canRead()
+        };
+    }
+    
+    console.log("\n========= 开始检查Download目录 =========");
+    console.log("checkDownloadFiles 目标文件名: " + targetFileName);
+    console.log("checkDownloadFiles 检查路径: " + DOWNLOAD_PATH);
+    
+    try {
+        // 检查目录本身
+        let downloadDir = new java.io.File(DOWNLOAD_PATH);
+        if (!downloadDir.exists()) {
+            console.log("Download目录不存在！");
+            return;
+        }
+        
+        console.log("\n=== 目录信息 ===");
+        console.log("checkDownloadFiles 目录是否可读: " + downloadDir.canRead());
+        console.log("checkDownloadFiles 是否是目录: " + downloadDir.isDirectory());
+        
+        // 获取所有文件
+        let fileList = files.listDir(DOWNLOAD_PATH);
+        console.log("\n=== 文件列表（共" + fileList.length + "个文件）===");
+        
+        // 遍历所有文件
+        let foundFiles = [];
+        fileList.forEach((fileName, index) => {
+            let fullPath = DOWNLOAD_PATH + fileName;
+            let fileInfo = examineFile(fullPath);
+            
+            // 打印所有文件信息
+            // console.log("\n文件 " + (index + 1) + ":");
+            // console.log("- 名称: " + fileInfo.name);
+            // console.log("- 路径: " + fileInfo.path);
+            // console.log("- 大小: " + (fileInfo.size / 1024).toFixed(2) + " KB");
+            // console.log("- 最后修改: " + fileInfo.lastModified.toLocaleString());
+            // console.log("- 可读: " + fileInfo.canRead);
+
+            // 检查是否匹配目标文件名
+            console.log("- fileName名称: " + fileInfo.name);
+            console.log("- targetFileName名称: " + targetFileName);
+            console.log("- checkFileName结果： "+checkFileName(fileName, targetFileName) );
+
+            if (checkFileName(fileName, targetFileName)) {
+                foundFiles.push(fileInfo);
+            }
+        });
+        
+        // 输出匹配结果
+        console.log("\n=== 查找结果 ===");
+        if (foundFiles.length > 0) {
+            console.log("找到" + foundFiles.length + "个匹配文件：");
+            foundFiles.forEach((file, index) => {
+                console.log("\n匹配文件 " + (index + 1) + ":");
+                console.log("- 完整名称: " + file.name);
+                console.log("- 完整路径: " + file.path);
+                console.log("- 文件大小: " + (file.size / 1024).toFixed(2) + " KB");
+                console.log("- 最后修改: " + file.lastModified.toLocaleString());
+                console.log("- 存在判断: " + files.exists(file.path));
+            });
+        } else {
+            console.log("未找到匹配的文件！");
+        }
+        
+    } catch (e) {
+        console.log("\n*** 发生错误 ***");
+        console.log("错误信息: " + e);
+        console.log("错误栈: " + e.stack);
+    }
+    
+    console.log("\n========= 检查完成 =========");
+}
+
 
 
 
@@ -738,6 +1203,10 @@ function find_textview_text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US)
 
 
 try {
+
+    refreshMedia("/storage/emulated/0/Download/")
+
+    var imageTempPath = transferHeadImageToNest(TT_PROFILE_HEAD_IMAGE)
     
     close_friend_suggest()
 
@@ -746,6 +1215,28 @@ try {
 
     //点击：text("Edit profile")
     find_textview_text_base("编辑主页","編輯個人資料","Edit profile")
+
+
+    
+    //点击头像
+    //className("android.widget.ImageView")
+    //id("fzc").findOne().click()
+    click_update_profile_head_image()
+
+
+
+
+    //className("android.widget.TextView")
+    //fullId("com.ss.android.ugc.trill:id/u3")
+    click_update_profile_head_image_from_photos()
+
+
+
+    //选中图片 
+    selectImageWithRetry(imageTempPath) 
+
+    sleep(3000)
+
 
 
     //点击：text("Name")
@@ -765,6 +1256,60 @@ try {
 
     sleep(3000)
     back()
+
+
+    //点击：text("Bio")
+    find_textview_text_base("个人简介","個人簡介","Bio")
+    //点击：EditText，输入Bio
+    sleep(5000) //延迟5S，否则可能找不到EditText
+    var search_Bio_edits = className("android.widget.EditText").find();
+        taskLog("找到BIO："+ search_Bio_edits.size());
+        for(var i = 0; i < search_Bio_edits.size(); i++) {
+            var search_Bio_edit = search_Bio_edits.get(i);
+            if(search_Bio_edit) {
+                taskLog("找到TextView控件-Text："+ search_Bio_edit.text());
+                taskLog("准备输入BIO："+ TT_PROFILE_BIO);
+
+                sleep(1000)
+                search_Bio_edit.setText(TT_PROFILE_BIO)
+                sleep(5000)
+
+            }
+        }
+    sleep(5000)
+    find_btn_Text_base("保存","儲存","Save")
+    sleep(5000)
+
+
+
+    //点击：text("Username")
+    find_textview_text_base("用户名","使用者名稱","Username")
+    //点击：EditText，输入Username
+    sleep(5000) //延迟5S，否则可能找不到EditText
+    var search_Username_edits = className("android.widget.EditText").find();
+        for(var i = 0; i < search_Username_edits.size(); i++) {
+            var search_Username_edit = search_Username_edits.get(i);
+            if(search_Username_edit) {
+                taskLog("找到TextView控件-Text："+ search_Username_edit.text());
+                sleep(1000)
+                search_Username_edit.setText(TT_PROFILE_USERNAME)
+                sleep(3000)
+
+            }
+        }
+    sleep(5000)
+    var findText_result = find_btn_Text_base("保存","儲存","Save")
+    if(findText_result) {
+        sleep(3000)
+        find_btn_Text_base("设置用户名","設定使用者名稱","Set username")
+        sleep(3000)
+        back()
+    }
+    sleep(5000)
+    back()
+
+
+
 } catch (e) {
     handleError(e);
 }
