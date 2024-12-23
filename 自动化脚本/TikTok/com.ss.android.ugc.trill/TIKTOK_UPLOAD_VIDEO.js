@@ -1298,14 +1298,7 @@ try {
 
     //选中图片 
     selectImageWithRetry(imageTempPath) 
-    sleep(300000)
-
-
-
-
-    
-
-
+    sleep(30000)
 
 
 } catch (e) {
