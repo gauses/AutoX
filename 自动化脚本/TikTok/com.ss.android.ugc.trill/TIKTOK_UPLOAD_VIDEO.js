@@ -341,7 +341,8 @@ function selectImageByButton(fileName) {
 
 
             //删除临时媒体文件夹
-            deleteNestMediaFile(newFolder)
+            const delFolder = "/storage/emulated/0/Download/" + A_NEST_TikTok_MEDIA;  // 替换成你想要的文件夹路径
+            deleteNestMediaFile(delFolder)
 
             return true;
         } else {
