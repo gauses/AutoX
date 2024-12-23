@@ -306,7 +306,8 @@ function selectImageByButton(fileName) {
         let selectButton = className("android.widget.Button")
             .id("com.ss.android.ugc.trill:id/gkg")
             .findOne(5000);  // 等待最多5秒
-            
+
+  
         if (selectButton) {
             // 点击选择按钮
             selectButton.click();
@@ -321,13 +322,23 @@ function selectImageByButton(fileName) {
             //点击下一步
             id("jtf").findOne(3000).click()
 
+
+            //可能会出现一个下拉框，提示二次创作：text("確定")
+            find_btn_Text_base("確定", "确定", "OK")
+
             sleep(3000)
             click_Video_desc(TT_UPLOAD_VIDEO_DESC)
 
             sleep(5000)
             //点击Post
             id("luk").findOne().click()
+            sleep(5000)
+
+            //可能会出现一个下拉框，提示是否添加到主屏幕:text("ADD TO HOME SCREEN")
+            find_btn_Text_base("添加到主屏幕", "新增到主螢幕", "ADD TO HOME SCREEN")
+
             sleep(30000) //上传需要耗时
+
 
             //删除临时媒体文件夹
             deleteNestMediaFile(newFolder)
@@ -1236,6 +1247,31 @@ function click_Video_desc(commentText){
     }
 }
 
+//可能会出现权限弹窗，如果弹出，那么允许
+function click_permission_allow(){
+    // 等待权限弹窗出现
+    let allow_zh = textContains("允许").findOne(3000);
+    if(allow_zh){
+        // 点击"允许"按钮
+        allow_zh.click();
+    }
+
+    // 等待权限弹窗出现
+    let allow_tw = textContains("允許").findOne(3000);
+    if(allow_tw){
+        // 点击"允许"按钮
+        allow_tw.click();
+    }
+
+    // 等待权限弹窗出现
+    let allow_en = textContains("ALLOW").findOne(3000);
+    if(allow_en){
+        // 点击"允许"按钮
+        allow_en.click();
+    }
+
+}
+
 
 try {
 
@@ -1255,10 +1291,13 @@ try {
     click_choose_video_framelayout()
     sleep(3000)
 
+    //可能会出现权限提示，直接允许
+    click_permission_allow()    
+    sleep(3000)
+
 
     //选中图片 
     selectImageWithRetry(imageTempPath) 
-
     sleep(300000)
 
 
