@@ -1,8 +1,13 @@
 
 
 
-D:\AndroidProject\AutoX\自动化脚本\SyncCookie_修改插件_0331>adb push test_fb_cookie_01.js /sdcard/Download
+D:\AndroidProject\AutoX\自动化脚本\SyncCookie_修改插件_0331>adb push .\NEST_FB_SYNC_COOKIE.js  /sdcard/Download
 
 
 
-D:\AndroidProject\AutoX\自动化脚本\SyncCookie_修改插件_0331>adb shell am start -W -n org.autojs.autoxjs/org.autojs.autojs.ui.main.MainActivity --es "net_script_name" "test_fb_cookie_01"
+D:\AndroidProject\AutoX\自动化脚本\SyncCookie_修改插件_0331> adb shell am start -W -n org.autojs.autoxjs/org.autojs.autojs.ui.main.MainActivity --es "net_script_name" "NEST_FB_SYNC_COOKIE"
+
+
+
+
+adb shell pm clear com.kiwibrowser.browser

@@ -1,4 +1,3 @@
-
 //Date:11-26  11：03
 // 导入SimpleDateFormat类
 importClass(java.text.SimpleDateFormat);
@@ -51,12 +50,12 @@ app.startActivity({
 
 sleep(3000);
 
-//可能部分设备弹出“NestBrowser不能运行在没有GMS的设备”的弹出框，需要点击确定
+//可能部分设备弹出"NestBrowser不能运行在没有GMS的设备"的弹出框，需要点击确定
 if (id('button1').exists()) {
   id('button1').findOne(3000).click();
 }
 
-//点击欢迎界面的“continue”按钮
+//点击欢迎界面的"continue"按钮
 try {
     sleep(3000);
     className('androidx.recyclerview.widget.RecyclerView')
@@ -65,8 +64,8 @@ try {
       .forEach((child) => {
         var target = child.findOne(id('signin_fre_continue_button'));
         //console.log
-        console.log('点击欢迎界面的“continue”按钮');
-        toast('点击欢迎界面的“continue”按钮');
+        console.log('点击欢迎界面的"continue"按钮');
+        toast('点击欢迎界面的"continue"按钮');
         //第一次打开
         if (target) {
           target.click();
@@ -78,8 +77,10 @@ try {
 
 /////////////////////////////正式开始/////////////////////////////
 
+
 //加载插件拓展
 load_kiwi_extensions_from_NetWork();
+
 
 //修改Kiwi的Cookie
 export_COOKIE_TO_Kiwi();
@@ -96,7 +97,7 @@ function load_kiwi_extensions_from_NetWork() {
   app.startActivity(COOKIE_Intent);
   sleep(6000);
 
-  //1、点击界面的“添加至 Chrome”按钮
+  //1、点击界面的"添加至 Chrome"按钮
   add_extension_to_chrome();
 
 
@@ -107,6 +108,11 @@ function load_kiwi_extensions_from_NetWork() {
   sleep(1000);
   waitFor_extension_to_chrome();
   sleep(2000);
+
+  //4.开始移出悬浮窗
+  toast('开始移出悬浮窗...');
+  console.clear();
+  console.hide();
 }
 
 //点击界面的"添加至 Chrome"按钮
@@ -145,7 +151,7 @@ function find_btn_Text_base(text1, text2, text3) {
   }
 }
 
-//等待界面的“从Chrome中移除”按钮已经安装完成，界面元素会变化
+//等待界面的"从Chrome中移除"按钮已经安装完成，界面元素会变化
 function waitFor_extension_to_chrome() {
   toast('开始检查插件拓展是否已经安装完成...');
 
@@ -162,28 +168,28 @@ function waitFor_extension_to_chrome() {
       .findOne(1000);
 
     if (button1 && button1.enabled()) {
-      console.log('插件安装完成，此时界面显示‘从Chrome中移除’');
-      toast('插件安装完成，此时界面显示‘从Chrome中移除’');
+      console.log('插件安装完成，此时界面显示“从Chrome中移除”');
+      toast('插件安装完成，此时界面显示“从Chrome中移除”');
       break; // 跳出循环
     } else if (button2 && button2.enabled()) {
-      console.log('插件安装完成，此时界面显示‘Remove from Chrome’');
-      toast('插件安装完成，此时界面显示‘Remove from Chrome’');
+      console.log('插件安装完成，此时界面显示“Remove from Chrome”');
+      toast('插件安装完成，此时界面显示“Remove from Chrome”');
       break; // 跳出循环
     } else if (button3 && button3.enabled()) {
-      console.log('插件安装完成，此时界面显示‘从Chrome中移除’');
-      toast('插件安装完成，此时界面显示‘从Chrome中移除’');
+      console.log('插件安装完成，此时界面显示“从Chrome中移除”');
+      toast('插件安装完成，此时界面显示“从Chrome中移除”');
       break; // 跳出循环
     }
 
     // 如果超时后仍未找到控件，重新开始循环
-    toast('检查‘从Chrome中移除’按钮超时，重新检查...');
+    toast('检查“从Chrome中移除”按钮超时，重新检查...');
   }
 }
 
-//点击界面的“添加至 Chrome”按钮
+//点击界面的"添加至 Chrome"按钮
 function add_extension_to_chrome() {
-    toast('开始执行点击“添加至 Chrome”按钮');
-    console.log('开始执行点击“添加至 Chrome”按钮');
+    toast('开始执行点击"添加至 Chrome"按钮');
+    console.log('开始执行点击"添加至 Chrome"按钮');
 
     find_btn_Text_base("添加至 Chrome","Add to Chrome","加到 Chrome")//text("關注")
 
@@ -191,7 +197,7 @@ function add_extension_to_chrome() {
 
 //点击popup界面positive_button
 function click_pop_extension_to_chrome() {
-  toast('开始执行点击popup界面的“确认”按钮');
+  toast('开始执行点击popup界面的"确认"按钮');
 
   sleep(2000);
   while (true) {
@@ -227,10 +233,13 @@ function export_COOKIE_TO_Kiwi() {
   //2.把Cookie的JSON转换成Header
   var cookieJsonFilePath = '/data/local/tmp/cookies.txt';
   toast('读取云端cookieJsonFilePath = ' + cookieJsonFilePath);
-  var NestCookie = jsonCookiesToHeader(cookieJsonFilePath);
 
   //直接这样set，是OK的；
+  var NestCookie = jsonCookiesTEST(cookieJsonFilePath);
+  taskLog('读取jsonCookiesTEST云端Cookie = ' + NestCookie);
   toast('读取云端Cookie = ' + NestCookie);
+
+ 
 
   //3.右侧抽屉页面滑动到底部
   toast('开始打开右侧按钮Button...');
@@ -249,7 +258,7 @@ function export_COOKIE_TO_Kiwi() {
   //5.Cookiedough的按钮整体布局
   var UA_Text = id('menu_item_text')
     .className('android.widget.TextView')
-    .text('Cookiedough')
+    .text('Cookie Editor - Cookie Manager')
     .findOne();
   var UA_Text_centerX = UA_Text.bounds().centerX();
   var UA_Text_centerY = UA_Text.bounds().centerY();
@@ -257,22 +266,72 @@ function export_COOKIE_TO_Kiwi() {
   toast('点击往下滑动菜单列表，滑到最下面...');
   sleep(3000);
 
-  //5.开始填入cookie并保存
-  var object = className('android.widget.EditText').find();
-  if (!object.empty()) {
-    object.forEach(function (currentValue, index) {
-      currentValue.setText(NestCookie);
-      toast('找到设置Cookie的编辑框，开始填入云端Cookie...');
-    });
-  } else {
-    toast('没找到可以设置Cookie的编辑框');
-  }
-  sleep(3000);
+  //6.开始移出悬浮窗
+  toast('开始移出悬浮窗...');
+  console.clear();
+  console.hide();
 
-  //6.保存
-  className('android.widget.Button').text('Set Cookies').findOne().click(); //保存
-  toast('点击底部保存按钮....');
-  sleep(8000);
+
+  //7.点击"Import"
+  sleep(5000);
+  className("android.widget.Button").text("Import").findOne().click();
+  sleep(5000);
+  className("android.view.MenuItem").text("Import from clipboard").findOne().click();
+  sleep(5000);
+  //输入cookie的输入框
+  var allButtons = className("android.widget.EditText").find();
+    if (allButtons && allButtons.size() > 0) {
+        for (var i = 0; i < allButtons.size(); i++) {
+            var button = allButtons.get(i);
+            if (button) {
+                //taskLog("找到button控件-Text：" + button.text() + ";ID = " + button.id());
+                button.setText(NestCookie)
+            }
+        }
+    }
+    sleep(5000);
+    var Buttons = className("android.widget.Button").find();
+    if (Buttons && Buttons.size() > 0) {
+        var importCount = 1;
+        for (var i = 0; i < Buttons.size(); i++) {
+            var button = Buttons.get(i);
+            if (button) {
+                //taskLog("找到button控件-Text：" + button.text() + ";ID = " + button.id());
+                if (button.text() === "Import") {
+                    importCount++;
+                    if (importCount === 2) {
+                        //taskLog("找到第二个Import按钮，准备点击");
+                        button.click();
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+
+    //8.点击"Allow cookies"
+    click_pop_extension_Positive_Button()
+    sleep(3000);
+    console.show()
+    var Buttons = className("android.widget.Button").find();
+    if (Buttons && Buttons.size() > 0) {
+        for (var i = 0; i < Buttons.size(); i++) {
+            var button = Buttons.get(i);
+            if (button) {
+                taskLog("找到button控件-Text：" + button.text() + ";ID = " + button.id());
+                if (button.text() === "Refresh") {
+                      button.click();
+                      break;
+                  
+                }
+            }
+        }
+    }
+
+
+    sleep(10000)
+
 
   //7.再次点开Facebook.com
   let fbIntent = {
@@ -289,6 +348,7 @@ function export_COOKIE_TO_Kiwi() {
     '如果较长时间卡住在Facebook首页的启动页面，请耐心等待几秒钟，不需要操作，会自动刷新到首页面....',
   );
 }
+
 
 //判断右侧Listview底部Cookiedough控件是否存在，有可能打开Facebook.com太快，导致可能Cookiedough还没有安装完成
 function judgeCookiedoughExists() {
@@ -335,64 +395,32 @@ function judgeCookiedoughExists() {
   }
 }
 
-//将Cookie的JSON转换成Header-String类型
-function jsonCookiesToHeader(jsonFilePath) {
+function jsonCookiesTEST(jsonFilePath) {
   var jsonData = '';
   try {
-    // 读取 JSON 文件内容
     jsonData = files.read(jsonFilePath);
-    const cookiesData = JSON.parse(jsonData);
-
-    // 构建 Header 字符串
-    let headerString = '';
-    cookiesData.forEach((cookie) => {
-      //移除__Secure-ENID，否则导入FB会失败
-      // if (cookie.domain.includes('facebook') || cookie.domain.includes('fb')) {
-      if (cookie.domain.includes('facebook')) {
-        //log:Failed to parse or set cookie named "__Secure-ENID"
-        //                if(cookie.name != "__Secure-ENID"){
-        //                    headerString += `${cookie.name}=${cookie.value}; `;
-        //                }
-        //1009:只保留必要的几个参数，否则打开之后，有几率会打开空白
-        if (cookie.name == 'c_user') {
-          headerString += `${cookie.name}=${cookie.value}; `;
-        }
-        if (cookie.name == 'sb') {
-          headerString += `${cookie.name}=${cookie.value}; `;
-        }
-        if (cookie.name == 'datr') {
-          headerString += `${cookie.name}=${cookie.value}; `;
-        }
-        if (cookie.name == 'ps_n') {
-          headerString += `${cookie.name}=${cookie.value}; `;
-        }
-        if (cookie.name == 'ps_l') {
-          headerString += `${cookie.name}=${cookie.value}; `;
-        }
-        if (cookie.name == 'xs') {
-          headerString += `${cookie.name}=${cookie.value}; `;
-        }
-        if (cookie.name == 'fr') {
-          headerString += `${cookie.name}=${cookie.value}; `;
-        }
-
-        //卖号不包含该参数
-        if (cookie.name == 'wd') {
-          headerString += `${cookie.name}=${cookie.value}; `;
-        }
-        if (cookie.name == 'dpr') {
-          headerString += `${cookie.name}=${cookie.value}; `;
-        }
-      }
-    });
-
-    // 移除末尾多余的分号和空格
-    headerString = headerString.trim().slice(0, -1);
-
-    return headerString;
   } catch (error) {
-    toast('Error reading COOKIE JSON file:', error);
-    return '';
+  }
+  return jsonData;
+}
+
+
+//导入cookie之后，点击popup界面positive_button
+function click_pop_extension_Positive_Button() {
+  toast('开始执行点击popup界面的"确认"按钮');
+
+  sleep(2000);
+  while (true) {
+    // 查找控件
+    var positive_button = id('positive_button').findOne();
+    if (positive_button && positive_button.enabled()) {
+      sleep(1000);
+      positive_button.click();
+      toast('positive_button控件被点击！');
+      break; // 跳出循环
+    }
+    // 如果超时后仍未找到控件，重新开始循环
+    toast('检查positive_button控件超时，重新检查...');
   }
 }
 
@@ -491,10 +519,10 @@ function forceStop_netbrowser(){
               // return;
           }
       } else {
-          taskLog("未找到可点击的‘強制停止’按钮");
+          taskLog("未找到可点击的'強制停止'按钮");
       }
   } else {
-      taskLog("未找到‘解除安裝’按钮");
+      taskLog("未找到'解除安裝'按钮");
   }
   sleep(3000)
 
@@ -510,10 +538,10 @@ function forceStop_netbrowser(){
               taskLog("已经强行停止")
           }
       } else {
-          taskLog("未找到可点击的‘强行停止’按钮");
+          taskLog("未找到可点击的'强行停止'按钮");
       }
   } else {
-      taskLog("未找到‘强行停止’按钮");
+      taskLog("未找到'强行停止'按钮");
   }
 
   sleep(1000)
@@ -531,10 +559,10 @@ function forceStop_netbrowser(){
               taskLog("已经Force stop")
           }
       } else {
-          taskLog("未找到可点击的‘Force stop’按钮");
+          taskLog("未找到可点击的'Force stop'按钮");
       }
   } else {
-      taskLog("未找到‘Force stop’按钮");
+      taskLog("未找到'Force stop'按钮");
   }
   sleep(1000)
 
@@ -551,10 +579,10 @@ function forceStop_netbrowser(){
               sleep(1000)
           }
       } else {
-          taskLog("未找到可点击的‘FORCE STOP’按钮");
+          taskLog("未找到可点击的'FORCE STOP'按钮");
       }
   } else {
-      taskLog("未找到‘FORCE STOP’按钮");
+      taskLog("未找到'FORCE STOP'按钮");
   }
   sleep(1000)
 
