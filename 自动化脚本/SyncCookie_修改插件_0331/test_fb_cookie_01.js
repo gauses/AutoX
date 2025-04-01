@@ -1,4 +1,3 @@
-
 //Date:11-26  11：03
 // 导入SimpleDateFormat类
 importClass(java.text.SimpleDateFormat);
@@ -51,12 +50,12 @@ app.startActivity({
 
 sleep(3000);
 
-//可能部分设备弹出“NestBrowser不能运行在没有GMS的设备”的弹出框，需要点击确定
+//可能部分设备弹出"NestBrowser不能运行在没有GMS的设备"的弹出框，需要点击确定
 if (id('button1').exists()) {
   id('button1').findOne(3000).click();
 }
 
-//点击欢迎界面的“continue”按钮
+//点击欢迎界面的"continue"按钮
 try {
     sleep(3000);
     className('androidx.recyclerview.widget.RecyclerView')
@@ -65,8 +64,8 @@ try {
       .forEach((child) => {
         var target = child.findOne(id('signin_fre_continue_button'));
         //console.log
-        console.log('点击欢迎界面的“continue”按钮');
-        toast('点击欢迎界面的“continue”按钮');
+        console.log('点击欢迎界面的"continue"按钮');
+        toast('点击欢迎界面的"continue"按钮');
         //第一次打开
         if (target) {
           target.click();
@@ -98,7 +97,7 @@ function load_kiwi_extensions_from_NetWork() {
   app.startActivity(COOKIE_Intent);
   sleep(6000);
 
-  //1、点击界面的“添加至 Chrome”按钮
+  //1、点击界面的"添加至 Chrome"按钮
   add_extension_to_chrome();
 
 
@@ -112,8 +111,8 @@ function load_kiwi_extensions_from_NetWork() {
 
   //4.开始移出悬浮窗
   toast('开始移出悬浮窗...');
-  // console.clear();
-  // console.hide();
+  console.clear();
+  console.hide();
 }
 
 //点击界面的"添加至 Chrome"按钮
@@ -152,7 +151,7 @@ function find_btn_Text_base(text1, text2, text3) {
   }
 }
 
-//等待界面的“从Chrome中移除”按钮已经安装完成，界面元素会变化
+//等待界面的"从Chrome中移除"按钮已经安装完成，界面元素会变化
 function waitFor_extension_to_chrome() {
   toast('开始检查插件拓展是否已经安装完成...');
 
@@ -169,28 +168,28 @@ function waitFor_extension_to_chrome() {
       .findOne(1000);
 
     if (button1 && button1.enabled()) {
-      console.log('插件安装完成，此时界面显示‘从Chrome中移除’');
-      toast('插件安装完成，此时界面显示‘从Chrome中移除’');
+      console.log('插件安装完成，此时界面显示“从Chrome中移除”');
+      toast('插件安装完成，此时界面显示“从Chrome中移除”');
       break; // 跳出循环
     } else if (button2 && button2.enabled()) {
-      console.log('插件安装完成，此时界面显示‘Remove from Chrome’');
-      toast('插件安装完成，此时界面显示‘Remove from Chrome’');
+      console.log('插件安装完成，此时界面显示“Remove from Chrome”');
+      toast('插件安装完成，此时界面显示“Remove from Chrome”');
       break; // 跳出循环
     } else if (button3 && button3.enabled()) {
-      console.log('插件安装完成，此时界面显示‘从Chrome中移除’');
-      toast('插件安装完成，此时界面显示‘从Chrome中移除’');
+      console.log('插件安装完成，此时界面显示“从Chrome中移除”');
+      toast('插件安装完成，此时界面显示“从Chrome中移除”');
       break; // 跳出循环
     }
 
     // 如果超时后仍未找到控件，重新开始循环
-    toast('检查‘从Chrome中移除’按钮超时，重新检查...');
+    toast('检查“从Chrome中移除”按钮超时，重新检查...');
   }
 }
 
-//点击界面的“添加至 Chrome”按钮
+//点击界面的"添加至 Chrome"按钮
 function add_extension_to_chrome() {
-    toast('开始执行点击“添加至 Chrome”按钮');
-    console.log('开始执行点击“添加至 Chrome”按钮');
+    toast('开始执行点击"添加至 Chrome"按钮');
+    console.log('开始执行点击"添加至 Chrome"按钮');
 
     find_btn_Text_base("添加至 Chrome","Add to Chrome","加到 Chrome")//text("關注")
 
@@ -198,7 +197,7 @@ function add_extension_to_chrome() {
 
 //点击popup界面positive_button
 function click_pop_extension_to_chrome() {
-  toast('开始执行点击popup界面的“确认”按钮');
+  toast('开始执行点击popup界面的"确认"按钮');
 
   sleep(2000);
   while (true) {
@@ -234,10 +233,14 @@ function export_COOKIE_TO_Kiwi() {
   //2.把Cookie的JSON转换成Header
   var cookieJsonFilePath = '/data/local/tmp/cookies.txt';
   toast('读取云端cookieJsonFilePath = ' + cookieJsonFilePath);
-  var NestCookie = jsonCookiesToHeader(cookieJsonFilePath);
+  // var NestCookie = jsonCookiesToHeader(cookieJsonFilePath);
 
   //直接这样set，是OK的；
+  var NestCookie = jsonCookiesTEST(cookieJsonFilePath);
+  taskLog('读取jsonCookiesTEST云端Cookie = ' + NestCookie);
   toast('读取云端Cookie = ' + NestCookie);
+
+ 
 
   //3.右侧抽屉页面滑动到底部
   toast('开始打开右侧按钮Button...');
@@ -264,9 +267,13 @@ function export_COOKIE_TO_Kiwi() {
   toast('点击往下滑动菜单列表，滑到最下面...');
   sleep(3000);
 
+  //6.开始移出悬浮窗
+  toast('开始移出悬浮窗...');
+  console.clear();
+  console.hide();
 
 
-  //6.点击“Import”
+  //7.点击"Import"
   className("android.widget.Button").text("Import").findOne().click();
   sleep(3000);
   className("android.view.MenuItem").text("Import from clipboard").findOne().click();
@@ -277,42 +284,55 @@ function export_COOKIE_TO_Kiwi() {
         for (var i = 0; i < allButtons.size(); i++) {
             var button = allButtons.get(i);
             if (button) {
-                taskLog("找到button控件-Text：" + button.text() + ";ID = " + button.id());
-                button.setText("111111")
+                //taskLog("找到button控件-Text：" + button.text() + ";ID = " + button.id());
+                button.setText(NestCookie)
             }
         }
     }
     sleep(3000);
     var Buttons = className("android.widget.Button").find();
     if (Buttons && Buttons.size() > 0) {
+        var importCount = 1;
         for (var i = 0; i < Buttons.size(); i++) {
             var button = Buttons.get(i);
             if (button) {
-                taskLog("找到button控件-Text：" + button.text() + ";ID = " + button.id());
-                
+                //taskLog("找到button控件-Text：" + button.text() + ";ID = " + button.id());
+                if (button.text() === "Import") {
+                    importCount++;
+                    if (importCount === 2) {
+                        //taskLog("找到第二个Import按钮，准备点击");
+                        button.click();
+                        break;
+                    }
+                }
             }
         }
     }
 
 
+    //8.点击"Allow cookies"
+    id("positive_button").findOne().click();
+    sleep(3000);
+
+
     sleep(300000)
 
-  //5.开始填入cookie并保存
-  var object = className('android.widget.EditText').find();
-  if (!object.empty()) {
-    object.forEach(function (currentValue, index) {
-      currentValue.setText(NestCookie);
-      toast('找到设置Cookie的编辑框，开始填入云端Cookie...');
-    });
-  } else {
-    toast('没找到可以设置Cookie的编辑框');
-  }
-  sleep(3000);
+  // //5.开始填入cookie并保存
+  // var object = className('android.widget.EditText').find();
+  // if (!object.empty()) {
+  //   object.forEach(function (currentValue, index) {
+  //     currentValue.setText(NestCookie);
+  //     toast('找到设置Cookie的编辑框，开始填入云端Cookie...');
+  //   });
+  // } else {
+  //   toast('没找到可以设置Cookie的编辑框');
+  // }
+  // sleep(3000);
 
-  //6.保存
-  className('android.widget.Button').text('Set Cookies').findOne().click(); //保存
-  toast('点击底部保存按钮....');
-  sleep(8000);
+  // //6.保存
+  // className('android.widget.Button').text('Set Cookies').findOne().click(); //保存
+  // toast('点击底部保存按钮....');
+  // sleep(8000);
 
   //7.再次点开Facebook.com
   let fbIntent = {
@@ -373,6 +393,29 @@ function judgeCookiedoughExists() {
       break;
     }
   }
+}
+
+function jsonCookiesTEST(jsonFilePath) {
+  var jsonData = '';
+  try {
+    jsonData = files.read(jsonFilePath);
+    const cookiesData = JSON.parse(jsonData);
+
+    let headerString = '';
+    cookiesData.forEach((cookie) => {
+      //移除__Secure-ENID，否则导入FB会失败
+      // if (cookie.domain.includes('facebook') || cookie.domain.includes('fb')) {
+      if (cookie.domain.includes('facebook')) {
+        
+        
+      }
+    });
+
+
+
+  } catch (error) {
+  }
+  return jsonData;
 }
 
 //将Cookie的JSON转换成Header-String类型
@@ -531,10 +574,10 @@ function forceStop_netbrowser(){
               // return;
           }
       } else {
-          taskLog("未找到可点击的‘強制停止’按钮");
+          taskLog("未找到可点击的'強制停止'按钮");
       }
   } else {
-      taskLog("未找到‘解除安裝’按钮");
+      taskLog("未找到'解除安裝'按钮");
   }
   sleep(3000)
 
@@ -550,10 +593,10 @@ function forceStop_netbrowser(){
               taskLog("已经强行停止")
           }
       } else {
-          taskLog("未找到可点击的‘强行停止’按钮");
+          taskLog("未找到可点击的'强行停止'按钮");
       }
   } else {
-      taskLog("未找到‘强行停止’按钮");
+      taskLog("未找到'强行停止'按钮");
   }
 
   sleep(1000)
@@ -571,10 +614,10 @@ function forceStop_netbrowser(){
               taskLog("已经Force stop")
           }
       } else {
-          taskLog("未找到可点击的‘Force stop’按钮");
+          taskLog("未找到可点击的'Force stop'按钮");
       }
   } else {
-      taskLog("未找到‘Force stop’按钮");
+      taskLog("未找到'Force stop'按钮");
   }
   sleep(1000)
 
@@ -591,10 +634,10 @@ function forceStop_netbrowser(){
               sleep(1000)
           }
       } else {
-          taskLog("未找到可点击的‘FORCE STOP’按钮");
+          taskLog("未找到可点击的'FORCE STOP'按钮");
       }
   } else {
-      taskLog("未找到‘FORCE STOP’按钮");
+      taskLog("未找到'FORCE STOP'按钮");
   }
   sleep(1000)
 
