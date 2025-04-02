@@ -7,7 +7,17 @@ importClass(java.io.FileWriter);
 ////////////////////////////////////////////////////////////////////
 var chromePackageName = 'com.kiwibrowser.browser';
 var chromeNewName = 'NestBrowser';
-var fb_cookie_host = 'https://facebook.com';
+var IP_cookie_host = 'https://whoer.net/zh';
+var fb_cookie_host = 'https://m.facebook.com/';
+var instagram_cookie_host = 'https://instagram.com';
+var threads_cookie_host = 'https://threads.net';
+var gmail_cookie_host = 'https://gmail.com';
+
+var open_cookie_host_url = ""
+
+
+
+
 
 var COOKIE_EXT_URL =
   'https://chromewebstore.google.com/detail/cookie-editor-cookie-mana/hocoakkpjckombahpgmbhpilegeicdeh';
@@ -218,16 +228,16 @@ function click_pop_extension_to_chrome() {
 /////////////////////////
 function export_COOKIE_TO_Kiwi() {
   //1.先点开fb
-  toast('开始打开Facebook.com网站...');
+  toast('开始打开whoer.net网站...');
   let fb_mobile_Intent = {
     action: 'android.intent.action.VIEW',
-    data: fb_cookie_host,
+    data: IP_cookie_host,
     packageName: chromePackageName, // 指定kiwi打开url
   };
 
   app.startActivity(fb_mobile_Intent);
-  toast('正在打开Facebook.com网站...');
-  sleep(5000);
+  toast('打开whoer.net网站，测试当前设备网络是否正常...');
+  sleep(10000);
 
   //**************开始更新Cookie,目前是根据坐标来点击*****************//
   //2.把Cookie的JSON转换成Header
@@ -273,11 +283,11 @@ function export_COOKIE_TO_Kiwi() {
 
 
   //7.点击"Import"
-  sleep(5000);
+  sleep(10000);
   className("android.widget.Button").text("Import").findOne().click();
-  sleep(5000);
+  sleep(10000);
   className("android.view.MenuItem").text("Import from clipboard").findOne().click();
-  sleep(5000);
+  sleep(10000);
   //输入cookie的输入框
   var allButtons = className("android.widget.EditText").find();
     if (allButtons && allButtons.size() > 0) {
@@ -289,7 +299,7 @@ function export_COOKIE_TO_Kiwi() {
             }
         }
     }
-    sleep(5000);
+    sleep(15000);
     var Buttons = className("android.widget.Button").find();
     if (Buttons && Buttons.size() > 0) {
         var importCount = 1;
@@ -310,10 +320,9 @@ function export_COOKIE_TO_Kiwi() {
     }
 
 
-    //8.点击"Allow cookies"
+    //8.点击"Allow cookies",然后点击刷新按钮
     click_pop_extension_Positive_Button()
-    sleep(3000);
-    //console.show()
+    sleep(10000);
     var Buttons = className("android.widget.Button").find();
     if (Buttons && Buttons.size() > 0) {
         for (var i = 0; i < Buttons.size(); i++) {
@@ -330,22 +339,23 @@ function export_COOKIE_TO_Kiwi() {
     }
 
 
-    sleep(10000)
+    sleep(15000)
 
 
-  //7.再次点开Facebook.com
+  //7.根据导入Cookie的domain，来确定再次点开具体哪个网站
   let fbIntent = {
     action: 'android.intent.action.VIEW',
-    data: fb_cookie_host,
+    data: open_cookie_host_url,
     packageName: chromePackageName, // 指定kiwi打开url
   };
+
   toast(
-    '第二次打开Facebook.com网站，额可以检查此时Facebook是否处于登陆状态...',
+    'Cookie中包含的网站，可以检查此时网站是否处于登陆状态...',
   );
   app.startActivity(fbIntent);
   sleep(8000);
   toast(
-    '如果较长时间卡住在Facebook首页的启动页面，请耐心等待几秒钟，不需要操作，会自动刷新到首页面....',
+    '如果较长时间卡住在网站首页的启动页面，请耐心等待几秒钟，不需要操作，会自动刷新到首页面....',
   );
 }
 
@@ -399,6 +409,29 @@ function jsonCookiesTEST(jsonFilePath) {
   var jsonData = '';
   try {
     jsonData = files.read(jsonFilePath);
+    const cookiesData = JSON.parse(jsonData);
+    cookiesData.forEach((cookie) => {
+      console.log(cookie.name + "=" + cookie.value + ";");
+      if (cookie.domain.includes('.gmail.com')) {
+        console.log("打开gmail.com网站...");
+        open_cookie_host_url = gmail_cookie_host
+      }
+      if (cookie.domain.includes('.facebook.com')) {
+        console.log("打开Facebook.com网站...");
+        open_cookie_host_url = fb_cookie_host
+      }
+      if (cookie.domain.includes('.instagram.com')) {
+        console.log("打开Instagram.com网站...");
+        open_cookie_host_url = instagram_cookie_host
+      }
+      if (cookie.domain.includes('.threads.net')) {
+        console.log("打开threads.net网站...");
+        open_cookie_host_url = threads_cookie_host
+      }
+      
+
+
+    });
   } catch (error) {
   }
   return jsonData;
