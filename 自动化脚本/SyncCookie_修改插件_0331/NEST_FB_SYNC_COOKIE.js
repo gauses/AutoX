@@ -16,7 +16,7 @@ var COOKIE_EXT_URL =
 auto.waitFor();
 
 
-console.show()
+//console.show()
 
 taskLog("开始强制关闭同名的脚本...")
 let currentEngine = engines.myEngine()
@@ -313,7 +313,7 @@ function export_COOKIE_TO_Kiwi() {
     //8.点击"Allow cookies"
     click_pop_extension_Positive_Button()
     sleep(3000);
-    console.show()
+    //console.show()
     var Buttons = className("android.widget.Button").find();
     if (Buttons && Buttons.size() > 0) {
         for (var i = 0; i < Buttons.size(); i++) {
@@ -410,7 +410,8 @@ function click_pop_extension_Positive_Button() {
   toast('开始执行点击popup界面的"确认"按钮');
 
   sleep(2000);
-  while (true) {
+  var retry = 0 
+  while (retry < 3) {
     // 查找控件
     var positive_button = id('positive_button').findOne();
     if (positive_button && positive_button.enabled()) {
@@ -421,6 +422,7 @@ function click_pop_extension_Positive_Button() {
     }
     // 如果超时后仍未找到控件，重新开始循环
     toast('检查positive_button控件超时，重新检查...');
+    retry++
   }
 }
 
