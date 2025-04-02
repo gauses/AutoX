@@ -289,15 +289,18 @@ function export_COOKIE_TO_Kiwi() {
   className("android.view.MenuItem").text("Import from clipboard").findOne().click();
   sleep(10000);
   //输入cookie的输入框
-  var allButtons = className("android.widget.EditText").find();
-    if (allButtons && allButtons.size() > 0) {
-        for (var i = 0; i < allButtons.size(); i++) {
-            var button = allButtons.get(i);
-            if (button) {
-                //taskLog("找到button控件-Text：" + button.text() + ";ID = " + button.id());
-                button.setText(NestCookie)
-            }
-        }
+  var allEditText = className("android.widget.EditText").find();
+    if (allEditText && allEditText.size() > 0) {
+      toast('allEditTextSize = ' + allEditTextSize)
+      for (var i = 0; i < allEditText.size(); i++) {
+          var button = allEditText.get(i);
+          if (button) {
+              taskLog("找到button控件-Text：" + button.text() + ";ID = " + button.id());
+              button.setText(NestCookie)
+          }
+      }
+        // var allEditTextSize = allEditText.size()
+        // allEditText.get(1).setText(NestCookie)
     }
     sleep(15000);
     var Buttons = className("android.widget.Button").find();
@@ -310,7 +313,6 @@ function export_COOKIE_TO_Kiwi() {
                 if (button.text() === "Import") {
                     importCount++;
                     if (importCount === 2) {
-                        //taskLog("找到第二个Import按钮，准备点击");
                         button.click();
                         break;
                     }

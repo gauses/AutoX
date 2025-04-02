@@ -11,3 +11,21 @@ D:\AndroidProject\AutoX\自动化脚本\SyncCookie_修改插件_0331> adb shell 
 
 
 adb shell pm clear com.kiwibrowser.browser
+
+
+ adb push .\cookies.txt /data/local/tmp/
+ 
+ 
+ 
+ 
+ NestBrowser 运行
+1、yarn
+2、yarn rebuild
+3、yarn dev
+
+
+
+ certutil -hashfile .\NEST_CM_SYNC_COOKIE.js MD5
+
+	
+	
