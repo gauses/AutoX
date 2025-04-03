@@ -1,4 +1,4 @@
-//Date:11-26  11：03
+//Date:04-03  16:27
 // 导入SimpleDateFormat类
 importClass(java.text.SimpleDateFormat);
 importClass(java.io.PrintWriter);
@@ -26,7 +26,7 @@ var COOKIE_EXT_URL =
 auto.waitFor();
 
 
-//console.show()
+// console.show()
 
 taskLog("开始强制关闭同名的脚本...")
 let currentEngine = engines.myEngine()
@@ -48,7 +48,7 @@ forceStop_netbrowser()
 
 //第三步：启动Kiwi
 home()
-sleep(3000)
+sleep(6000)
 
 app.startActivity({
   action: "android.intent.action.VIEW",
@@ -58,7 +58,7 @@ app.startActivity({
 
 
 
-sleep(3000);
+sleep(6000);
 
 //可能部分设备弹出"NestBrowser不能运行在没有GMS的设备"的弹出框，需要点击确定
 if (id('button1').exists()) {
@@ -66,27 +66,27 @@ if (id('button1').exists()) {
 }
 
 //点击欢迎界面的"continue"按钮
-try {
-    sleep(3000);
-    className('androidx.recyclerview.widget.RecyclerView')
-      .findOne(5000)
-      .children()
-      .forEach((child) => {
-        var target = child.findOne(id('signin_fre_continue_button'));
-        //console.log
-        console.log('点击欢迎界面的"continue"按钮');
-        toast('点击欢迎界面的"continue"按钮');
-        //第一次打开
-        if (target) {
-          target.click();
+var continueButtons = className("android.widget.Button").find();
+if (continueButtons && continueButtons.size() > 0) {
+    for (var i = 0; i < continueButtons.size(); i++) {
+        var button = continueButtons.get(i);
+        if (button) {
+            taskLog("找到button控件-Text：" + button.text() + ";ID = " + button.id());
+
+            //fullId("com.kiwibrowser.browser:id/signin_fre_continue_button")
+            if(button.id() === "com.kiwibrowser.browser:id/signin_fre_continue_button"){
+              toast('找到signin_fre_continue_button按钮');
+              button.click();
+              break;
+            }
         }
-      });
-} catch (error) {
+    }
 }
 
 
 /////////////////////////////正式开始/////////////////////////////
 
+sleep(6000);
 
 //加载插件拓展
 load_kiwi_extensions_from_NetWork();
