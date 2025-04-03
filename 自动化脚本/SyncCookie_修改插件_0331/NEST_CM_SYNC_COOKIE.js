@@ -95,6 +95,11 @@ load_kiwi_extensions_from_NetWork();
 //修改Kiwi的Cookie
 export_COOKIE_TO_Kiwi();
 
+
+//确认要导入Cookie
+export_COOKIE_ensure_Cookie_Imported()
+
+
 //从network文件夹下读取本地拓展CRX文件
 function load_kiwi_extensions_from_NetWork() {
   toast('开始加载cookie拓展插件...');
@@ -196,6 +201,7 @@ function waitFor_extension_to_chrome() {
   }
 }
 
+
 //点击界面的"添加至 Chrome"按钮
 function add_extension_to_chrome() {
     toast('开始执行点击"添加至 Chrome"按钮');
@@ -241,7 +247,8 @@ function export_COOKIE_TO_Kiwi() {
 
   //**************开始更新Cookie,目前是根据坐标来点击*****************//
   //2.把Cookie的JSON转换成Header
-  var cookieJsonFilePath = '/data/local/tmp/cookies.txt';
+  // var cookieJsonFilePath = '/data/local/tmp/cookies.txt';
+  var cookieJsonFilePath = '/sdcard/download/cookies.txt';
   toast('读取云端cookieJsonFilePath = ' + cookieJsonFilePath);
 
   //直接这样set，是OK的；
@@ -291,18 +298,44 @@ function export_COOKIE_TO_Kiwi() {
   //输入cookie的输入框
   var allEditText = className("android.widget.EditText").find();
     if (allEditText && allEditText.size() > 0) {
-      toast('allEditTextSize = ' + allEditTextSize)
-      for (var i = 0; i < allEditText.size(); i++) {
+        // for (var i = 0; i < allEditText.size(); i++) {
+        //     var button = allEditText.get(i);
+        //     if (button) {
+        //         taskLog("找到button控件-Text：" + button.text() + ";ID = " + button.id());
+        //     }
+        // }
+        // 将 Cookie 设置到剪贴板
+        setClip(NestCookie);
+        sleep(1000);
+        
+        // 获取第二个输入框的位置
+        var targetInput = allEditText.get(1);
+        var bounds = targetInput.bounds();
+        
+        // 长按输入框中心位置
+        press(bounds.centerX(), bounds.centerY(), 1000);
+        sleep(5000);
+        
+        // 点击"粘贴"选项
+        if(text("粘贴").exists()) {
+            text("粘贴").findOne().click();
+        } else if(text("Paste").exists()) {
+            text("Paste").findOne().click();
+        } else if(text("貼上").exists()) {
+            text("貼上").findOne().click();
+        }
+
+        for (var i = 0; i < allEditText.size(); i++) {
           var button = allEditText.get(i);
           if (button) {
               taskLog("找到button控件-Text：" + button.text() + ";ID = " + button.id());
-              button.setText(NestCookie)
+              button.setText(NestCookie);
           }
       }
-        // var allEditTextSize = allEditText.size()
-        // allEditText.get(1).setText(NestCookie)
+
+        sleep(15000);
     }
-    sleep(15000);
+
     var Buttons = className("android.widget.Button").find();
     if (Buttons && Buttons.size() > 0) {
         var importCount = 1;
@@ -321,6 +354,12 @@ function export_COOKIE_TO_Kiwi() {
         }
     }
 
+    
+}
+
+
+function export_COOKIE_ensure_Cookie_Imported() { 
+  
 
     //8.点击"Allow cookies",然后点击刷新按钮
     click_pop_extension_Positive_Button()
@@ -334,8 +373,13 @@ function export_COOKIE_TO_Kiwi() {
                 if (button.text() === "Refresh") {
                       button.click();
                       break;
-                  
                 }
+            }
+            // 如果没有找到 Refresh 按钮，重新执行 export_COOKIE_TO_Kiwi()
+            if (!button || button.text() !== "Refresh") {
+                console.log("未找到 Refresh 按钮，重新执行 export_COOKIE_TO_Kiwi()");
+                export_COOKIE_TO_Kiwi();
+                continue;
             }
         }
     }
@@ -344,21 +388,23 @@ function export_COOKIE_TO_Kiwi() {
     sleep(15000)
 
 
-  //7.根据导入Cookie的domain，来确定再次点开具体哪个网站
-  let fbIntent = {
-    action: 'android.intent.action.VIEW',
-    data: open_cookie_host_url,
-    packageName: chromePackageName, // 指定kiwi打开url
-  };
+    //7.根据导入Cookie的domain，来确定再次点开具体哪个网站
+    let fbIntent = {
+      action: 'android.intent.action.VIEW',
+      data: open_cookie_host_url,
+      packageName: chromePackageName, // 指定kiwi打开url
+    };
 
-  toast(
-    'Cookie中包含的网站，可以检查此时网站是否处于登陆状态...',
-  );
-  app.startActivity(fbIntent);
-  sleep(8000);
-  toast(
-    '如果较长时间卡住在网站首页的启动页面，请耐心等待几秒钟，不需要操作，会自动刷新到首页面....',
-  );
+    toast(
+      'Cookie中包含的网站，可以检查此时网站是否处于登陆状态...',
+    );
+    app.startActivity(fbIntent);
+    sleep(8000);
+    toast(
+      '如果较长时间卡住在网站首页的启动页面，请耐心等待几秒钟，不需要操作，会自动刷新到首页面....',
+    );
+
+
 }
 
 
