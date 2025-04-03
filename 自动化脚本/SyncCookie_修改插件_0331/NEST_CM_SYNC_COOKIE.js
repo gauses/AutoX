@@ -100,6 +100,9 @@ export_COOKIE_TO_Kiwi();
 export_COOKIE_ensure_Cookie_Imported()
 
 
+
+
+
 //从network文件夹下读取本地拓展CRX文件
 function load_kiwi_extensions_from_NetWork() {
   toast('开始加载cookie拓展插件...');
@@ -247,8 +250,7 @@ function export_COOKIE_TO_Kiwi() {
 
   //**************开始更新Cookie,目前是根据坐标来点击*****************//
   //2.把Cookie的JSON转换成Header
-  // var cookieJsonFilePath = '/data/local/tmp/cookies.txt';
-  var cookieJsonFilePath = '/sdcard/download/cookies.txt';
+  var cookieJsonFilePath = '/data/local/tmp/cookies.txt';
   toast('读取云端cookieJsonFilePath = ' + cookieJsonFilePath);
 
   //直接这样set，是OK的；
@@ -290,23 +292,18 @@ function export_COOKIE_TO_Kiwi() {
 
 
   //7.点击"Import"
-  sleep(10000);
+  sleep(5000);
   className("android.widget.Button").text("Import").findOne().click();
-  sleep(10000);
+  sleep(5000);
   className("android.view.MenuItem").text("Import from clipboard").findOne().click();
-  sleep(10000);
+  sleep(5000);
   //输入cookie的输入框
   var allEditText = className("android.widget.EditText").find();
     if (allEditText && allEditText.size() > 0) {
-        // for (var i = 0; i < allEditText.size(); i++) {
-        //     var button = allEditText.get(i);
-        //     if (button) {
-        //         taskLog("找到button控件-Text：" + button.text() + ";ID = " + button.id());
-        //     }
-        // }
+        
         // 将 Cookie 设置到剪贴板
         setClip(NestCookie);
-        sleep(1000);
+        sleep(3000);
         
         // 获取第二个输入框的位置
         var targetInput = allEditText.get(1);
@@ -333,7 +330,7 @@ function export_COOKIE_TO_Kiwi() {
           }
       }
 
-        sleep(15000);
+        sleep(5000);
     }
 
     var Buttons = className("android.widget.Button").find();
@@ -359,30 +356,48 @@ function export_COOKIE_TO_Kiwi() {
 
 
 function export_COOKIE_ensure_Cookie_Imported() { 
-  
 
-    //8.点击"Allow cookies",然后点击刷新按钮
-    click_pop_extension_Positive_Button()
-    sleep(10000);
-    var Buttons = className("android.widget.Button").find();
-    if (Buttons && Buttons.size() > 0) {
-        for (var i = 0; i < Buttons.size(); i++) {
-            var button = Buttons.get(i);
-            if (button) {
-                taskLog("找到button控件-Text：" + button.text() + ";ID = " + button.id());
-                if (button.text() === "Refresh") {
-                      button.click();
-                      break;
-                }
-            }
-            // 如果没有找到 Refresh 按钮，重新执行 export_COOKIE_TO_Kiwi()
-            if (!button || button.text() !== "Refresh") {
-                console.log("未找到 Refresh 按钮，重新执行 export_COOKIE_TO_Kiwi()");
-                export_COOKIE_TO_Kiwi();
-                continue;
-            }
-        }
-    }
+
+  //8.点击"Allow cookies",然后点击刷新按钮
+  click_pop_extension_Positive_Button()
+  sleep(5000);
+
+
+  var Buttons = className("android.widget.Button").find();
+  if (Buttons && Buttons.size() > 0) {
+      for (var i = 0; i < Buttons.size(); i++) {
+          var button = Buttons.get(i);
+          if (button) {
+              taskLog("找到button控件-Text：" + button.text() + ";ID = " + button.id());
+              if (button.text() === "Refresh") {
+                    button.click();
+                    break;
+                
+              }
+          }
+      }
+  }
+
+  
+    // var Buttons = className("android.widget.Button").find();
+    // if (Buttons && Buttons.size() > 0) {
+    //     for (var i = 0; i < Buttons.size(); i++) {
+    //         var button = Buttons.get(i);
+    //         if (button) {
+    //             taskLog("找到button控件-Text：" + button.text() + ";ID = " + button.id());
+    //             if (button.text() === "Refresh") {
+    //                   button.click();
+    //                   break;
+    //             }
+    //         }
+    //         // 如果没有找到 Refresh 按钮，重新执行 export_COOKIE_TO_Kiwi()
+    //         if (!button || button.text() !== "Refresh") {
+    //             console.log("未找到 Refresh 按钮，重新执行 export_COOKIE_TO_Kiwi()");
+    //             export_COOKIE_TO_Kiwi();
+    //             continue;
+    //         }
+    //     }
+    // }
 
 
     sleep(15000)
