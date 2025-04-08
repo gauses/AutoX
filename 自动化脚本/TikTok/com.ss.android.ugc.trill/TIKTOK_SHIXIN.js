@@ -491,23 +491,29 @@ function taskLog(_log){
                 var linearLayout = allLinearLayout.get(i);
                 if (linearLayout) {
                     // taskLog("找到linearLayout控件-Text：" + linearLayout.text() + ";ID = " + linearLayout.id());
-                    
-                    // 检查ID是否为"hvl"
-                    if (linearLayout.id() == (TikTokPackageName +":id/hvl")) {
-                        // 正确调用bounds()方法并点击
+
+                    var linearLayout_click = clickId("com.ss.android.ugc.trill:id/hvl")
+                    if (linearLayout_click) {
                         taskLog("找到LinearLayout控件:开始点击第一个" );
-
-                        var x = linearLayout.bounds().centerX()
-                        var y = linearLayout.bounds().centerY()
-                        taskLog("找到LinearLayout控件,坐标X = "+x );
-                        taskLog("找到LinearLayout控件,坐标y = "+y );
-
-                        // 找到并点击后可以跳出循环
-                        if(x > 0 && y > 0) {
-                            click(x, y);
-                        }     
                         break;
                     }
+                    
+                    // // 检查ID是否为"hvl"
+                    // if (linearLayout.id() == (TikTokPackageName +":id/hvl")) {
+                    //     // 正确调用bounds()方法并点击
+                    //     taskLog("找到LinearLayout控件:开始点击第一个" );
+
+                    //     var x = linearLayout.bounds().centerX()
+                    //     var y = linearLayout.bounds().centerY()
+                    //     taskLog("找到LinearLayout控件,坐标X = "+x );
+                    //     taskLog("找到LinearLayout控件,坐标y = "+y );
+
+                    //     // 找到并点击后可以跳出循环
+                    //     if(x > 0 && y > 0) {
+                    //         click(x, y);
+                    //     }     
+                    //     break;
+                    // }
                 }
             }
         }
