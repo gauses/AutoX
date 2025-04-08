@@ -1174,6 +1174,8 @@ function click_bottom_center_for_post_video(){
 
 function click_choose_video_framelayout(){
 
+    click_permission_allow()
+
     toast("开始点击选择图片的跳转按钮....")
     // 通过ID选择器查找控件
     let view = id("com.ss.android.ugc.trill:id/bjf").className("android.widget.FrameLayout").findOne(3000);
@@ -1250,31 +1252,53 @@ function click_Video_desc(commentText){
 
 //可能会出现权限弹窗，如果弹出，那么允许
 function click_permission_allow(){
+    toast("开始处理权限问题.....")
     // 等待权限弹窗出现
     let allow_zh = textContains("允许").findOne(3000);
     if(allow_zh){
-        // 点击"允许"按钮
-        allow_zh.click();
+        // 获取控件的文本内容
+        let btnText_cn = allow_zh.text();
+        // 检查文本是否包含"不允许"，如果不包含才点击
+        if(!btnText_cn.includes("不允许")){
+            allow_zh.click();
+        }
     }
 
     // 等待权限弹窗出现
     let allow_tw = textContains("允許").findOne(3000);
     if(allow_tw){
-        // 点击"允许"按钮
-        allow_tw.click();
+        // 获取控件的文本内容
+        let btnText_tw = allow_tw.text();
+        // 检查文本是否包含"不允许"，如果不包含才点击
+        if(!btnText_tw.includes("不允许")){
+            allow_tw.click();
+        }
     }
 
     // 等待权限弹窗出现
     let allow_en = textContains("ALLOW").findOne(3000);
     if(allow_en){
-        // 点击"允许"按钮
-        allow_en.click();
+        // 获取控件的文本内容
+        let btnText_en = allow_en.text();
+        // 检查文本是否包含"不允许"，如果不包含才点击
+        if(!btnText_en.includes("DON'T ALLOW")){
+            allow_en.click();
+        }
     }
 
 }
 
 
 try {
+
+    // 检查是否已有权限
+    if (!files.exists("/storage/emulated/0/Download/")) {
+        // 请求文件访问权限
+        runtime.requestPermissions(["android.permission.WRITE_EXTERNAL_STORAGE"]);
+    }
+    sleep(3000)
+    click_permission_allow()    
+    sleep(3000)
 
 
     refreshMedia("/storage/emulated/0/Download/")

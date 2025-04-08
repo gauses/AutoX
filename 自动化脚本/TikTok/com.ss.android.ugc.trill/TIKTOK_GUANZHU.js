@@ -66,7 +66,7 @@ function handleError(e) {
 
 
 //显示控制窗：https://github.com/kkevsekk1/AutoX/issues/868
-// console.show()
+ console.show()
 
 
 taskLog("开始强制关闭同名的脚本...")
@@ -297,18 +297,24 @@ function click_LinearLayout_GUANZHU(){
                 taskLog("找到linearLayout控件-Text：" + linearLayout.text() + ";ID = " + linearLayout.id());
                 
                 // 检查ID是否为"hvl"
-                if (linearLayout.id() == (TikTokPackageName +":id/hvl")) {
-                    // 正确调用bounds()方法并点击
+				//fullId("com.ss.android.ugc.trill:id/hvl")
+                var linearLayout_click = clickId("com.ss.android.ugc.trill:id/hvl")
+                if (linearLayout_click) {
                     taskLog("找到LinearLayout控件:开始点击第一个" );
-
-                    var x = linearLayout.bounds().centerX()
-                    var y = linearLayout.bounds().centerY()
-                    // 找到并点击后可以跳出循环
-                    if(x > 0 && y > 0) {
-                        click(x, y);
-                    }     
                     break;
                 }
+                // if (linearLayout.id() == (TikTokPackageName +":id/hvl")) {
+                //     // 正确调用bounds()方法并点击
+                //     taskLog("找到LinearLayout控件:开始点击第一个" );
+
+                //     var x = linearLayout.bounds().centerX()
+                //     var y = linearLayout.bounds().centerY()
+                //     // 找到并点击后可以跳出循环
+                //     if(x > 0 && y > 0) {
+                //         click(x, y);
+                //     }     
+                //     break;
+                // }
             }
         }
     }
@@ -839,39 +845,32 @@ if (comments.length > 0) {
 
                 sleep(random(3000, 5000))
 
-                // // 等待RecyclerView出现
-                // let recyclerView = className("androidx.recyclerview.widget.RecyclerView").findOne(5000); // 5秒超时
-                // if(!recyclerView) {
-                //     console.log("未找到RecyclerView");
-                //     click_back_btn()
-                //     break
-                // }
-
-                // // 等待内容加载
-                // sleep(2000);
-
-                // // 获取size并打印
-                // let size = recyclerView.childCount();
-                // taskLog("列表大小: " + size);
-                // sleep(random(2000, 4000))
-                // // 确保有item后再点击
-                // if(size > 0) {
-                //     recyclerView.child(0).click();
-                // }
-
-                // sleep(random(2000, 4000))
                 click_LinearLayout_GUANZHU()
 
-
                 //text("消息")：点击User的主页的"消息"按钮，准备发信息
-                var findMSGTextResult = find_textview_text_base("关注","關注","Follow")
+                //text("关注")
+                //fullId("com.ss.android.ugc.trill:id/d4v")
+                //var findMSGTextResult = find_textview_text_base("关注","關注","Follow")
+                var findMSGTextResult = clickId("com.ss.android.ugc.trill:id/d4v")
                 if(!findMSGTextResult) {
                     taskLog("没有找到消息控件，终止本次操作，开始下一个用户的私信行为！！！");
                 }
 
+                //有可能有一种情况，可能某个人已经关注了，此时再点击一次，就进入了私信页面，就需要多点击一次返回
+                //className("android.widget.EditText")这个是私信底部的EditText所在的布局
+                sleep(3000)
+                var sixin_TextViews = className("android.widget.EditText").find();
+                // 检查是否找到元素
+                toast("elements  = " + sixin_TextViews.size());
+                if (sixin_TextViews.size() > 0) {
+                    toast("已经关注过了，需要多点击一次返回，退出私信页面");
+                    //fullId("com.ss.android.ugc.trill:id/jnj") - 左上角back
+                    clickId("com.ss.android.ugc.trill:id/jnj")
+                }
+
                 sleep(3000)
                 click_back_btn()
-                sleep(1000)
+                sleep(3000)
                 click_back_btn()
                 sleep(random(2000, 4000))
 
