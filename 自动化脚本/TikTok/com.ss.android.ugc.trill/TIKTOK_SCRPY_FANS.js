@@ -4,8 +4,7 @@ importClass(java.io.PrintWriter);
 importClass(java.io.FileWriter);
 
 //******************************************************************
-//***********************採集個人用戶的關注粉絲
-//(是否能篩選性別.粉絲數量決定要不要採集? 例如指採集有1000個粉絲以上的用戶 指採集男生或女生)*************************
+//***********************将指定视频链接或者直播间链接分享给好友
 //******************************************************************
 
 
@@ -17,7 +16,7 @@ var taskLogImgName = "nest_task_log.png"
 var chromePackageName = 'com.kiwibrowser.browser';
 
 //名稱.使用者名稱.個人簡介
-const TT_VIDEO_URL = '$${指定視訊/直播間鏈接}';
+const TT_VIDEO_URL = '$${指定视频链接/直播間鏈接}';
 const TT_VIDEO_SHARE_TEXT = '$${分享文案}';
 const TT_VIDEO_SHARE_FRIENDS_NUMBER = '$${分享好友數量}';
 
