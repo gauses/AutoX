@@ -17,7 +17,7 @@ var taskLogImgName = "nest_task_log.png"
 var chromePackageName = 'com.kiwibrowser.browser';
 
 //名稱.使用者名稱.個人簡介
-const TT_VIDEO_URL = '$${指定視訊/直播間鏈接}';
+const TT_VIDEO_URL = '$${指定视频链接/直播間鏈接}';
 const TT_VIDEO_SHARE_TEXT = '$${分享文案}';
 const TT_VIDEO_SHARE_FRIENDS_NUMBER = '$${分享好友數量}';
 
