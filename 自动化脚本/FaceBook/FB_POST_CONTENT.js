@@ -16,7 +16,11 @@ var taskLogImgName = "nest_task_log.png"
 
 
 //用户需要输入的评论内容
-const FB_input_text = "$${输入文案}"
+const FB_input_text = "$${FB_输入文案}"
+const FB_input_IMAGE = '$${FB_图片地址}';
+
+var FacebookPackageName = 'com.facebook.katana';
+
 
 
 //1.autox.js侧边栏的打开USB调试先打开
@@ -28,8 +32,39 @@ const FB_input_text = "$${输入文案}"
 //会在在无障碍服务启动后继续运行。
 auto.waitFor();
 
+//出现异常错误时，打印的日志错误信息
+var handleErrorFlag = false //默认没有错误，如果出现异常，那么该值是true
+
+// 注册退出事件监听器
+ events.on('exit', function(){
+    console.hide()
+    sleep(1000)
+
+    if(handleErrorFlag){
+        console.error("-----------------脚本执行出现异常---------------");
+        console.error("Facebook個人發文以及图片---------------");
+        console.error("脚本执行时间：" + new Date().toLocaleString());
+    }else{
+        forceStop_FaceBook()
+        console.log("-----------------脚本功能执行结束：---------------");
+        console.log("Facebook個人發文以及图片---------------");
+        console.log("脚本执行时间：" + new Date().toLocaleString());
+    }
+    openLogActivity();
+});
+
+function handleError(e) {
+    handleErrorFlag = true
+    forceStop_FaceBook()
+    console.error("===错误报告开始===");
+    console.error("错误信息：" + e);
+    console.error("错误堆栈：" + e.stack);
+    console.error("===错误报告结束===");
+    exit()
+}
+
 //显示控制窗：https://github.com/kkevsekk1/AutoX/issues/868
-console.show()
+// console.show()
 
 
 taskLog("开始强制关闭同名的脚本...")
@@ -50,63 +85,86 @@ taskLog("准备启动Facebook...")
 sleep(5000)
 app.startActivity({
     action: "android.intent.action.VIEW",
-    packageName: "com.facebook.katana",
+    packageName: FacebookPackageName,
     className: "com.facebook.katana.activity.FbMainTabActivity"
 });
 
 
 
 taskLog("打开Facebook成功...")
+taskLog("FB_input_IMAGE:" + FB_input_IMAGE)
+toast("FB_input_IMAGE:" + FB_input_IMAGE)
+//图片不是空
+if(FB_input_IMAGE && FB_input_IMAGE !== "" && FB_input_IMAGE !== "null" 
+    && FB_input_IMAGE !== "undefined" && FB_input_IMAGE !== "$${FB_图片地址}" 
+    && !FB_input_IMAGE.includes("$${FB_图片地址}")){
+
+    toast("图片不是空")    
+    // className("android.widget.Button").desc("Select photos or videos for your post").findOne().click()
+    find_btn_desc_base("Select photos or videos for your post", "選擇照片或影片", "Select photos or videos for your post")
+    sleep(5000)
+
+    // className("android.widget.Button").desc("Allow access").findOne().click()
+    find_btn_desc_base("Allow access", "允許存取", "Allow access")
+    sleep(5000)
+
+    //id("(name removed)").className("android.widget.Button").text("ALLOW").findOne().click()
+    find_btn_Text_base("ALLOW", "允許", "ALLOW")
+    sleep(5000)
+
+    find_btn_Text_base("允许", "允許", "Allow")
+    sleep(5000)
+}else{
+    //发布content
+    //className("android.widget.Button").desc("Make a post on Facebook").findOne().click()
+    find_btn_desc_base("Make a post on Facebook", "發布到 Facebook", "Make a post on Facebook")
+    sleep(5000)
+
+
+    // 获取屏幕的宽度和高度
+    let screenWidth = device.width;
+    let screenHeight = device.height;
+    taskLog("屏幕区域的宽高坐标: (" + screenWidth + ", " + screenHeight + ")");
+    // 计算屏幕上方2/3区域的底部位置
+    let twoThirdsHeight = screenHeight * (2/3);
+    // 计算该区域的中心点坐标
+    let centerX = screenWidth / 2;
+    let centerY = twoThirdsHeight - (screenHeight / 3) / 2;
+    // 打印屏幕上方2/3区域的中心点坐标
+    taskLog("准备点击屏幕上方2/3区域的中心点坐标: (" + centerX + ", " + centerY + ")");
+    click(centerX,centerY)
+
+
+    taskLog("准备输入分享内容....");
+    className("android.widget.AutoCompleteTextView").findOne().click()
+    sleep(5000)
+    className("android.widget.AutoCompleteTextView").findOne().setText("")
+    sleep(5000)
+    className("android.widget.AutoCompleteTextView").findOne().setText(FB_input_text)
+    sleep(5000)
 
 
 
 
-taskLog("准备点击‘分享新鲜事 在 Facebook 发帖’按钮...");
-////点击界面的“准备点击‘分享新鲜事 在 Facebook 发帖’按钮...”按钮，界面元素会变化
-//className("android.widget.Button").text("分享新鲜事 在 Facebook 发帖").findOne(1000);
-// className("android.widget.Button").text("What's on your mind? Create a post on Facebook").findOne().click()
-find_btn_Text_base("分享新鲜事 在 Facebook 发帖", 
-    "在想些什麼？ Make a post on Facebook" , 
-    "What's on your mind? Make a post on Facebook",
-    "What's on your mind? Create a post on Facebook")
+    taskLog("准备点击下一步....");
+    sleep(5000)
+    find_btn_desc_base("下一步", "下一步" , "NEXT")
+
+    //className("android.widget.Button").desc("POST").findOne().click()
+    taskLog("准备点击POST....");
+    sleep(5000)
+    find_btn_desc_base("POST", "發布" , "POST")
+
+
+    taskLog("等待分享结果，大约30s左右....");
+    sleep(30000)
+    //stopCurrentTask()
+
+
+}
 
 
 
-sleep(5000)
-// 获取屏幕的宽度和高度
-let screenWidth = device.width;
-let screenHeight = device.height;
-taskLog("屏幕区域的宽高坐标: (" + screenWidth + ", " + screenHeight + ")");
- // 计算屏幕上方2/3区域的底部位置
- let twoThirdsHeight = screenHeight * (2/3);
- // 计算该区域的中心点坐标
- let centerX = screenWidth / 2;
- let centerY = twoThirdsHeight - (screenHeight / 3) / 2;
-// 打印屏幕上方2/3区域的中心点坐标
-taskLog("准备点击屏幕上方2/3区域的中心点坐标: (" + centerX + ", " + centerY + ")");
-click(centerX,centerY)
-
-
-taskLog("准备输入分享内容....");
-id("(name removed)").className("android.widget.AutoCompleteTextView").findOne(5000).setText(FB_input_text)
-
-
-
-taskLog("准备点击下一步....");
-sleep(5000)
-find_btn_desc_base("下一步", "下一步" , "NEXT")
-
-
-
-
-taskLog("准备点击分享....");
-sleep(5000)
-find_btn_desc_base("分享", "分享" , "Share")
-
-
-taskLog("等待分享结果，大约30s左右....");
-sleep(30000)
-stopCurrentTask()
 
 
 //打印日志
@@ -282,3 +340,93 @@ function find_btn_desc_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
          }
 }
 
+
+//强制停止FaceBook 
+function forceStop_FaceBook(){
+    taskLog("准备强杀FaceBook...")
+    // 先启动应用
+    // app.launchPackage(TikTokPackageName);
+    // 等待应用启动
+    sleep(1000);
+    app.openAppSetting(FacebookPackageName)
+    sleep(5000)
+
+    //繁体
+    if (text("強行停止").exists()) {
+        let forceStopBtn = text("強行停止").findOne();
+        if (forceStopBtn && forceStopBtn.clickable()) {
+            forceStopBtn.click();
+            sleep(1000);
+            // 确认操作
+            if (text("確定").exists()) {
+                taskLog("已经找到可点击的‘強行停止’按钮！！！！！！！！！！");
+                text("確定").findOne().click();
+            }
+        } else {
+            taskLog("未找到可点击的‘強制停止’按钮");
+        }
+    } else {
+        taskLog("未找到‘強制停止’按钮");
+    }
+    sleep(3000)
+
+    //简体
+    if (text("强行停止").exists()) {
+        let forceStopBtn = text("强行停止").findOne();
+        if (forceStopBtn && forceStopBtn.clickable()) {
+            forceStopBtn.click();
+            sleep(1000);
+            // 确认操作
+            if (text("确定").exists()) {
+                text("确定").findOne().click();
+            }
+        } else {
+            taskLog("未找到可点击的‘强行停止’按钮");
+        }
+    } else {
+        taskLog("未找到‘强行停止’按钮");
+    }
+
+    sleep(3000)
+
+
+    //英语
+    if (text("Force stop").exists()) {
+        let forceStopBtn = text("Force stop").findOne();
+        if (forceStopBtn && forceStopBtn.clickable()) {
+            forceStopBtn.click();
+            sleep(1000);
+            // 确认操作
+            if (text("OK").exists()) {
+                text("OK").findOne().click();
+            }
+        } else {
+            taskLog("未找到可点击的‘Force stop’按钮");
+        }
+    } else {
+        taskLog("未找到‘Force stop’按钮");
+    }
+    sleep(3000)
+
+    //英语
+    if (text("FORCE STOP").exists()) {
+        let forceStopBtn = text("FORCE STOP").findOne();
+        if (forceStopBtn && forceStopBtn.clickable()) {
+            forceStopBtn.click();
+            sleep(1000);
+            // 确认操作
+            if (text("OK").exists()) {
+                text("OK").findOne().click();
+            }
+        } else {
+            taskLog("未找到可点击的‘FORCE STOP’按钮");
+        }
+    } else {
+        taskLog("未找到‘FORCE STOP’按钮");
+    }
+    sleep(3000)
+
+
+    home()
+
+}
