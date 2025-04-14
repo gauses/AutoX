@@ -85,7 +85,7 @@ function openLogActivity() {
 
 
 //显示控制窗：https://github.com/kkevsekk1/AutoX/issues/868
-// console.show()
+ //console.show()
 
 
 
@@ -219,7 +219,7 @@ function click_update_profile_head_image(){
             if (img) {
                 console.log("准备找Image控件: img ID = " + img.id() );
 
-                if (img.id() == (TikTokPackageName +":id/fzc")) {
+                if (img.id() == ("com.ss.android.ugc.trill:id/fzc")) {
                     // 正确调用bounds()方法并点击
                     taskLog("找到Image控件: 个人头像修改按钮" );
 
@@ -797,6 +797,7 @@ function clickId(a) {
     // 验证 X 和 Y 是否为正数
     if (X < 0 || Y < 0) {
         taskLog("坐标无效，中心点X或Y为负值: X=" + X + ", Y=" + Y);
+        toast("坐标无效，中心点X或Y为负值: X=" + X + ", Y=" + Y);
         return false;
     }
 
@@ -1204,14 +1205,13 @@ function find_textview_text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US)
 
 try {
 
-    refreshMedia("/storage/emulated/0/Download/")
-
-    var imageTempPath = transferHeadImageToNest(TT_PROFILE_HEAD_IMAGE)
-    
     close_friend_suggest()
-
     //Tab：点击 FrameLayout("Profile")
     find_btn_desc_base("主页","個人資料","Profile")
+    sleep(3000)
+
+    refreshMedia("/storage/emulated/0/Download/")
+    var imageTempPath = transferHeadImageToNest(TT_PROFILE_HEAD_IMAGE)
 
     //点击：text("Edit profile")
     find_textview_text_base("编辑主页","編輯個人資料","Edit profile")
@@ -1221,7 +1221,9 @@ try {
     //点击头像
     //className("android.widget.ImageView")
     //id("fzc").findOne().click()
+    //fullId("com.ss.android.ugc.trill:id/fzc")
     click_update_profile_head_image()
+    // clickId("com.ss.android.ugc.trill:id/fzc")
 
 
 
@@ -1237,6 +1239,10 @@ try {
 
     sleep(3000)
 
+    //保存并发布
+    // fullId("com.ss.android.ugc.trill:id/l76")
+    clickId("com.ss.android.ugc.trill:id/l76")
+    sleep(15000)
 
 
     //点击：text("Name")

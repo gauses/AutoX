@@ -22,7 +22,7 @@ const TT_UPLOAD_VIDEO_DESC = '$${上傳影片的說明}';
 
 var TikTokPackageName = 'com.ss.android.ugc.trill';
 //将需要处理的多媒体图片，单独copy一份放到这个文件夹里面，后面处理完成之后，再删除这个文件夹
-var A_NEST_TikTok_MEDIA = 'A_NEST_TikTok_MEDIA'; 
+var A_NEST_TikTok_MEDIA = 'A_NEST_TikTok_MEDIA';    
 
 
 //1.autox.js侧边栏的打开USB调试先打开
@@ -83,7 +83,7 @@ function openLogActivity() {
 
 
 //显示控制窗：https://github.com/kkevsekk1/AutoX/issues/868
-// console.show()
+console.show()
 
 
 
@@ -115,11 +115,10 @@ app.startActivity({
 
 
 taskLog("打开TikTok成功...")
-refreshMedia("/storage/emulated/0/Download/")
-
 sleep(10000)
+// refreshMedia("/storage/emulated/0/Download/")
 toast("本地视频地址：" + TT_UPLOAD_VIDEO_URL)
-sleep(3000)
+// sleep(5000)
 
 click_bottom_center_for_post_video()
 
@@ -137,7 +136,7 @@ function transferVideoToNest(fileName){
     if (!videoPath) {
         console.error("未找到指定视频：" + fileName);
         toast("未找到指定视频：" + fileName);
-        throw new error("没有找到需要上传的视频，所以异常直接退出")
+        //throw new error("没有找到需要上传的视频，所以异常直接退出")
         return;
     }
 
@@ -165,8 +164,8 @@ function transferVideoToNest(fileName){
     sleep(3000);
 
 
-    refreshMedia(newFolder)
-    sleep(5000);
+    // refreshMedia(newFolder)
+    // sleep(5000);
 
     return targetPath
 
@@ -300,54 +299,65 @@ function selectImageByButton(fileName) {
         }
 
 
-        sleep(3000);
+        sleep(5000);
         
         // 查找并点击指定按钮（其实只需要点击第一个图片的按钮就行了，因为肯定就是第一张图片）
-        let selectButton = className("android.widget.Button")
-            .id("com.ss.android.ugc.trill:id/gkg")
-            .findOne(5000);  // 等待最多5秒
 
-  
-        if (selectButton) {
-            // 点击选择按钮
-            selectButton.click();
-            console.log("成功点击选择按钮");
+        // 使用id("com.ss.android.ugc.trill:id/gkg")来查找按钮
+        var autoSelectButton = id("com.ss.android.ugc.trill:id/gkg").find();
+        for(var i = 0; i < autoSelectButton.size(); i++) {
+            var selectButton = autoSelectButton.get(i);
+            if(selectButton) {
+                sleep(1000)
+                // 点击选择按钮
+                selectButton.click();
+                console.log("成功点击选择按钮");
 
-            sleep(5000)
-            //点击下一步
-            id("oy5").findOne().click()
+                sleep(5000)
+                //点击下一步
+                // id("oy5").findOne().click()
+                clickId("com.ss.android.ugc.trill:id/oy5")
 
-            //发布视频时才会有这个按钮，修改头像时没有这个按钮
-            sleep(5000)
-            //点击下一步
-            id("jtf").findOne(3000).click()
-
-
-            //可能会出现一个下拉框，提示二次创作：text("確定")
-            find_btn_Text_base("確定", "确定", "OK")
-
-            sleep(3000)
-            click_Video_desc(TT_UPLOAD_VIDEO_DESC)
-
-            sleep(5000)
-            //点击Post
-            id("luk").findOne().click()
-            sleep(5000)
-
-            //可能会出现一个下拉框，提示是否添加到主屏幕:text("ADD TO HOME SCREEN")
-            find_btn_Text_base("添加到主屏幕", "新增到主螢幕", "ADD TO HOME SCREEN")
-
-            sleep(30000) //上传需要耗时
+                //发布视频时才会有这个按钮，修改头像时没有这个按钮
+                sleep(5000)
+                //点击下一步
+                clickId("com.ss.android.ugc.trill:id/jtf")
 
 
-            //删除临时媒体文件夹
-            const delFolder = "/storage/emulated/0/Download/" + A_NEST_TikTok_MEDIA;  // 替换成你想要的文件夹路径
-            deleteNestMediaFile(delFolder)
+                //可能会出现一个下拉框，提示二次创作：text("確定")
+                find_btn_Text_base("確定", "确定", "OK")
 
-            return true;
-        } else {
-            console.error("未找到选择按钮");
-            return false;
+                sleep(3000)
+                click_Video_desc(TT_UPLOAD_VIDEO_DESC)
+
+                sleep(5000)
+                //点击Post
+                // clickId("com.ss.android.ugc.trill:id/luk")
+                //找不到ID，所以直接点击最后一个Button
+                var allPostButtons = className("android.widget.Button").find();
+                if (allPostButtons && allPostButtons.size() > 0) {
+                    var lastPostButton = allPostButtons.get(allPostButtons.size() - 1);
+                    if (lastPostButton) {
+                        lastPostButton.click();
+                        break
+                    }
+                }
+                sleep(5000)
+
+                //可能会出现一个下拉框，提示是否添加到主屏幕:text("ADD TO HOME SCREEN")
+                find_btn_Text_base("添加到主屏幕", "新增到主螢幕", "ADD TO HOME SCREEN")
+
+                sleep(60000) //上传需要耗时
+
+
+                //删除临时媒体文件夹
+                const delFolder = "/storage/emulated/0/Download/" + A_NEST_TikTok_MEDIA;  // 替换成你想要的文件夹路径
+                deleteNestMediaFile(delFolder)
+
+                break;
+
+
+            }
         }
         
     } catch (e) {
@@ -442,24 +452,34 @@ function debugImageFind(fileName) {
 
 // 刷新指定路径的媒体库
 function refreshMedia(path) {
-    toast("开始刷新媒体库，用时5秒钟....");
-    // 发送媒体扫描广播
-    media.scanFile(path);
-    // 等待扫描完成
-    sleep(5000);
-    toast("媒体库刷新完成，开始下一步任务...");
+    try {
+        toast("开始刷新媒体库，用时5秒钟....");
+        // 发送媒体扫描广播
+        media.scanFile(path);
+        // 等待扫描完成
+        sleep(5000);
+        toast("媒体库刷新完成，开始下一步任务...");
+    } catch (error) {
+        toast("path = " + path + " 媒体库刷新失败，error = " + error);
+    }
+
 }
 
 // 刷新整个存储的媒体库
 function refreshAllMedia() {
-    toast("开始刷新媒体库，用时5秒钟....");
-    // 获取外部存储路径
-    let storage = files.externalStorage();
-    // 发送媒体扫描广播
-    media.scanFile(storage);
-    // 等待扫描完成
-    sleep(5000);
-    toast("媒体库刷新完成，开始下一步任务...");
+    try {
+        toast("开始刷新媒体库，用时5秒钟....");
+        // 获取外部存储路径
+        let storage = files.externalStorage();
+        // 发送媒体扫描广播
+        media.scanFile(storage);
+        // 等待扫描完成
+        sleep(5000);
+        toast("媒体库刷新完成，开始下一步任务...");
+    } catch (error) {
+        toast("refreshAllMedia , 媒体库刷新失败，error = " + error);
+    }
+    
 }
 
 function checkDownloadFiles(targetFileName) {
@@ -503,6 +523,7 @@ function checkDownloadFiles(targetFileName) {
         // 获取所有文件
         let fileList = files.listDir(DOWNLOAD_PATH);
         console.log("\n=== 文件列表（共" + fileList.length + "个文件）===");
+        toast("文件列表（共" + fileList.length + "个文件）")
         
         // 遍历所有文件
         let foundFiles = [];
@@ -842,9 +863,9 @@ function find_btn_Text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
          }
 
          // 查找控件
-         var button1 = className("android.widget.Button").text(findText_ZH_CN).findOne(1000);
-         var button2 = className("android.widget.Button").text(findText_ZH_TW).findOne(1000);
-         var button3 = className("android.widget.Button").text(findText_EN_US).findOne(1000);
+         var button1 = className("android.widget.Button").text(findText_ZH_CN).findOne(3000);
+         var button2 = className("android.widget.Button").text(findText_ZH_TW).findOne(3000);
+         var button3 = className("android.widget.Button").text(findText_EN_US).findOne(3000);
 
          if (button1) {
              taskLog("找到" + findText_ZH_CN);
@@ -927,9 +948,9 @@ function find_btn_desc_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
             //  var button1 = className("android.widget.Button").desc(findText_ZH_CN).findOne(1000);
             //  var button2 = className("android.widget.Button").desc(findText_ZH_TW).findOne(1000);
             //  var button3 = className("android.widget.Button").desc(findText_EN_US).findOne(1000);
-            var button1 = desc(findText_ZH_CN).findOne(1000);
-            var button2 = desc(findText_ZH_TW).findOne(1000);
-            var button3 = desc(findText_EN_US).findOne(1000);
+            var button1 = desc(findText_ZH_CN).findOne(3000);
+            var button2 = desc(findText_ZH_TW).findOne(3000);
+            var button3 = desc(findText_EN_US).findOne(3000);
 
 
              if (button1) {
@@ -1034,9 +1055,9 @@ function find_textview_text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US)
          }
 
          // 查找控件
-        var button1 = className("android.widget.TextView").text(findText_ZH_CN).findOne(1000);
-        var button2 = className("android.widget.TextView").text(findText_ZH_TW).findOne(1000);
-        var button3 = className("android.widget.TextView").text(findText_EN_US).findOne(1000);
+        var button1 = className("android.widget.TextView").text(findText_ZH_CN).findOne(3000);
+        var button2 = className("android.widget.TextView").text(findText_ZH_TW).findOne(3000);
+        var button3 = className("android.widget.TextView").text(findText_EN_US).findOne(3000);
 
         if (button1) {
             taskLog("找到" + findText_ZH_CN);
@@ -1164,7 +1185,8 @@ function click_bottom_center_for_post_video(){
             console.log("点击成功");
         } else {
             console.log("多次尝试后仍然点击失败");
-            throw new error("因为一直没有找到底部的+号按钮，导致无法进入发布视频的界面，所以终止任务直接报错")
+            toast("因为一直没有找到底部的+号按钮，导致无法进入发布视频的界面，所以终止任务直接报错")
+            // throw new error("因为一直没有找到底部的+号按钮，导致无法进入发布视频的界面，所以终止任务直接报错")
         }
     } else {
         console.log("未找到指定控件");
@@ -1178,7 +1200,7 @@ function click_choose_video_framelayout(){
 
     toast("开始点击选择图片的跳转按钮....")
     // 通过ID选择器查找控件
-    let view = id("com.ss.android.ugc.trill:id/bjf").className("android.widget.FrameLayout").findOne(3000);
+    let view = id("com.ss.android.ugc.trill:id/bjf").className("android.widget.FrameLayout").findOne();
 
 
     if (view) {
@@ -1221,7 +1243,8 @@ function click_choose_video_framelayout(){
             console.log("点击成功");
         } else {
             console.log("多次尝试后仍然点击失败");
-            throw new error("因为一直没有找到底部的+号按钮，导致无法进入发布视频的界面，所以终止任务直接报错")
+            toast("因为一直没有找到底部的+号按钮，导致无法进入发布视频的界面，所以终止任务直接报错")
+            //throw new error("因为一直没有找到底部的+号按钮，导致无法进入发布视频的界面，所以终止任务直接报错")
         }
     } else {
         console.log("未找到指定控件");
@@ -1254,7 +1277,7 @@ function click_Video_desc(commentText){
 function click_permission_allow(){
     toast("开始处理权限问题.....")
     // 等待权限弹窗出现
-    let allow_zh = textContains("允许").findOne(3000);
+    let allow_zh = textContains("允许").findOne(5000);
     if(allow_zh){
         // 获取控件的文本内容
         let btnText_cn = allow_zh.text();
@@ -1265,7 +1288,7 @@ function click_permission_allow(){
     }
 
     // 等待权限弹窗出现
-    let allow_tw = textContains("允許").findOne(3000);
+    let allow_tw = textContains("允許").findOne(5000);
     if(allow_tw){
         // 获取控件的文本内容
         let btnText_tw = allow_tw.text();
@@ -1276,7 +1299,7 @@ function click_permission_allow(){
     }
 
     // 等待权限弹窗出现
-    let allow_en = textContains("ALLOW").findOne(3000);
+    let allow_en = textContains("ALLOW").findOne(5000);
     if(allow_en){
         // 获取控件的文本内容
         let btnText_en = allow_en.text();
