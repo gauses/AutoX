@@ -16,7 +16,7 @@ var taskLogImgName = "nest_task_log.png"
 
 
 //用户需要输入的评论内容
-const FB_input_text = "$${FB_输入文案}"
+const FB_input_text = '$${T_FB_输入文案}';
 const FB_input_IMAGE = '$${FB_图片地址}';
 
 var FacebookPackageName = 'com.facebook.katana';
@@ -140,7 +140,34 @@ if(FB_input_IMAGE && FB_input_IMAGE !== "" && FB_input_IMAGE !== "null"
     sleep(5000)
     className("android.widget.AutoCompleteTextView").findOne().setText("")
     sleep(5000)
-    className("android.widget.AutoCompleteTextView").findOne().setText(FB_input_text)
+
+
+    //输入文案
+    // 用于存储私信用户的数组
+    let comments = [];
+    // 私信用户是否存在
+    taskLog("私信用户地址 =  " + FB_input_text)
+    const file = new java.io.File(FB_input_text);
+    if (file.exists() && file.isFile()) {
+        try {
+            // 读取文件内容
+            const reader = new java.io.BufferedReader(new java.io.FileReader(file));
+            let line;
+            while ((line = reader.readLine()) !== null) {
+                comments.push(line);
+            }
+            reader.close();
+        } catch (e) {
+            taskLog("读取文件时发生错误：" + e.message);
+        }
+    } else {
+        // 如果文件不存在，将文件名添加到数组中
+        comments.push(FB_input_text);
+    }
+    var randIdx = random(0, comments.length - 1)
+    taskLog("评论文案的下标randIdx："+randIdx)
+    var messageText = comments[randIdx];
+    className("android.widget.AutoCompleteTextView").findOne().setText(messageText)
     sleep(5000)
 
 
