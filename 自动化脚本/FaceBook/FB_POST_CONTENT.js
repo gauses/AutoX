@@ -17,10 +17,11 @@ var taskLogImgName = "nest_task_log.png"
 
 //用户需要输入的评论内容
 const FB_input_text = '$${T_FB_输入文案}';
-const FB_input_IMAGE = '$${FB_图片地址}';
+const FB_input_IMAGE = '$${T_FB_图片地址}';
 
 var FacebookPackageName = 'com.facebook.katana';
-
+//将需要处理的多媒体图片，单独copy一份放到这个文件夹里面，后面处理完成之后，再删除这个文件夹
+var A_NEST_FaceBook_MEDIA = 'A_NEST_FaceBook_MEDIA'; 
 
 
 //1.autox.js侧边栏的打开USB调试先打开
@@ -91,30 +92,10 @@ app.startActivity({
 
 
 
-taskLog("打开Facebook成功...")
-taskLog("FB_input_IMAGE:" + FB_input_IMAGE)
-toast("FB_input_IMAGE:" + FB_input_IMAGE)
-//图片不是空
-if(FB_input_IMAGE && FB_input_IMAGE !== "" && FB_input_IMAGE !== "null" 
-    && FB_input_IMAGE !== "undefined" && FB_input_IMAGE !== "$${FB_图片地址}" 
-    && !FB_input_IMAGE.includes("$${FB_图片地址}")){
-
-    toast("图片不是空")    
-    // className("android.widget.Button").desc("Select photos or videos for your post").findOne().click()
-    find_btn_desc_base("Select photos or videos for your post", "選擇照片或影片", "Select photos or videos for your post")
-    sleep(5000)
-
-    // className("android.widget.Button").desc("Allow access").findOne().click()
-    find_btn_desc_base("Allow access", "允許存取", "Allow access")
-    sleep(5000)
-
-    //id("(name removed)").className("android.widget.Button").text("ALLOW").findOne().click()
-    find_btn_Text_base("ALLOW", "允許", "ALLOW")
-    sleep(5000)
-
-    find_btn_Text_base("允许", "允許", "Allow")
-    sleep(5000)
-}else{
+    taskLog("打开Facebook成功...")
+    taskLog("FB_input_IMAGE:" + FB_input_IMAGE)
+    toast("FB_input_IMAGE:" + FB_input_IMAGE)
+ 
     //发布content
     //className("android.widget.Button").desc("Make a post on Facebook").findOne().click()
     find_btn_desc_base("Make a post on Facebook", "發布到 Facebook", "Make a post on Facebook")
@@ -170,7 +151,11 @@ if(FB_input_IMAGE && FB_input_IMAGE !== "" && FB_input_IMAGE !== "null"
     className("android.widget.AutoCompleteTextView").findOne().setText(messageText)
     sleep(5000)
 
+    //检查是否需要发图片
+    post_Image()
 
+    //删除临时图片库 :A_NEST_FaceBook_MEDIA
+    delete_temp_image("/storage/emulated/0/Download/" + A_NEST_FaceBook_MEDIA)
 
 
     taskLog("准备点击下一步....");
@@ -188,9 +173,191 @@ if(FB_input_IMAGE && FB_input_IMAGE !== "" && FB_input_IMAGE !== "null"
     //stopCurrentTask()
 
 
+
+
+
+function post_Image(){
+    taskLog("开始检查图片条件判断...")
+    taskLog("FB_input_IMAGE的实际值: " + FB_input_IMAGE)
+    
+    // 检查是否是有效的图片路径（不是模板字符串且文件存在）
+    if(FB_input_IMAGE && 
+        FB_input_IMAGE.trim() !== "" && 
+        !FB_input_IMAGE.includes("$${")){
+            taskLog("检测到有效的图片路径，准备处理图片...")
+            toast("图片不是空")    
+
+            refreshMedia("/storage/emulated/0/Download/")
+            var imageTempPath = transferHeadImageToNest(FB_input_IMAGE)
+            sleep(10000)
+
+            //className("android.widget.Button").desc("Photo/video").findOne().click()
+            find_btn_desc_base("Photo/video", "照片/影片", "Photo/video")
+            sleep(5000)
+
+
+            className("android.widget.GridView").findOne().children().forEach(child => {
+                var target = child.findOne(className("android.widget.Spinner"));
+                if(target == null){
+                    taskLog("未找到target控件，跳过");
+                    return;
+                }
+                target.click();
+                sleep(5000)
+
+
+                //点击对应的targetPath：A_NEST_FaceBook_MEDIA
+                var allListTextView = className("android.view.ViewGroup").find();
+                taskLog("找到allListTextView: 全部 = "  + allListTextView.size());
+                if (allListTextView && allListTextView.size() > 0) {
+                    for (var i = 0; i < allListTextView.size(); i++) {
+                        var listTextView = allListTextView.get(i);
+                        if (listTextView) {
+                            taskLog("找到listTextView控件-Text：" + listTextView.desc());
+                            
+                            // 检查text是否为"A_NEST_TikTok_MEDIA"
+                            if (listTextView.desc() != null && listTextView.desc().includes("A_NEST_FaceBook_MEDIA")) {
+                                // 正确调用bounds()方法并点击
+                                taskLog("找到对应目录" + listTextView.desc());
+                                var bounds = listTextView.bounds();
+                                click(bounds.centerX(), bounds.centerY());
+                                // 找到并点击后可以跳出循环
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                sleep(5000)
+
+
+                //选择图片
+                find_btn_desc_base("Select multiple", "選擇多張", "Select multiple")
+                sleep(5000)
+
+                //选中所有图片
+                className("android.widget.GridView").findOne().children().forEach(child => {
+                    var button = child.findOne(className("android.widget.Button"));
+                    if (!button) {
+                        taskLog("未找到Button控件，跳过");
+                        return;
+                    }
+                    
+                    var buttonDesc = button.desc();
+                    if (!buttonDesc) {
+                        taskLog("Button没有描述文本，跳过");
+                        return;
+                    }
+                    
+                    toast("选择图片描述 = " + buttonDesc);
+                    taskLog("选择图片描述 = " + buttonDesc);
+                    
+                    if (buttonDesc.indexOf("Photo taken on") !== -1) {
+                        taskLog("找到目标图片：" + buttonDesc);
+                        var bounds = button.bounds();
+                        if (bounds) {
+                            click(bounds.centerX(), bounds.centerY());
+                            taskLog("点击坐标：" + bounds.centerX() + ", " + bounds.centerY());
+                            sleep(2000);
+                        }
+                    }
+                    sleep(3000);
+                });
+
+
+
+                //点击Nest
+                //className("android.widget.Button").desc("Next").findOne().click()
+                find_btn_desc_base("Next", "下一步", "Next")
+                sleep(5000)
+
+            });
+            
+
+            
+
+            
+        }
 }
 
+// 刷新指定路径的媒体库
+function refreshMedia(path) {
+    toast("开始刷新媒体库，用时5秒钟....");
+    // 发送媒体扫描广播
+    media.scanFile(path);
+    // 等待扫描完成
+    sleep(5000);
+    toast("媒体库刷新完成，开始下一步任务...");
+}
 
+//转移头像图片到Nest临时文件夹
+function transferHeadImageToNest(fileName){
+    let imagePath = null;
+    if (files.exists(fileName)) {
+        imagePath = fileName;
+    }
+    
+    if (!imagePath) {
+        console.error("未找到指定图片：" + fileName);
+        toast("未找到指定图片：" + fileName);
+        return;
+    }
+
+
+    //开始拷贝一份，到本地自己的文件夹来单独处理，不处理原来的图片，
+    // 创建文件夹(如果不存在)
+    const newFolder = "/storage/emulated/0/Download/" + A_NEST_FaceBook_MEDIA;  // 替换成你想要的文件夹路径
+    if(!files.exists(newFolder)){
+        files.ensureDir(newFolder);
+        console.log("创建文件夹: " + newFolder);
+    }
+    // 目标图片路径(在新文件夹中)
+    const targetFileName = files.getName(imagePath);
+    const targetPath = newFolder + "/" + targetFileName;
+    console.log("新图片文件的绝对路径: " + targetPath);
+    // 复制图片文件
+    try {
+        files.copy(imagePath, targetPath);
+        console.log("复制成功!");
+        console.log("新图片路径: " + targetPath);
+    } catch(e) {
+        console.error("复制失败: " + e);
+    }
+
+    sleep(3000);
+
+
+    refreshMedia(newFolder)
+    sleep(10000);
+
+
+    // 创建文件对象并获取URI
+    let file = new java.io.File(targetPath);
+    let uri = app.getUriForFile(targetPath);
+    
+    // 创建打开图片的 Intent
+    let intent = new Intent(Intent.ACTION_VIEW);
+    intent.setDataAndType(uri, "image/*");
+    // 添加必要的权限标志
+    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+    // 指定使用系统默认的图库应用
+    intent.setPackage("com.android.gallery3d");  // 系统默认图库的包名
+    // 如果上面的包名不生效，可以尝试：
+    // intent.setPackage("com.google.android.apps.photos");  // Google Photos
+    // intent.setPackage("com.sec.android.gallery3d");  // 三星图库
+    // intent.setPackage("com.miui.gallery");  // 小米图库
+
+    // 启动图片查看Activity
+    // context.startActivity(intent);
+    // 等待界面加载
+    sleep(3000);
+
+    return targetPath
+
+
+}
 
 
 
@@ -386,14 +553,14 @@ function forceStop_FaceBook(){
             sleep(1000);
             // 确认操作
             if (text("確定").exists()) {
-                taskLog("已经找到可点击的‘強行停止’按钮！！！！！！！！！！");
+                taskLog("已经找到可点击的'強行停止'按钮！！！！！！！！！！");
                 text("確定").findOne().click();
             }
         } else {
-            taskLog("未找到可点击的‘強制停止’按钮");
+            taskLog("未找到可点击的'強制停止'按钮");
         }
     } else {
-        taskLog("未找到‘強制停止’按钮");
+        taskLog("未找到'強制停止'按钮");
     }
     sleep(3000)
 
@@ -408,10 +575,10 @@ function forceStop_FaceBook(){
                 text("确定").findOne().click();
             }
         } else {
-            taskLog("未找到可点击的‘强行停止’按钮");
+            taskLog("未找到可点击的'强行停止'按钮");
         }
     } else {
-        taskLog("未找到‘强行停止’按钮");
+        taskLog("未找到'强行停止'按钮");
     }
 
     sleep(3000)
@@ -428,10 +595,10 @@ function forceStop_FaceBook(){
                 text("OK").findOne().click();
             }
         } else {
-            taskLog("未找到可点击的‘Force stop’按钮");
+            taskLog("未找到可点击的'Force stop'按钮");
         }
     } else {
-        taskLog("未找到‘Force stop’按钮");
+        taskLog("未找到'Force stop'按钮");
     }
     sleep(3000)
 
@@ -446,14 +613,34 @@ function forceStop_FaceBook(){
                 text("OK").findOne().click();
             }
         } else {
-            taskLog("未找到可点击的‘FORCE STOP’按钮");
+            taskLog("未找到可点击的'FORCE STOP'按钮");
         }
     } else {
-        taskLog("未找到‘FORCE STOP’按钮");
+        taskLog("未找到'FORCE STOP'按钮");
     }
     sleep(3000)
 
 
     home()
 
+}
+
+//删除临时图片文件夹
+function delete_temp_image(folderPath) {
+    taskLog("准备删除临时文件夹: " + folderPath);
+    toast("准备删除临时文件夹: " + folderPath);
+    
+    if (!files.exists(folderPath)) {
+        taskLog("文件夹不存在，无需删除");
+        return;
+    }
+
+    try {
+        // 删除文件夹及其所有内容
+        files.removeDir(folderPath);
+        taskLog("成功删除临时文件夹");
+    } catch (e) {
+        taskLog("删除临时文件夹时出错: " + e);
+        console.error("删除临时文件夹时出错: " + e);
+    }
 }
