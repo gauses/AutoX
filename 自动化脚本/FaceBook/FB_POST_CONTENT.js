@@ -195,6 +195,20 @@ function post_Image(){
             find_btn_desc_base("Photo/video", "照片/影片", "Photo/video")
             sleep(5000)
 
+            //点击权限
+            //className("android.widget.Button").desc("Allow access").findOne().click()
+            find_btn_desc_base("Allow access", "允許存取", "Allow access")
+            sleep(3000)
+
+            //再次点击权限
+            // id("(name removed)").className("android.widget.Button").text("ALLOW").findOne().click()
+            find_btn_text_base("ALLOW", "允許", "ALLOW")
+            sleep(3000)
+
+            //系统弹窗
+            find_btn_Text_base("允许", "允許", "Allow")
+            sleep(3000)
+
 
             className("android.widget.GridView").findOne().children().forEach(child => {
                 var target = child.findOne(className("android.widget.Spinner"));
@@ -445,7 +459,7 @@ function stopCurrentTask(){
 
 
 //通过Button的Text
-function find_btn_Text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US, findText_EN_UK){
+function find_btn_Text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
 
 
         var loopCount  = 0
@@ -466,7 +480,6 @@ function find_btn_Text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US, find
              var button1 = className("android.widget.Button").text(findText_ZH_CN).findOne(1000);
              var button2 = className("android.widget.Button").text(findText_ZH_TW).findOne(1000);
              var button3 = className("android.widget.Button").text(findText_EN_US).findOne(1000);
-             var button4 = className("android.widget.Button").text(findText_EN_UK).findOne(1000);
 
              if (button1) {
                  taskLog("找到" + findText_ZH_CN);
@@ -480,11 +493,7 @@ function find_btn_Text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US, find
                  taskLog("找到" + findText_EN_US);
                  button3.click();
                  break; // 跳出循环
-             }else if(button4){
-                taskLog("找到" + findText_EN_UK);
-                button4.click();
-                break; // 跳出循环
-            }
+             }
 
              sleep(1000)
 
