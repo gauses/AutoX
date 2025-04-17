@@ -202,7 +202,7 @@ function post_Image(){
 
             //再次点击权限
             // id("(name removed)").className("android.widget.Button").text("ALLOW").findOne().click()
-            find_btn_text_base("ALLOW", "允許", "ALLOW")
+            find_btn_Text_base("ALLOW", "允許", "ALLOW")
             sleep(3000)
 
             //系统弹窗
@@ -456,6 +456,8 @@ function stopCurrentTask(){
     console.hide()
 
 }
+
+
 
 
 //通过Button的Text
