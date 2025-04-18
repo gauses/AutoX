@@ -16,12 +16,12 @@ var taskLogImgName = "nest_task_log.png"
 
 
 //用户需要输入的评论内容
-const FB_input_text = "${{输入文案}}"
-// const FB_input_Time = "${{输入时间}}"
-const FB_input_Time = 6000
+const FB_input_text = '$${T_FB_输入评论文案}';
+const FB_input_Time = "$${FB_自定義瀏覽時間}"
 
 
 // 计算循环次数
+toast("FB_input_Time = " + FB_input_Time)
 const loopTimes = Math.floor(parseInt(FB_input_Time) / 60);
 taskLog("总执行次数：" + loopTimes + "次");
 
@@ -90,34 +90,50 @@ for(let currentLoop = 1; currentLoop <= loopTimes; currentLoop++) {
     find_btn_desc_base("Like button. Double tap and hold to react.", "Like button. Double tap and hold to react." , "Like button. Double tap and hold to react.")
     //检查是不是有点赞按钮
 
-
-
-    taskLog("准备点击评论按钮....");
-    sleep(5000)
-    find_btn_desc_base("Comment", "Comment" , "Comment")
-
-    sleep(5000)
-    var autoCompleteTextViews = className("android.widget.AutoCompleteTextView").find();
-    if(autoCompleteTextViews.size() > 0 ){
-        for(var i = 0; i < autoCompleteTextViews.size(); i++) {
-            var textView = autoCompleteTextViews.get(i);
-            if(textView) {
-                taskLog("找到AutoCompleteTextView控件-Text："+ textView.text());
-                sleep(2000)
-                textView.setText("do you love me?")
+    
+    var commentText = get_post_text()
+    if(commentText){
+        toast("评论文案：" + commentText)
+        toast("准备点击评论按钮....");
+        sleep(5000)
+        var findCommentBtn = find_btn_desc_base("Comment", "Comment" , "Comment")
+        if(findCommentBtn){
+            toast("找到评论按钮");
+    
+            sleep(5000)
+            var autoCompleteTextViews = className("android.widget.AutoCompleteTextView").find();
+            if(autoCompleteTextViews.size() > 0 ){
+                for(var i = 0; i < autoCompleteTextViews.size(); i++) {
+                    var textView = autoCompleteTextViews.get(i);
+                    if(textView) {
+                        taskLog("找到AutoCompleteTextView控件-Text："+ textView.text());
+                        sleep(2000)
+                        textView.setText(commentText)
+                    }
+                }
             }
+    
+            //发送
+            sleep(5000)
+            find_btn_desc_base("Send", "Send" , "Send")
+    
+    
+            sleep(5000)
+            back() //键盘收起
+            sleep(1000)
+            back() //返回上一个页面
+    
+    
+        }else{
+            toast("没有找到评论按钮");
         }
+    }else{
+        toast("评论文案为空，所以不点击评论按钮");
     }
 
-    //发送
-    sleep(5000)
-    find_btn_desc_base("Send", "Send" , "Send")
 
 
-    sleep(3000)
-    back() //键盘收起
-    sleep(1000)
-    back() //返回上一个页面
+    
 
     if(currentLoop < loopTimes) {
         taskLog("等待5秒后开始下一次循环...");
@@ -286,14 +302,17 @@ function find_btn_desc_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
              var button2 = className("android.widget.Button").desc(findText_ZH_TW).findOne(1000);
              var button3 = className("android.widget.Button").desc(findText_EN_US).findOne(1000);
              if (button1) {
+                 findBtn = true
                  taskLog("找到" + findText_ZH_CN);
                  button1.click();
                  break; // 跳出循环
              }else if(button2){
+                 findBtn = true
                  taskLog("找到" + findText_ZH_TW);
                  button2.click();
                  break; // 跳出循环
              }else if(button3){
+                 findBtn = true
                  taskLog("找到" + findText_EN_US);
                  button3.click();
                  break; // 跳出循环
@@ -303,5 +322,37 @@ function find_btn_desc_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
 
          }
 
+         return findBtn
+
 }
 
+
+//从评论列表数组中，随机挑选一条内容，翻译
+function get_post_text(){
+    // 用于存储私信用户的数组
+    let comments = [];
+    // 私信用户是否存在
+    taskLog("私信用户地址 =  " + FB_input_text)
+    const file = new java.io.File(FB_input_text);
+    if (file.exists() && file.isFile()) {
+        try {
+            // 读取文件内容
+            const reader = new java.io.BufferedReader(new java.io.FileReader(file));
+            let line;
+            while ((line = reader.readLine()) !== null) {
+                comments.push(line);
+            }
+            reader.close();
+        } catch (e) {
+            taskLog("读取文件时发生错误：" + e.message);
+        }
+    } else {
+        // 如果文件不存在，将文件名添加到数组中
+        comments.push(FB_input_text);
+    }
+    var randIdx = random(0, comments.length - 1)
+    var messageText = comments[randIdx];
+
+    return messageText
+
+}
