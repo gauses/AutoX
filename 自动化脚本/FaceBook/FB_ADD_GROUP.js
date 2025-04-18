@@ -4,9 +4,11 @@ importClass(java.io.PrintWriter);
 importClass(java.io.FileWriter);
 
 //******************************************************************
-//***********************Facebook加入好友(連結)*************************
-// 指紋 新增爬粉絲頁追蹤者數據
-// 1 如遇到無法加好友直接略過
+//***********************FaceBook加入社團(連結)************************
+// 連結加社團
+
+// 1 需可自動打勾社團條約(有條約自動勾 無條約直接略過)
+// 2 需可自動自定義回答社團問題 (有幾個問答就回答幾個)
 //******************************************************************
 
 
@@ -19,7 +21,7 @@ var chromePackageName = 'com.kiwibrowser.browser';
 
 
 //需要添加的用户好友
-const FB_input_text = '$${T_FB_输入需要添加的所有好友}';
+const FB_input_text = '$${T_FB_输入需要添加的所有Group}';
 
 // 添加全局索引计数器
 let commentIndex = 0;
@@ -67,7 +69,7 @@ taskLog("准备启动Facebook...")
 
 
     var all_friends = get_all_friedns()
-    toast("所有好友数量 = " + all_friends.length)
+    toast("所有Group数量 = " + all_friends.length)
     sleep(5000)
     
     //用浏览器打开链接
@@ -89,15 +91,13 @@ taskLog("准备启动Facebook...")
         find_textview_text_base("開啟應用程式","開啟應用程式","Open app")
         sleep(5000)
 
-        //className("android.view.View").text("Add friend").findOne().click()
-        find_view_desc_base("Add friend","Add friend","Add friend")
+        //className("android.view.ViewGroup").text("Join group").findOne().click()
+        find_viewGroup_desc_base("Join group","Join group","Join group")
         sleep(5000)
 
-        //className("android.view.View").text("Follow").findOne().click()
-        find_view_desc_base("Follow","Follow","Follow")
-        sleep(5000) 
+        answer_all_questions()
 
-        toast("已经点击添加好友")
+        toast("已经点击添加Group")
 
 
 
@@ -578,6 +578,56 @@ function find_textview_text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US)
 
 
 //通过Button的Desc
+function find_viewGroup_desc_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
+
+    var findBtn = false
+
+    var loopCount  = 0
+
+     while (true) {
+         taskLog(findText_ZH_CN + " - 循环寻找执行：" + (++loopCount));
+         // 检查计数器是否达到3
+         if (loopCount >= 3) {
+             // 打印一条消息并退出循环
+             taskLog("寻找" + findText_ZH_CN + "按钮失败");
+             taskLog("循环已执行3次，即将退出循环。");
+
+             //不能抛出异常，因为可能Facebook记忆功能，自动跳转到输入页面
+//                 throw new Error(findText_ZH_CN +"按钮没有找到");
+            break;
+         }
+
+
+         // 查找控件
+         var button1 = className("android.view.ViewGroup").desc(findText_ZH_CN).findOne(1000);
+         var button2 = className("android.view.ViewGroup").desc(findText_ZH_TW).findOne(1000);
+         var button3 = className("android.view.ViewGroup").desc(findText_EN_US).findOne(1000);
+         if (button1) {
+             findBtn = true
+             taskLog("找到" + findText_ZH_CN);
+             click(button1.bounds().centerX() , button1.bounds().centerY())
+             break; // 跳出循环
+         }else if(button2){
+             findBtn = true
+             taskLog("找到" + findText_ZH_TW);
+             click(button2.bounds().centerX() , button2.bounds().centerY())
+             break; // 跳出循环
+         }else if(button3){
+             findBtn = true
+             taskLog("找到" + findText_EN_US);
+             click(button3.bounds().centerX() , button3.bounds().centerY())
+             break; // 跳出循环
+         }
+
+         sleep(1000)
+
+     }
+
+     return findBtn
+
+}
+
+//通过Button的Desc
 function find_view_desc_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
 
     var findBtn = false
@@ -714,4 +764,25 @@ function forceStop_APP(packageName){
 
     home()
 
+}
+
+
+
+//回答当然页面的所有EditText的所有问题，填入内容
+function answer_all_questions(){
+    //获取当前页面所有EditText
+    var editTexts = className("android.widget.EditText").find()
+    //遍历所有EditText
+    for(var i = 0; i < editTexts.length; i++){
+        var editText = editTexts[i]
+        //填入内容
+        editText.setText("YES, This is awesome! 😎")
+        //点击键盘的“完成”按钮
+        // className("android.view.View").text("Submit").findOne().click()
+        find_view_desc_base("Submit","Submit","Submit")
+        sleep(5000)
+
+    
+    }
+    sleep(10000)
 }
