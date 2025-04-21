@@ -78,24 +78,33 @@ taskLog("准备启动Facebook...")
 
 
     for(var i = 0; i < all_friends.length; i++){
-        toast("当前好友 = " + all_friends[i])
         sleep(5000)
 
         var friend_info_link = all_friends[i]
-        toast("当前好友信息 = " + friend_info_link)
+        toast("当前Group信息 = " + friend_info_link)
         sleep(5000)
 
         openBrowser(friend_info_link)
         sleep(5000)
 
+        //可能会出现“Continue”按钮，点击：
+        if(id("message_primary_button").exists()){
+            toast("出现Continue按钮，点击.")
+            id("message_primary_button").findOne().click()
+        }
+        sleep(5000)
+
         find_textview_text_base("開啟應用程式","開啟應用程式","Open app")
         sleep(5000)
+
+
 
         //className("android.view.ViewGroup").text("Join group").findOne().click()
         find_viewGroup_desc_base("Join group","Join group","Join group")
         sleep(5000)
 
         answer_all_questions()
+
 
         toast("已经点击添加Group")
 
@@ -107,83 +116,6 @@ taskLog("准备启动Facebook...")
     
 toast("所有循环执行完毕，准备结束任务...");
 stopCurrentTask()
-
-
-// // 开始主循环
-// for(let currentLoop = 1; currentLoop <= loopTimes; currentLoop++) {
-//     toast("开始第 " + currentLoop + "/" + loopTimes + " 次执行");    
-    
-    
-//     sleep(5000)
-//     taskLog("准备上滑，起始x坐标: " + device.width / 2 );
-//     taskLog("准备上滑，起始y坐标: " + device.height * 3 / 4 );
-//     taskLog("准备上滑，结束x坐标: " + device.width / 2 );
-//     taskLog("准备上滑，结束Y坐标: " + device.height / 4 );
-
-//     swipe(device.width / 2, device.height * 3 / 4, device.width / 2, device.height / 4, 500);
-
-
-
-//     //点赞：className("android.widget.Button").desc("Like button. Double tap and hold to react.").findOne().click()
-//     //评论：className("android.widget.Button").desc("Comment").clickable(true).findOne().click()
-
-//     taskLog("准备点击点赞按钮....");
-//     sleep(5000)
-//     find_btn_desc_base("Like button. Double tap and hold to react.", "Like button. Double tap and hold to react." , "Like button. Double tap and hold to react.")
-//     //检查是不是有点赞按钮
-
-    
-//     var commentText = get_post_text()
-//     if(commentText){
-//         toast("评论文案：" + commentText)
-//         toast("准备点击评论按钮....");
-//         sleep(5000)
-//         var findCommentBtn = find_btn_desc_base("Comment", "Comment" , "Comment")
-//         if(findCommentBtn){
-//             toast("找到评论按钮");
-    
-//             sleep(5000)
-//             var autoCompleteTextViews = className("android.widget.AutoCompleteTextView").find();
-//             if(autoCompleteTextViews.size() > 0 ){
-//                 for(var i = 0; i < autoCompleteTextViews.size(); i++) {
-//                     var textView = autoCompleteTextViews.get(i);
-//                     if(textView) {
-//                         taskLog("找到AutoCompleteTextView控件-Text："+ textView.text());
-//                         sleep(2000)
-//                         textView.setText(commentText)
-//                     }
-//                 }
-//             }
-    
-//             //发送
-//             sleep(5000)
-//             find_btn_desc_base("Send", "Send" , "Send")
-    
-    
-//             sleep(5000)
-//             back() //键盘收起
-//             sleep(1000)
-//             back() //返回上一个页面
-    
-    
-//         }else{
-//             toast("没有找到评论按钮");
-//         }
-//     }else{
-//         toast("评论文案为空，所以不点击评论按钮");
-//     }
-
-
-
-    
-
-//     if(currentLoop < loopTimes) {
-//         taskLog("等待5秒后开始下一次循环...");
-//         toast("等待5秒后开始下一次循环...");
-//         sleep(5000);
-//     }
-// }
-
 
 
 
@@ -440,13 +372,18 @@ function firstOpenBrowser(){
 
       sleep(3000);
 
-      //可能部分设备弹出“NestBrowser不能运行在没有GMS的设备”的弹出框，需要点击确定
-      if (id('button1').exists()) {
-        id('button1').findOne(3000).click();
-      }
+    //   //可能部分设备弹出"NestBrowser不能运行在没有GMS的设备"的弹出框，需要点击确定
+    //   if (id('button1').exists()) {
+    //     id('button1').findOne(3000).click();
+    //   }
       
-      //点击欢迎界面的“continue”按钮
-      clickId("com.kiwibrowser.browser:id/signin_fre_continue_button")  
+      //可能存在欢迎界面的"continue"按钮，点击
+      if(id("com.kiwibrowser.browser:id/signin_fre_continue_button").exists()){
+        toast("存在欢迎界面的continue按钮，点击")
+        id("com.kiwibrowser.browser:id/signin_fre_continue_button").findOne().click()
+      }else{
+        toast("不存在欢迎界面的continue按钮")
+      }
 
 
 }
@@ -627,7 +564,7 @@ function find_viewGroup_desc_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US
 
 }
 
-//通过Button的Desc
+//通过View的Desc
 function find_view_desc_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
 
     var findBtn = false
@@ -679,6 +616,59 @@ function find_view_desc_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
 
 
 
+//通过View的text
+function find_view_text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
+
+    var findBtn = false
+
+    var loopCount  = 0
+
+     while (true) {
+         taskLog(findText_ZH_CN + " - 循环寻找执行：" + (++loopCount));
+         // 检查计数器是否达到3
+         if (loopCount >= 3) {
+             // 打印一条消息并退出循环
+             taskLog("寻找" + findText_ZH_CN + "按钮失败");
+             taskLog("循环已执行3次，即将退出循环。");
+
+             //不能抛出异常，因为可能Facebook记忆功能，自动跳转到输入页面
+//                 throw new Error(findText_ZH_CN +"按钮没有找到");
+            break;
+         }
+
+
+         // 查找控件
+         var button1 = className("android.view.View").text(findText_ZH_CN).findOne(1000);
+         var button2 = className("android.view.View").text(findText_ZH_TW).findOne(1000);
+         var button3 = className("android.view.View").text(findText_EN_US).findOne(1000);
+         if (button1) {
+             findBtn = true
+             taskLog("找到" + findText_ZH_CN);
+             click(button1.bounds().centerX() , button1.bounds().centerY())
+             break; // 跳出循环
+         }else if(button2){
+             findBtn = true
+             taskLog("找到" + findText_ZH_TW);
+             click(button2.bounds().centerX() , button2.bounds().centerY())
+             break; // 跳出循环
+         }else if(button3){
+             findBtn = true
+             taskLog("找到" + findText_EN_US);
+             click(button3.bounds().centerX() , button3.bounds().centerY())
+             break; // 跳出循环
+         }
+
+         sleep(1000)
+
+     }
+
+     return findBtn
+
+}
+
+
+
+
 //强制停止TikTok 
 function forceStop_APP(packageName){
     taskLog("准备强杀:" + packageName + "...")
@@ -694,14 +684,14 @@ function forceStop_APP(packageName){
             sleep(1000);
             // 确认操作
             if (text("確定").exists()) {
-                taskLog("已经找到可点击的‘強行停止’按钮！！！！！！！！！！");
+                taskLog("已经找到可点击的'強行停止'按钮！！！！！！！！！！");
                 text("確定").findOne().click();
             }
         } else {
-            taskLog("未找到可点击的‘強制停止’按钮");
+            taskLog("未找到可点击的'強制停止'按钮");
         }
     } else {
-        taskLog("未找到‘強制停止’按钮");
+        taskLog("未找到'強制停止'按钮");
     }
     sleep(3000)
 
@@ -716,10 +706,10 @@ function forceStop_APP(packageName){
                 text("确定").findOne().click();
             }
         } else {
-            taskLog("未找到可点击的‘强行停止’按钮");
+            taskLog("未找到可点击的'强行停止'按钮");
         }
     } else {
-        taskLog("未找到‘强行停止’按钮");
+        taskLog("未找到'强行停止'按钮");
     }
 
     sleep(3000)
@@ -736,10 +726,10 @@ function forceStop_APP(packageName){
                 text("OK").findOne().click();
             }
         } else {
-            taskLog("未找到可点击的‘Force stop’按钮");
+            taskLog("未找到可点击的'Force stop'按钮");
         }
     } else {
-        taskLog("未找到‘Force stop’按钮");
+        taskLog("未找到'Force stop'按钮");
     }
     sleep(3000)
 
@@ -754,10 +744,10 @@ function forceStop_APP(packageName){
                 text("OK").findOne().click();
             }
         } else {
-            taskLog("未找到可点击的‘FORCE STOP’按钮");
+            taskLog("未找到可点击的'FORCE STOP'按钮");
         }
     } else {
-        taskLog("未找到‘FORCE STOP’按钮");
+        taskLog("未找到'FORCE STOP'按钮");
     }
     sleep(3000)
 
@@ -772,17 +762,58 @@ function forceStop_APP(packageName){
 function answer_all_questions(){
     //获取当前页面所有EditText
     var editTexts = className("android.widget.EditText").find()
+    toast("当前页面所有EditText = " + editTexts.length)
+
+    if(editTexts.length == 0){
+        taskLog("当前页面没有EditText")
+        return
+    }
+    
     //遍历所有EditText
     for(var i = 0; i < editTexts.length; i++){
         var editText = editTexts[i]
-        //填入内容
-        editText.setText("YES, This is awesome! 😎")
-        //点击键盘的“完成”按钮
-        // className("android.view.View").text("Submit").findOne().click()
-        find_view_desc_base("Submit","Submit","Submit")
-        sleep(5000)
-
-    
+        
+        //检查EditText是否可见
+        if(!editText.visibleToUser()){
+            //如果不可见,尝试滚动屏幕
+            let screenHeight = device.height;
+            let startY = screenHeight * 0.8;  // 从屏幕80%的位置开始
+            let endY = screenHeight * 0.2;    // 滑动到屏幕20%的位置
+            
+            swipe(device.width / 2, startY, device.width / 2, endY, 500);
+            sleep(2000) //等待滚动完成
+            
+            //重新获取EditText列表
+            editTexts = className("android.widget.EditText").find()
+            if(i < editTexts.length) {
+                editText = editTexts[i]
+            }
+        }
+        
+        //再次检查是否可见
+        if(editText && editText.visibleToUser()){
+            //填入内容
+            editText.setText("YES, This is awesome! 😎")            
+            sleep(5000)
+        } else {
+            taskLog("警告:第" + (i+1) + "个EditText仍然不可见或已不存在,跳过此项")
+        }
     }
+    
+    //检查是否还有未填写的EditText
+    var remainingEditTexts = className("android.widget.EditText").find()
+    if(remainingEditTexts.length > 0){
+        taskLog("注意:页面上可能还有" + remainingEditTexts.length + "个未处理的EditText")
+    }
+    
+    sleep(10000)
+
+    //点击同意的checkbook
+    // className("android.view.View").text("I agree to the group rules").findOne().click()
+    find_view_text_base("I agree to the group rules","我同意社團規則","I agree to the group rules")
+    sleep(5000)
+
+    //点击提交按钮
+    find_view_desc_base("Submit","Submit","Submit")
     sleep(10000)
 }
