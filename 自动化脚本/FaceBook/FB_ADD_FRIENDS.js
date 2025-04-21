@@ -79,11 +79,10 @@ taskLog("准备启动Facebook...")
         stopCurrentTask()
     }else{
         for(var i = 0; i < all_friends.length; i++){
-            toast("当前好友 = " + all_friends[i])
+            toast("当前好友在第" + (i+1) + "个 = " + all_friends[i])
             sleep(5000)
     
             var friend_info_link = all_friends[i]
-            toast("当前好友信息 = " + friend_info_link)
             sleep(5000)
     
             openBrowser(friend_info_link)
@@ -107,6 +106,10 @@ taskLog("准备启动Facebook...")
             //className("android.view.View").text("Follow").findOne().click()
             find_view_desc_base("Follow","Follow","Follow")
             sleep(5000) 
+
+            //检查页面是否存在多个“Add friend”按钮，因为可能会跳转到一个新页面
+            check_add_friend_page()
+            sleep(5000)
     
             toast("已经点击添加好友")
     
@@ -563,6 +566,22 @@ function find_view_desc_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
      return findBtn
 
 }
+
+//在加好友之后，可能会跳转到一个新页面，这个页面是推荐你add friend，需要点击back返回
+function check_add_friend_page(){
+    //检查页面是否存在“Add friend”按钮 :desc("Add friend")
+    var add_friends_viewGroup = className("android.view.ViewGroup").desc("Add friend").find()
+    toast("当前页面所有viewGroup = " + add_friends_viewGroup.length)
+
+    if(add_friends_viewGroup.length > 1){
+        toast("当前页面存在add_friends_viewGroup")
+        back()
+    }else{
+        toast("当前页面不存在add_friends_viewGroup")
+    }
+
+}
+
 
 
 
