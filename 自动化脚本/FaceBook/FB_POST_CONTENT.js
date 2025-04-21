@@ -154,9 +154,6 @@ app.startActivity({
     //检查是否需要发图片
     post_Image()
 
-    //删除临时图片库 :A_NEST_FaceBook_MEDIA
-    delete_temp_image("/storage/emulated/0/Download/" + A_NEST_FaceBook_MEDIA)
-
 
     taskLog("准备点击下一步....");
     sleep(5000)
@@ -165,7 +162,13 @@ app.startActivity({
     //className("android.widget.Button").desc("POST").findOne().click()
     taskLog("准备点击POST....");
     sleep(5000)
-    find_btn_desc_base("POST", "發布" , "POST")
+    //className("android.view.ViewGroup").text("POST").findOne().click()
+    find_viewGroup_text_base("POST", "發布" , "POST")
+
+
+    //删除临时图片库 :A_NEST_FaceBook_MEDIA
+    sleep(5000)
+    delete_temp_image("/storage/emulated/0/Download/" + A_NEST_FaceBook_MEDIA)
 
 
     taskLog("等待分享结果，大约30s左右....");
@@ -654,4 +657,56 @@ function delete_temp_image(folderPath) {
         taskLog("删除临时文件夹时出错: " + e);
         console.error("删除临时文件夹时出错: " + e);
     }
+
+}
+
+
+//通过Button的Desc
+function find_viewGroup_text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
+
+    var findBtn = false
+
+    var loopCount  = 0
+
+     while (true) {
+         taskLog(findText_ZH_CN + " - 循环寻找执行：" + (++loopCount));
+         // 检查计数器是否达到3
+         if (loopCount >= 3) {
+             // 打印一条消息并退出循环
+             taskLog("寻找" + findText_ZH_CN + "按钮失败");
+             taskLog("循环已执行3次，即将退出循环。");
+
+             //不能抛出异常，因为可能Facebook记忆功能，自动跳转到输入页面
+//                 throw new Error(findText_ZH_CN +"按钮没有找到");
+            break;
+         }
+
+
+         // 查找控件
+         var button1 = className("android.view.ViewGroup").text(findText_ZH_CN).findOne(1000);
+         var button2 = className("android.view.ViewGroup").text(findText_ZH_TW).findOne(1000);
+         var button3 = className("android.view.ViewGroup").text(findText_EN_US).findOne(1000);
+         if (button1) {
+             findBtn = true
+             taskLog("找到" + findText_ZH_CN);
+             click(button1.bounds().centerX() , button1.bounds().centerY())
+             break; // 跳出循环
+         }else if(button2){
+             findBtn = true
+             taskLog("找到" + findText_ZH_TW);
+             click(button2.bounds().centerX() , button2.bounds().centerY())
+             break; // 跳出循环
+         }else if(button3){
+             findBtn = true
+             taskLog("找到" + findText_EN_US);
+             click(button3.bounds().centerX() , button3.bounds().centerY())
+             break; // 跳出循环
+         }
+
+         sleep(1000)
+
+     }
+
+     return findBtn
+
 }
