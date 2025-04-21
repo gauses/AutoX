@@ -74,119 +74,51 @@ taskLog("准备启动Facebook...")
     firstOpenBrowser()
     sleep(5000)
 
+    if(all_friends.length == 0){
+        toast("没有好友")
+        stopCurrentTask()
+    }else{
+        for(var i = 0; i < all_friends.length; i++){
+            toast("当前好友 = " + all_friends[i])
+            sleep(5000)
+    
+            var friend_info_link = all_friends[i]
+            toast("当前好友信息 = " + friend_info_link)
+            sleep(5000)
+    
+            openBrowser(friend_info_link)
+            sleep(5000)
 
-    for(var i = 0; i < all_friends.length; i++){
-        toast("当前好友 = " + all_friends[i])
-        sleep(5000)
+            //可能会出现“Continue”按钮，点击：
+            if(id("message_primary_button").exists()){
+                toast("出现Continue按钮，点击.")
+                id("message_primary_button").findOne().click()
+            }
+            sleep(5000)
 
-        var friend_info_link = all_friends[i]
-        toast("当前好友信息 = " + friend_info_link)
-        sleep(5000)
-
-        openBrowser(friend_info_link)
-        sleep(5000)
-
-        find_textview_text_base("開啟應用程式","開啟應用程式","Open app")
-        sleep(5000)
-
-        //className("android.view.View").text("Add friend").findOne().click()
-        find_view_desc_base("Add friend","Add friend","Add friend")
-        sleep(5000)
-
-        //className("android.view.View").text("Follow").findOne().click()
-        find_view_desc_base("Follow","Follow","Follow")
-        sleep(5000) 
-
-        toast("已经点击添加好友")
-
-
-
+    
+            find_textview_text_base("開啟應用程式","開啟應用程式","Open app")
+            sleep(5000)
+    
+            //className("android.view.View").text("Add friend").findOne().click()
+            find_view_desc_base("Add friend","Add friend","Add friend")
+            sleep(5000)
+    
+            //className("android.view.View").text("Follow").findOne().click()
+            find_view_desc_base("Follow","Follow","Follow")
+            sleep(5000) 
+    
+            toast("已经点击添加好友")
+    
+        }
     }
+
+
 
 
     
 toast("所有循环执行完毕，准备结束任务...");
 stopCurrentTask()
-
-
-// // 开始主循环
-// for(let currentLoop = 1; currentLoop <= loopTimes; currentLoop++) {
-//     toast("开始第 " + currentLoop + "/" + loopTimes + " 次执行");    
-    
-    
-//     sleep(5000)
-//     taskLog("准备上滑，起始x坐标: " + device.width / 2 );
-//     taskLog("准备上滑，起始y坐标: " + device.height * 3 / 4 );
-//     taskLog("准备上滑，结束x坐标: " + device.width / 2 );
-//     taskLog("准备上滑，结束Y坐标: " + device.height / 4 );
-
-//     swipe(device.width / 2, device.height * 3 / 4, device.width / 2, device.height / 4, 500);
-
-
-
-//     //点赞：className("android.widget.Button").desc("Like button. Double tap and hold to react.").findOne().click()
-//     //评论：className("android.widget.Button").desc("Comment").clickable(true).findOne().click()
-
-//     taskLog("准备点击点赞按钮....");
-//     sleep(5000)
-//     find_btn_desc_base("Like button. Double tap and hold to react.", "Like button. Double tap and hold to react." , "Like button. Double tap and hold to react.")
-//     //检查是不是有点赞按钮
-
-    
-//     var commentText = get_post_text()
-//     if(commentText){
-//         toast("评论文案：" + commentText)
-//         toast("准备点击评论按钮....");
-//         sleep(5000)
-//         var findCommentBtn = find_btn_desc_base("Comment", "Comment" , "Comment")
-//         if(findCommentBtn){
-//             toast("找到评论按钮");
-    
-//             sleep(5000)
-//             var autoCompleteTextViews = className("android.widget.AutoCompleteTextView").find();
-//             if(autoCompleteTextViews.size() > 0 ){
-//                 for(var i = 0; i < autoCompleteTextViews.size(); i++) {
-//                     var textView = autoCompleteTextViews.get(i);
-//                     if(textView) {
-//                         taskLog("找到AutoCompleteTextView控件-Text："+ textView.text());
-//                         sleep(2000)
-//                         textView.setText(commentText)
-//                     }
-//                 }
-//             }
-    
-//             //发送
-//             sleep(5000)
-//             find_btn_desc_base("Send", "Send" , "Send")
-    
-    
-//             sleep(5000)
-//             back() //键盘收起
-//             sleep(1000)
-//             back() //返回上一个页面
-    
-    
-//         }else{
-//             toast("没有找到评论按钮");
-//         }
-//     }else{
-//         toast("评论文案为空，所以不点击评论按钮");
-//     }
-
-
-
-    
-
-//     if(currentLoop < loopTimes) {
-//         taskLog("等待5秒后开始下一次循环...");
-//         toast("等待5秒后开始下一次循环...");
-//         sleep(5000);
-//     }
-// }
-
-
-
-
 
 
 //打印日志
@@ -440,13 +372,18 @@ function firstOpenBrowser(){
 
       sleep(3000);
 
-      //可能部分设备弹出“NestBrowser不能运行在没有GMS的设备”的弹出框，需要点击确定
-      if (id('button1').exists()) {
-        id('button1').findOne(3000).click();
-      }
+    //   //可能部分设备弹出"NestBrowser不能运行在没有GMS的设备"的弹出框，需要点击确定
+    //   if (id('button1').exists()) {
+    //     id('button1').findOne(3000).click();
+    //   }
       
-      //点击欢迎界面的“continue”按钮
-      clickId("com.kiwibrowser.browser:id/signin_fre_continue_button")  
+      //可能存在欢迎界面的"continue"按钮，点击
+      if(id("com.kiwibrowser.browser:id/signin_fre_continue_button").exists()){
+        toast("存在欢迎界面的continue按钮，点击")
+        id("com.kiwibrowser.browser:id/signin_fre_continue_button").findOne().click()
+      }else{
+        toast("不存在欢迎界面的continue按钮")
+      }
 
 
 }
