@@ -23,6 +23,8 @@ var chromePackageName = 'com.kiwibrowser.browser';
 
 //需要添加的用户好友
 const FB_input_text = '$${T_FB_输入需要動態文章留言的所有Group}';
+const FB_common_count = '$${FB_每个Group输入留言的个数}';
+
 
 // 添加全局索引计数器
 let commentIndex = 0;
@@ -766,8 +768,20 @@ function fina_all_Comment(){
     //计数器，记录连续下滑未找到Comment按钮的次数
     let noCommentScrollCount = 0;
     
-    //循环直到点击了10次Comment按钮
-    while(clickedCount < 10){
+    //设置开始时间
+    let startTime = new Date().getTime();
+    //设置超时时间（30秒）
+    const TIMEOUT = 30000;
+    
+    //循环直到点击了需要的Comment按钮次数
+    var FB_group_common_count = parseInt(FB_common_count);
+    while(clickedCount < FB_group_common_count){
+        //检查是否超时
+        if(new Date().getTime() - startTime > TIMEOUT){
+            toast("执行时间超过30秒，自动退出");
+            return;
+        }
+
         //获取当前页面所有Comment按钮
         var comments = className("android.widget.Button").desc("Comment").find();
         toast("当前页面所有Comment按钮 = " + comments.length);
@@ -782,13 +796,39 @@ function fina_all_Comment(){
                 return;
             }
             
-            //使用gesture实现更流畅的滑动
+            //使用多段swipe实现曲线滑动
             let screenHeight = device.height;
-            let startY = screenHeight * 0.9;  // 从屏幕90%的位置开始
-            let endY = screenHeight * 0.1;    // 滑动到屏幕10%的位置
-            gesture(2000,  // 持续时间2秒
-                [device.width / 2, startY],  // 起始点
-                [device.width / 2, endY]     // 结束点
+            let startY = Math.floor(screenHeight * 0.9);  // 起点
+            let endY = Math.floor(screenHeight * 0.1);    // 终点
+            let distance = startY - endY;                 // 总距离
+            
+            // 第一段：向右倾斜
+            swipe(
+                device.width / 2,    // 起点X
+                startY,             // 起点Y
+                device.width * 0.7,  // 终点X
+                startY - distance/3, // 终点Y
+                700                 // 持续时间
+            );
+            sleep(200);
+            
+            // 第二段：向左倾斜
+            swipe(
+                device.width * 0.7,  // 起点X
+                startY - distance/3, // 起点Y
+                device.width * 0.3,  // 终点X
+                startY - distance*2/3, // 终点Y
+                700                 // 持续时间
+            );
+            sleep(200);
+            
+            // 第三段：回到中间
+            swipe(
+                device.width * 0.3,  // 起点X
+                startY - distance*2/3, // 起点Y
+                device.width / 2,    // 终点X
+                endY,               // 终点Y
+                600                 // 持续时间
             );
             sleep(2000); //等待滚动完成
             
@@ -808,40 +848,149 @@ function fina_all_Comment(){
             toast("找到Comment按钮，准备点击第" + (clickedCount + 1) + "次");
             comments[comments.length - 1].click(); // 选择最后一个元素
             post_content()
-            back()
             sleep(3000)
-            back()
 
             clickedCount++;
             sleep(5000); //等待点击操作完成
             
             //点击完成后下滑页面，准备寻找下一个Comment按钮
             let screenHeight = device.height;
-            let startY = screenHeight * 0.9;  // 从屏幕90%的位置开始
-            let endY = screenHeight * 0.1;    // 滑动到屏幕10%的位置
-            gesture(2000,  // 持续时间2秒
-                [device.width / 2, startY],  // 起始点
-                [device.width / 2, endY]     // 结束点
+            let startY = Math.floor(screenHeight * 0.9);  // 起点
+            let endY = Math.floor(screenHeight * 0.1);    // 终点
+            let distance = startY - endY;                 // 总距离
+            
+            // 第一段：向右倾斜
+            swipe(
+                device.width / 2,    // 起点X
+                startY,             // 起点Y
+                device.width * 0.7,  // 终点X
+                startY - distance/3, // 终点Y
+                700                 // 持续时间
+            );
+            sleep(200);
+            
+            // 第二段：向左倾斜
+            swipe(
+                device.width * 0.7,  // 起点X
+                startY - distance/3, // 起点Y
+                device.width * 0.3,  // 终点X
+                startY - distance*2/3, // 终点Y
+                700                 // 持续时间
+            );
+            sleep(200);
+            
+            // 第三段：回到中间
+            swipe(
+                device.width * 0.3,  // 起点X
+                startY - distance*2/3, // 起点Y
+                device.width / 2,    // 终点X
+                endY,               // 终点Y
+                600                 // 持续时间
             );
             sleep(2000);
         }
     }
     
-    toast("已完成10次Comment按钮的点击操作");
+    toast("已完成" + FB_group_common_count + "次Comment按钮的点击操作");
+
+    check_comment_result()
+    sleep(3000)
+
+    back()
+    sleep(3000)
+
+    back()
 }
 
 
 //开始评论内容
 function post_content(){
+    //设置开始时间
+    let startTime = new Date().getTime();
+    //设置超时时间（30秒）
+    const TIMEOUT = 30000;
+
     taskLog("准备输入评论内容....");
-    className("android.widget.AutoCompleteTextView").findOne().click()
-    sleep(5000)
+    
+    //尝试点击输入框
+    let inputClicked = false;
+    while(!inputClicked && new Date().getTime() - startTime < TIMEOUT){
+        try {
+            className("android.widget.AutoCompleteTextView").findOne().click();
+            inputClicked = true;
+        } catch(e) {
+            sleep(1000);
+            continue;
+        }
+    }
+    if(!inputClicked){
+        toast("30秒内未能找到输入框，退出评论");
+        return;
+    }
+    sleep(5000);
 
-    className("android.widget.AutoCompleteTextView").findOne().setText("do you love me?")
-    sleep(5000)
+    //尝试输入文本
+    let textInput = false;
+    while(!textInput && new Date().getTime() - startTime < TIMEOUT){
+        try {
+            className("android.widget.AutoCompleteTextView").findOne().setText("do you love me?");
+            textInput = true;
+        } catch(e) {
+            sleep(1000);
+            continue;
+        }
+    }
+    if(!textInput){
+        toast("30秒内未能输入文本，退出评论");
+        return;
+    }
+    sleep(5000);
 
-    className("android.widget.Button").desc("Send").findOne().click()
-    sleep(5000)
+    //尝试点击发送按钮
+    let sendClicked = false;
+    while(!sendClicked && new Date().getTime() - startTime < TIMEOUT){
+        try {
+            className("android.widget.Button").desc("Send").findOne().click();
+            sendClicked = true;
+        } catch(e) {
+            sleep(1000);
+            continue;
+        }
+    }
+    if(!sendClicked){
+        toast("30秒内未能点击发送按钮，退出评论");
+        return;
+    }
+    sleep(5000);
+
+    //如果超时，提示用户
+    if(new Date().getTime() - startTime >= TIMEOUT){
+        toast("评论操作超过30秒，自动退出");
+        return;
+    }
+
+    check_comment_result()
+    sleep(3000)
+
+    back()
+    sleep(3000)
+
+    back()
+}
 
 
+
+//在评论之后，要检查一下，有没有出现一个新页面：desc("We removed your comment")
+//className("android.view.View").text("We removed your comment").findOne().click()
+function check_comment_result(){
+    var check_comment_result = find_view_text_base("We removed your comment","我們移除了您的評論","We removed your comment")
+    toast("评论检查 = " + check_comment_result);
+    if(check_comment_result){
+        toast("评论失败");
+        //className("android.widget.Button").desc("Close").findOne().click()
+        find_btn_desc_base("Close","關閉","Close")
+        sleep(3000)
+    }else{
+        toast("评论成功");
+    }
 }
