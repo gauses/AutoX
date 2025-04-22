@@ -782,11 +782,14 @@ function fina_all_Comment(){
                 return;
             }
             
-            //下滑页面
+            //使用gesture实现更流畅的滑动
             let screenHeight = device.height;
-            let startY = screenHeight * 0.8;  // 从屏幕80%的位置开始
-            let endY = screenHeight * 0.2;    // 滑动到屏幕20%的位置
-            swipe(device.width / 2, startY, device.width / 2, endY, 500);
+            let startY = screenHeight * 0.9;  // 从屏幕90%的位置开始
+            let endY = screenHeight * 0.1;    // 滑动到屏幕10%的位置
+            gesture(2000,  // 持续时间2秒
+                [device.width / 2, startY],  // 起始点
+                [device.width / 2, endY]     // 结束点
+            );
             sleep(2000); //等待滚动完成
             
             //重新获取Comment按钮
@@ -799,22 +802,46 @@ function fina_all_Comment(){
             }
         }
         
-        //找到Comment按钮后，点击第一个
+        //找到Comment按钮后，点击最后一个
         if(comments.length > 0){
             noCommentScrollCount = 0; // 重置未找到计数
             toast("找到Comment按钮，准备点击第" + (clickedCount + 1) + "次");
-            // comments[0].click();
+            comments[comments.length - 1].click(); // 选择最后一个元素
+            post_content()
+            back()
+            sleep(3000)
+            back()
+
             clickedCount++;
             sleep(5000); //等待点击操作完成
             
             //点击完成后下滑页面，准备寻找下一个Comment按钮
             let screenHeight = device.height;
-            let startY = screenHeight * 0.8;
-            let endY = screenHeight * 0.2;
-            swipe(device.width / 2, startY, device.width / 2, endY, 500);
+            let startY = screenHeight * 0.9;  // 从屏幕90%的位置开始
+            let endY = screenHeight * 0.1;    // 滑动到屏幕10%的位置
+            gesture(2000,  // 持续时间2秒
+                [device.width / 2, startY],  // 起始点
+                [device.width / 2, endY]     // 结束点
+            );
             sleep(2000);
         }
     }
     
     toast("已完成10次Comment按钮的点击操作");
+}
+
+
+//开始评论内容
+function post_content(){
+    taskLog("准备输入评论内容....");
+    className("android.widget.AutoCompleteTextView").findOne().click()
+    sleep(5000)
+
+    className("android.widget.AutoCompleteTextView").findOne().setText("do you love me?")
+    sleep(5000)
+
+    className("android.widget.Button").desc("Send").findOne().click()
+    sleep(5000)
+
+
 }
