@@ -765,17 +765,17 @@ function fina_all_Comment(){
     
     //设置开始时间
     let startTime = new Date().getTime();
-    //设置超时时间（30秒 * 评论次数）
-    const TIMEOUT = 30000 * FB_common_count;
+    //设置超时时间（60秒 * 评论次数）
+    const TIMEOUT = 60 * 1000 * FB_common_count;  // 转换为毫秒
 
-    toast("开始寻找Comment按钮，超时时间 = " + TIMEOUT + "秒,评论次数 = " + FB_common_count);
+    toast("开始寻找Comment按钮，超时时间 = " + (TIMEOUT/1000) + "秒,评论次数 = " + FB_common_count);
     
     //循环直到点击了需要的Comment按钮次数
     var FB_group_common_count = parseInt(FB_common_count);
     while(clickedCount < FB_group_common_count){
         //检查是否超时
         if(new Date().getTime() - startTime > TIMEOUT){
-            toast("执行时间超过30秒，自动退出");
+            toast("执行时间超过" + (TIMEOUT/1000) + "秒，自动退出");
             return;
         }
 
@@ -835,6 +835,11 @@ function fina_all_Comment(){
             //如果滑动后还是没有找到Comment按钮，继续下一次循环
             if(comments.length == 0){
                 toast("下滑后仍未找到Comment按钮，继续寻找");
+
+                //检查是不是已经到了FB提示页面      
+                check_comment_result()
+                sleep(3000)
+
                 continue;
             }
         }
@@ -903,81 +908,97 @@ function fina_all_Comment(){
 //开始评论内容
 function post_content(){
     //设置开始时间
-    let startTime = new Date().getTime();
-    //设置超时时间（30秒）
-    const TIMEOUT = 30000;
+    const startTime = new Date().getTime();
 
-    taskLog("准备输入评论内容....");
+    //检查总时间的函数
+    function checkTimeout() {
+        if(new Date().getTime() - startTime > 60 * 1000) {  // 60秒 = 60 * 1000毫秒
+            toast("评论操作总时间超过60秒，自动退出");
+            sleep(1000)
+            back()
+            sleep(3000)
+            return true;
+        }
+        toast("评论操作总时间没有超过60秒，继续进行");
+        return false;
+    }
+
 
     
+    taskLog("准备输入评论内容....");
+    toast("准备输入评论内容....");
+
     //尝试点击输入框
-    let inputClicked = false;
-    while(!inputClicked && new Date().getTime() - startTime < TIMEOUT){
-        try {
-            className("android.widget.AutoCompleteTextView").findOne().click();
+    try {
+        let inputBox = className("android.widget.AutoCompleteTextView").findOne(10000); // 5秒超时
+        if(inputBox) {
+            inputBox.click();
             toast("点击输入框成功");
-            inputClicked = true;
-        } catch(e) {
-            sleep(1000);
-            continue;
+        } else {
+            sleep(3000)
+            toast("未找到输入框");
+            sleep(1000)
+            back()
+            sleep(3000)
+            return;
         }
-    }
-    if(!inputClicked){
-        toast("30秒内未能找到输入框，退出评论");
-        return;
+    } catch(e) {
+        sleep(1000);
     }
     sleep(5000);
+    
+    //检查超时
+    if(checkTimeout()) return;
 
     //尝试输入文本
-    let textInput = false;
-    while(!textInput && new Date().getTime() - startTime < TIMEOUT){
-        try {
-            var randIdx = random(0, all_group_comment_text.length - 1)
-            var messageText = all_group_comment_text[randIdx];
-            toast("输入内容 = " + messageText);
-            
-            className("android.widget.AutoCompleteTextView").findOne().setText(messageText);
-            textInput = true;
+    try {
+        var randIdx = random(0, all_group_comment_text.length - 1)
+        var messageText = all_group_comment_text[randIdx];
+        toast("输入内容 = " + messageText);
 
-            check_comment_result()
+        //检查是不是已经到了FB提示页面
+        check_comment_result()
+        sleep(3000)
+
+        let textBox = className("android.widget.AutoCompleteTextView").findOne(10000); // 5秒超时
+        if(textBox) {
+            textBox.setText(messageText);
+        } else {
+            toast("未找到输入框");
+            sleep(1000)
+            back()
+
+
             sleep(3000)
-            
-        } catch(e) {
-            sleep(1000);
-            continue;
+            return;
         }
-    }
-    if(!textInput){
-        toast("30秒内未能输入文本，退出评论");
-        return;
+    } catch(e) {
+        sleep(1000);
     }
     sleep(5000);
+    
+    //检查超时
+    if(checkTimeout()) return;
 
     //尝试点击发送按钮
-    let sendClicked = false;
-    while(!sendClicked && new Date().getTime() - startTime < TIMEOUT){
-        try {
-            className("android.widget.Button").desc("Send").findOne().click();
-            sendClicked = true;
-
-            check_comment_result()
+    try {
+        let sendBtn = className("android.widget.Button").desc("Send").findOne(10000); // 5秒超时
+        if(sendBtn) {
+            sendBtn.click();
+        } else {
+            toast("未找到发送按钮");
+            sleep(1000)
+            back()
             sleep(3000)
-        } catch(e) {
-            sleep(1000);
-            continue;
+            return;
         }
-    }
-    if(!sendClicked){
-        toast("30秒内未能点击发送按钮，退出评论");
-        return;
+    } catch(e) {
+        sleep(1000);
     }
     sleep(5000);
 
-    //如果超时，提示用户
-    if(new Date().getTime() - startTime >= TIMEOUT){
-        toast("评论操作超过30秒，自动退出");
-        return;
-    }
+    //检查超时
+    if(checkTimeout()) return;
 
     check_comment_result()
     sleep(3000)
@@ -989,6 +1010,7 @@ function post_content(){
 }
 
 
+    
 
 //在评论之后，要检查一下，有没有出现一个新页面：desc("We removed your comment")
 function check_comment_result(){
