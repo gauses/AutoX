@@ -938,6 +938,10 @@ function post_content(){
             
             className("android.widget.AutoCompleteTextView").findOne().setText(messageText);
             textInput = true;
+
+            check_comment_result()
+            sleep(3000)
+            
         } catch(e) {
             sleep(1000);
             continue;
@@ -955,6 +959,9 @@ function post_content(){
         try {
             className("android.widget.Button").desc("Send").findOne().click();
             sendClicked = true;
+
+            check_comment_result()
+            sleep(3000)
         } catch(e) {
             sleep(1000);
             continue;
