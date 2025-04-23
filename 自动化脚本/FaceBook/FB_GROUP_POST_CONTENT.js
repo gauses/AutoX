@@ -22,8 +22,11 @@ var chromePackageName = 'com.kiwibrowser.browser';
 
 
 //需要添加的用户好友
-const FB_input_text = '$${T_FB_输入需要動態文章留言的所有Group}';
+// const FB_Group_links = '$${T_FB_输入需要動態文章留言的所有Group}';
+const FB_Group_links = '$${T_FB_输入需要動態文章留言的所有Group}';
 const FB_common_count = '$${FB_每个Group输入留言的个数}';
+const FB_group_comment_text = '$${T_FB_输入動態留言的所有文本}';
+
 
 
 // 添加全局索引计数器
@@ -71,9 +74,14 @@ taskLog("准备启动Facebook...")
 
 
 
-    var all_friends = get_all_friedns()
+    var all_friends = get_all_groups()
     toast("所有Group数量 = " + all_friends.length)
     sleep(5000)
+
+    var all_group_comment_text = get_all_groups_comment_text()
+    toast("所有Group评论数量 = " + all_group_comment_text.length)
+    sleep(5000) 
+
     
     //用浏览器打开链接
     firstOpenBrowser()
@@ -102,14 +110,6 @@ taskLog("准备启动Facebook...")
 
 
         fina_all_Comment()
-
-
-
-
-
-
-
-
 
     }
 
@@ -302,47 +302,15 @@ function find_btn_desc_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
 }
 
 
-//从好友列表数组中，顺序挑选一条内容
-function get_post_text(){
-    // 用于存储私信用户的数组
-    let comments = [];
-    // 私信用户是否存在
-    taskLog("私信用户地址 =  " + FB_input_text)
-    const file = new java.io.File(FB_input_text);
-    if (file.exists() && file.isFile()) {
-        try {
-            // 读取文件内容
-            const reader = new java.io.BufferedReader(new java.io.FileReader(file));
-            let line;
-            while ((line = reader.readLine()) !== null) {
-                comments.push(line);
-            }
-            reader.close();
-        } catch (e) {
-            taskLog("读取文件时发生错误：" + e.message);
-        }
-    } else {
-        // 如果文件不存在，将文件名添加到数组中
-        comments.push(FB_input_text);
-    }
-    
-    // 使用顺序索引获取消息
-    var messageText = comments[commentIndex % comments.length];
-    // 增加索引计数
-    commentIndex++;
-    
-    return messageText
-}
-
 
 
 //从好友列表数组中，顺序挑选一条内容
-function get_all_friedns(){
+function get_all_groups(){
     // 用于存储用户的数组
     let comments = [];
     // 户是否存在
-    taskLog("用户地址 =  " + FB_input_text)
-    const file = new java.io.File(FB_input_text);
+    taskLog("用户地址 =  " + FB_Group_links)
+    const file = new java.io.File(FB_Group_links);
     if (file.exists() && file.isFile()) {
         try {
             // 读取文件内容
@@ -357,7 +325,34 @@ function get_all_friedns(){
         }
     } else {
         // 如果文件不存在，将文件名添加到数组中
-        comments.push(FB_input_text);
+        comments.push(FB_Group_links);
+    }
+    
+    return comments
+}
+
+//从group评论数组中，顺序挑选一条内容
+function get_all_groups_comment_text(){
+    // 用于存储用户的数组
+    let comments = [];
+    // 户是否存在
+    taskLog("group评论数组 =  " + FB_group_comment_text)
+    const file = new java.io.File(FB_group_comment_text);
+    if (file.exists() && file.isFile()) {
+        try {
+            // 读取文件内容
+            const reader = new java.io.BufferedReader(new java.io.FileReader(file));
+            let line;
+            while ((line = reader.readLine()) !== null) {
+                comments.push(line);
+            }
+            reader.close();
+        } catch (e) {
+            taskLog("读取文件时发生错误：" + e.message);
+        }
+    } else {
+        // 如果文件不存在，将文件名添加到数组中
+        comments.push(FB_group_comment_text);
     }
     
     return comments
@@ -770,8 +765,10 @@ function fina_all_Comment(){
     
     //设置开始时间
     let startTime = new Date().getTime();
-    //设置超时时间（30秒）
-    const TIMEOUT = 30000;
+    //设置超时时间（30秒 * 评论次数）
+    const TIMEOUT = 30000 * FB_common_count;
+
+    toast("开始寻找Comment按钮，超时时间 = " + TIMEOUT + "秒,评论次数 = " + FB_common_count);
     
     //循环直到点击了需要的Comment按钮次数
     var FB_group_common_count = parseInt(FB_common_count);
@@ -911,12 +908,14 @@ function post_content(){
     const TIMEOUT = 30000;
 
     taskLog("准备输入评论内容....");
+
     
     //尝试点击输入框
     let inputClicked = false;
     while(!inputClicked && new Date().getTime() - startTime < TIMEOUT){
         try {
             className("android.widget.AutoCompleteTextView").findOne().click();
+            toast("点击输入框成功");
             inputClicked = true;
         } catch(e) {
             sleep(1000);
@@ -933,7 +932,11 @@ function post_content(){
     let textInput = false;
     while(!textInput && new Date().getTime() - startTime < TIMEOUT){
         try {
-            className("android.widget.AutoCompleteTextView").findOne().setText("do you love me?");
+            var randIdx = random(0, all_group_comment_text.length - 1)
+            var messageText = all_group_comment_text[randIdx];
+            toast("输入内容 = " + messageText);
+            
+            className("android.widget.AutoCompleteTextView").findOne().setText(messageText);
             textInput = true;
         } catch(e) {
             sleep(1000);
@@ -981,13 +984,11 @@ function post_content(){
 
 
 //在评论之后，要检查一下，有没有出现一个新页面：desc("We removed your comment")
-//className("android.view.View").text("We removed your comment").findOne().click()
 function check_comment_result(){
-    var check_comment_result = find_view_text_base("We removed your comment","我們移除了您的評論","We removed your comment")
+    var check_comment_result = find_view_desc_base("We removed your comment","我們移除了您的評論","We removed your comment")
     toast("评论检查 = " + check_comment_result);
     if(check_comment_result){
         toast("评论失败");
-        //className("android.widget.Button").desc("Close").findOne().click()
         find_btn_desc_base("Close","關閉","Close")
         sleep(3000)
     }else{
