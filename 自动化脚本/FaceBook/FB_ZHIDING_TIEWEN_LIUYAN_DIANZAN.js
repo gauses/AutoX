@@ -788,8 +788,15 @@ function find_post_button(){
 
         taskLog("准备点击POST....");
         sleep(5000)
-        //className("android.view.ViewGroup").text("POST").findOne().click()
-        find_viewGroup_desc_base("發布", "發布", "POST")
+
+
+        //退出图库选中，因为要点击send按钮，否则可能会点中图库的最后一张图片
+        back()
+        sleep(5000)
+        
+
+        // className("android.widget.Button").desc("Send").findOne().click()
+        find_btn_desc_base("Send", "發送", "Send")
     
     
         //删除临时图片库 :A_NEST_FaceBook_MEDIA
@@ -838,100 +845,48 @@ function post_Image(){
             sleep(3000)
 
 
+
+            //选中一张图片即可
+            var isPhotoSelected = false;  // 添加标志位
             className("android.widget.GridView").findOne().children().forEach(child => {
-                var target = child.findOne(className("android.widget.Spinner"));
-                if(target == null){
-                    taskLog("未找到target控件，跳过");
+                if (isPhotoSelected) return;  // 如果已经选中图片就跳过后续循环
+
+                var button = child.findOne(className("android.widget.Button"));
+                if (!button) {
+                    taskLog("未找到Button控件，跳过");
                     return;
                 }
-                target.click();
-                sleep(5000)
-
-
-                //点击对应的targetPath：A_NEST_FaceBook_MEDIA
-                var allListTextView = className("android.view.ViewGroup").find();
-                toast("找到allListTextView: 全部 = "  + allListTextView.size());
-
-                // 检查是否存在"A_NEST_FaceBook_MEDIA"
-                var isFound = false;
-                for (var i = 0; i < allListTextView.size(); i++) {
-                    var listTextView = allListTextView.get(i);
-                    toast("listTextView desc = " + listTextView.desc());
-                    if (listTextView && listTextView.desc() != null && listTextView.desc().includes("A_NEST_FaceBook_MEDIA")) { 
-                        isFound = true;
-                        break;
+                
+                var buttonDesc = button.desc();
+                if (!buttonDesc) {
+                    taskLog("Button没有描述文本，跳过");
+                    return;
+                }
+                
+                toast("选择图片描述 = " + buttonDesc);
+                taskLog("选择图片描述 = " + buttonDesc);
+                
+                if (buttonDesc.indexOf("Photo taken on") !== -1) {
+                    taskLog("找到目标图片：" + buttonDesc);
+                    var bounds = button.bounds();
+                    if (bounds) {
+                        click(bounds.centerX(), bounds.centerY());
+                        taskLog("点击坐标：" + bounds.centerX() + ", " + bounds.centerY());
+                        isPhotoSelected = true;  // 设置标志位为true
+                        sleep(2000);
                     }
                 }
-
-                toast("isFound = " + isFound);
-
-                sleep(500000000)
-
-
-                if (allListTextView && allListTextView.size() > 0) {
-                    for (var i = 0; i < allListTextView.size(); i++) {
-                        var listTextView = allListTextView.get(i);
-                        if (listTextView) {
-                            toast("找到listTextView控件-Text：" + listTextView.desc());
-                            
-                            // 检查text是否为"A_NEST_TikTok_MEDIA"
-                            if (listTextView.desc() != null && listTextView.desc().includes("A_NEST_FaceBook_MEDIA")) {
-                                // 正确调用bounds()方法并点击
-                                taskLog("找到对应目录" + listTextView.desc());
-                                var bounds = listTextView.bounds();
-                                click(bounds.centerX(), bounds.centerY());
-                                // 找到并点击后可以跳出循环
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                sleep(5000)
-
-
-                //选择图片
-                find_btn_desc_base("Select multiple", "選擇多張", "Select multiple")
-                sleep(5000)
-
-                //选中所有图片
-                className("android.widget.GridView").findOne().children().forEach(child => {
-                    var button = child.findOne(className("android.widget.Button"));
-                    if (!button) {
-                        taskLog("未找到Button控件，跳过");
-                        return;
-                    }
-                    
-                    var buttonDesc = button.desc();
-                    if (!buttonDesc) {
-                        taskLog("Button没有描述文本，跳过");
-                        return;
-                    }
-                    
-                    toast("选择图片描述 = " + buttonDesc);
-                    taskLog("选择图片描述 = " + buttonDesc);
-                    
-                    if (buttonDesc.indexOf("Photo taken on") !== -1) {
-                        taskLog("找到目标图片：" + buttonDesc);
-                        var bounds = button.bounds();
-                        if (bounds) {
-                            click(bounds.centerX(), bounds.centerY());
-                            taskLog("点击坐标：" + bounds.centerX() + ", " + bounds.centerY());
-                            sleep(2000);
-                        }
-                    }
-                    sleep(3000);
-                });
-
-
-
-                //点击Nest
-                //className("android.widget.Button").desc("Next").findOne().click()
-                find_btn_desc_base("Next", "下一步", "Next")
-                sleep(5000)
-
             });
-            
+
+            if (isPhotoSelected) {
+                //点击Next
+                toast("已经选中图库中的第一张图片");
+                sleep(5000);
+            } else {
+                taskLog("未找到任何符合条件的图片");
+                toast("未找到任何符合条件的图片");
+            }
+        
 
             
 

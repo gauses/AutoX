@@ -18,8 +18,5 @@ https://www.facebook.com/groups/kimyoojungkorea01110/
 
 
 
-
-社團動態文章留言：
-导入的大量社团，可能无法打开
-
-
+FB_ZHIDING_TIEWEN_LIUYAN_DIANZAN：
+只能选中一张图片，因为放进临时文件夹之后，autojs找不到那个下拉的listview，导致无法进入临时文件夹，所以只能选中第一张图片来完成任务
