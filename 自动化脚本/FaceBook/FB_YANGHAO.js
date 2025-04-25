@@ -17,15 +17,16 @@ var taskLogImgName = "nest_task_log.png"
 
 //用户需要输入的评论内容
 const FB_input_text = '$${T_FB_输入评论文案}';
-const FB_input_Time = "$${FB_自定義瀏覽時間}"
+const FB_input_Time = "$${FB_自定義总执行次数}"
 
 
 // 计算循环次数
-toast("FB_input_Time = " + FB_input_Time)
-const loopTimes = Math.floor(parseInt(FB_input_Time) / 60);
-taskLog("总执行次数：" + loopTimes + "次");
+const loopTimes = FB_input_Time;
+taskLog("自定義瀏覽总执行次数：" + loopTimes + "次");
 
 var FacebookPackageName = 'com.facebook.katana';
+var chromePackageName = 'com.kiwibrowser.browser';
+
 
 //1.autox.js侧边栏的打开USB调试先打开
 //2.vscode ctrl+shift+p 输入start all server 确定
@@ -68,72 +69,82 @@ taskLog("准备启动Facebook...")
 
 
 // 开始主循环
+var commentTextArrays = get_post_text()
+toast("评论文案个数：" + commentTextArrays.length)
+
 for(let currentLoop = 1; currentLoop <= loopTimes; currentLoop++) {
     toast("开始第 " + currentLoop + "/" + loopTimes + " 次执行");    
     
     
     sleep(5000)
-    taskLog("准备上滑，起始x坐标: " + device.width / 2 );
-    taskLog("准备上滑，起始y坐标: " + device.height * 3 / 4 );
-    taskLog("准备上滑，结束x坐标: " + device.width / 2 );
-    taskLog("准备上滑，结束Y坐标: " + device.height / 4 );
+    // toast("开始模拟滑动")
+    // taskLog("准备上滑，起始x坐标: " + device.width / 2 );
+    // taskLog("准备上滑，起始y坐标: " + device.height * 3 / 4 );
+    // taskLog("准备上滑，结束x坐标: " + device.width / 2 );
+    // taskLog("准备上滑，结束Y坐标: " + device.height / 4 );
+    // swipe(device.width / 2, device.height * 3 / 4, device.width / 2, device.height / 4, 500);
 
-    swipe(device.width / 2, device.height * 3 / 4, device.width / 2, device.height / 4, 500);
 
+    toast("开始模拟滑动")
+    swipe_up()
 
-
-    //点赞：className("android.widget.Button").desc("Like button. Double tap and hold to react.").findOne().click()
-    //评论：className("android.widget.Button").desc("Comment").clickable(true).findOne().click()
 
     taskLog("准备点击点赞按钮....");
     sleep(5000)
-    find_btn_desc_base("Like button. Double tap and hold to react.", "Like button. Double tap and hold to react." , "Like button. Double tap and hold to react.")
-    //检查是不是有点赞按钮
 
-    
-    var commentText = get_post_text()
-    if(commentText){
-        toast("评论文案：" + commentText)
-        toast("准备点击评论按钮....");
-        sleep(5000)
-        var findCommentBtn = find_btn_desc_base("Comment", "Comment" , "Comment")
-        if(findCommentBtn){
-            toast("找到评论按钮");
-    
+    //检查是不是有点赞按钮
+    var likeBtn =  find_viewGroup_desc_base("讚","Like", "Like")
+    sleep(2000)
+    if(likeBtn){
+        toast("找到点赞按钮, 直接继续进行")
+
+        if(commentTextArrays.length > 0){
+
+            var randIdx = random(0, commentTextArrays.length - 1)
+            var messageText = commentTextArrays[randIdx];
+
+            toast("评论文案：" + messageText)
+            toast("准备点击评论按钮....");
             sleep(5000)
-            var autoCompleteTextViews = className("android.widget.AutoCompleteTextView").find();
-            if(autoCompleteTextViews.size() > 0 ){
-                for(var i = 0; i < autoCompleteTextViews.size(); i++) {
-                    var textView = autoCompleteTextViews.get(i);
-                    if(textView) {
-                        taskLog("找到AutoCompleteTextView控件-Text："+ textView.text());
-                        sleep(2000)
-                        textView.setText(commentText)
+            var findCommentBtn = find_btn_desc_base("留言", "Comment" , "Comment")
+            if(findCommentBtn){
+                toast("找到评论按钮");
+                sleep(5000)
+    
+                var autoCompleteTextViews = className("android.widget.AutoCompleteTextView").find();
+                if(autoCompleteTextViews.size() > 0 ){
+                    for(var i = 0; i < autoCompleteTextViews.size(); i++) {
+                        var textView = autoCompleteTextViews.get(i);
+                        if(textView) {
+                            taskLog("找到AutoCompleteTextView控件-Text："+ textView.text());
+                            sleep(2000)
+                            textView.setText(messageText)
+                        }
                     }
                 }
+        
+                //发送
+                sleep(5000)
+                find_btn_desc_base("傳送", "Send" , "Send")
+        
+        
+                sleep(5000)
+                back() //键盘收起
+                sleep(1000)
+                back() //返回上一个页面
+        
+        
+            }else{
+                toast("没有找到评论按钮");
             }
-    
-            //发送
-            sleep(5000)
-            find_btn_desc_base("Send", "Send" , "Send")
-    
-    
-            sleep(5000)
-            back() //键盘收起
-            sleep(1000)
-            back() //返回上一个页面
-    
-    
         }else{
-            toast("没有找到评论按钮");
+            toast("评论文案为空，所以不点击评论按钮");
         }
+        
     }else{
-        toast("评论文案为空，所以不点击评论按钮");
+        toast("没有找到点赞按钮，直接下一次循环页面")
     }
 
-
-
-    
 
     if(currentLoop < loopTimes) {
         taskLog("等待5秒后开始下一次循环...");
@@ -228,6 +239,9 @@ function stopCurrentTask(){
     // log(res.body.string());
 
     console.hide()
+    forceStop_APP(FacebookPackageName)
+    sleep(3000)
+    forceStop_APP(chromePackageName)
 
 }
 
@@ -350,9 +364,188 @@ function get_post_text(){
         // 如果文件不存在，将文件名添加到数组中
         comments.push(FB_input_text);
     }
-    var randIdx = random(0, comments.length - 1)
-    var messageText = comments[randIdx];
+    return comments
 
-    return messageText
+}
+
+
+
+
+function swipe_up(){
+    //使用多段swipe实现曲线滑动
+    let screenHeight = device.height;
+    let startY = Math.floor(screenHeight * 0.9);  // 起点
+    let endY = Math.floor(screenHeight * 0.1);    // 终点
+    let distance = startY - endY;                 // 总距离
+    
+    // 第一段：向右倾斜
+    swipe(
+        device.width / 2,    // 起点X
+        startY,             // 起点Y
+        device.width * 0.7,  // 终点X
+        startY - distance/3, // 终点Y
+        700                 // 持续时间
+    );
+    sleep(200);
+    
+    // 第二段：向左倾斜
+    swipe(
+        device.width * 0.7,  // 起点X
+        startY - distance/3, // 起点Y
+        device.width * 0.3,  // 终点X
+        startY - distance*2/3, // 终点Y
+        700                 // 持续时间
+    );
+    sleep(200);
+    
+    // 第三段：回到中间
+    swipe(
+        device.width * 0.3,  // 起点X
+        startY - distance*2/3, // 起点Y
+        device.width / 2,    // 终点X
+        endY,               // 终点Y
+        600                 // 持续时间
+    );
+    sleep(3000); //等待滚动完成
+}
+
+
+
+
+//通过Button的Desc
+function find_viewGroup_desc_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
+
+    var findBtn = false
+
+    var loopCount  = 0
+
+     while (true) {
+         taskLog(findText_ZH_CN + " - 循环寻找执行：" + (++loopCount));
+         // 检查计数器是否达到3
+         if (loopCount >= 3) {
+             // 打印一条消息并退出循环
+             taskLog("寻找" + findText_ZH_CN + "按钮失败");
+             taskLog("循环已执行3次，即将退出循环。");
+
+             //不能抛出异常，因为可能Facebook记忆功能，自动跳转到输入页面
+//                 throw new Error(findText_ZH_CN +"按钮没有找到");
+            break;
+         }
+
+
+         // 查找控件
+         var button1 = className("android.view.ViewGroup").desc(findText_ZH_CN).findOne(1000);
+         var button2 = className("android.view.ViewGroup").desc(findText_ZH_TW).findOne(1000);
+         var button3 = className("android.view.ViewGroup").desc(findText_EN_US).findOne(1000);
+         if (button1) {
+             findBtn = true
+             taskLog("找到" + findText_ZH_CN);
+             click(button1.bounds().centerX() , button1.bounds().centerY())
+             break; // 跳出循环
+         }else if(button2){
+             findBtn = true
+             taskLog("找到" + findText_ZH_TW);
+             click(button2.bounds().centerX() , button2.bounds().centerY())
+             break; // 跳出循环
+         }else if(button3){
+             findBtn = true
+             taskLog("找到" + findText_EN_US);
+             click(button3.bounds().centerX() , button3.bounds().centerY())
+             break; // 跳出循环
+         }
+
+         sleep(1000)
+
+     }
+
+     return findBtn
+
+}
+
+
+
+function forceStop_APP(packageName){
+    taskLog("准备强杀:" + packageName + "...")
+    sleep(1000);
+    app.openAppSetting(packageName)
+    sleep(5000)
+
+    //繁体
+    if (text("強行停止").exists()) {
+        let forceStopBtn = text("強行停止").findOne();
+        if (forceStopBtn && forceStopBtn.clickable()) {
+            forceStopBtn.click();
+            sleep(1000);
+            // 确认操作
+            if (text("確定").exists()) {
+                taskLog("已经找到可点击的'強行停止'按钮！！！！！！！！！！");
+                text("確定").findOne().click();
+            }
+        } else {
+            taskLog("未找到可点击的'強制停止'按钮");
+        }
+    } else {
+        taskLog("未找到'強制停止'按钮");
+    }
+    sleep(3000)
+
+    //简体
+    if (text("强行停止").exists()) {
+        let forceStopBtn = text("强行停止").findOne();
+        if (forceStopBtn && forceStopBtn.clickable()) {
+            forceStopBtn.click();
+            sleep(1000);
+            // 确认操作
+            if (text("确定").exists()) {
+                text("确定").findOne().click();
+            }
+        } else {
+            taskLog("未找到可点击的'强行停止'按钮");
+        }
+    } else {
+        taskLog("未找到'强行停止'按钮");
+    }
+
+    sleep(3000)
+
+
+    //英语
+    if (text("Force stop").exists()) {
+        let forceStopBtn = text("Force stop").findOne();
+        if (forceStopBtn && forceStopBtn.clickable()) {
+            forceStopBtn.click();
+            sleep(1000);
+            // 确认操作
+            if (text("OK").exists()) {
+                text("OK").findOne().click();
+            }
+        } else {
+            taskLog("未找到可点击的'Force stop'按钮");
+        }
+    } else {
+        taskLog("未找到'Force stop'按钮");
+    }
+    sleep(3000)
+
+    //英语
+    if (text("FORCE STOP").exists()) {
+        let forceStopBtn = text("FORCE STOP").findOne();
+        if (forceStopBtn && forceStopBtn.clickable()) {
+            forceStopBtn.click();
+            sleep(1000);
+            // 确认操作
+            if (text("OK").exists()) {
+                text("OK").findOne().click();
+            }
+        } else {
+            taskLog("未找到可点击的'FORCE STOP'按钮");
+        }
+    } else {
+        taskLog("未找到'FORCE STOP'按钮");
+    }
+    sleep(3000)
+
+
+    home()
 
 }
