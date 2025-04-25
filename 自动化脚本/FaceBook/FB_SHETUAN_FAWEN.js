@@ -763,7 +763,8 @@ function forceStop_APP(packageName){
 function find_post_button(){
     // className("android.widget.Button").text("Write something...").findOne().click()
 
-    var postBtn = find_btn_desc_base("Write something...","寫點什麼...","Write something...")   
+
+    var postBtn = find_btn_desc_base("Write something...","留個言吧……","Write something...")   
     if(postBtn){
         //已经点击过了，准备输入文字和图片
         taskLog("准备输入分享内容....");
@@ -793,7 +794,7 @@ function find_post_button(){
         taskLog("准备点击POST....");
         sleep(5000)
         //className("android.view.ViewGroup").text("POST").findOne().click()
-        find_viewGroup_desc_base("發布", "發布", "POST")
+        find_viewGroup_desc_base("發布", "POST", "發布")
     
     
         //删除临时图片库 :A_NEST_FaceBook_MEDIA
@@ -824,7 +825,7 @@ function post_Image(){
             sleep(10000)
 
             //className("android.widget.Button").desc("Photo/video").findOne().click()
-            find_btn_desc_base("Photo/video", "照片/影片", "Photo/video")
+            find_btn_desc_base("Photo/video", "相片／影片", "Photo/video")
             sleep(5000)
 
             //点击权限
@@ -878,7 +879,7 @@ function post_Image(){
 
 
                 //选择图片
-                find_btn_desc_base("Select multiple", "選擇多張", "Select multiple")
+                find_btn_desc_base("Select multiple", "選擇多個", "Select multiple")
                 sleep(5000)
 
                 //选中所有图片
@@ -1026,272 +1027,3 @@ function delete_temp_image(folderPath) {
 
 }
 
-
-// //知道页面所有的Comment按钮
-// function fina_all_Comment(){
-//     //计数器，记录已经点击的Comment按钮数量
-//     let clickedCount = 0;
-//     //计数器，记录连续下滑未找到Comment按钮的次数
-//     let noCommentScrollCount = 0;
-    
-//     //设置开始时间
-//     let startTime = new Date().getTime();
-//     //设置超时时间（60秒 * 评论次数）
-//     const TIMEOUT = 60 * 1000 * FB_common_count;  // 转换为毫秒
-
-//     toast("开始寻找Comment按钮，超时时间 = " + (TIMEOUT/1000) + "秒,评论次数 = " + FB_common_count);
-    
-//     //循环直到点击了需要的Comment按钮次数
-//     var FB_group_common_count = parseInt(FB_common_count);
-//     while(clickedCount < FB_group_common_count){
-//         //检查是否超时
-//         if(new Date().getTime() - startTime > TIMEOUT){
-//             toast("执行时间超过" + (TIMEOUT/1000) + "秒，自动退出");
-//             return;
-//         }
-
-//         //获取当前页面所有Comment按钮
-//         var comments = className("android.widget.Button").desc("Comment").find();
-//         toast("当前页面所有Comment按钮 = " + comments.length);
-        
-//         if(comments.length == 0){
-//             noCommentScrollCount++; // 增加未找到计数
-//             toast("当前页面没有Comment按钮，准备下滑页面，这是第" + noCommentScrollCount + "次连续未找到");
-            
-//             //如果连续5次下滑都没找到，退出循环
-//             if(noCommentScrollCount >= 5){
-//                 toast("连续5次下滑都未找到Comment按钮，终止任务");
-//                 return;
-//             }
-            
-//             //使用多段swipe实现曲线滑动
-//             let screenHeight = device.height;
-//             let startY = Math.floor(screenHeight * 0.9);  // 起点
-//             let endY = Math.floor(screenHeight * 0.1);    // 终点
-//             let distance = startY - endY;                 // 总距离
-            
-//             // 第一段：向右倾斜
-//             swipe(
-//                 device.width / 2,    // 起点X
-//                 startY,             // 起点Y
-//                 device.width * 0.7,  // 终点X
-//                 startY - distance/3, // 终点Y
-//                 700                 // 持续时间
-//             );
-//             sleep(200);
-            
-//             // 第二段：向左倾斜
-//             swipe(
-//                 device.width * 0.7,  // 起点X
-//                 startY - distance/3, // 起点Y
-//                 device.width * 0.3,  // 终点X
-//                 startY - distance*2/3, // 终点Y
-//                 700                 // 持续时间
-//             );
-//             sleep(200);
-            
-//             // 第三段：回到中间
-//             swipe(
-//                 device.width * 0.3,  // 起点X
-//                 startY - distance*2/3, // 起点Y
-//                 device.width / 2,    // 终点X
-//                 endY,               // 终点Y
-//                 600                 // 持续时间
-//             );
-//             sleep(2000); //等待滚动完成
-            
-//             //重新获取Comment按钮
-//             comments = className("android.widget.Button").desc("Comment").find();
-            
-//             //如果滑动后还是没有找到Comment按钮，继续下一次循环
-//             if(comments.length == 0){
-//                 toast("下滑后仍未找到Comment按钮，继续寻找");
-
-//                 //检查是不是已经到了FB提示页面      
-//                 check_comment_result()
-//                 sleep(3000)
-
-//                 continue;
-//             }
-//         }
-        
-//         //找到Comment按钮后，点击最后一个
-//         if(comments.length > 0){
-//             noCommentScrollCount = 0; // 重置未找到计数
-//             toast("找到Comment按钮，准备点击第" + (clickedCount + 1) + "次");
-//             comments[comments.length - 1].click(); // 选择最后一个元素
-//             post_content()
-//             sleep(3000)
-
-//             clickedCount++;
-//             sleep(5000); //等待点击操作完成
-            
-//             //点击完成后下滑页面，准备寻找下一个Comment按钮
-//             let screenHeight = device.height;
-//             let startY = Math.floor(screenHeight * 0.9);  // 起点
-//             let endY = Math.floor(screenHeight * 0.1);    // 终点
-//             let distance = startY - endY;                 // 总距离
-            
-//             // 第一段：向右倾斜
-//             swipe(
-//                 device.width / 2,    // 起点X
-//                 startY,             // 起点Y
-//                 device.width * 0.7,  // 终点X
-//                 startY - distance/3, // 终点Y
-//                 700                 // 持续时间
-//             );
-//             sleep(200);
-            
-//             // 第二段：向左倾斜
-//             swipe(
-//                 device.width * 0.7,  // 起点X
-//                 startY - distance/3, // 起点Y
-//                 device.width * 0.3,  // 终点X
-//                 startY - distance*2/3, // 终点Y
-//                 700                 // 持续时间
-//             );
-//             sleep(200);
-            
-//             // 第三段：回到中间
-//             swipe(
-//                 device.width * 0.3,  // 起点X
-//                 startY - distance*2/3, // 起点Y
-//                 device.width / 2,    // 终点X
-//                 endY,               // 终点Y
-//                 600                 // 持续时间
-//             );
-//             sleep(2000);
-//         }
-//     }
-    
-//     toast("已完成" + FB_group_common_count + "次Comment按钮的点击操作");
-
-//     check_comment_result()
-//     sleep(3000)
-
-//     back()
-//     sleep(3000)
-
-//     back()
-// }
-
-
-// //开始评论内容
-// function post_content(){
-//     //设置开始时间
-//     const startTime = new Date().getTime();
-
-//     //检查总时间的函数
-//     function checkTimeout() {
-//         if(new Date().getTime() - startTime > 60 * 1000) {  // 60秒 = 60 * 1000毫秒
-//             toast("评论操作总时间超过60秒，自动退出");
-//             sleep(1000)
-//             back()
-//             sleep(3000)
-//             return true;
-//         }
-//         toast("评论操作总时间没有超过60秒，继续进行");
-//         return false;
-//     }
-
-
-    
-//     taskLog("准备输入评论内容....");
-//     toast("准备输入评论内容....");
-
-//     //尝试点击输入框
-//     try {
-//         let inputBox = className("android.widget.AutoCompleteTextView").findOne(10000); // 5秒超时
-//         if(inputBox) {
-//             inputBox.click();
-//             toast("点击输入框成功");
-//         } else {
-//             sleep(3000)
-//             toast("未找到输入框");
-//             sleep(1000)
-//             back()
-//             sleep(3000)
-//             return;
-//         }
-//     } catch(e) {
-//         sleep(1000);
-//     }
-//     sleep(5000);
-    
-//     //检查超时
-//     if(checkTimeout()) return;
-
-//     //尝试输入文本
-//     try {
-//         var randIdx = random(0, all_group_comment_text.length - 1)
-//         var messageText = all_group_comment_text[randIdx];
-//         toast("输入内容 = " + messageText);
-
-//         //检查是不是已经到了FB提示页面
-//         check_comment_result()
-//         sleep(3000)
-
-//         let textBox = className("android.widget.AutoCompleteTextView").findOne(10000); // 5秒超时
-//         if(textBox) {
-//             textBox.setText(messageText);
-//         } else {
-//             toast("未找到输入框");
-//             sleep(1000)
-//             back()
-
-
-//             sleep(3000)
-//             return;
-//         }
-//     } catch(e) {
-//         sleep(1000);
-//     }
-//     sleep(5000);
-    
-//     //检查超时
-//     if(checkTimeout()) return;
-
-//     //尝试点击发送按钮
-//     try {
-//         let sendBtn = className("android.widget.Button").desc("Send").findOne(10000); // 5秒超时
-//         if(sendBtn) {
-//             sendBtn.click();
-//         } else {
-//             toast("未找到发送按钮");
-//             sleep(1000)
-//             back()
-//             sleep(3000)
-//             return;
-//         }
-//     } catch(e) {
-//         sleep(1000);
-//     }
-//     sleep(5000);
-
-//     //检查超时
-//     if(checkTimeout()) return;
-
-//     check_comment_result()
-//     sleep(3000)
-
-//     back()
-//     sleep(3000)
-
-//     back()
-// }
-
-
-    
-
-// //在评论之后，要检查一下，有没有出现一个新页面：desc("We removed your comment")
-// function check_comment_result(){
-//     var check_comment_result = find_view_desc_base("We removed your comment","我們移除了您的評論","We removed your comment")
-//     toast("评论检查 = " + check_comment_result);
-//     if(check_comment_result){
-//         toast("评论失败");
-//         find_btn_desc_base("Close","關閉","Close")
-//         sleep(3000)
-//     }else{
-//         toast("评论成功");
-//     }
-// }

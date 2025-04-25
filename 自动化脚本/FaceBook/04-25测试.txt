@@ -1,0 +1,20 @@
+
+加入好友(連結) - OK
+
+加入社團(連結) - OK
+1.没有遇到这种情况的社团链接：
+find_view_text_base("I agree to the group rules","我同意社團規則","I agree to the group rules")
+
+
+
+
+社團動態文章留言
+指定粉絲業點關注 - OK
+指定貼文留言點讚
+
+
+自動社團發文 - 0425正在测试
+
+
+自動養號 - OK
+
