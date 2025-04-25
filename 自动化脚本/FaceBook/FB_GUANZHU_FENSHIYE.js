@@ -94,18 +94,21 @@ taskLog("准备启动Facebook...")
     
             find_textview_text_base("開啟應用程式","開啟應用程式","Open app")
             sleep(5000)
-    
+            
+            //测试：https://www.facebook.com/profile.php?id=100070600397434
             //className("android.view.View").text("Add friend").findOne().click()
-            var add_friend = find_view_desc_base("Add friend","Add friend","Add friend")
+            var add_friend = find_view_desc_base("加朋友","Add friend","Add friend")
             if(add_friend){
                 toast("已经点击Add friend粉丝页")
             }else{
                 toast("没有找到Add friend按钮")
             }   
             sleep(5000)
-    
+            
+            //测试：https://www.facebook.com/profile.php?id=100083184186096
             //className("android.view.View").text("Follow").findOne().click()
-            var follow = find_view_desc_base("Follow","Follow","Follow")
+            //desc("追蹤")
+            var follow = find_view_desc_base("追蹤","Follow","Follow")
             if(follow){
                 toast("已经点击Follow粉丝页")
             }else{
@@ -113,8 +116,8 @@ taskLog("准备启动Facebook...")
             }   
             sleep(5000) 
 
-
-            var like = find_view_desc_base("Like","Like","Like")    
+            //测试：https://www.facebook.com/profile.php?id=61572758800839
+            var like = find_view_desc_base("讚","Like","Like")    
             if(like){
                 toast("已经点击Like粉丝页")
             }else{
@@ -727,5 +730,5 @@ function swipe_up(){
         endY,               // 终点Y
         600                 // 持续时间
     );
-    sleep(2000); //等待滚动完成
+    sleep(3000); //等待滚动完成
 }

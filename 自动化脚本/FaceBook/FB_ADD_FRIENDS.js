@@ -4,9 +4,7 @@ importClass(java.io.PrintWriter);
 importClass(java.io.FileWriter);
 
 //******************************************************************
-//***********************Facebook加入好友(連結)*************************
-// 指紋 新增爬粉絲頁追蹤者數據
-// 1 如遇到無法加好友直接略過
+//***********************指定粉絲業點關注*************************
 //******************************************************************
 
 
@@ -18,8 +16,8 @@ var taskLogImgName = "nest_task_log.png"
 var chromePackageName = 'com.kiwibrowser.browser';
 
 
-//需要添加的用户好友
-const FB_input_text = '$${T_FB_输入需要添加的所有好友}';
+//需要Floow的FaceBook粉丝页
+const FB_input_Page_text = '$${T_FB_输入需要添加的所有好友}';
 
 // 添加全局索引计数器
 let commentIndex = 0;
@@ -75,15 +73,13 @@ taskLog("准备启动Facebook...")
     sleep(5000)
 
     if(all_friends.length == 0){
-        toast("没有好友")
+        toast("没有好友") 
         stopCurrentTask()
     }else{
         for(var i = 0; i < all_friends.length; i++){
-            toast("当前好友在第" + (i+1) + "个 = " + all_friends[i])
-            sleep(5000)
-    
+            toast("当前好友在第" + (i+1) + "个 = " + all_friends[i])      
             var friend_info_link = all_friends[i]
-            sleep(5000)
+            sleep(2000)
     
             openBrowser(friend_info_link)
             sleep(5000)
@@ -98,20 +94,45 @@ taskLog("准备启动Facebook...")
     
             find_textview_text_base("開啟應用程式","開啟應用程式","Open app")
             sleep(5000)
-    
+            
+            //测试：https://www.facebook.com/profile.php?id=100070600397434
             //className("android.view.View").text("Add friend").findOne().click()
-            find_view_desc_base("Add friend","Add friend","Add friend")
+            var add_friend = find_view_desc_base("加朋友","Add friend","Add friend")
+            if(add_friend){
+                toast("已经点击Add friend好友")
+            }else{
+                toast("没有找到Add friend按钮")
+            }   
             sleep(5000)
-    
+            
+            //测试：https://www.facebook.com/profile.php?id=100083184186096
             //className("android.view.View").text("Follow").findOne().click()
-            find_view_desc_base("Follow","Follow","Follow")
+            //desc("追蹤")
+            var follow = find_view_desc_base("追蹤","Follow","Follow")
+            if(follow){
+                toast("已经点击Follow好友")
+            }else{
+                toast("没有找到Follow按钮") 
+            }   
             sleep(5000) 
 
+            //测试：https://www.facebook.com/profile.php?id=61572758800839
+            var like = find_view_desc_base("讚","Like","Like")    
+            if(like){
+                toast("已经点击Like好友")
+            }else{
+                toast("没有找到Like按钮")
+            }   
+            sleep(5000) 
+            
+            toast("开始模拟滑动")
+            swipe_up()
+
+
             //检查页面是否存在多个“Add friend”按钮，因为可能会跳转到一个新页面
-            check_add_friend_page()
-            sleep(5000)
+            // check_add_friend_page()
+            // sleep(5000)
     
-            toast("已经点击添加好友")
     
         }
     }
@@ -309,8 +330,8 @@ function get_post_text(){
     // 用于存储私信用户的数组
     let comments = [];
     // 私信用户是否存在
-    taskLog("私信用户地址 =  " + FB_input_text)
-    const file = new java.io.File(FB_input_text);
+    taskLog("私信用户地址 =  " + FB_input_Page_text)
+    const file = new java.io.File(FB_input_Page_text);
     if (file.exists() && file.isFile()) {
         try {
             // 读取文件内容
@@ -325,7 +346,7 @@ function get_post_text(){
         }
     } else {
         // 如果文件不存在，将文件名添加到数组中
-        comments.push(FB_input_text);
+        comments.push(FB_input_Page_text);
     }
     
     // 使用顺序索引获取消息
@@ -343,8 +364,8 @@ function get_all_friedns(){
     // 用于存储用户的数组
     let comments = [];
     // 户是否存在
-    taskLog("用户地址 =  " + FB_input_text)
-    const file = new java.io.File(FB_input_text);
+    taskLog("用户地址 =  " + FB_input_Page_text)
+    const file = new java.io.File(FB_input_Page_text);
     if (file.exists() && file.isFile()) {
         try {
             // 读取文件内容
@@ -359,7 +380,7 @@ function get_all_friedns(){
         }
     } else {
         // 如果文件不存在，将文件名添加到数组中
-        comments.push(FB_input_text);
+        comments.push(FB_input_Page_text);
     }
     
     return comments
@@ -670,4 +691,44 @@ function forceStop_APP(packageName){
 
     home()
 
+}
+
+
+
+function swipe_up(){
+    //使用多段swipe实现曲线滑动
+    let screenHeight = device.height;
+    let startY = Math.floor(screenHeight * 0.9);  // 起点
+    let endY = Math.floor(screenHeight * 0.1);    // 终点
+    let distance = startY - endY;                 // 总距离
+    
+    // 第一段：向右倾斜
+    swipe(
+        device.width / 2,    // 起点X
+        startY,             // 起点Y
+        device.width * 0.7,  // 终点X
+        startY - distance/3, // 终点Y
+        700                 // 持续时间
+    );
+    sleep(200);
+    
+    // 第二段：向左倾斜
+    swipe(
+        device.width * 0.7,  // 起点X
+        startY - distance/3, // 起点Y
+        device.width * 0.3,  // 终点X
+        startY - distance*2/3, // 终点Y
+        700                 // 持续时间
+    );
+    sleep(200);
+    
+    // 第三段：回到中间
+    swipe(
+        device.width * 0.3,  // 起点X
+        startY - distance*2/3, // 起点Y
+        device.width / 2,    // 终点X
+        endY,               // 终点Y
+        600                 // 持续时间
+    );
+    sleep(3000); //等待滚动完成
 }
