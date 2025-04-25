@@ -98,11 +98,13 @@ taskLog("准备启动Facebook...")
         sleep(5000)
 
 
-
+        //测试：https://www.facebook.com/groups/403644813716642/
         //className("android.view.ViewGroup").text("Join group").findOne().click()
-        find_viewGroup_desc_base("Join group","Join group","Join group")
+        //desc("加入社團")
+        find_viewGroup_desc_base("加入社團","Join group","Join group")
         sleep(5000)
 
+        //测试：https://www.facebook.com/groups/232736963482941
         answer_all_questions()
 
 
@@ -814,6 +816,13 @@ function answer_all_questions(){
     sleep(5000)
 
     //点击提交按钮
-    find_view_desc_base("Submit","Submit","Submit")
+    toast("开始检测submit按钮")
+
+    //Facebook语言是英语时：View - Submit
+    find_view_desc_base("Submit","提交","Submit")
+
+    //Facebook语言是繁体时：ViewGroup - 提交
+    find_viewGroup_desc_base("提交","Submit","Submit")   
+    
     sleep(10000)
 }
