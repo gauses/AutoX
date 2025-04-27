@@ -11,10 +11,26 @@ find_view_text_base("I agree to the group rules","我同意社團規則","I agre
 社團動態文章留言
 
 
+
 指定粉絲業點關注 - OK
 
 
-指定貼文留言點讚 - 0427测试
+指定貼文留言點讚 - OK
+1.再post img时，相关权限这一块没有测试：
+//点击权限
+//className("android.widget.Button").desc("Allow access").findOne().click()
+find_btn_desc_base("Allow access", "允許存取", "Allow access")
+sleep(3000)
+
+//再次点击权限
+// id("(name removed)").className("android.widget.Button").text("ALLOW").findOne().click()
+find_btn_Text_base("ALLOW", "允許", "ALLOW")
+sleep(3000)
+
+//系统弹窗
+find_btn_Text_base("允许", "允許", "Allow")
+sleep(3000)
+
 
 
 

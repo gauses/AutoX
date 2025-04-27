@@ -818,7 +818,8 @@ function find_post_button(){
 
 function post_Image(){
     taskLog("开始检查图片条件判断...")
-    taskLog("FB_input_IMAGE的实际值: " + FB_input_IMAGE)
+    toast("FB_input_IMAGE的实际值: " + FB_input_IMAGE)
+    
     
     // 检查是否是有效的图片路径（不是模板字符串且文件存在）
     if(FB_input_IMAGE && 

@@ -26,6 +26,7 @@ var chromePackageName = 'com.kiwibrowser.browser';
 const FB_Group_links = '$${T_FB_输入需要動態文章留言的所有Group}';
 const FB_common_count = '$${FB_每个Group输入留言的个数}';
 const FB_group_comment_text = '$${T_FB_输入動態留言的所有文本}';
+const FB_input_IMAGE = '$${T_FB_图片地址}';
 
 
 
@@ -33,6 +34,7 @@ const FB_group_comment_text = '$${T_FB_输入動態留言的所有文本}';
 let commentIndex = 0;
 
 var FacebookPackageName = 'com.facebook.katana';
+var A_NEST_FaceBook_MEDIA = 'A_NEST_FaceBook_MEDIA'; 
 
 //1.autox.js侧边栏的打开USB调试先打开
 //2.vscode ctrl+shift+p 输入start all server 确定
@@ -61,6 +63,10 @@ if (runningEngines.length > 1) {
   })
 }
 
+
+toast("先尝试杀Facebook进程...")
+forceStop_APP(FacebookPackageName)
+sleep(5000)
 
 taskLog("准备启动Facebook...")
     sleep(5000)
@@ -780,10 +786,16 @@ function fina_all_Comment(){
         }
 
         //获取当前页面所有Comment按钮
-        var comments = className("android.widget.Button").desc("Comment").find();
-        toast("当前页面所有Comment按钮 = " + comments.length);
+        //繁体：className("android.widget.Button").desc("留言").findOne().click()
+
+        var comments_eng = className("android.widget.Button").desc("Comment").find();
+        var comments_zh = className("android.widget.Button").desc("留言").find();
+
+
+        toast("当前页面所有Comment-EN按钮 = " + comments_eng.length);
+        toast("当前页面所有Comment-ZH按钮 = " + comments_zh.length);
         
-        if(comments.length == 0){
+        if(comments_eng.length == 0 && comments_zh.length == 0){
             noCommentScrollCount++; // 增加未找到计数
             toast("当前页面没有Comment按钮，准备下滑页面，这是第" + noCommentScrollCount + "次连续未找到");
             
@@ -794,46 +806,14 @@ function fina_all_Comment(){
             }
             
             //使用多段swipe实现曲线滑动
-            let screenHeight = device.height;
-            let startY = Math.floor(screenHeight * 0.9);  // 起点
-            let endY = Math.floor(screenHeight * 0.1);    // 终点
-            let distance = startY - endY;                 // 总距离
-            
-            // 第一段：向右倾斜
-            swipe(
-                device.width / 2,    // 起点X
-                startY,             // 起点Y
-                device.width * 0.7,  // 终点X
-                startY - distance/3, // 终点Y
-                700                 // 持续时间
-            );
-            sleep(200);
-            
-            // 第二段：向左倾斜
-            swipe(
-                device.width * 0.7,  // 起点X
-                startY - distance/3, // 起点Y
-                device.width * 0.3,  // 终点X
-                startY - distance*2/3, // 终点Y
-                700                 // 持续时间
-            );
-            sleep(200);
-            
-            // 第三段：回到中间
-            swipe(
-                device.width * 0.3,  // 起点X
-                startY - distance*2/3, // 起点Y
-                device.width / 2,    // 终点X
-                endY,               // 终点Y
-                600                 // 持续时间
-            );
-            sleep(2000); //等待滚动完成
+            swipe_up()
             
             //重新获取Comment按钮
-            comments = className("android.widget.Button").desc("Comment").find();
+            comments_eng = className("android.widget.Button").desc("Comment").find();
+            comments_zh = className("android.widget.Button").desc("留言").find();
             
             //如果滑动后还是没有找到Comment按钮，继续下一次循环
-            if(comments.length == 0){
+            if(comments_eng.length == 0 && comments_zh.length == 0){
                 toast("下滑后仍未找到Comment按钮，继续寻找");
 
                 //检查是不是已经到了FB提示页面      
@@ -845,51 +825,21 @@ function fina_all_Comment(){
         }
         
         //找到Comment按钮后，点击最后一个
-        if(comments.length > 0){
+        if(comments_eng.length > 0 || comments_zh.length > 0){
             noCommentScrollCount = 0; // 重置未找到计数
             toast("找到Comment按钮，准备点击第" + (clickedCount + 1) + "次");
-            comments[comments.length - 1].click(); // 选择最后一个元素
+            if(comments_eng.length > 0){    
+                comments_eng[comments_eng.length - 1].click(); // 选择最后一个元素
+            }else{
+                comments_zh[comments_zh.length - 1].click(); // 选择最后一个元素
+            }
             post_content()
             sleep(3000)
 
             clickedCount++;
             sleep(5000); //等待点击操作完成
             
-            //点击完成后下滑页面，准备寻找下一个Comment按钮
-            let screenHeight = device.height;
-            let startY = Math.floor(screenHeight * 0.9);  // 起点
-            let endY = Math.floor(screenHeight * 0.1);    // 终点
-            let distance = startY - endY;                 // 总距离
-            
-            // 第一段：向右倾斜
-            swipe(
-                device.width / 2,    // 起点X
-                startY,             // 起点Y
-                device.width * 0.7,  // 终点X
-                startY - distance/3, // 终点Y
-                700                 // 持续时间
-            );
-            sleep(200);
-            
-            // 第二段：向左倾斜
-            swipe(
-                device.width * 0.7,  // 起点X
-                startY - distance/3, // 起点Y
-                device.width * 0.3,  // 终点X
-                startY - distance*2/3, // 终点Y
-                700                 // 持续时间
-            );
-            sleep(200);
-            
-            // 第三段：回到中间
-            swipe(
-                device.width * 0.3,  // 起点X
-                startY - distance*2/3, // 起点Y
-                device.width / 2,    // 终点X
-                endY,               // 终点Y
-                600                 // 持续时间
-            );
-            sleep(2000);
+            swipe_up()
         }
     }
     
@@ -945,7 +895,7 @@ function post_content(){
     } catch(e) {
         sleep(1000);
     }
-    sleep(5000);
+    sleep(2000);
     
     //检查超时
     if(checkTimeout()) return;
@@ -980,25 +930,48 @@ function post_content(){
     //检查超时
     if(checkTimeout()) return;
 
+
+    //检查是否需要发图片
+    post_Image()
+    sleep(2000)
+
+    //退出图库选中，因为要点击send按钮，否则可能会点中图库的最后一张图片
+    back()
+    sleep(3000)
+
+
+
     //尝试点击发送按钮
     try {
-        let sendBtn = className("android.widget.Button").desc("Send").findOne(10000); // 5秒超时
-        if(sendBtn) {
-            sendBtn.click();
-        } else {
+        
+        // let sendBtn = className("android.widget.Button").desc("Send").findOne(10000); // 5秒超时
+        // if(sendBtn) {
+        //     sendBtn.click();
+        // } else {
+        //     toast("未找到发送按钮");
+        //     sleep(1000)
+        //     back()
+        //     sleep(3000)
+        //     return;
+        // }
+
+        let sendBtn = find_btn_desc_base("Send", "傳送", "Send")
+        if(!sendBtn){
             toast("未找到发送按钮");
             sleep(1000)
             back()
             sleep(3000)
             return;
         }
+
+
     } catch(e) {
         sleep(1000);
     }
     sleep(5000);
 
-    //检查超时
-    if(checkTimeout()) return;
+    // //检查超时
+    // if(checkTimeout()) return;
 
     check_comment_result()
     sleep(3000)
@@ -1015,12 +988,240 @@ function post_content(){
 //在评论之后，要检查一下，有没有出现一个新页面：desc("We removed your comment")
 function check_comment_result(){
     var check_comment_result = find_view_desc_base("We removed your comment","我們移除了您的評論","We removed your comment")
-    toast("评论检查 = " + check_comment_result);
+    toast("先检查是否处于FaceBook警告页面： = " + check_comment_result);
     if(check_comment_result){
-        toast("评论失败");
+        toast("目前处于FaceBook警告页面，需要关闭");
         find_btn_desc_base("Close","關閉","Close")
         sleep(3000)
-    }else{
-        toast("评论成功");
     }
+}
+
+
+
+
+function swipe_up(){
+    //使用多段swipe实现曲线滑动
+    let screenHeight = device.height;
+    let startY = Math.floor(screenHeight * 0.9);  // 起点
+    let endY = Math.floor(screenHeight * 0.1);    // 终点
+    let distance = startY - endY;                 // 总距离
+    
+    // 第一段：向右倾斜
+    swipe(
+        device.width / 2,    // 起点X
+        startY,             // 起点Y
+        device.width * 0.7,  // 终点X
+        startY - distance/3, // 终点Y
+        700                 // 持续时间
+    );
+    sleep(200);
+    
+    // 第二段：向左倾斜
+    swipe(
+        device.width * 0.7,  // 起点X
+        startY - distance/3, // 起点Y
+        device.width * 0.3,  // 终点X
+        startY - distance*2/3, // 终点Y
+        700                 // 持续时间
+    );
+    sleep(200);
+    
+    // 第三段：回到中间
+    swipe(
+        device.width * 0.3,  // 起点X
+        startY - distance*2/3, // 起点Y
+        device.width / 2,    // 终点X
+        endY,               // 终点Y
+        600                 // 持续时间
+    );
+    sleep(3000); //等待滚动完成
+}
+
+
+
+function post_Image(){
+    taskLog("开始检查图片条件判断...")
+    taskLog("FB_input_IMAGE的实际值: " + FB_input_IMAGE)
+    
+    // 检查是否是有效的图片路径（不是模板字符串且文件存在）
+    if(FB_input_IMAGE && 
+        FB_input_IMAGE.trim() !== "" && 
+        FB_input_IMAGE.trim().toLowerCase !== "off" && 
+        !FB_input_IMAGE.includes("$${")){
+            taskLog("检测到有效的图片路径，准备处理图片...")
+            toast("图片不是空")    
+
+            toast("FB_input_IMAGE = " + FB_input_IMAGE)
+
+            refreshMedia("/storage/emulated/0/Download/")
+            var imageTempPath = transferHeadImageToNest(FB_input_IMAGE)
+            sleep(10000)
+
+            //className("android.widget.Button").desc("Show photos and videos").findOne().click()
+            //desc("顯示相片和影片")
+            find_btn_desc_base("Show photos and videos", "顯示相片和影片", "Show photos and videos")
+            sleep(5000)
+
+            //点击权限
+            //className("android.widget.Button").desc("Allow access").findOne().click()
+            find_btn_desc_base("Allow access", "允許存取", "Allow access")
+            sleep(3000)
+
+            //再次点击权限
+            // id("(name removed)").className("android.widget.Button").text("ALLOW").findOne().click()
+            find_btn_Text_base("ALLOW", "允許", "ALLOW")
+            sleep(3000)
+
+            //系统弹窗
+            find_btn_Text_base("允许", "允許", "Allow")
+            sleep(3000)
+
+
+
+            //选中一张图片即可
+            var isPhotoSelected = false;  // 添加标志位
+            className("android.widget.GridView").findOne().children().forEach(child => {
+                if (isPhotoSelected) return;  // 如果已经选中图片就跳过后续循环
+
+                var button = child.findOne(className("android.widget.Button"));
+                if (!button) {
+                    taskLog("未找到Button控件，跳过");
+                    return;
+                }
+                
+                var buttonDesc = button.desc();
+                if (!buttonDesc) {
+                    taskLog("Button没有描述文本，跳过");
+                    return;
+                }
+                
+                toast("选择图片描述 = " + buttonDesc);
+                taskLog("选择图片描述 = " + buttonDesc);
+                
+                if (buttonDesc.indexOf("Photo taken on") !== -1 || buttonDesc.indexOf("的相片") !== -1)  {
+                    taskLog("找到目标图片：" + buttonDesc);
+                    var bounds = button.bounds();
+                    if (bounds) {
+                        click(bounds.centerX(), bounds.centerY());
+                        taskLog("点击坐标：" + bounds.centerX() + ", " + bounds.centerY());
+                        isPhotoSelected = true;  // 设置标志位为true
+                        sleep(2000);
+                    }
+                }
+            });
+
+            if (isPhotoSelected) {
+                //点击Next
+                toast("已经选中图库中的第一张图片");
+                sleep(5000);
+            } else {
+                taskLog("未找到任何符合条件的图片");
+                toast("未找到任何符合条件的图片");
+            }
+        
+
+            
+
+            
+        }
+}
+
+// 刷新指定路径的媒体库
+function refreshMedia(path) {
+    toast("开始刷新媒体库，用时5秒钟....");
+    // 发送媒体扫描广播
+    media.scanFile(path);
+    // 等待扫描完成
+    sleep(5000);
+    toast("媒体库刷新完成，开始下一步任务...");
+}
+
+//转移头像图片到Nest临时文件夹
+function transferHeadImageToNest(fileName){
+    let imagePath = null;
+    if (files.exists(fileName)) {
+        imagePath = fileName;
+    }
+    
+    if (!imagePath) {
+        console.error("未找到指定图片：" + fileName);
+        toast("未找到指定图片：" + fileName);
+        return;
+    }
+
+
+    //开始拷贝一份，到本地自己的文件夹来单独处理，不处理原来的图片，
+    // 创建文件夹(如果不存在)
+    const newFolder = "/storage/emulated/0/Download/" + A_NEST_FaceBook_MEDIA;  // 替换成你想要的文件夹路径
+    if(!files.exists(newFolder)){
+        files.ensureDir(newFolder);
+        console.log("创建文件夹: " + newFolder);
+    }
+    // 目标图片路径(在新文件夹中)
+    const targetFileName = files.getName(imagePath);
+    const targetPath = newFolder + "/" + targetFileName;
+    console.log("新图片文件的绝对路径: " + targetPath);
+    // 复制图片文件
+    try {
+        files.copy(imagePath, targetPath);
+        console.log("复制成功!");
+        console.log("新图片路径: " + targetPath);
+    } catch(e) {
+        console.error("复制失败: " + e);
+    }
+
+    sleep(3000);
+
+
+    refreshMedia(newFolder)
+    sleep(10000);
+
+
+    // 创建文件对象并获取URI
+    let file = new java.io.File(targetPath);
+    let uri = app.getUriForFile(targetPath);
+    
+    // 创建打开图片的 Intent
+    let intent = new Intent(Intent.ACTION_VIEW);
+    intent.setDataAndType(uri, "image/*");
+    // 添加必要的权限标志
+    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+    // 指定使用系统默认的图库应用
+    intent.setPackage("com.android.gallery3d");  // 系统默认图库的包名
+    // 如果上面的包名不生效，可以尝试：
+    // intent.setPackage("com.google.android.apps.photos");  // Google Photos
+    // intent.setPackage("com.sec.android.gallery3d");  // 三星图库
+    // intent.setPackage("com.miui.gallery");  // 小米图库
+
+    // 启动图片查看Activity
+    // context.startActivity(intent);
+    // 等待界面加载
+    sleep(3000);
+
+    return targetPath
+
+
+}
+
+//删除临时图片文件夹
+function delete_temp_image(folderPath) {
+    taskLog("准备删除临时文件夹: " + folderPath);
+    toast("准备删除临时文件夹: " + folderPath);
+    
+    if (!files.exists(folderPath)) {
+        taskLog("文件夹不存在，无需删除");
+        return;
+    }
+
+    try {
+        // 删除文件夹及其所有内容
+        files.removeDir(folderPath);
+        taskLog("成功删除临时文件夹");
+    } catch (e) {
+        taskLog("删除临时文件夹时出错: " + e);
+        console.error("删除临时文件夹时出错: " + e);
+    }
+
 }
