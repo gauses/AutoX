@@ -62,6 +62,11 @@ if (runningEngines.length > 1) {
 }
 
 
+toast("先尝试杀Facebook进程...")
+forceStop_APP(FacebookPackageName)
+sleep(5000)
+
+
 taskLog("准备启动Facebook...")
     sleep(5000)
     app.startActivity({
@@ -791,15 +796,19 @@ function find_post_button(){
         post_Image()
 
 
-        taskLog("准备点击POST....");
-        sleep(5000)
-        //className("android.view.ViewGroup").text("POST").findOne().click()
-        find_viewGroup_desc_base("發布", "POST", "發布")
-    
+        toast("准备点击POST....");
+        sleep(3000)
+        // find_viewGroup_desc_base("發布", "POST", "發布")
+        find_btn_desc_base("發佈", "POST", "發佈")
     
         //删除临时图片库 :A_NEST_FaceBook_MEDIA
         sleep(10000)
         delete_temp_image("/storage/emulated/0/Download/" + A_NEST_FaceBook_MEDIA)
+
+
+        toast("开始模拟滑动")
+        swipe_up()
+        sleep(5000)
 
     }else{
         toast("未找到在Group群组发表po文的按钮，进行下一个Group任务");
@@ -899,7 +908,8 @@ function post_Image(){
                     toast("选择图片描述 = " + buttonDesc);
                     taskLog("选择图片描述 = " + buttonDesc);
                     
-                    if (buttonDesc.indexOf("Photo taken on") !== -1) {
+                    //繁体：desc("在4月 26, 2025 23:16拍攝的相片")
+                    if (buttonDesc.indexOf("Photo taken on") !== -1 || buttonDesc.indexOf("的相片") !== -1)  {
                         taskLog("找到目标图片：" + buttonDesc);
                         var bounds = button.bounds();
                         if (bounds) {
@@ -908,15 +918,13 @@ function post_Image(){
                             sleep(2000);
                         }
                     }
-                    sleep(3000);
+                    sleep(1000);
                 });
 
 
-
                 //点击Nest
-                //className("android.widget.Button").desc("Next").findOne().click()
-                find_btn_desc_base("Next", "下一步", "Next")
-                sleep(5000)
+                find_btn_desc_base("繼續", "Next", "Next")
+                sleep(3000)
 
             });
             
@@ -1027,3 +1035,40 @@ function delete_temp_image(folderPath) {
 
 }
 
+function swipe_up(){
+    //使用多段swipe实现曲线滑动
+    let screenHeight = device.height;
+    let startY = Math.floor(screenHeight * 0.9);  // 起点
+    let endY = Math.floor(screenHeight * 0.1);    // 终点
+    let distance = startY - endY;                 // 总距离
+    
+    // 第一段：向右倾斜
+    swipe(
+        device.width / 2,    // 起点X
+        startY,             // 起点Y
+        device.width * 0.7,  // 终点X
+        startY - distance/3, // 终点Y
+        700                 // 持续时间
+    );
+    sleep(200);
+    
+    // 第二段：向左倾斜
+    swipe(
+        device.width * 0.7,  // 起点X
+        startY - distance/3, // 起点Y
+        device.width * 0.3,  // 终点X
+        startY - distance*2/3, // 终点Y
+        700                 // 持续时间
+    );
+    sleep(200);
+    
+    // 第三段：回到中间
+    swipe(
+        device.width * 0.3,  // 起点X
+        startY - distance*2/3, // 起点Y
+        device.width / 2,    // 终点X
+        endY,               // 终点Y
+        600                 // 持续时间
+    );
+    sleep(3000); //等待滚动完成
+}
