@@ -186,6 +186,7 @@ function post_Image(){
     // 检查是否是有效的图片路径（不是模板字符串且文件存在）
     if(FB_input_IMAGE && 
         FB_input_IMAGE.trim() !== "" && 
+        FB_input_IMAGE.trim().toLowerCase() !== "off" && 
         !FB_input_IMAGE.includes("$${")){
             taskLog("检测到有效的图片路径，准备处理图片...")
             toast("图片不是空")    
