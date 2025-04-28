@@ -18,18 +18,14 @@ var taskLogImgName = "nest_task_log.png"
 
 
 //用户需要输入的评论内容
-//const TT_commentFile = "SO COOL..."
-// const TT_Like_Count = 10 //点赞概率
-// const TT_Save_Count = 10 //收藏概率
-// const TT_Comment_Count = 100 //评论概率
-// const TT_Watch_Author_Page= 10 //查看作者主页的概率
-// const TT_Watch_Count = 1024 //观看视频个数
+const TT_Watch_Count = "$${瀏覽數量}" //观看视频个数
 const TT_commentFile = '$${T_留言內容}';
 const TT_Like_Count = "$${點讚概率}" //点赞概率
-const TT_Save_Count = 0 //收藏概率
-const TT_Watch_Author_Page= 0 //查看作者主页的概率
 const TT_Comment_Count = "$${留言概率}" //评论概率
-const TT_Watch_Count = "$${瀏覽數量}" //观看视频个数
+const TT_Save_Count = "$${收藏概率}" //收藏概率
+
+
+const TT_Watch_Author_Page= 0 //查看作者主页的概率
 
 
 //1.autox.js侧边栏的打开USB调试先打开
@@ -107,7 +103,7 @@ taskLog("准备启动TikTok...")
 sleep(5000)
 app.startActivity({
     action: "android.intent.action.VIEW",
-    packageName: "com.ss.android.ugc.trill",
+    packageName: TikTokPackageName,
     className: "com.ss.android.ugc.aweme.main.MainActivity"
 });
 
@@ -201,22 +197,82 @@ function click_Author_Page_Btn(){
 //点击点赞按钮
 function click_Like_Btn(){
     taskLog("开始准备点赞视频")
-    clickId("dh4") //直接用这个会报错
-    // id("dh4").className("android.widget.ImageView").findOne(3000).click()
+    //fullId("com.zhiliaoapp.musically:id/e1x")
+    clickId(TikTokPackageName + ":id/e1x")
+
+}
+
+
+
+//点击评论按钮
+function click_Comment_Btn(commentText){
+    taskLog("开始准备评论视频")
+    //fullId("com.zhiliaoapp.musically:id/cwt")
+    clickId(TikTokPackageName + ":id/cwt")
+
+    sleep(5000)
+    var autoCompleteTextViews = className("android.widget.EditText").find();
+    taskLog("autoCompleteTextViews长度 = " + autoCompleteTextViews.size())
+
+
+    //如果某个tiktok视频，0评论，自己是首评，那么界面会有两个"android.widget.EditText"
+    if(autoCompleteTextViews.size() >0){
+        var textView = autoCompleteTextViews.get(autoCompleteTextViews.size() - 1);
+        if(textView) {
+            taskLog("找到TextView控件-Text："+ textView.text());
+            textView.click()
+            sleep(1000)
+            taskLog("评论控件，设置内容：" +commentText );
+            textView.setText(commentText)
+            sleep(5000)
+    
+    
+            //发送按钮,如果某个tiktok视频，0评论，自己是首评，那么就会找不到fullId("com.zhiliaoapp.musically:id/cyq")
+            //所以必须要执行两次clickId(TikTokPackageName + ":id/cyq") ，因为0评论，和有评论的界面不一样
+            // fullId("com.zhiliaoapp.musically:id/cyq")
+            clickId(TikTokPackageName + ":id/cyq")
+            sleep(random(2000, 3000))
+            back()
+            sleep(random(2000, 3000))
+            clickId(TikTokPackageName + ":id/cyq")
+    
+    
+            sleep(random(10000, 15000))
+    
+    
+            var clickX = device.width  - 100 ; 
+            var clickY = device.width /4; 
+            taskLog("开始准备点击屏幕 clickX = " + clickX)
+            taskLog("开始准备点击屏幕 clickY = " + clickY)
+            click(clickX, clickY);
+                
+                
+            }
+    }
+
+    
+
+
+
+   
+}
+
+
+
+//点击收藏按钮
+function click_Save_Btn(){
+    taskLog("开始准备收藏视频")
+    //fullId("com.zhiliaoapp.musically:id/fc_")
+    clickId(TikTokPackageName + ":id/fc_")
 
 }
 
 
 function find_send_btn() {
     var allButtons = className("android.widget.Button").find();
+    taskLog("find_send_btn allButtons长度 = " + allButtons.size())
     if (allButtons && allButtons.size() > 0) {
-        // for (var i = 0; i < allButtons.size(); i++) {
-        //     var button = allButtons.get(i);
-        //     if (button) {
-        //         taskLog("找到button控件-Text：" + button.text() + ";ID = " + button.id());
-        //     }
-        // }
-        
+
         // 获取最后一个按钮
         var lastButton = allButtons.get(allButtons.size() - 1);
         if (lastButton) {
@@ -228,76 +284,10 @@ function find_send_btn() {
 }
 
 
-function find_send_image() {
-    var allImages = className("android.widget.ImageView").find();
-    if (allImages && allImages.size() > 0) {
-        for (var i = 0; i < allImages.size(); i++) {
-            var img = allImages.get(i);
-            if (img) {
-                taskLog("找到Image控件-Text：" + img.text() + ";ID = " + img.id());
-            }
-        }
-        
-        // 获取最后一个图片控件
-        var lastImage = allImages.get(allImages.size() - 1);
-        if (lastImage) {
-            // 正确调用bounds()方法
-            var bounds = lastImage.bounds();
-            click(bounds.centerX(), bounds.centerY());
-        }
-    }
-}
-
-//点击评论按钮
-function click_Comment_Btn(commentText){
-    taskLog("开始准备评论视频")
-    clickId("cgq")
-
-    sleep(5000)
-    var autoCompleteTextViews = className("android.widget.EditText").find();
-    for(var i = 0; i < autoCompleteTextViews.size(); i++) {
-        var textView = autoCompleteTextViews.get(i);
-        if(textView) {
-            taskLog("找到TextView控件-Text："+ textView.text());
-            sleep(1000)
-            taskLog("评论控件，设置内容：" +commentText );
-            textView.setText(commentText)
-            sleep(10000)
-
-
-            //发送按钮,一直找不到发送按钮，所以直接点击屏幕的最后一个button
-            find_send_btn()
-            sleep(15000)
-
-
-            var clickX = device.width  - 100 ; 
-            var clickY = device.width /4; 
-            taskLog("开始准备点击屏幕 clickX = " + clickX)
-            taskLog("开始准备点击屏幕 clickY = " + clickY)
-            click(clickX, clickY);
-            
-            
-        }
-    }
-   
-}
-
-
-
-//点击收藏按钮
-function click_Save_Btn(){
-    taskLog("开始准备收藏视频")
-    // id("egc").className("android.widget.ImageView").findOne().click()
-    clickId("egc")
-
-}
-
-
-
-
 
 //打印日志
 function taskLog(_log){
+    toast(_log)
     console.log(getSystemDate("df") +":" +_log)
 
     //通过日志判断任务有没有结束：
@@ -628,16 +618,11 @@ function close_friend_suggest(){
 }
 
 
-
-try {
-    
-    close_friend_suggest()
-
-
-    // 用于存储评论的数组
+//从评论数组中，顺序挑选一条内容
+function get_all_TT_comment_text(){
     let comments = [];
-    // 检查文件是否存在
-    taskLog("评论文案地址 =  " + TT_commentFile)
+    // 户是否存在
+    taskLog("TT评论数组 =  " + TT_commentFile)
     const file = new java.io.File(TT_commentFile);
     if (file.exists() && file.isFile()) {
         try {
@@ -655,15 +640,31 @@ try {
         // 如果文件不存在，将文件名添加到数组中
         comments.push(TT_commentFile);
     }
+    
+    return comments
+}
 
-    // 如果TT_commentFile等于'off'，则清空评论数组
-    if (TT_commentFile == 'off') {
-        comments = [];
-    }
 
+
+try {
+    
+    close_friend_suggest()
+
+    var all_TT_comment_text = []
+
+    if(TT_commentFile && 
+        TT_commentFile.trim() !== "" && 
+        TT_commentFile.trim().toLowerCase() !== "off" && 
+        !TT_commentFile.includes("$${")){
+            all_TT_comment_text = get_all_TT_comment_text()
+        }
+    
     // 输出结果，用于调试
-    taskLog(comments);
-
+    if(all_TT_comment_text.length > 0){
+        taskLog("评论文案数量 = " + all_TT_comment_text.length);
+    }else{
+        taskLog("没有找到评论文案，所以将只会执行点赞")
+    }
 
 
 
@@ -677,33 +678,29 @@ try {
 
         close_friend_suggest()
 
-        sleep(random(10000, 25000))
+        sleep(random(10000, 15000))
 
         if (Math.random() * 100 < TT_Like_Count)  {
             taskLog("开始触发点赞概率")
             click_Like_Btn()
-            sleep(random(5000, 8000))
+            sleep(random(3000, 5000))
         }
         if (Math.random() * 100 < TT_Save_Count)  {
             taskLog("开始触发保存视频概率")
-            click_Like_Btn()
-            sleep(random(5000, 8000))
+            click_Save_Btn()
+            sleep(random(3000, 5000))
+        }else{
+            taskLog("本次无法触发保存视频概率")
         }
         if (Math.random() * 100 < TT_Comment_Count)  {
             taskLog("开始触发评论视频概率")
-            taskLog("评论文案的总个数："+comments.length)
-            if (comments.length > 0) {
-                //如果评论概率不是0，那么直接报错
-                taskLog("comments.includes = "+ comments.includes("T_评论文案"))
-
-                if(TT_Comment_Count > 0 && comments.includes("T_评论文案")) {
-                    throw new Error("评论概率不是0，但评论内容是空，所以报错");
-                }
+            taskLog("评论文案的总个数："+all_TT_comment_text.length)
+            if (all_TT_comment_text.length > 0) {
 
                 taskLog("- 找到可用评论文案, 开始评论 - ");
-                var randIdx = random(0, comments.length - 1)
+                var randIdx = random(0, all_TT_comment_text.length - 1)
                 taskLog("评论文案的下标randIdx："+randIdx)
-                var commentText = comments[randIdx];
+                var commentText = all_TT_comment_text[randIdx];
                 taskLog("随机评论文案 :" + commentText);
                 click_Comment_Btn(commentText)
                 sleep(random(5000, 8000))
