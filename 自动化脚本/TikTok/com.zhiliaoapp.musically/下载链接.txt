@@ -1,0 +1,22 @@
+TikTok_39.6.3(2023906030)_APKPure.apk
+https://apkpure.net/tiktok-musically-2024/com.zhiliaoapp.musically/download/39.6.3
+
+TikTok 39.6.3 (2023906030)
+Architecture
+arm64-v8a, armeabi-v7a
+
+Requires Android
+Android 5.0+ (Lollipop, API 21)
+
+Signature
+d79f7cb8509a5e7e71c4f2afcfb75ea8c87177ca
+
+Screen DPI
+nodpi
+
+File SHA1
+cfedb9b1a5c60bebd78b94ddd28fe1edc9a9e661
+
+Uploaded by
+Runcan Vlad
+
