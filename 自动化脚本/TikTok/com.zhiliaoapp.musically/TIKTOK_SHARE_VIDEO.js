@@ -49,7 +49,6 @@ var handleErrorFlag = false //默认没有错误，如果出现异常，那么�
         console.error("Tiktok根據關鍵字，搜尋影片瀏覽養號，評論，點讚---------------");
         console.error("脚本执行时间：" + new Date().toLocaleString());
     }else{
-        forceStop_titkok()
         console.log("-----------------脚本功能执行结束：---------------");
         console.log("Tiktok根據關鍵字，搜尋影片瀏覽養號，評論，點讚---------------");
         console.log("脚本执行时间：" + new Date().toLocaleString());
@@ -59,7 +58,6 @@ var handleErrorFlag = false //默认没有错误，如果出现异常，那么�
 
 function handleError(e) {
     handleErrorFlag = true
-    forceStop_titkok()
     console.error("===错误报告开始===");
     console.error("错误信息：" + e);
     console.error("错误堆栈：" + e.stack);
@@ -98,122 +96,34 @@ if (runningEngines.length > 1) {
   })
 }
 
-forceStop_titkok()
+// forceStop_titkok()
 
-sleep(3000)
-taskLog("准备启动TikTok...")
-sleep(5000)
+// sleep(3000)
+// taskLog("准备启动TikTok...")
+// sleep(5000)
 
-var tiktokUrl = TT_VIDEO_URL
-// 确保URL格式正确
-taskLog("提供TikTok URL = "+ tiktokUrl)
-// if (!tiktokUrl.startsWith("http://") || !tiktokUrl.startsWith("https://")) {
-//     throw new Error("URL格式不正确，因为没有https://");
+// var tiktokUrl = TT_VIDEO_URL
+// // 确保URL格式正确
+// taskLog("提供TikTok URL = "+ tiktokUrl)
+// // if (!tiktokUrl.startsWith("http://") || !tiktokUrl.startsWith("https://")) {
+// //     throw new Error("URL格式不正确，因为没有https://");
+// // }
+// app.startActivity({
+//   action: "android.intent.action.VIEW",
+//   data: tiktokUrl,
+//   packageName: chromePackageName,
+//   className: "org.chromium.chrome.browser.ChromeTabbedActivity",
+//   flags: [
+//     "activity_new_task",
+//     "activity_clear_top"
+//     ],
+// extras: {
+//     // 设置打开方式偏好
+//     "browser.application_id": TikTokPackageName,  // TikTok包名
+//     "create_new_tab": true,
+//     "open_in_external_app": true
 // }
-app.startActivity({
-  action: "android.intent.action.VIEW",
-  data: tiktokUrl,
-  packageName: chromePackageName,
-  className: "org.chromium.chrome.browser.ChromeTabbedActivity",
-  flags: [
-    "activity_new_task",
-    "activity_clear_top"
-    ],
-extras: {
-    // 设置打开方式偏好
-    "browser.application_id": TikTokPackageName,  // TikTok包名
-    "create_new_tab": true,
-    "open_in_external_app": true
-}
-});
-
-
-/**
- * 滑动查找并点击指定数量的aom布局，保持已选中状态
- * @param {number} targetClickCount - 目标点击数量
- * @returns {number} - 实际点击的数量
- */
-function findAndClickAomLayouts(targetClickCount) {
-    let actualClicks = 0;
-    let maxAttempts = 10;  // 最大滑动尝试次数
-    let attempts = 0;
-    
-    // 使用Set记录已点击的布局位置
-    let clickedPositions = new Set();
-    
-    while (actualClicks < targetClickCount && attempts < maxAttempts) {
-        // 获取当前页面的aom布局
-        var aomLayouts = id("jmt").className("android.widget.Button").find();
-        
-        // 点击当前可见的未点击过的aom布局
-        for (let i = 0; i < aomLayouts.size() && actualClicks < targetClickCount; i++) {
-            try {
-                let layout = aomLayouts.get(i);
-                if (layout && layout.visibleToUser()) {
-                    // 使用布局的边界作为唯一标识
-                    let positionKey = layout.bounds().toString();
-                    
-                    // 只点击未点击过的布局
-                    if (!clickedPositions.has(positionKey)) {
-                        layout.click();
-                        clickedPositions.add(positionKey);
-                        actualClicks++;
-                        taskLog("点击了新的layout，当前总数：" + actualClicks);
-                        sleep(500);  // 点击间隔
-                    }
-                }
-            } catch(e) {
-                console.error("点击出错: " + e);
-            }
-        }
-        
-        // 如果还没有点击够，尝试滑动查找更多
-        if (actualClicks < targetClickCount) {
-            taskLog("当前点击数不够，尝试滑动查找更多...");
-            // 滑动寻找新的内容
-            let swiped = swipeRightToLeft();
-            if (!swiped) {
-                taskLog("滑动失败，退出查找");
-                break;  // 滑动失败，退出循环
-            }
-            sleep(1000);  // 等待内容加载
-            attempts++;
-            taskLog("完成第" + attempts + "次滑动");
-        }
-    }
-    
-    if (actualClicks < targetClickCount) {
-        taskLog("找到的布局数量(" + actualClicks + ")少于要求点击数量(" + targetClickCount + ")");
-    } else {
-        taskLog("成功点击完成，共点击" + actualClicks + "个layout");
-    }
-    
-    return actualClicks;
-}
-
-// 滑动函数
-function swipeRightToLeft() {
-    try {
-        let recyclerView = className("androidx.recyclerview.widget.RecyclerView").findOne(3000);
-        if (!recyclerView) {
-            taskLog("未找到RecyclerView");
-            return false;
-        }
-        
-        let bounds = recyclerView.bounds();
-        let startX = bounds.right - 50;
-        let endX = bounds.left + 100;
-        let y = bounds.centerY();
-        
-        gesture(300, [startX, y], [endX, y]);
-        sleep(500);
-        
-        return true;
-    } catch (error) {
-        console.error("滑动失败: " + error);
-        return false;
-    }
-}
+// });
 
 
 
@@ -224,13 +134,10 @@ function swipeRightToLeft() {
 
 
 //强制停止TikTok 
-function forceStop_titkok(){
-    taskLog("准备强杀TikTok...")
-    // 先启动应用
-    // app.launchPackage(TikTokPackageName);
-    // 等待应用启动
+function forceStop_APP(packageName){
+    taskLog("准备强杀:" + packageName + "...")
     sleep(1000);
-    app.openAppSetting(TikTokPackageName)
+    app.openAppSetting(packageName)
     sleep(5000)
 
     //繁体
@@ -241,14 +148,14 @@ function forceStop_titkok(){
             sleep(1000);
             // 确认操作
             if (text("確定").exists()) {
-                taskLog("已经找到可点击的‘強行停止’按钮！！！！！！！！！！");
+                taskLog("已经找到可点击的'強行停止'按钮！！！！！！！！！！");
                 text("確定").findOne().click();
             }
         } else {
-            taskLog("未找到可点击的‘強制停止’按钮");
+            taskLog("未找到可点击的'強制停止'按钮");
         }
     } else {
-        taskLog("未找到‘強制停止’按钮");
+        taskLog("未找到'強制停止'按钮");
     }
     sleep(3000)
 
@@ -263,10 +170,10 @@ function forceStop_titkok(){
                 text("确定").findOne().click();
             }
         } else {
-            taskLog("未找到可点击的‘强行停止’按钮");
+            taskLog("未找到可点击的'强行停止'按钮");
         }
     } else {
-        taskLog("未找到‘强行停止’按钮");
+        taskLog("未找到'强行停止'按钮");
     }
 
     sleep(3000)
@@ -283,10 +190,10 @@ function forceStop_titkok(){
                 text("OK").findOne().click();
             }
         } else {
-            taskLog("未找到可点击的‘Force stop’按钮");
+            taskLog("未找到可点击的'Force stop'按钮");
         }
     } else {
-        taskLog("未找到‘Force stop’按钮");
+        taskLog("未找到'Force stop'按钮");
     }
     sleep(3000)
 
@@ -301,10 +208,10 @@ function forceStop_titkok(){
                 text("OK").findOne().click();
             }
         } else {
-            taskLog("未找到可点击的‘FORCE STOP’按钮");
+            taskLog("未找到可点击的'FORCE STOP'按钮");
         }
     } else {
-        taskLog("未找到‘FORCE STOP’按钮");
+        taskLog("未找到'FORCE STOP'按钮");
     }
     sleep(3000)
 
@@ -806,6 +713,27 @@ function firstOpenBrowser(){
 
 }
 
+function openBrowser(url){
+
+    app.startActivity({
+        action: "android.intent.action.VIEW",
+        data: url,
+        packageName: chromePackageName,
+        className: "org.chromium.chrome.browser.ChromeTabbedActivity",
+        flags: [
+          "activity_new_task",
+          "activity_clear_top"
+          ],
+      extras: {
+          // 设置打开方式偏好
+          "browser.application_id": TikTokPackageName,  
+          "create_new_tab": true,
+          "open_in_external_app": true
+      }
+      });
+}
+
+
 //从视频列表数组中，顺序挑选一条
 function get_all_video_link(){
     // 用于存储用户的数组
@@ -847,34 +775,238 @@ function click_Zhuanfa_Btn(){
     //fullId("com.zhiliaoapp.musically:id/pgl")
     clickId(TikTokPackageName + ":id/pgl")
 
+    //点击好友列表
+    click_friend_list()
+
+
 }
 
 
 //开始点击好友列表
 function click_friend_list(){
-    var number = TT_VIDEO_SHARE_FRIENDS_NUMBER;  // 目标点击数量
-    
-    //点击查找更多：ImageView fullId("com.ss.android.ugc.trill:id/c47")
-    clickId(TikTokPackageName + ":id/c47")
-    sleep(random(3000,5000))
-
-    //出现好友列表
-    //className("androidx.recyclerview.widget.RecyclerView")
-    //fullId("com.ss.android.ugc.trill:id/crk")
-    var friend_list = className("androidx.recyclerview.widget.RecyclerView").findOne(1000)
-    if(friend_list){
-        taskLog("找到好友列表")
-        //点击第一个好友
-        friend_list.child(0).click()
-
-
-    }else{
-        taskLog("没有找到好友列表")
+    var number = parseInt(TT_VIDEO_SHARE_FRIENDS_NUMBER);  // 目标点击数量
+    if (isNaN(number) || number <= 0) {
+        taskLog("无效的目标点击数量：" + TT_VIDEO_SHARE_FRIENDS_NUMBER);
+        return;
     }
+    
+    //点击查找更多：ImageView
+    taskLog("点击最左侧放大镜");
+    //fullId("com.zhiliaoapp.musically:id/ikx")
+    id(TikTokPackageName + ":id/ikx").findOne().click()
+    sleep(random(3000,5000));
+
+    //等待好友列表加载
+    var friend_list = className("androidx.recyclerview.widget.RecyclerView").findOne(5000);
+    if(!friend_list){
+        taskLog("没有找到好友列表");
+        return;
+    }
+    
+    taskLog("找到好友列表，开始点击好友");
+    var clickCount = 0;
+    var maxAttempts = 10; // 最大滑动次数
+    var attempts = 0;
+    
+    // 使用Set记录已点击的好友名称，避免重复点击
+    var clickedFriends = new Set();
+    
+    while(clickCount < number && attempts < maxAttempts) {
+        // 获取当前页面所有的checkbox
+        var checkboxes = id(TikTokPackageName + ":id/cfc").find();
+
+        // 获取当前页面所有的好友名称TextView
+        var friendNames = id(TikTokPackageName + ":id/e09").find();
+        
+        if(!checkboxes || checkboxes.empty() || !friendNames || friendNames.empty()){
+            taskLog("列表为空，退出点击");
+            break;
+        }
+        
+        var foundNewFriend = false;
+        // 遍历所有checkbox和对应的好友名称
+        for(var i = 0; i < checkboxes.size() && clickCount < number; i++){
+            try {
+                var checkbox = checkboxes.get(i);
+                var friendName = friendNames.get(i);
+                
+                if(checkbox && friendName && checkbox.visibleToUser() && friendName.visibleToUser()){
+                    var name = friendName.text();
+                    
+                    // 只点击未点击过的好友
+                    if(!clickedFriends.has(name)){
+                        // 获取checkbox的坐标信息
+                        var bounds = checkbox.bounds();
+                        var centerX = bounds.centerX();
+                        var centerY = bounds.centerY();
+                        
+                        // 验证坐标是否有效
+                        if (centerX < 0 || centerY < 0) {
+                            taskLog("坐标无效，跳过当前好友: " + name);
+                            continue;
+                        }
+                        
+                        // 添加随机偏移
+                        var offsetX = random(-2, 2);
+                        var offsetY = random(-2, 2);
+                        var targetX = Math.max(0, centerX + offsetX);
+                        var targetY = Math.max(0, centerY + offsetY);
+                        
+                        // 执行点击
+                        click(targetX, targetY);
+                        clickedFriends.add(name);
+                        clickCount++;
+                        foundNewFriend = true;
+                        taskLog("已点击第" + clickCount + "个好友：" + name);
+                        sleep(random(1000,2000)); // 点击间隔
+                    }
+                }
+            } catch(e) {
+                taskLog("点击好友时出错: " + e);
+            }
+        }
+        
+        // 如果这一页没有找到新的好友可点击，尝试滑动
+        if(!foundNewFriend && clickCount < number){
+            taskLog("当前页面没有新的好友可点击，尝试滑动加载更多...");
+            // 获取列表的边界
+            var bounds = friend_list.bounds();
+            // 从下往上滑动
+            gesture(300, [bounds.centerX(), bounds.bottom - 100], 
+                        [bounds.centerX(), bounds.top + 100]);
+            sleep(1000); // 等待加载
+            attempts++;
+            taskLog("完成第" + attempts + "次滑动");
+        }
+    }
+    
+    taskLog("共点击了" + clickCount + "个好友");
+    if(clickCount < number){
+        taskLog("警告：实际点击数量(" + clickCount + ")少于目标数量(" + number + ")");
+    }
+    taskLog("已点击的好友：" + Array.from(clickedFriends).join(", "));
+
+
+    sleep(random(3000,5000))
+    //点击EditText：
+    // clickId(TikTokPackageName + ":id/e09")
+    var autoCompleteTextViews = className("android.widget.EditText").find();
+    taskLog("autoCompleteTextViews长度 = " + autoCompleteTextViews.size())
+    if(autoCompleteTextViews.size() >0){
+        var textView = autoCompleteTextViews.get(autoCompleteTextViews.size() - 1);
+        if(textView) {
+            taskLog("找到TextView控件-Text："+ textView.text());
+            textView.click()
+            sleep(1000)
+            textView.setText(TT_VIDEO_SHARE_TEXT)
+            sleep(5000)
+        }
+    }
+
+    //点击传送按钮： Button fullId("com.zhiliaoapp.musically:id/ter")
+    taskLog("点击传送按钮")
+    clickId(TikTokPackageName + ":id/ter")
+
+
+    
 
 }
 
+
+
+// /**
+//  * 滑动查找并点击指定数量的aom布局，保持已选中状态
+//  * @param {number} targetClickCount - 目标点击数量
+//  * @returns {number} - 实际点击的数量
+//  */
+// function findAndClickAomLayouts(targetClickCount) {
+//     let actualClicks = 0;
+//     let maxAttempts = 10;  // 最大滑动尝试次数
+//     let attempts = 0;
+    
+//     // 使用Set记录已点击的布局位置
+//     let clickedPositions = new Set();
+    
+//     while (actualClicks < targetClickCount && attempts < maxAttempts) {
+//         // 获取当前页面的aom布局
+//         //fullId("com.zhiliaoapp.musically:id/olp")
+//         var aomLayouts = id(TikTokPackageName + ":id/olp").className("androidx.recyclerview.widget.RecyclerView").find();
+        
+//         // 点击当前可见的未点击过的aom布局
+//         for (let i = 0; i < aomLayouts.size() && actualClicks < targetClickCount; i++) {
+//             try {
+//                 let layout = aomLayouts.get(i);
+//                 if (layout && layout.visibleToUser()) {
+//                     // 使用布局的边界作为唯一标识
+//                     let positionKey = layout.bounds().toString();
+                    
+//                     // 只点击未点击过的布局
+//                     if (!clickedPositions.has(positionKey)) {
+//                         layout.click();
+//                         clickedPositions.add(positionKey);
+//                         actualClicks++;
+//                         taskLog("点击了新的layout，当前总数：" + actualClicks);
+//                         sleep(500);  // 点击间隔
+//                     }
+//                 }
+//             } catch(e) {
+//                 console.error("点击出错: " + e);
+//             }
+//         }
+        
+//         // 如果还没有点击够，尝试滑动查找更多
+//         if (actualClicks < targetClickCount) {
+//             taskLog("当前点击数不够，尝试滑动查找更多...");
+//             // 滑动寻找新的内容
+//             let swiped = swipeRightToLeft();
+//             if (!swiped) {
+//                 taskLog("滑动失败，退出查找");
+//                 break;  // 滑动失败，退出循环
+//             }
+//             sleep(1000);  // 等待内容加载
+//             attempts++;
+//             taskLog("完成第" + attempts + "次滑动");
+//         }
+//     }
+    
+//     if (actualClicks < targetClickCount) {
+//         taskLog("找到的布局数量(" + actualClicks + ")少于要求点击数量(" + targetClickCount + ")");
+//     } else {
+//         taskLog("成功点击完成，共点击" + actualClicks + "个layout");
+//     }
+    
+//     return actualClicks;
+// }
+
+// // 滑动函数
+// function swipeRightToLeft() {
+//     try {
+//         let recyclerView = className("androidx.recyclerview.widget.RecyclerView").findOne(3000);
+//         if (!recyclerView) {
+//             taskLog("未找到RecyclerView");
+//             return false;
+//         }
+        
+//         let bounds = recyclerView.bounds();
+//         let startX = bounds.right - 50;
+//         let endX = bounds.left + 100;
+//         let y = bounds.centerY();
+        
+//         gesture(300, [startX, y], [endX, y]);
+//         sleep(500);
+        
+//         return true;
+//     } catch (error) {
+//         console.error("滑动失败: " + error);
+//         return false;
+//     }
+// }
+
+
 try {
+
+    forceStop_APP(TikTokPackageName)
+    forceStop_APP(chromePackageName)
 
     //用浏览器打开链接
     firstOpenBrowser()
@@ -888,7 +1020,7 @@ try {
     toast("所有需要分享的视频数量 = " + all_TT_VIDEO_LINK.length)
     sleep(5000)
     
-    if(all_friends.length == 0){
+    if(all_TT_VIDEO_LINK.length == 0){
         toast("没有需要分享的视频") 
         stopCurrentTask()
     }else{
@@ -900,7 +1032,7 @@ try {
             openBrowser(video_info_link)
             sleep(5000)
 
-            //可能会出现“Continue”按钮，点击：
+            //可能会出现"Continue"按钮，点击：
             if(id("message_primary_button").exists()){
                 toast("出现Continue按钮，点击.")
                 id("message_primary_button").findOne().click()
@@ -908,7 +1040,7 @@ try {
             sleep(5000)
 
 
-            //可能需要点击一下浏览器界面的“開啟 TikTok”
+            //可能需要点击一下浏览器界面的"開啟 TikTok"
             find_textview_text_base("打开应用","開啟應用程式","Open app")
             sleep(5000)
             // find_textview_text_base("打开应用","開啟 TikTok","Open app")
@@ -930,33 +1062,8 @@ try {
             sleep(random(3000,5000))
 
 
-            //点击好友列表
-            click_friend_list() 
+
             sleep(random(3000,5000))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-            sleep(5000)
-            taskLog("开始寫下訊息...");
-            id("jfq").findOne().setText(TT_VIDEO_SHARE_TEXT)
-
-
-            sleep(5000)
-            taskLog("开始点击传送按钮...");
-            clickId("nfe")
-
-            sleep(5000)
 
 
 
