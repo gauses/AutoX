@@ -314,6 +314,7 @@ function clickId(a) {
 
 //打印日志
 function taskLog(_log){
+    toast(_log)
     console.log(getSystemDate("df") +":" +_log)
 
     //通过日志判断任务有没有结束：
@@ -774,6 +775,7 @@ function click_Zhuanfa_Btn(){
     taskLog("开始准备转发视频")
     //fullId("com.zhiliaoapp.musically:id/pgl")
     clickId(TikTokPackageName + ":id/pgl")
+    sleep(random(3000,5000))
 
     //点击好友列表
     click_friend_list()
@@ -797,7 +799,7 @@ function click_friend_list(){
     sleep(random(3000,5000));
 
     //等待好友列表加载
-    var friend_list = className("androidx.recyclerview.widget.RecyclerView").findOne(5000);
+    var friend_list = className("androidx.recyclerview.widget.RecyclerView").findOne(8000);
     if(!friend_list){
         taskLog("没有找到好友列表");
         return;
@@ -805,7 +807,7 @@ function click_friend_list(){
     
     taskLog("找到好友列表，开始点击好友");
     var clickCount = 0;
-    var maxAttempts = 10; // 最大滑动次数
+    var maxAttempts = 5; // 最大滑动次数
     var attempts = 0;
     
     // 使用Set记录已点击的好友名称，避免重复点击
@@ -913,96 +915,6 @@ function click_friend_list(){
 }
 
 
-
-// /**
-//  * 滑动查找并点击指定数量的aom布局，保持已选中状态
-//  * @param {number} targetClickCount - 目标点击数量
-//  * @returns {number} - 实际点击的数量
-//  */
-// function findAndClickAomLayouts(targetClickCount) {
-//     let actualClicks = 0;
-//     let maxAttempts = 10;  // 最大滑动尝试次数
-//     let attempts = 0;
-    
-//     // 使用Set记录已点击的布局位置
-//     let clickedPositions = new Set();
-    
-//     while (actualClicks < targetClickCount && attempts < maxAttempts) {
-//         // 获取当前页面的aom布局
-//         //fullId("com.zhiliaoapp.musically:id/olp")
-//         var aomLayouts = id(TikTokPackageName + ":id/olp").className("androidx.recyclerview.widget.RecyclerView").find();
-        
-//         // 点击当前可见的未点击过的aom布局
-//         for (let i = 0; i < aomLayouts.size() && actualClicks < targetClickCount; i++) {
-//             try {
-//                 let layout = aomLayouts.get(i);
-//                 if (layout && layout.visibleToUser()) {
-//                     // 使用布局的边界作为唯一标识
-//                     let positionKey = layout.bounds().toString();
-                    
-//                     // 只点击未点击过的布局
-//                     if (!clickedPositions.has(positionKey)) {
-//                         layout.click();
-//                         clickedPositions.add(positionKey);
-//                         actualClicks++;
-//                         taskLog("点击了新的layout，当前总数：" + actualClicks);
-//                         sleep(500);  // 点击间隔
-//                     }
-//                 }
-//             } catch(e) {
-//                 console.error("点击出错: " + e);
-//             }
-//         }
-        
-//         // 如果还没有点击够，尝试滑动查找更多
-//         if (actualClicks < targetClickCount) {
-//             taskLog("当前点击数不够，尝试滑动查找更多...");
-//             // 滑动寻找新的内容
-//             let swiped = swipeRightToLeft();
-//             if (!swiped) {
-//                 taskLog("滑动失败，退出查找");
-//                 break;  // 滑动失败，退出循环
-//             }
-//             sleep(1000);  // 等待内容加载
-//             attempts++;
-//             taskLog("完成第" + attempts + "次滑动");
-//         }
-//     }
-    
-//     if (actualClicks < targetClickCount) {
-//         taskLog("找到的布局数量(" + actualClicks + ")少于要求点击数量(" + targetClickCount + ")");
-//     } else {
-//         taskLog("成功点击完成，共点击" + actualClicks + "个layout");
-//     }
-    
-//     return actualClicks;
-// }
-
-// // 滑动函数
-// function swipeRightToLeft() {
-//     try {
-//         let recyclerView = className("androidx.recyclerview.widget.RecyclerView").findOne(3000);
-//         if (!recyclerView) {
-//             taskLog("未找到RecyclerView");
-//             return false;
-//         }
-        
-//         let bounds = recyclerView.bounds();
-//         let startX = bounds.right - 50;
-//         let endX = bounds.left + 100;
-//         let y = bounds.centerY();
-        
-//         gesture(300, [startX, y], [endX, y]);
-//         sleep(500);
-        
-//         return true;
-//     } catch (error) {
-//         console.error("滑动失败: " + error);
-//         return false;
-//     }
-// }
-
-
 try {
 
     forceStop_APP(TikTokPackageName)
@@ -1030,6 +942,12 @@ try {
             sleep(2000)
     
             openBrowser(video_info_link)
+            sleep(random(5000,8000))
+
+            //可能需要点击一下浏览器界面的"開啟 TikTok"
+            find_textview_text_base("打开应用","開啟應用程式","Open app")
+            sleep(5000)
+            find_textview_text_base("打开应用","開啟 TikTok","Open app")
             sleep(5000)
 
             //可能会出现"Continue"按钮，点击：
@@ -1038,12 +956,6 @@ try {
                 id("message_primary_button").findOne().click()
             }
             sleep(5000)
-
-
-            //可能需要点击一下浏览器界面的"開啟 TikTok"
-            find_textview_text_base("打开应用","開啟應用程式","Open app")
-            sleep(5000)
-            // find_textview_text_base("打开应用","開啟 TikTok","Open app")
 
 
             taskLog("打开TikTok成功...")
