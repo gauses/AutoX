@@ -53,7 +53,7 @@ var handleErrorFlag = false //默认没有错误，如果出现异常，那么�
         console.error("Tiktok根據關鍵字，搜尋影片瀏覽養號，評論，點讚---------------");
         console.error("脚本执行时间：" + new Date().toLocaleString());
     }else{
-        forceStop_titkok()
+        forceStop_APP(TikTokPackageName)
         console.log("-----------------脚本功能执行结束：---------------");
         console.log("Tiktok根據關鍵字，搜尋影片瀏覽養號，評論，點讚---------------");
         console.log("脚本执行时间：" + new Date().toLocaleString());
@@ -63,7 +63,7 @@ var handleErrorFlag = false //默认没有错误，如果出现异常，那么�
 
 function handleError(e) {
     handleErrorFlag = true
-    forceStop_titkok()
+    forceStop_APP(TikTokPackageName)
     console.error("===错误报告开始===");
     console.error("错误信息：" + e);
     console.error("错误堆栈：" + e.stack);
@@ -105,7 +105,7 @@ if (runningEngines.length > 1) {
   })
 }
 
-forceStop_titkok()
+forceStop_APP(TikTokPackageName)
 
 sleep(3000)
 taskLog("准备启动TikTok...")
@@ -665,32 +665,30 @@ function checkDownloadFiles(targetFileName) {
 
 
 
+
 //强制停止TikTok 
-function forceStop_titkok(){
-    taskLog("准备强杀TikTok...")
-    // 先启动应用
-    // app.launchPackage(TikTokPackageName);
-    // 等待应用启动
+function forceStop_APP(packageName){
+    taskLog("准备强杀:" + packageName + "...")
     sleep(1000);
-    app.openAppSetting(TikTokPackageName)
+    app.openAppSetting(packageName)
     sleep(5000)
 
     //繁体
-    if (text("強行停止").exists()) {
-        let forceStopBtn = text("強行停止").findOne();
+    if (text("強制停止").exists()) {
+        let forceStopBtn = text("強制停止").findOne();
         if (forceStopBtn && forceStopBtn.clickable()) {
             forceStopBtn.click();
             sleep(1000);
             // 确认操作
             if (text("確定").exists()) {
-                taskLog("已经找到可点击的‘強行停止’按钮！！！！！！！！！！");
+                taskLog("已经找到可点击的'強制停止'按钮！！！！！！！！！！");
                 text("確定").findOne().click();
             }
         } else {
-            taskLog("未找到可点击的‘強制停止’按钮");
+            taskLog("未找到可点击的'強制停止'按钮");
         }
     } else {
-        taskLog("未找到‘強制停止’按钮");
+        taskLog("未找到'強制停止'按钮");
     }
     sleep(3000)
 
@@ -705,10 +703,10 @@ function forceStop_titkok(){
                 text("确定").findOne().click();
             }
         } else {
-            taskLog("未找到可点击的‘强行停止’按钮");
+            taskLog("未找到可点击的'强行停止'按钮");
         }
     } else {
-        taskLog("未找到‘强行停止’按钮");
+        taskLog("未找到'强行停止'按钮");
     }
 
     sleep(3000)
@@ -725,10 +723,10 @@ function forceStop_titkok(){
                 text("OK").findOne().click();
             }
         } else {
-            taskLog("未找到可点击的‘Force stop’按钮");
+            taskLog("未找到可点击的'Force stop'按钮");
         }
     } else {
-        taskLog("未找到‘Force stop’按钮");
+        taskLog("未找到'Force stop'按钮");
     }
     sleep(3000)
 
@@ -743,10 +741,10 @@ function forceStop_titkok(){
                 text("OK").findOne().click();
             }
         } else {
-            taskLog("未找到可点击的‘FORCE STOP’按钮");
+            taskLog("未找到可点击的'FORCE STOP'按钮");
         }
     } else {
-        taskLog("未找到‘FORCE STOP’按钮");
+        taskLog("未找到'FORCE STOP'按钮");
     }
     sleep(3000)
 
@@ -754,7 +752,6 @@ function forceStop_titkok(){
     home()
 
 }
-
 
 
 //推荐好友的弹窗，直接关闭
@@ -849,6 +846,7 @@ function clickId(a) {
 
 //打印日志
 function taskLog(_log){
+    toast(_log)
     console.log(getSystemDate("df") +":" +_log)
 
     //通过日志判断任务有没有结束：

@@ -96,42 +96,10 @@ if (runningEngines.length > 1) {
   })
 }
 
-// forceStop_titkok()
-
-// sleep(3000)
-// taskLog("准备启动TikTok...")
-// sleep(5000)
-
-// var tiktokUrl = TT_VIDEO_URL
-// // 确保URL格式正确
-// taskLog("提供TikTok URL = "+ tiktokUrl)
-// // if (!tiktokUrl.startsWith("http://") || !tiktokUrl.startsWith("https://")) {
-// //     throw new Error("URL格式不正确，因为没有https://");
-// // }
-// app.startActivity({
-//   action: "android.intent.action.VIEW",
-//   data: tiktokUrl,
-//   packageName: chromePackageName,
-//   className: "org.chromium.chrome.browser.ChromeTabbedActivity",
-//   flags: [
-//     "activity_new_task",
-//     "activity_clear_top"
-//     ],
-// extras: {
-//     // 设置打开方式偏好
-//     "browser.application_id": TikTokPackageName,  // TikTok包名
-//     "create_new_tab": true,
-//     "open_in_external_app": true
-// }
-// });
-
-
-
 
 //******************************************************************
 //******************************************************************
 //******************************************************************
-
 
 //强制停止TikTok 
 function forceStop_APP(packageName){
@@ -141,14 +109,14 @@ function forceStop_APP(packageName){
     sleep(5000)
 
     //繁体
-    if (text("強行停止").exists()) {
-        let forceStopBtn = text("強行停止").findOne();
+    if (text("強制停止").exists()) {
+        let forceStopBtn = text("強制停止").findOne();
         if (forceStopBtn && forceStopBtn.clickable()) {
             forceStopBtn.click();
             sleep(1000);
             // 确认操作
             if (text("確定").exists()) {
-                taskLog("已经找到可点击的'強行停止'按钮！！！！！！！！！！");
+                taskLog("已经找到可点击的'強制停止'按钮！！！！！！！！！！");
                 text("確定").findOne().click();
             }
         } else {
@@ -219,7 +187,6 @@ function forceStop_APP(packageName){
     home()
 
 }
-
 
 
 //推荐好友的弹窗，直接关闭

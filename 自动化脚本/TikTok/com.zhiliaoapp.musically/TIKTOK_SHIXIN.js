@@ -244,52 +244,43 @@ function taskLog(_log){
 
     //通过TextView的text
     function find_textview_text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
-
         //是否找到该TextView，找到：true / 未找到：false
         var findText_result = false
-
-        var loopCount  = 0
+        var loopCount = 0
 
         while (true) {
             taskLog(findText_ZH_CN + " - 循环寻找执行：" + (++loopCount));
-            // 检查计数器是否达到3
             if (loopCount >= 3) {
-                // 打印一条消息并退出循环
                 taskLog("循环已执行3次，即将退出循环。");
-
-                //不能抛出异常，因为可能Facebook记忆功能，自动跳转到输入页面
-    //                 throw new Error(findText_ZH_CN +"按钮没有找到");
                 break;
             }
 
-            // 查找控件
-            var button1 = className("android.widget.TextView").text(findText_ZH_CN).findOne(1000);
-            var button2 = className("android.widget.TextView").text(findText_ZH_TW).findOne(1000);
-            var button3 = className("android.widget.TextView").text(findText_EN_US).findOne(1000);
+            // 使用正则表达式匹配可能带有前导空格的文本
+            var button1 = textMatches("^\\s*" + findText_ZH_CN + "$").className("android.widget.TextView").findOne(1000);
+            var button2 = textMatches("^\\s*" + findText_ZH_TW + "$").className("android.widget.TextView").findOne(1000);
+            var button3 = textMatches("^\\s*" + findText_EN_US + "$").className("android.widget.TextView").findOne(1000);
 
-            if (button1 ) {
+            if (button1) {
                 taskLog("找到" + findText_ZH_CN);
                 taskLog("找到" + button1.clickable());
-                clickText(findText_ZH_CN)
+                click(button1.bounds().centerX(), button1.bounds().centerY());
                 findText_result = true
-                break; // 跳出循环
-            }else if(button2){
+                break;
+            } else if(button2) {
                 taskLog("找到" + findText_ZH_TW);
                 taskLog("找到" + button2.clickable());
-                clickText(findText_ZH_TW)
+                click(button2.bounds().centerX(), button2.bounds().centerY());
                 findText_result = true
-                break; // 跳出循环
-            }else if(button3){
+                break;
+            } else if(button3) {
                 taskLog("找到" + findText_EN_US);
                 taskLog("找到" + button3.clickable());
-                clickText(findText_EN_US)
+                click(button3.bounds().centerX(), button3.bounds().centerY());
                 findText_result = true
-                // click(button3.bounds().centerX(), button3.bounds().centerY())
-                break; // 跳出循环
+                break;
             }
 
             sleep(1000)
-
         }
         return findText_result
     }
@@ -303,14 +294,14 @@ function forceStop_APP(packageName){
     sleep(5000)
 
     //繁体
-    if (text("強行停止").exists()) {
-        let forceStopBtn = text("強行停止").findOne();
+    if (text("強制停止").exists()) {
+        let forceStopBtn = text("強制停止").findOne();
         if (forceStopBtn && forceStopBtn.clickable()) {
             forceStopBtn.click();
             sleep(1000);
             // 确认操作
             if (text("確定").exists()) {
-                taskLog("已经找到可点击的'強行停止'按钮！！！！！！！！！！");
+                taskLog("已经找到可点击的'強制停止'按钮！！！！！！！！！！");
                 text("確定").findOne().click();
             }
         } else {
@@ -532,36 +523,36 @@ function click_LinearLayout_GUANZHU(){
 
 
 
-    function click_back_btn(){
-        // 获取所有相同id的控件（
-        //fullId("com.zhiliaoapp.musically:id/ay9")
-        let targets = id(TikTokPackageName+":id/ay9").find();
-        // 通过索引获取指定的那个，比如第二个就是[1]
-        let target = targets[0];
-        if (target) {
-            taskLog("已经找到返回按钮 " )
-            // 获取控件的坐标信息
-            let bounds = target.bounds();
+    // function click_back_btn(){
+    //     // 获取所有相同id的控件（
+    //     //fullId("com.zhiliaoapp.musically:id/ay9")
+    //     let targets = id(TikTokPackageName+":id/ay9").find();
+    //     // 通过索引获取指定的那个，比如第二个就是[1]
+    //     let target = targets[0];
+    //     if (target) {
+    //         taskLog("已经找到返回按钮 " )
+    //         // 获取控件的坐标信息
+    //         let bounds = target.bounds();
             
-            // 计算控件中心点坐标
-            let centerX = bounds.centerX();
-            let centerY = bounds.centerY();
+    //         // 计算控件中心点坐标
+    //         let centerX = bounds.centerX();
+    //         let centerY = bounds.centerY();
             
-            // 使用click函数模拟点击中心点位置
-            taskLog("已经找到返回按钮 centerX = " +centerX)
-            taskLog("已经找到返回按钮 centerY = " +centerY)
-            sleep(1000);  // 点击前等待
-            click(centerX, centerY);
-            sleep(1000);  // 点击后等待
+    //         // 使用click函数模拟点击中心点位置
+    //         taskLog("已经找到返回按钮 centerX = " +centerX)
+    //         taskLog("已经找到返回按钮 centerY = " +centerY)
+    //         sleep(1000);  // 点击前等待
+    //         click(centerX, centerY);
+    //         sleep(1000);  // 点击后等待
             
-            // 或者使用press函数来模拟按压
-            // press(centerX, centerY, 100); // 100是按压时长(毫秒)
-        }else{
-            taskLog("没有找到首页搜索确认按钮,所以直接back " )
-            back()
-        }
+    //         // 或者使用press函数来模拟按压
+    //         // press(centerX, centerY, 100); // 100是按压时长(毫秒)
+    //     }else{
+    //         taskLog("没有找到首页搜索确认按钮,所以直接back " )
+    //         back()
+    //     }
 
-    }
+    // }
 
     //点击屏幕左上方
     function click_left_top_screen(){
@@ -896,7 +887,7 @@ try {
                     var findMSGTextResult = find_textview_text_base("用户","使用者","Users")
                     if(!findMSGTextResult) {
                         taskLog("没有找到用户Tab控件，终止本次操作，开始下一个用户的私信行为！！！");
-                        click_back_btn()
+                        back()    
                         break
                     }
 
@@ -920,72 +911,78 @@ try {
                     sleep(random(2000, 4000))
 
                     var autoCompleteTextViews = className("android.widget.EditText").find();
-                    for(var i = 0; i < autoCompleteTextViews.size(); i++) {
-                        var textView = autoCompleteTextViews.get(i);
-                        if(textView) {
-                            taskLog("找到TextView控件-Text："+ textView.text());
-                            sleep(1000)
+                    if(autoCompleteTextViews.size() == 0){//这种场景对应的用户：mrbeast
+                        taskLog("没有找到訊息控件，终止本次操作，开始下一个用户的私信行为！！！");               
+                        back()
+                        sleep(random(2000, 4000))
+                        back()
+                        sleep(random(2000, 4000))
+                        back()
+                        sleep(1000)
+                        break
+                    }else{
+                        for(var i = 0; i < autoCompleteTextViews.size(); i++) {
+                            var textView = autoCompleteTextViews.get(i);
+                            if(textView) {
+                                taskLog("找到TextView控件-Text："+ textView.text());
+                                sleep(1000)
 
-                            var randIdx = random(0, all_TT_Comment_TEXT.length - 1)
-                            taskLog("评论文案的下标randIdx："+randIdx)
-                            var messageText = all_TT_Comment_TEXT[randIdx];
+                                var randIdx = random(0, all_TT_Comment_TEXT.length - 1)
+                                taskLog("评论文案的下标randIdx："+randIdx)
+                                var messageText = all_TT_Comment_TEXT[randIdx];
 
-                            taskLog("评论控件，设置内容：" +messageText );
+                                taskLog("评论控件，设置内容：" +messageText );
 
-                            textView.setText(messageText)
-                            sleep(random(2000, 4000))
-            
+                                textView.setText(messageText)
+                                sleep(random(2000, 4000))
                 
+                    
 
-                            //点击发送按钮
-                            className("android.widget.ImageView").find().forEach((iv, idx) => {
-                                taskLog("ImageView " + idx + ": " + iv.bounds());
-                            });
+                                //点击发送按钮
+                                className("android.widget.ImageView").find().forEach((iv, idx) => {
+                                    taskLog("ImageView " + idx + ": " + iv.bounds());
+                                });
 
-                            taskLog("开始寻找发送按钮.....")
-                            taskLog("开始寻找发送按钮,device.width * 0.9 = " + device.width * 0.9)
-                            taskLog("开始寻找发送按钮,device.height * 0.9 = " + device.height * 0.9)
-
-
-                            let sendButton = className("android.widget.ImageView")
-                            .filter(function(w) {
-                                let b = w.bounds();
-                                // 检查是否在右下角区域
-                                return b.centerX() > device.width * 0.8 && b.centerY() > device.height * 0.8;
-                            }).findOne(5000);
+                                taskLog("开始寻找发送按钮.....")
+                                taskLog("开始寻找发送按钮,device.width * 0.9 = " + device.width * 0.9)
+                                taskLog("开始寻找发送按钮,device.height * 0.9 = " + device.height * 0.9)
 
 
+                                let sendButton = className("android.widget.ImageView")
+                                .filter(function(w) {
+                                    let b = w.bounds();
+                                    // 检查是否在右下角区域
+                                    return b.centerX() > device.width * 0.8 && b.centerY() > device.height * 0.8;
+                                }).findOne(5000);
 
-                            // 点击按钮
-                            if(sendButton) {
-                                taskLog("找到发送按钮，开始点击")
-                                let bounds = sendButton.bounds();
-                                sleep(1000);  // 点击前等待
-                                click(bounds.centerX(), bounds.centerY());
-                                sleep(1000);  // 点击后等待
-                                
-                            }else{
-                                taskLog("没有找到私信发送按钮！！！！")
-                                // throw new Error("没有找到私信发送按钮，所以报错"); 
-                            } 
 
-                            sleep(3000)
-                            click_back_btn()
-                            sleep(1000)
-                            click_back_btn()
-                            sleep(1000)
-                            click_back_btn()
-                            sleep(5000)
+
+                                // 点击按钮
+                                if(sendButton) {
+                                    taskLog("找到发送按钮，开始点击")
+                                    let bounds = sendButton.bounds();
+                                    sleep(1000);  // 点击前等待
+                                    click(bounds.centerX(), bounds.centerY());
+                                    sleep(1000);  // 点击后等待
+                                    
+                                }else{
+                                    taskLog("没有找到私信发送按钮！！！！")
+                                    // throw new Error("没有找到私信发送按钮，所以报错"); 
+                                } 
+
+                                sleep(3000)
+                                back()      
+                                sleep(1000)
+                                back()
+                                sleep(1000)
+                                back()
+                                sleep(5000)
                         }
                     }
 
 
+                    }
 
-                    
-                    sleep(random(2000, 4000))
-                    click_back_btn()
-                    sleep(random(2000, 4000))
-        
                 }
             }
 

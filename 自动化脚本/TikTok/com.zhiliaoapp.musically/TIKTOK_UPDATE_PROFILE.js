@@ -53,7 +53,7 @@ var handleErrorFlag = false //默认没有错误，如果出现异常，那么�
         console.error("Tiktok根據關鍵字，搜尋影片瀏覽養號，評論，點讚---------------");
         console.error("脚本执行时间：" + new Date().toLocaleString());
     }else{
-        forceStop_titkok()
+        forceStop_APP(TikTokPackageName)
         console.log("-----------------脚本功能执行结束：---------------");
         console.log("Tiktok根據關鍵字，搜尋影片瀏覽養號，評論，點讚---------------");
         console.log("脚本执行时间：" + new Date().toLocaleString());
@@ -63,7 +63,7 @@ var handleErrorFlag = false //默认没有错误，如果出现异常，那么�
 
 function handleError(e) {
     handleErrorFlag = true
-    forceStop_titkok()
+    forceStop_APP(TikTokPackageName)
     console.error("===错误报告开始===");
     console.error("错误信息：" + e);
     console.error("错误堆栈：" + e.stack);
@@ -105,7 +105,7 @@ if (runningEngines.length > 1) {
   })
 }
 
-forceStop_titkok()
+forceStop_APP(TikTokPackageName)
 
 sleep(3000)
 taskLog("准备启动TikTok...")
@@ -221,7 +221,8 @@ function click_update_profile_head_image(){
             if (img) {
                 console.log("准备找Image控件: img ID = " + img.id() );
 
-                if (img.id() == ("com.ss.android.ugc.trill:id/fzc")) {
+                //fullId("com.zhiliaoapp.musically:id/gub")
+                if (img.id() == ("com.zhiliaoapp.musically:id/gub")) {
                     // 正确调用bounds()方法并点击
                     taskLog("找到Image控件: 个人头像修改按钮" );
 
@@ -248,8 +249,8 @@ function click_update_profile_head_image_from_photos(){
             var img = allImages.get(i);
             if (img) {
                 
-                // 检查ID是否为"u3"
-                if (img.id() == (TikTokPackageName +":id/u3")) {
+                // fullId("com.zhiliaoapp.musically:id/ve")
+                if (img.id() == (TikTokPackageName +":id/ve")) {
                     // 正确调用bounds()方法并点击
                     if(i == 1){
                         taskLog("找到Image控件: 从图片库中选择" );
@@ -370,7 +371,8 @@ function selectImageByButton(fileName) {
                 if (textView) {
                     taskLog("找到textView控件-Text：" + textView.text());
                     
-                    if (textView.id() == (TikTokPackageName +":id/rcg")) {
+                    //fullId("com.zhiliaoapp.musically:id/tke")
+                    if (textView.id() == (TikTokPackageName +":id/tke")) {
                         // 正确调用bounds()方法并点击
                         taskLog("找到顶部控件: 全部" );
                         var bounds = textView.bounds();
@@ -412,8 +414,9 @@ function selectImageByButton(fileName) {
         sleep(3000);
         
         // 查找并点击指定按钮（其实只需要点击第一个图片的按钮就行了，因为肯定就是第一张图片）
+        //fullId("com.zhiliaoapp.musically:id/hj2")
         let selectButton = className("android.widget.Button")
-            .id("com.ss.android.ugc.trill:id/gkg")
+            .id(TikTokPackageName +":id/hj2")
             .findOne(5000);  // 等待最多5秒
             
         if (selectButton) {
@@ -423,10 +426,21 @@ function selectImageByButton(fileName) {
 
             sleep(5000)
             //点击下一步
-            id("oy5").findOne().click()
+            //fullId("com.zhiliaoapp.musically:id/qxd")
+            clickId(TikTokPackageName +":id/qxd")
             sleep(5000)
             //点击储存并发布
-            id("qke").findOne().click()
+            //fullId("com.zhiliaoapp.musically:id/sr9")
+            clickId(TikTokPackageName +":id/sr9")
+            sleep(5000)
+
+            //出现一个下拉框，提示点击储存并发布
+            //fullId("com.zhiliaoapp.musically:id/mmy")
+            clickId(TikTokPackageName +":id/mmy")
+
+
+
+
             sleep(30000) //上传需要耗时
 
             //删除临时媒体文件夹
@@ -644,33 +658,29 @@ function checkDownloadFiles(targetFileName) {
 
 
 
-
 //强制停止TikTok 
-function forceStop_titkok(){
-    taskLog("准备强杀TikTok...")
-    // 先启动应用
-    // app.launchPackage(TikTokPackageName);
-    // 等待应用启动
+function forceStop_APP(packageName){
+    taskLog("准备强杀:" + packageName + "...")
     sleep(1000);
-    app.openAppSetting(TikTokPackageName)
+    app.openAppSetting(packageName)
     sleep(5000)
 
     //繁体
-    if (text("強行停止").exists()) {
-        let forceStopBtn = text("強行停止").findOne();
+    if (text("強制停止").exists()) {
+        let forceStopBtn = text("強制停止").findOne();
         if (forceStopBtn && forceStopBtn.clickable()) {
             forceStopBtn.click();
             sleep(1000);
             // 确认操作
             if (text("確定").exists()) {
-                taskLog("已经找到可点击的‘強行停止’按钮！！！！！！！！！！");
+                taskLog("已经找到可点击的'強制停止'按钮！！！！！！！！！！");
                 text("確定").findOne().click();
             }
         } else {
-            taskLog("未找到可点击的‘強制停止’按钮");
+            taskLog("未找到可点击的'強制停止'按钮");
         }
     } else {
-        taskLog("未找到‘強制停止’按钮");
+        taskLog("未找到'強制停止'按钮");
     }
     sleep(3000)
 
@@ -685,10 +695,10 @@ function forceStop_titkok(){
                 text("确定").findOne().click();
             }
         } else {
-            taskLog("未找到可点击的‘强行停止’按钮");
+            taskLog("未找到可点击的'强行停止'按钮");
         }
     } else {
-        taskLog("未找到‘强行停止’按钮");
+        taskLog("未找到'强行停止'按钮");
     }
 
     sleep(3000)
@@ -705,10 +715,10 @@ function forceStop_titkok(){
                 text("OK").findOne().click();
             }
         } else {
-            taskLog("未找到可点击的‘Force stop’按钮");
+            taskLog("未找到可点击的'Force stop'按钮");
         }
     } else {
-        taskLog("未找到‘Force stop’按钮");
+        taskLog("未找到'Force stop'按钮");
     }
     sleep(3000)
 
@@ -723,10 +733,10 @@ function forceStop_titkok(){
                 text("OK").findOne().click();
             }
         } else {
-            taskLog("未找到可点击的‘FORCE STOP’按钮");
+            taskLog("未找到可点击的'FORCE STOP'按钮");
         }
     } else {
-        taskLog("未找到‘FORCE STOP’按钮");
+        taskLog("未找到'FORCE STOP'按钮");
     }
     sleep(3000)
 
@@ -1238,55 +1248,40 @@ try {
 
     //选中图片 
     selectImageWithRetry(imageTempPath) 
-
     sleep(3000)
 
-    //保存并发布
-    // fullId("com.ss.android.ugc.trill:id/l76")
-    clickId("com.ss.android.ugc.trill:id/l76")
-    sleep(15000)
 
 
     //点击：text("Name")
     find_textview_text_base("名字","名稱","Name")
     sleep(5000) //延迟5S，否则可能找不到EditText
     //点击：EditText，输入Name
-    var search_name_edits = className("android.widget.EditText").find();
-        for(var i = 0; i < search_name_edits.size(); i++) {
-            var search_name_edit = search_name_edits.get(i);
+    if(find_btn_desc_base("保存","儲存","Save")) {
+        var search_name_edits = className("android.widget.EditText").find();
+        if(search_name_edits.size() > 0) {
+            var search_name_edit = search_name_edits.get(0);
             if(search_name_edit) {
                 taskLog("找到TextView控件-Text："+ search_name_edit.text());
                 sleep(1000)
                 search_name_edit.setText(TT_PROFILE_NAME)
                 sleep(3000)
             }
-        }
-
-    sleep(3000)
-    back()
-
-
-    //点击：text("Bio")
-    find_textview_text_base("个人简介","個人簡介","Bio")
-    //点击：EditText，输入Bio
-    sleep(5000) //延迟5S，否则可能找不到EditText
-    var search_Bio_edits = className("android.widget.EditText").find();
-        taskLog("找到BIO："+ search_Bio_edits.size());
-        for(var i = 0; i < search_Bio_edits.size(); i++) {
-            var search_Bio_edit = search_Bio_edits.get(i);
-            if(search_Bio_edit) {
-                taskLog("找到TextView控件-Text："+ search_Bio_edit.text());
-                taskLog("准备输入BIO："+ TT_PROFILE_BIO);
-
-                sleep(1000)
-                search_Bio_edit.setText(TT_PROFILE_BIO)
-                sleep(5000)
-
+            sleep(5000)
+            var nameSave = find_btn_desc_base("保存","儲存","Save")
+            if(nameSave) {
+                find_btn_Text_base("確認","確認","Confirm")
             }
+        }else{
+            // fullId("com.zhiliaoapp.musically:id/kxw") 取消
+            clickId("com.zhiliaoapp.musically:id/kxw")
+            sleep(5000)
         }
-    sleep(5000)
-    find_btn_Text_base("保存","儲存","Save")
-    sleep(5000)
+
+    }else{
+        back()
+        sleep(5000)
+    }
+    
 
 
 
@@ -1294,26 +1289,69 @@ try {
     find_textview_text_base("用户名","使用者名稱","Username")
     //点击：EditText，输入Username
     sleep(5000) //延迟5S，否则可能找不到EditText
-    var search_Username_edits = className("android.widget.EditText").find();
-        for(var i = 0; i < search_Username_edits.size(); i++) {
-            var search_Username_edit = search_Username_edits.get(i);
-            if(search_Username_edit) {
-                taskLog("找到TextView控件-Text："+ search_Username_edit.text());
-                sleep(1000)
-                search_Username_edit.setText(TT_PROFILE_USERNAME)
-                sleep(3000)
+    if(find_btn_desc_base("保存","儲存","Save")) {
+        var search_Username_edits = className("android.widget.EditText").find();
+    if(search_Username_edits.size() > 0) {
+        var search_Username_edit = search_Username_edits.get(0);
+        if(search_Username_edit) {
+            taskLog("找到TextView控件-Text："+ search_Username_edit.text());
+            sleep(1000)
+            search_Username_edit.setText(TT_PROFILE_USERNAME)
+            sleep(3000)
 
-            }
         }
-    sleep(5000)
-    var findText_result = find_btn_Text_base("保存","儲存","Save")
-    if(findText_result) {
-        sleep(3000)
-        find_btn_Text_base("设置用户名","設定使用者名稱","Set username")
-        sleep(3000)
-        back()
+        sleep(5000)
+        var usernameSave = find_btn_desc_base("保存","儲存","Save")
+        if(usernameSave) {
+            find_btn_Text_base("確認","確認","Confirm")
+        }
+        sleep(5000)
+    }else{
+        // fullId("com.zhiliaoapp.musically:id/kxw") 取消
+        clickId("com.zhiliaoapp.musically:id/kxw")
+        sleep(5000)
     }
-    sleep(5000)
+    
+    }else{
+        back()
+        sleep(5000)
+    }
+
+    
+
+
+    
+    //点击：text("Bio")
+    find_textview_text_base("个人简介","個人簡介","Bio")
+    //点击：EditText，输入Bio
+    sleep(5000) //延迟5S，否则可能找不到EditText
+
+    if(find_btn_desc_base("保存","儲存","Save")) {
+        var search_Bio_edits = className("android.widget.EditText").find();
+        if(search_Bio_edits.size() > 0) {
+            var search_Bio_edit = search_Bio_edits.get(0);
+            if(search_Bio_edit) {
+                taskLog("找到TextView控件-Text："+ search_Bio_edit.text());
+                sleep(1000)
+                search_Bio_edit.setText(TT_PROFILE_BIO)
+                sleep(3000)
+            }
+            sleep(5000)
+            var bioSave = find_btn_desc_base("保存","儲存","Save")
+            if(bioSave) {
+                find_btn_Text_base("確認","確認","Confirm")
+            }
+            sleep(5000)
+        }else{  
+            // fullId("com.zhiliaoapp.musically:id/kxw") 取消
+            clickId("com.zhiliaoapp.musically:id/kxw")
+            sleep(5000)
+        }
+    }else{
+        back()
+        sleep(5000)
+    }
+    
     back()
 
 

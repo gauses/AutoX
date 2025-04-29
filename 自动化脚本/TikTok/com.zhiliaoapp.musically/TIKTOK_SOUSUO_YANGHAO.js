@@ -8,8 +8,8 @@ importClass(java.io.FileWriter);
 // mx-phone-2  - drewryapilado@gmail.com
 //******************************************************************
 
-var TikTokPackageName = 'com.ss.android.ugc.trill';
-
+// var TikTokPackageName = 'com.ss.android.ugc.trill';
+var TikTokPackageName = 'com.zhiliaoapp.musically';
 
 
 //保证Java层和JS代码两边的日志文件一致
@@ -19,12 +19,17 @@ var taskLogImgName = "nest_task_log.png"
 
 //用户需要输入的评论内容
 const TT_searchFile = '$${T_搜尋關鍵字}';
+const TT_Watch_Count = "$${視頻瀏覽數量}" //观看视频个数
+
+
 const TT_commentFile = '$${T_評論內容}';
 const TT_Like_Count = "$${點讚概率}" //点赞概率
-const TT_Save_Count = 0 //收藏概率
-const TT_Watch_Author_Page= 0 //查看作者主页的概率
+const TT_Save_Count = "$${收藏概率}" //收藏概率
 const TT_Comment_Count = "$${評論概率}" //评论概率
-const TT_Watch_Count = "$${視頻瀏覽數量}" //观看视频个数
+
+
+const TT_Watch_Author_Page= 0 //查看作者主页的概率
+
 
 
 //1.autox.js侧边栏的打开USB调试先打开
@@ -49,7 +54,7 @@ var handleErrorFlag = false //默认没有错误，如果出现异常，那么�
         console.error("Tiktok根據關鍵字，搜尋影片瀏覽養號，評論，點讚---------------");
         console.error("脚本执行时间：" + new Date().toLocaleString());
     }else{
-        forceStop_titkok()
+        forceStop_APP(TikTokPackageName)
         console.log("-----------------脚本功能执行结束：---------------");
         console.log("Tiktok根據關鍵字，搜尋影片瀏覽養號，評論，點讚---------------");
         console.log("脚本执行时间：" + new Date().toLocaleString());
@@ -59,7 +64,7 @@ var handleErrorFlag = false //默认没有错误，如果出现异常，那么�
 
 function handleError(e) {
     handleErrorFlag = true
-    forceStop_titkok()
+    forceStop_APP(TikTokPackageName)
     console.error("===错误报告开始===");
     console.error("错误信息：" + e);
     console.error("错误堆栈：" + e.stack);
@@ -99,23 +104,24 @@ if (runningEngines.length > 1) {
 }
 
 
-forceStop_titkok()
+forceStop_APP(TikTokPackageName)
 
 
 taskLog("准备启动TikTok...")
 sleep(5000)
 app.startActivity({
     action: "android.intent.action.VIEW",
-    packageName: "com.ss.android.ugc.trill",
+    packageName: TikTokPackageName,
     className: "com.ss.android.ugc.aweme.main.MainActivity"
 });
 ;
 
 
 //强制停止TikTok 
-function forceStop_titkok(){
-    taskLog("准备强杀TikTok...")
-    app.openAppSetting(TikTokPackageName)
+function forceStop_APP(packageName){
+    taskLog("准备强杀:" + packageName + "...")
+    sleep(1000);
+    app.openAppSetting(packageName)
     sleep(5000)
 
     //繁体
@@ -126,19 +132,20 @@ function forceStop_titkok(){
             sleep(1000);
             // 确认操作
             if (text("確定").exists()) {
+                taskLog("已经找到可点击的'強制停止'按钮！！！！！！！！！！");
                 text("確定").findOne().click();
             }
         } else {
-            taskLog("未找到可点击的‘強制停止’按钮");
+            taskLog("未找到可点击的'強制停止'按钮");
         }
     } else {
-        taskLog("未找到‘強制停止’按钮");
+        taskLog("未找到'強制停止'按钮");
     }
     sleep(3000)
 
     //简体
-    if (text("强制停止").exists()) {
-        let forceStopBtn = text("强制停止").findOne();
+    if (text("强行停止").exists()) {
+        let forceStopBtn = text("强行停止").findOne();
         if (forceStopBtn && forceStopBtn.clickable()) {
             forceStopBtn.click();
             sleep(1000);
@@ -147,10 +154,10 @@ function forceStop_titkok(){
                 text("确定").findOne().click();
             }
         } else {
-            taskLog("未找到可点击的‘强行停止’按钮");
+            taskLog("未找到可点击的'强行停止'按钮");
         }
     } else {
-        taskLog("未找到‘强行停止’按钮");
+        taskLog("未找到'强行停止'按钮");
     }
 
     sleep(3000)
@@ -167,10 +174,10 @@ function forceStop_titkok(){
                 text("OK").findOne().click();
             }
         } else {
-            taskLog("未找到可点击的‘Force stop’按钮");
+            taskLog("未找到可点击的'Force stop'按钮");
         }
     } else {
-        taskLog("未找到‘Force stop’按钮");
+        taskLog("未找到'Force stop'按钮");
     }
     sleep(3000)
 
@@ -185,10 +192,10 @@ function forceStop_titkok(){
                 text("OK").findOne().click();
             }
         } else {
-            taskLog("未找到可点击的‘FORCE STOP’按钮");
+            taskLog("未找到可点击的'FORCE STOP'按钮");
         }
     } else {
-        taskLog("未找到‘FORCE STOP’按钮");
+        taskLog("未找到'FORCE STOP'按钮");
     }
     sleep(3000)
 
@@ -196,6 +203,7 @@ function forceStop_titkok(){
     home()
 
 }
+
 
 
 
@@ -210,29 +218,89 @@ function close_friend_suggest(){
 
 //点击首页的右上角Search按钮
 function click_home_search_btn(){
-
+    var find_search_btn_count = 0
+    if(find_search_btn_count > 5){
+        console.error("首页寻找'搜索'按钮超过5次，抛出异常")
+        throw new error("首页寻找'搜索'按钮超过5次，抛出异常")
+    }
     sleep(random(2000, 5000))
+
+    var gz5_img_count = 0
+    var targetGz5 = null; // 用于存储第二个gz5按钮
+    
     var allImages = className("android.widget.ImageView").find();
     if (allImages && allImages.size() > 0) {
+        taskLog("找到ImageView的总数量：" + allImages.size());
+        
         for (var i = 0; i < allImages.size(); i++) {
             var img = allImages.get(i);
             if (img) {
-                taskLog("找到Image控件-Text：" + img.text() + ";ID = " + img.id());
+                taskLog("第" + (i+1) + "个Image控件-Text：" + img.text() + ";ID = " + img.id());
                 
-                // 检查ID是否为"en4"
-                if (img.id() == (TikTokPackageName +":id/en4")) {
-                    // 正确调用bounds()方法并点击
-                    taskLog("找到Image控件: 首页搜索框！" );
-
+                if (img.id() == (TikTokPackageName+":id/gz5")) {
+                    gz5_img_count++;
+                    taskLog("这是第" + gz5_img_count + "个gz5按钮");
+                    
+                    // 获取父容器信息
+                    var parent = img.parent();
+                    taskLog("父容器类型：" + parent.className());
+                    taskLog("父容器ID：" + parent.id());
+                    
                     var bounds = img.bounds();
-                    click(bounds.centerX(), bounds.centerY());
-                    // 找到并点击后可以跳出循环
-                    break;
+                    taskLog("元素位置：left=" + bounds.left + 
+                           ", top=" + bounds.top + 
+                           ", right=" + bounds.right + 
+                           ", bottom=" + bounds.bottom);
+                    
+                    // 存储第二个gz5按钮
+                    if(gz5_img_count == 2) {
+                        targetGz5 = img;
+                        break; // 找到第二个后就退出循环
+                    }
                 }
             }
         }
+        
+        // 点击第二个gz5按钮
+        if(targetGz5) {
+            taskLog("找到第二个gz5按钮，准备点击");
+            var bounds = targetGz5.bounds();
+            if(targetGz5.clickable()){
+                targetGz5.click();
+            } else {
+                click(bounds.centerX(), bounds.centerY());
+            }
+            return;
+        }
     }
-    sleep(random(2000, 5000))
+    
+    //如果没找到合适的按钮，尝试滑动
+    taskLog("没有找到第二个gz5按钮，准备滑动屏幕");
+    swipe_to_up();
+    find_search_btn_count++;
+    
+    sleep(random(2000, 5000));
+}
+
+//屏幕上滑
+function swipe_to_up(){
+    // 获取设备屏幕的宽高
+    var width = device.width;
+    var height = device.height;
+
+    // 生成随机起始点
+    var startX = random(width / 3 , width * 2 / 3);
+    var startY = random(height * 2 / 3, height * 3 / 4);
+
+    // 生成随机结束点
+    var endX = random(width / 3 , width * 2 / 3);
+    var endY = random(height * 1 / 3, height * 1 / 4);
+
+    // 屏幕上滑操作
+    swipe(startX, startY, endX, endY, 500);
+    taskLog("开始滑动位置，x = "+startX+"；y = " + startY)
+    taskLog("结束滑动位置，x = "+endX+"；y = " + endY)
+
 }
 
 //点击第二页的右上角Search按钮
@@ -244,12 +312,12 @@ function click_Second_search_btn(){
         for (var i = 0; i < allButtons.size(); i++) {
             var btn = allButtons.get(i);
             if (btn) {
-                taskLog("找到Button控件-Text：" + btn.text() + ";ID = " + btn.id());
+                // taskLog("找到Button控件-Text：" + btn.text() + ";ID = " + btn.id());
                 
-                // 检查ID是否为"r7e"
-                if (btn.id() == (TikTokPackageName +":id/r7e")) {
+                // fullId("com.zhiliaoapp.musically:id/te3")
+                if (btn.id() == (TikTokPackageName +":id/te3")) {
                     // 正确调用bounds()方法并点击
-                    taskLog("找到Button控件: 第二个页面的搜索框！" );
+                    toast("找到Button控件: 第二个页面的搜索框！" );
 
                     var bounds = btn.bounds();
                     click(bounds.centerX(), bounds.centerY());
@@ -261,7 +329,6 @@ function click_Second_search_btn(){
     }
     sleep(random(2000, 5000))
 }
-
 
 //点击屏幕左上方
 function click_left_top_screen(){
@@ -368,59 +435,76 @@ function click_Author_Page_Btn(){
 //点击点赞按钮
 function click_Like_Btn(){
     taskLog("开始准备点赞视频")
-    clickId("dh4") 
-}
+    //fullId("com.zhiliaoapp.musically:id/e1x")
+    clickId(TikTokPackageName + ":id/e1x")
 
+}
 
 
 //点击评论按钮
 function click_Comment_Btn(commentText){
     taskLog("开始准备评论视频")
-    clickId("cgq")
+    //fullId("com.zhiliaoapp.musically:id/cwt")
+    clickId(TikTokPackageName + ":id/cwt")
 
     sleep(5000)
     var autoCompleteTextViews = className("android.widget.EditText").find();
-    for(var i = 0; i < autoCompleteTextViews.size(); i++) {
-        var textView = autoCompleteTextViews.get(i);
+    taskLog("autoCompleteTextViews长度 = " + autoCompleteTextViews.size())
+
+
+    //如果某个tiktok视频，0评论，自己是首评，那么界面会有两个"android.widget.EditText"
+    if(autoCompleteTextViews.size() >0){
+        var textView = autoCompleteTextViews.get(autoCompleteTextViews.size() - 1);
         if(textView) {
             taskLog("找到TextView控件-Text："+ textView.text());
+            textView.click()
             sleep(1000)
             taskLog("评论控件，设置内容：" +commentText );
             textView.setText(commentText)
-            sleep(10000)
-
-           
-            //发送按钮,一直找不到发送按钮，所以直接点击屏幕的最后一个button
-            find_send_btn()
-            sleep(15000)
-
+            sleep(5000)
+    
+    
+            //发送按钮,如果某个tiktok视频，0评论，自己是首评，那么就会找不到fullId("com.zhiliaoapp.musically:id/cyq")
+            //所以必须要执行两次clickId(TikTokPackageName + ":id/cyq") ，因为0评论，和有评论的界面不一样
+            // fullId("com.zhiliaoapp.musically:id/cyq")
+            clickId(TikTokPackageName + ":id/cyq")
+            sleep(random(2000, 3000))
+            back()
+            sleep(random(2000, 3000))
+            clickId(TikTokPackageName + ":id/cyq")
+    
+    
+            sleep(random(10000, 15000))
+    
+    
             var clickX = device.width  - 100 ; 
             var clickY = device.width /4; 
             taskLog("开始准备点击屏幕 clickX = " + clickX)
             taskLog("开始准备点击屏幕 clickY = " + clickY)
             click(clickX, clickY);
-            
-            
-        }
+                
+                
+            }
     }
    
-
 }
+
+
 
 //点击收藏按钮
 function click_Save_Btn(){
     taskLog("开始准备收藏视频")
-    // id("egc").className("android.widget.ImageView").findOne().click()
-    clickId("egc")
+    //fullId("com.zhiliaoapp.musically:id/fc_")
+    clickId(TikTokPackageName + ":id/fc_")
 
 }
-
 
 
 
 
 //打印日志
 function taskLog(_log){
+    toast(_log)
     console.log(getSystemDate("df") +":" +_log)
 
     //通过日志判断任务有没有结束：
@@ -705,164 +789,160 @@ function find_textview_text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US)
 
 
 
-try {
-    
-taskLog("打开TikTok成功...")
-sleep(10000)
-
-close_friend_suggest()
-
-
-//******************************************************************
-// 用于存储评论的数组
-let comments = [];
-// 检查文件是否存在
-const file = new java.io.File(TT_commentFile);
-if (file.exists() && file.isFile()) {
-    try {
-        // 读取文件内容
-        const reader = new java.io.BufferedReader(new java.io.FileReader(file));
-        let line;
-        while ((line = reader.readLine()) !== null) {
-            comments.push(line);
-        }
-        reader.close();
-    } catch (e) {
-        taskLog("读取文件时发生错误：" + e.message);
-    }
-} else {
-    // 如果文件不存在，将文件名添加到数组中
-    comments.push(TT_commentFile);
-}
-
-// 如果TT_commentFile等于'off'，则清空评论数组
-if (TT_commentFile == 'off') {
-    comments = [];
-}
-
-// 输出结果，用于调试
-taskLog(comments);
-//******************************************************************
-
-
-
-//点击发送按钮
-function find_send_btn() {
-    var allButtons = className("android.widget.Button").find();
-    if (allButtons && allButtons.size() > 0) {
-        // for (var i = 0; i < allButtons.size(); i++) {
-        //     var button = allButtons.get(i);
-        //     if (button) {
-        //         taskLog("找到button控件-Text：" + button.text() + ";ID = " + button.id());
-        //     }
-        // }
-        
-        // 获取最后一个按钮
-        var lastButton = allButtons.get(allButtons.size() - 1);
-        if (lastButton) {
-            // bounds()是一个方法,需要先调用它
-            var bounds = lastButton.bounds();
-            click(bounds.centerX(), bounds.centerY());
-        }
-    }
-}
-
-
-
-
-
-//******************************************************************
-//******************************************************************
-//******************************************************************
-// 用于存储关键字的数组
-let search_text_array = [];
-// 检查文件是否存在
-const search_file = new java.io.File(TT_searchFile);
-if (search_file.exists() && search_file.isFile()) {
-    try {
-        // 读取文件内容
-        const search_reader = new java.io.BufferedReader(new java.io.FileReader(search_file));
-        let search_line;
-        while ((search_line = search_reader.readLine()) !== null) {
-            search_text_array.push(search_line);
-        }
-        search_reader.close();
-    } catch (e) {
-        taskLog("读取搜索关键字文件时发生错误：" + e.message);
-    }
-} else {
-    // 如果文件不存在，将文件名添加到数组中
-    search_text_array.push(TT_searchFile);
-}
-
-// 如果TT_commentFile等于'off'，则清空评论数组
-if (TT_searchFile == 'off') {
-    search_text_array = [];
-}
-
-// 输出搜索的关键字结果，用于调试
-taskLog(search_text_array);
-
-// 按照顺序开始执行搜索关键字
-if (search_text_array.length > 0) {
-    taskLog("- 找到可用的搜索关键字文案, 开始搜索观看 - ");
-    for (var randIdx = 0; randIdx < search_text_array.length; randIdx++) {
-        var commentText = search_text_array[randIdx];
-        taskLog("- 找到可用的搜索关键字文案: "+commentText+", 开始搜索观看 - ");
-        taskLog("开始准备点击首页搜索按钮")
-
-        // 计算右上角区域的点击坐标(找不到按钮，所以只能是点击坐标)
-        click_home_search_btn()
-        sleep(random(5000, 8000))
-
-
-        var search_edits = className("android.widget.EditText").find();
-        for(var i = 0; i < search_edits.size(); i++) {
-            var search_edit = search_edits.get(i);
-            if(search_edit) {
-                taskLog("找到TextView控件-Text："+ search_edit.text());
-                sleep(1000)
-                taskLog("搜索控件，设置内容：" +commentText );
-                search_edit.setText(commentText)    
-                sleep(random(5000, 8000))
-                
-                taskLog("开始点击Search按钮")
-                click_Second_search_btn()
-
-
-
-                //开始观看视频
-                sleep(random(5000, 8000))
-                taskLog("开始点击视频Tab按钮")
-                find_textview_text_base("视频","影片","Videos")
-
-                sleep(random(5000, 8000))
-                // console.show()
-                click_left_top_screen()//直接观看第一个即可
-                
-
-                sleep(random(5000, 8000))
-                watch_TT_video(comments)
-    
+    //点击发送按钮
+    function find_send_btn() {
+        var allButtons = className("android.widget.Button").find();
+        if (allButtons && allButtons.size() > 0) {
+            // for (var i = 0; i < allButtons.size(); i++) {
+            //     var button = allButtons.get(i);
+            //     if (button) {
+            //         taskLog("找到button控件-Text：" + button.text() + ";ID = " + button.id());
+            //     }
+            // }
+            
+            // 获取最后一个按钮
+            var lastButton = allButtons.get(allButtons.size() - 1);
+            if (lastButton) {
+                // bounds()是一个方法,需要先调用它
+                var bounds = lastButton.bounds();
+                click(bounds.centerX(), bounds.centerY());
             }
         }
-
-
     }
+
+
+
+    //获取评论列表
+    function get_all_comments(){
+        // 用于存储用户的数组
+        let comments = [];
+        // 户是否存在
+        const file = new java.io.File(TT_commentFile);
+        if (file.exists() && file.isFile()) {
+            try {
+                // 读取文件内容
+                const reader = new java.io.BufferedReader(new java.io.FileReader(file));
+                let line;
+                while ((line = reader.readLine()) !== null) {
+                    comments.push(line);
+                }
+                reader.close();
+            } catch (e) {
+                taskLog("读取文件时发生错误：" + e.message);
+            }
+        } else {
+            // 如果文件不存在，将文件名添加到数组中
+            comments.push(TT_commentFile);
+        }
+        
+        return comments
+    }
+
+
+        //获取关键字列表
+        function get_all_keyword(){
+            // 用于存储用户的数组
+            let comments = [];
+            // 户是否存在
+            const file = new java.io.File(TT_searchFile);
+            if (file.exists() && file.isFile()) {
+                try {
+                    // 读取文件内容
+                    const reader = new java.io.BufferedReader(new java.io.FileReader(file));
+                    let line;
+                    while ((line = reader.readLine()) !== null) {
+                        comments.push(line);
+                    }
+                    reader.close();
+                } catch (e) {
+                    taskLog("读取文件时发生错误：" + e.message);
+                }
+            } else {
+                // 如果文件不存在，将文件名添加到数组中
+                comments.push(TT_searchFile);
+            }
+            
+            return comments
+        }
+
+
+
+try {
     
-  }else{
-    taskLog("- 没有可用的搜索关键字文案, 忽略 - ");
-  }
+    taskLog("打开TikTok成功...")
+    sleep(10000)
+
+    close_friend_suggest()
 
 
-} catch (e) {
-    handleError(e);
+    //******************************************************************
+    // 用于存储评论的数组
+    var comments = get_all_comments()
+    var search_text_array = get_all_keyword()
+
+    if(search_text_array.length > 0){
+        taskLog("- 找到可用的搜索关键字文案, 开始搜索观看 - ");
+        for (var randIdx = 0; randIdx < search_text_array.length; randIdx++) {
+            var keywordText = search_text_array[randIdx];
+            taskLog("- 找到可用的搜索关键字文案: "+keywordText+", 开始搜索观看 - ");
+
+            // 计算右上角区域的点击坐标(找不到按钮，所以只能是点击坐标)
+            click_home_search_btn()
+            sleep(random(5000, 8000))
+
+
+            var search_edits = className("android.widget.EditText").find();
+            for(var i = 0; i < search_edits.size(); i++) {
+                var search_edit = search_edits.get(i);
+                if(search_edit) {
+                    taskLog("找到TextView控件-Text："+ search_edit.text());
+                    sleep(1000)
+                    taskLog("搜索控件，设置内容：" +keywordText );
+                    search_edit.setText(keywordText)    
+                    sleep(random(5000, 8000))
+                    
+                    taskLog("开始点击Search按钮")
+                    click_Second_search_btn()
+
+
+
+                    //开始观看视频
+                    sleep(random(5000, 8000))
+                    taskLog("开始点击视频Tab按钮")
+                    find_textview_text_base("影片","Videos","视频")
+
+                    sleep(random(5000, 8000))
+                    click_left_top_screen()//直接观看第一个即可
+                    
+
+                    sleep(random(5000, 8000))
+                    watch_TT_video(comments)
+
+
+                    //看完之后，回退回去
+                    back()
+                    sleep(random(2000, 3000))
+                    back()
+                    sleep(random(2000, 3000))
+        
+                }
+            }
+
+
+        }
+
+
+    }else{
+        taskLog("- 没有可用的搜索关键字文案, 忽略 - ");
+    }
+
+
+    } catch (e) {
+        handleError(e);
 }
 
 //开始观看视频
 function watch_TT_video(comments){
-
-    // console.show()
 
     //开始观看
     var count = 1;
@@ -871,6 +951,7 @@ function watch_TT_video(comments){
         taskLog("开始观看第"+count+"个TikTok视频")
         count++;
 
+        //
         close_friend_suggest()
 
         sleep(random(10000, 25000))

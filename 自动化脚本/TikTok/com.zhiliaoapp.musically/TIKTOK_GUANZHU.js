@@ -45,7 +45,6 @@ var handleErrorFlag = false //默认没有错误，如果出现异常，那么�
         console.error("Tiktok关注：根據關注列表UID的順序，去關注用戶---------------");
         console.error("脚本执行时间：" + new Date().toLocaleString());
     }else{
-        forceStop_titkok()
         console.log("-----------------脚本功能执行结束：---------------");
         console.error("Tiktok关注：根據關注列表UID的順序，去關注用戶---------------");
         console.log("脚本执行时间：" + new Date().toLocaleString());
@@ -66,7 +65,7 @@ function openLogActivity() {
 
 function handleError(e) {
     handleErrorFlag = true
-    forceStop_titkok()
+    forceStop_APP(TikTokPackageName)
     console.error("===错误报告开始===");
     console.error("错误信息：" + e);
     console.error("错误堆栈：" + e.stack);
@@ -95,7 +94,7 @@ if (runningEngines.length > 1) {
   })
 }
 
-forceStop_titkok()
+forceStop_APP(TikTokPackageName)
 
 sleep(3000)
 taskLog("准备启动TikTok...")
@@ -109,9 +108,10 @@ app.startActivity({
 
 
 //强制停止TikTok 
-function forceStop_titkok(){
-    taskLog("准备强杀TikTok...")
-    app.openAppSetting(TikTokPackageName)
+function forceStop_APP(packageName){
+    taskLog("准备强杀:" + packageName + "...")
+    sleep(1000);
+    app.openAppSetting(packageName)
     sleep(5000)
 
     //繁体
@@ -122,6 +122,7 @@ function forceStop_titkok(){
             sleep(1000);
             // 确认操作
             if (text("確定").exists()) {
+                taskLog("已经找到可点击的'強制停止'按钮！！！！！！！！！！");
                 text("確定").findOne().click();
             }
         } else {
@@ -133,8 +134,8 @@ function forceStop_titkok(){
     sleep(3000)
 
     //简体
-    if (text("强制停止").exists()) {
-        let forceStopBtn = text("强制停止").findOne();
+    if (text("强行停止").exists()) {
+        let forceStopBtn = text("强行停止").findOne();
         if (forceStopBtn && forceStopBtn.clickable()) {
             forceStopBtn.click();
             sleep(1000);
@@ -192,7 +193,6 @@ function forceStop_titkok(){
     home()
 
 }
-
 
 
 //推荐好友的弹窗，直接关闭
@@ -870,30 +870,55 @@ try{
 
                     click_LinearLayout_GUANZHU()
 
-                    //fullId("com.zhiliaoapp.musically:id/dm4")
-                    var findMSGTextResult = clickId(TikTokPackageName + ":id/dm4")
-                    if(!findMSGTextResult) {
-                        toast("没有找到Follow控件，终止本次操作，开始下一个用户的关注行为！！！");
-                    }
 
-                    //有可能有一种情况，可能某个人已经关注了，此时再点击一次，就进入了私信页面，就需要多点击一次返回
-                    //className("android.widget.EditText")这个是私信底部的EditText所在的布局
-                    sleep(3000)
-                    var sixin_TextViews = className("android.widget.EditText").find();
-                    // 检查是否找到元素
-                    toast("elements  = " + sixin_TextViews.size());
-                    if (sixin_TextViews.size() > 0) {
-                        toast("已经关注过了，需要多点击一次返回，退出私信页面");
-                        //fullId("com.zhiliaoapp.musically:id/kxs") - 左上角back
-                        clickId(TikTokPackageName + ":id/kxs")
+                    //text("關注")
+                    var findFollowTextResult = find_textview_text_base("關注", "Follow", "關注")
+                    if(!findFollowTextResult) {
+                        taskLog("没有找到Follow控件，终止本次操作，开始下一个用户的Follow行为！！！");
+                        sleep(3000)
+                        back()
+                        sleep(1000)
+                        back()
+                        sleep(3000)
+                        break
                     }
-
-                    sleep(3000)
-                    click_back_btn()
-                    sleep(3000)
-                    click_back_btn()
                     sleep(random(2000, 4000))
 
+
+
+
+
+                    // var findMSGTextResult = clickId(TikTokPackageName + ":id/dm4")
+                    // if(!findMSGTextResult) {
+                    //     toast("没有找到Follow控件，终止本次操作，开始下一个用户的关注行为！！！");
+                    // }
+
+                    // //有可能有一种情况，可能某个人已经关注了，此时再点击一次，就进入了私信页面，就需要多点击一次返回
+                    // //className("android.widget.EditText")这个是私信底部的EditText所在的布局
+                    // sleep(3000)
+                    // var sixin_TextViews = className("android.widget.EditText").find();
+                    // // 检查是否找到元素
+                    // toast("elements  = " + sixin_TextViews.size());
+
+                    // if(sixin_TextViews.size() == 0){//这种场景对应的用户：mrbeast
+                    //     taskLog("没有找到訊息控件，终止本次操作，开始下一个用户的私信行为！！！");               
+                    //     back()
+                    //     sleep(random(2000, 4000))
+                    //     back()
+                    //     sleep(random(2000, 4000))
+                    //     back()
+                    //     sleep(1000)
+                    //     break
+                    // }else{
+                    //     toast("已经关注过了，需要多点击一次返回，退出私信页面");
+                    //     //fullId("com.zhiliaoapp.musically:id/kxs") - 左上角back
+                    //     clickId(TikTokPackageName + ":id/kxs")
+                    //     sleep(3000)
+                    //     back()
+                    //     sleep(3000)
+                    //     back()
+                    //     sleep(random(2000, 4000))
+                    // }
 
         
                 }
