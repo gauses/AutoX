@@ -3,5 +3,6 @@ TIKTOK关注提供的用户列表  -OK
 Tiktok首页浏览养号 -OK
 
 
-
+上传视频  - 
+1.目前不能将TT_UPLOAD_VIDEO_URL放在txt里面，然后进行批量去跑,只能放一个tiktok的URL
 

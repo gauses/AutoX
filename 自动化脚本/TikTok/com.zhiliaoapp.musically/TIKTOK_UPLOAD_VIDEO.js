@@ -17,7 +17,9 @@ var taskLogImgName = "nest_task_log.png"
 
 //名稱.使用者名稱.個人簡介
 const TT_UPLOAD_VIDEO_URL = '$${T_需要上傳影片的本地地址}';
-const TT_UPLOAD_VIDEO_DESC = '$${上傳影片的說明}';
+const TT_UPLOAD_VIDEO_TITLE = '$${T_上傳影片的标题}';
+const TT_UPLOAD_VIDEO_DESC = '$${T_上傳影片的說明}';
+
 
 
 // var TikTokPackageName = 'com.ss.android.ugc.trill';
@@ -85,7 +87,7 @@ function openLogActivity() {
 
 
 //显示控制窗：https://github.com/kkevsekk1/AutoX/issues/868
-console.show()
+// console.show()
 
 
 
@@ -118,15 +120,96 @@ app.startActivity({
 
 taskLog("打开TikTok成功...")
 sleep(10000)
-// refreshMedia("/storage/emulated/0/Download/")
 toast("本地视频地址：" + TT_UPLOAD_VIDEO_URL)
-// sleep(5000)
 
-click_bottom_center_for_post_video()
+
 
 //******************************************************************
 //******************************************************************
 //******************************************************************
+
+
+// //视频列表
+// function get_TT_VIDEO_LINK_text(){
+//     let comments = [];
+//     // 户是否存在
+//     taskLog("TT_UPLOAD_VIDEO_TITLE评论数组 =  " + TT_UPLOAD_VIDEO_URL)
+//     const file = new java.io.File(TT_UPLOAD_VIDEO_URL);
+//     if (file.exists() && file.isFile()) {
+//         try {
+//             // 读取文件内容
+//             const reader = new java.io.BufferedReader(new java.io.FileReader(file));
+//             let line;
+//             while ((line = reader.readLine()) !== null) {
+//                 comments.push(line);
+//             }
+//             reader.close();
+//         } catch (e) {
+//             taskLog("读取文件时发生错误：" + e.message);
+//         }
+//     } else {
+//         // 如果文件不存在，将文件名添加到数组中
+//         comments.push(TT_UPLOAD_VIDEO_URL);
+//     }
+    
+//     return comments
+// }
+
+
+
+//从评论数组中，顺序挑选一条标题
+function get_TITLE_comment_text(){
+    let comments = [];
+    // 户是否存在
+    taskLog("TT_UPLOAD_VIDEO_TITLE评论数组 =  " + TT_UPLOAD_VIDEO_TITLE)
+    const file = new java.io.File(TT_UPLOAD_VIDEO_TITLE);
+    if (file.exists() && file.isFile()) {
+        try {
+            // 读取文件内容
+            const reader = new java.io.BufferedReader(new java.io.FileReader(file));
+            let line;
+            while ((line = reader.readLine()) !== null) {
+                comments.push(line);
+            }
+            reader.close();
+        } catch (e) {
+            taskLog("读取文件时发生错误：" + e.message);
+        }
+    } else {
+        // 如果文件不存在，将文件名添加到数组中
+        comments.push(TT_UPLOAD_VIDEO_TITLE);
+    }
+    
+    return comments
+}
+
+
+//从评论数组中，顺序挑选一条描述
+function get_DESC_comment_text(){
+    let comments = [];
+    // 户是否存在
+    taskLog("TT_UPLOAD_VIDEO_DESC评论数组 =  " + TT_UPLOAD_VIDEO_DESC)
+    const file = new java.io.File(TT_UPLOAD_VIDEO_DESC);
+    if (file.exists() && file.isFile()) {
+        try {
+            // 读取文件内容
+            const reader = new java.io.BufferedReader(new java.io.FileReader(file));
+            let line;
+            while ((line = reader.readLine()) !== null) {
+                comments.push(line);
+            }
+            reader.close();
+        } catch (e) {
+            taskLog("读取文件时发生错误：" + e.message);
+        }
+    } else {
+        // 如果文件不存在，将文件名添加到数组中
+        comments.push(TT_UPLOAD_VIDEO_DESC);
+    }
+    
+    return comments
+}
+
 
 //转移视频到Nest临时文件夹
 function transferVideoToNest(fileName){
@@ -150,6 +233,7 @@ function transferVideoToNest(fileName){
         files.ensureDir(newFolder);
         console.log("创建文件夹: " + newFolder);
     }
+
     // 目标视频路径(在新文件夹中)
     const targetFileName = files.getName(videoPath);
     const targetPath = newFolder + "/" + targetFileName;
@@ -253,7 +337,7 @@ function selectImageByButton(fileName) {
     try {
 
         //点击顶部按钮：全部
-        //TextView全部：fullId("com.ss.android.ugc.trill:id/rcg")
+        //TextView全部：fullId("com.zhiliaoapp.musically:id/tke")
         var allTextView = className("android.widget.TextView").find();
         taskLog("找到allTextView: 全部 = "  + allTextView.size());
         if (allTextView && allTextView.size() > 0) {
@@ -262,7 +346,7 @@ function selectImageByButton(fileName) {
                 if (textView) {
                     taskLog("找到textView控件-Text：" + textView.text());
                     
-                    if (textView.id() == (TikTokPackageName +":id/rcg")) {
+                    if (textView.id() == (TikTokPackageName +":id/tke")) {
                         // 正确调用bounds()方法并点击
                         taskLog("找到顶部控件: 全部" );
                         var bounds = textView.bounds();
@@ -305,8 +389,8 @@ function selectImageByButton(fileName) {
         
         // 查找并点击指定按钮（其实只需要点击第一个图片的按钮就行了，因为肯定就是第一张图片）
 
-        // 使用id("com.ss.android.ugc.trill:id/gkg")来查找按钮
-        var autoSelectButton = id("com.ss.android.ugc.trill:id/gkg").find();
+        // 使用fullId("com.zhiliaoapp.musically:id/hj2")来查找按钮
+        var autoSelectButton = id(TikTokPackageName + ":id/hj2").find();
         for(var i = 0; i < autoSelectButton.size(); i++) {
             var selectButton = autoSelectButton.get(i);
             if(selectButton) {
@@ -317,25 +401,26 @@ function selectImageByButton(fileName) {
 
                 sleep(5000)
                 //点击下一步
-                // id("oy5").findOne().click()
-                clickId("com.ss.android.ugc.trill:id/oy5")
+                // fullId("com.zhiliaoapp.musically:id/qxd")
+                clickId(TikTokPackageName + ":id/qxd")
 
                 //发布视频时才会有这个按钮，修改头像时没有这个按钮
                 sleep(5000)
                 //点击下一步
-                clickId("com.ss.android.ugc.trill:id/jtf")
+                // fullId("com.zhiliaoapp.musically:id/l4w")
+                clickId(TikTokPackageName + ":id/l4w")
 
 
                 //可能会出现一个下拉框，提示二次创作：text("確定")
                 find_btn_Text_base("確定", "确定", "OK")
 
                 sleep(3000)
-                click_Video_desc(TT_UPLOAD_VIDEO_DESC)
+                click_Video_desc()
 
                 sleep(5000)
                 //点击Post
-                // clickId("com.ss.android.ugc.trill:id/luk")
-                //找不到ID，所以直接点击最后一个Button
+                //fullId("com.zhiliaoapp.musically:id/neo")
+                //之前找不到ID，所以直接点击最后一个Button
                 var allPostButtons = className("android.widget.Button").find();
                 if (allPostButtons && allPostButtons.size() > 0) {
                     var lastPostButton = allPostButtons.get(allPostButtons.size() - 1);
@@ -1145,6 +1230,7 @@ function click_bottom_center_for_post_video(){
 
     toast("开始寻找底部➕号按钮....")
     // 通过ID选择器查找控件
+
     let view = id("com.ss.android.ugc.trill:id/iy8").className("android.widget.LinearLayout").findOne(3000);
 
     if (view) {
@@ -1202,7 +1288,8 @@ function click_choose_video_framelayout(){
 
     toast("开始点击选择图片的跳转按钮....")
     // 通过ID选择器查找控件
-    let view = id("com.ss.android.ugc.trill:id/bjf").className("android.widget.FrameLayout").findOne();
+    // fullId("com.zhiliaoapp.musically:id/cg7")
+    let view = id(TikTokPackageName + ":id/cg7").className("android.widget.FrameLayout").findOne();
 
 
     if (view) {
@@ -1254,23 +1341,63 @@ function click_choose_video_framelayout(){
 }
 
 //给视频输入desc内容
-//fullId("com.ss.android.ugc.trill:id/e3f")
-function click_Video_desc(commentText){
+function click_Video_desc(){
     taskLog("开始准备输入视频描述")
 
     sleep(3000)
+    //短描述：fullId("com.zhiliaoapp.musically:id/epv")
+    //长描述：fullId("com.zhiliaoapp.musically:id/epu")
     var autoCompleteTextViews = className("android.widget.EditText").find();
     for(var i = 0; i < autoCompleteTextViews.size(); i++) {
         var textView = autoCompleteTextViews.get(i);
         if(textView) {
 
             sleep(1000)
-            taskLog("评论控件，设置内容：" +commentText );
 
-            if(textView.id() == "com.ss.android.ugc.trill:id/e3f"){
-                textView.setText(commentText)
-                sleep(10000)
-            } 
+            //标题
+            var all_TT_TITLE_text = []
+            if(TT_UPLOAD_VIDEO_TITLE && 
+                TT_UPLOAD_VIDEO_TITLE.trim() !== "" && 
+                TT_UPLOAD_VIDEO_TITLE.trim().toLowerCase() !== "off" && 
+                !TT_UPLOAD_VIDEO_TITLE.includes("$${")){
+                    all_TT_TITLE_text = get_TITLE_comment_text()
+            }
+
+            //描述
+            var all_TT_DESC_text = []
+            if(TT_UPLOAD_VIDEO_DESC && 
+                TT_UPLOAD_VIDEO_DESC.trim() !== "" && 
+                TT_UPLOAD_VIDEO_DESC.trim().toLowerCase() !== "off" && 
+                !TT_UPLOAD_VIDEO_DESC.includes("$${")){
+                    all_TT_DESC_text = get_DESC_comment_text()
+            }
+
+
+            if(all_TT_TITLE_text.length > 0){
+                var randTitleIdx = random(0, all_TT_TITLE_text.length - 1)
+                var titleText = all_TT_TITLE_text[randTitleIdx];
+                taskLog("标题：" + titleText);
+                //短描述
+                if(textView.id() == TikTokPackageName + ":id/epv"){
+                    textView.setText(commentText)
+                    sleep(random(3000,5000))
+                } 
+
+            }
+
+
+            if(all_TT_DESC_text.length > 0){
+                var randDescIdx = random(0, all_TT_DESC_text.length - 1)
+                var descText = all_TT_DESC_text[randDescIdx];
+                taskLog("描述：" + descText);
+                //长描述
+                if(textView.id() == TikTokPackageName + ":id/epu"){
+                    textView.setText(commentText)
+                    sleep(random(3000,5000))
+                }   
+            }
+
+    
         }
     }
 }
@@ -1316,30 +1443,63 @@ function click_permission_allow(){
 
 try {
 
-    // 检查是否已有权限
-    if (!files.exists("/storage/emulated/0/Download/")) {
-        // 请求文件访问权限
-        runtime.requestPermissions(["android.permission.WRITE_EXTERNAL_STORAGE"]);
-    }
+
+    // click_bottom_center_for_post_video()
+    //点击+号
+    //fullId("com.zhiliaoapp.musically:id/k3u")
+    clickId(TikTokPackageName + ":id/k3u")
+    sleep(3000)
+
+
+
+    // // 检查是否已有权限
+    // if (!files.exists("/storage/emulated/0/Download/")) {
+    //     // 请求文件访问权限
+    //     runtime.requestPermissions(["android.permission.WRITE_EXTERNAL_STORAGE"]);
+    // }
+    taskLog("开始处理权限问题.....")
     sleep(3000)
     click_permission_allow()    
     sleep(3000)
 
 
-    refreshMedia("/storage/emulated/0/Download/")
+    // //删除临时媒体文件夹
+    // const delFolder = "/storage/emulated/0/Download/" + A_NEST_TikTok_MEDIA;  // 替换成你想要的文件夹路径
+    // deleteNestMediaFile(delFolder)
+    // sleep(3000)
 
+
+    //视频列表
+    // var all_TT_VIDEO_LINK_text = get_TT_VIDEO_LINK_text()
+    // if(all_TT_VIDEO_LINK_text.length > 0){
+    //     var randVideoLinkIdx = random(0, all_TT_VIDEO_LINK_text.length - 1)
+    //     var videoLinkText = all_TT_VIDEO_LINK_text[randVideoLinkIdx];
+    //     taskLog("视频链接：" + videoLinkText);
+    // }
+
+
+    refreshMedia("/storage/emulated/0/Download/")
+    sleep(3000)
+
+    taskLog("开始转移视频到临时文件夹,TT_UPLOAD_VIDEO_URL = " + TT_UPLOAD_VIDEO_URL)
+    sleep(2000)
     var imageTempPath = transferVideoToNest(TT_UPLOAD_VIDEO_URL)
+
     
     close_friend_suggest()
 
     // 已经知道底部View的id是iy8，获取到这个view，拿到宽高，再点击这个view的中心位置，即可
-    click_bottom_center_for_post_video()
+    // click_bottom_center_for_post_video()
+    // sleep(3000)
+    //点击白色圆圈的右边
+    //fullId("com.zhiliaoapp.musically:id/fqi")
+    clickId(TikTokPackageName + ":id/fqi")
     sleep(3000)
 
 
     //开始点击选择
-    click_choose_video_framelayout()
-    sleep(3000)
+    // click_choose_video_framelayout()
+    // sleep(3000)
 
     //可能会出现权限提示，直接允许
     click_permission_allow()    
