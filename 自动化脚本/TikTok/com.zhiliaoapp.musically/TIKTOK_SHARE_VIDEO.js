@@ -781,52 +781,192 @@ function find_textview_text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US)
      return findText_result
 }
 
+function firstOpenBrowser(){
+    app.startActivity({
+        action: "android.intent.action.VIEW",
+        packageName: chromePackageName,
+        className: "org.chromium.chrome.browser.ChromeTabbedActivity"
+      });
+
+      sleep(3000);
+
+    //   //可能部分设备弹出"NestBrowser不能运行在没有GMS的设备"的弹出框，需要点击确定
+    //   if (id('button1').exists()) {
+    //     id('button1').findOne(3000).click();
+    //   }
+      
+      //可能存在欢迎界面的"continue"按钮，点击
+      if(id("com.kiwibrowser.browser:id/signin_fre_continue_button").exists()){
+        toast("存在欢迎界面的continue按钮，点击")
+        id("com.kiwibrowser.browser:id/signin_fre_continue_button").findOne().click()
+      }else{
+        toast("不存在欢迎界面的continue按钮")
+      }
+
+
+}
+
+//从视频列表数组中，顺序挑选一条
+function get_all_video_link(){
+    // 用于存储用户的数组
+    let comments = [];
+    // 户是否存在
+    const file = new java.io.File(TT_VIDEO_URL);
+    if (file.exists() && file.isFile()) {
+        try {
+            // 读取文件内容
+            const reader = new java.io.BufferedReader(new java.io.FileReader(file));
+            let line;
+            while ((line = reader.readLine()) !== null) {
+                comments.push(line);
+            }
+            reader.close();
+        } catch (e) {
+            taskLog("读取文件时发生错误：" + e.message);
+        }
+    } else {
+        // 如果文件不存在，将文件名添加到数组中
+        comments.push(TT_VIDEO_URL);
+    }
+    
+    return comments
+}
+
+
+//点击点赞按钮
+function click_Like_Btn(){
+    taskLog("开始准备点赞视频")
+    //fullId("com.zhiliaoapp.musically:id/e1x")
+    clickId(TikTokPackageName + ":id/e1x")
+
+}
+
+//点击转发按钮
+function click_Zhuanfa_Btn(){
+    taskLog("开始准备转发视频")
+    //fullId("com.zhiliaoapp.musically:id/pgl")
+    clickId(TikTokPackageName + ":id/pgl")
+
+}
+
+
+//开始点击好友列表
+function click_friend_list(){
+    var number = TT_VIDEO_SHARE_FRIENDS_NUMBER;  // 目标点击数量
+    
+    //点击查找更多：ImageView fullId("com.ss.android.ugc.trill:id/c47")
+    clickId(TikTokPackageName + ":id/c47")
+    sleep(random(3000,5000))
+
+    //出现好友列表
+    //className("androidx.recyclerview.widget.RecyclerView")
+    //fullId("com.ss.android.ugc.trill:id/crk")
+    var friend_list = className("androidx.recyclerview.widget.RecyclerView").findOne(1000)
+    if(friend_list){
+        taskLog("找到好友列表")
+        //点击第一个好友
+        friend_list.child(0).click()
+
+
+    }else{
+        taskLog("没有找到好友列表")
+    }
+
+}
 
 try {
+
+    //用浏览器打开链接
+    firstOpenBrowser()
+    sleep(5000)
 
         
     taskLog("打开浏览器成功...")
     sleep(5000)
 
-    //可能需要点击一下浏览器界面的“開啟 TikTok”
-    find_textview_text_base("打开应用","開啟應用程式","Open app")
+    var all_TT_VIDEO_LINK = get_all_video_link()
+    toast("所有需要分享的视频数量 = " + all_TT_VIDEO_LINK.length)
     sleep(5000)
-    find_textview_text_base("打开应用","開啟 TikTok","Open app")
+    
+    if(all_friends.length == 0){
+        toast("没有需要分享的视频") 
+        stopCurrentTask()
+    }else{
+        for(var i = 0; i < all_TT_VIDEO_LINK.length; i++){
+            toast("当前视频在第" + (i+1) + "个 = " + all_TT_VIDEO_LINK[i])      
+            var video_info_link = all_TT_VIDEO_LINK[i]
+            sleep(2000)
+    
+            openBrowser(video_info_link)
+            sleep(5000)
+
+            //可能会出现“Continue”按钮，点击：
+            if(id("message_primary_button").exists()){
+                toast("出现Continue按钮，点击.")
+                id("message_primary_button").findOne().click()
+            }
+            sleep(5000)
 
 
-    taskLog("打开TikTok成功...")
-    sleep(5000)
-
-    close_friend_suggest()
-
-    //点赞
-    taskLog("开始点击点赞按钮..")
-    clickId("dh4")
-    sleep(5000)
+            //可能需要点击一下浏览器界面的“開啟 TikTok”
+            find_textview_text_base("打开应用","開啟應用程式","Open app")
+            sleep(5000)
+            // find_textview_text_base("打开应用","開啟 TikTok","Open app")
 
 
+            taskLog("打开TikTok成功...")
+            sleep(5000)
 
-    //转发
-    taskLog("开始点击转发按钮..")
-    clickId("nlq")
-    sleep(5000)
+            close_friend_suggest()
 
-    // 使用示例
-    var number = TT_VIDEO_SHARE_FRIENDS_NUMBER;  // 目标点击数量
-    var clickedCount = findAndClickAomLayouts(number);
-    taskLog("找到的所有好友转发个数是："+clickedCount)
+            //点赞
+            click_Like_Btn()
+            sleep(random(3000,5000))
 
 
-    sleep(5000)
-    taskLog("开始寫下訊息...");
-    id("jfq").findOne().setText(TT_VIDEO_SHARE_TEXT)
+
+            //转发
+            click_Zhuanfa_Btn()
+            sleep(random(3000,5000))
 
 
-    sleep(5000)
-    taskLog("开始点击传送按钮...");
-    clickId("nfe")
+            //点击好友列表
+            click_friend_list() 
+            sleep(random(3000,5000))
 
-    sleep(5000)
+
+
+
+
+
+
+
+
+
+
+
+
+
+            sleep(5000)
+            taskLog("开始寫下訊息...");
+            id("jfq").findOne().setText(TT_VIDEO_SHARE_TEXT)
+
+
+            sleep(5000)
+            taskLog("开始点击传送按钮...");
+            clickId("nfe")
+
+            sleep(5000)
+
+
+
+        }
+
+        
+
+    }
+
+    
     
 } catch (e) {
     handleError(e);
