@@ -13,13 +13,8 @@ https://apkcombo.com/downloader/#package=com.zhiliaoapp.musically&arches=arm64-v
 Tiktok首页浏览养号 -OK，已经提交更新
 
 
-TIKTOK关注提供的用户列表 
+TIKTOK关注提供的用户列表 -OK，已经提交更新
 
-
-
-
-上传视频  - 没有测完
-1.目前不能将TT_UPLOAD_VIDEO_URL放在txt里面，然后进行批量去跑,只能放一个tiktok的URL
 
 
 
@@ -33,6 +28,13 @@ TIKTOK给用户ID列表私信
 
 
 TikTok根据关键词，搜索视频养号，可评论，点赞 
+
+
+
+
+
+上传视频  - 没有测完
+1.目前不能将TT_UPLOAD_VIDEO_URL放在txt里面，然后进行批量去跑,只能放一个tiktok的URL
 
 
 

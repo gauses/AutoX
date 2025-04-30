@@ -732,16 +732,16 @@ function get_all_video_link(){
 //点击点赞按钮
 function click_Like_Btn(){
     taskLog("开始准备点赞视频")
-    //fullId("com.zhiliaoapp.musically:id/e1x")
-    clickId(TikTokPackageName + ":id/e1x")
+    //fullId("com.zhiliaoapp.musically:id/e2n") 
+    clickId(TikTokPackageName + ":id/e2n")
 
 }
 
 //点击转发按钮
 function click_Zhuanfa_Btn(){
     taskLog("开始准备转发视频")
-    //fullId("com.zhiliaoapp.musically:id/pgl")
-    clickId(TikTokPackageName + ":id/pgl")
+    //fullId("com.zhiliaoapp.musically:id/pkk")
+    clickId(TikTokPackageName + ":id/pkk")
     sleep(random(3000,5000))
 
     //点击好友列表
@@ -761,8 +761,8 @@ function click_friend_list(){
     
     //点击查找更多：ImageView
     taskLog("点击最左侧放大镜");
-    //fullId("com.zhiliaoapp.musically:id/ikx")
-    id(TikTokPackageName + ":id/ikx").findOne().click()
+    //fullId("com.zhiliaoapp.musically:id/imt")
+    id(TikTokPackageName + ":id/imt").findOne().click()
     sleep(random(3000,5000));
 
     //等待好友列表加载
@@ -782,10 +782,12 @@ function click_friend_list(){
     
     while(clickCount < number && attempts < maxAttempts) {
         // 获取当前页面所有的checkbox
-        var checkboxes = id(TikTokPackageName + ":id/cfc").find();
+        //fullId("com.zhiliaoapp.musically:id/cg0")
+        var checkboxes = id(TikTokPackageName + ":id/cg0").find();
 
         // 获取当前页面所有的好友名称TextView
-        var friendNames = id(TikTokPackageName + ":id/e09").find();
+        //fullId("com.zhiliaoapp.musically:id/e0x")
+        var friendNames = id(TikTokPackageName + ":id/e0x").find();
         
         if(!checkboxes || checkboxes.empty() || !friendNames || friendNames.empty()){
             taskLog("列表为空，退出点击");
@@ -872,9 +874,9 @@ function click_friend_list(){
         }
     }
 
-    //点击传送按钮： Button fullId("com.zhiliaoapp.musically:id/ter")
+    //点击传送按钮： Button fullId("com.zhiliaoapp.musically:id/tks")
     taskLog("点击传送按钮")
-    clickId(TikTokPackageName + ":id/ter")
+    clickId(TikTokPackageName + ":id/tks")
 
 
     
