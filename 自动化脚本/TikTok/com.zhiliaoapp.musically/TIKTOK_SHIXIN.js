@@ -376,7 +376,7 @@ function forceStop_APP(packageName){
 
     
 
-    //点击首页的右上角Search按钮
+   //点击首页的右上角Search按钮
 function click_home_search_btn(){
     var find_search_btn_count = 0
     if(find_search_btn_count > 5){
@@ -397,9 +397,10 @@ function click_home_search_btn(){
             if (img) {
                 taskLog("第" + (i+1) + "个Image控件-Text：" + img.text() + ";ID = " + img.id());
                 
-                if (img.id() == (TikTokPackageName+":id/gz5")) {
+                //fullId("com.zhiliaoapp.musically:id/h0i")
+                if (img.id() == (TikTokPackageName+":id/h0i")) {
                     gz5_img_count++;
-                    taskLog("这是第" + gz5_img_count + "个gz5按钮");
+                    taskLog("这是第" + gz5_img_count + "个h0i按钮");
                     
                     // 获取父容器信息
                     var parent = img.parent();
@@ -466,38 +467,34 @@ function click_home_search_btn(){
 
     }
 
-    //点击第二页的右上角Search按钮
-    //fullId("com.zhiliaoapp.musically:id/te3")
-    function click_Second_search_btn(){
+//点击第二页的右上角Search按钮
+function click_Second_search_btn(){
 
-        sleep(random(2000, 5000))
-        var allButtons = className("android.widget.Button").find();
-        if (allButtons && allButtons.size() > 0) {
-            for (var i = 0; i < allButtons.size(); i++) {
-                var btn = allButtons.get(i);
-                if (btn) {
-                    // taskLog("找到Button控件-Text：" + btn.text() + ";ID = " + btn.id());
-                    
-                    // 检查ID是否为"r7e"
-                    if (btn.id() == (TikTokPackageName +":id/te3")) {
-                        // 正确调用bounds()方法并点击
-                        taskLog("找到Button控件: 第二个页面的搜索框！" );
+    sleep(random(2000, 5000))
+    var allButtons = className("android.widget.Button").find();
+    if (allButtons && allButtons.size() > 0) {
+        for (var i = 0; i < allButtons.size(); i++) {
+            var btn = allButtons.get(i);
+            if (btn) {
+                // taskLog("找到Button控件-Text：" + btn.text() + ";ID = " + btn.id());
+                
+                // fullId("com.zhiliaoapp.musically:id/tk1")
+                if (btn.id() == (TikTokPackageName +":id/tk1")) {
+                    // 正确调用bounds()方法并点击
+                    toast("找到Button控件: 第二个页面的搜索框！" );
 
-                        var bounds = btn.bounds();
-                        sleep(1000);  // 点击前等待
-                        click(bounds.centerX(), bounds.centerY())
-                        sleep(1000);  // 点击后等待
-                        // 找到并点击后可以跳出循环
-                        break;
-                    }
+                    var bounds = btn.bounds();
+                    click(bounds.centerX(), bounds.centerY());
+                    // 找到并点击后可以跳出循环
+                    break;
                 }
             }
         }
-        sleep(random(2000, 5000))
     }
+    sleep(random(2000, 5000))
+}
 
-
-    //输入需要关注的用户ID之后，找到第一个User的LinearLayout
+//输入需要关注的用户ID之后，找到第一个User的LinearLayout
 function click_LinearLayout_GUANZHU(){
 
     sleep(random(2000, 5000))
@@ -508,8 +505,8 @@ function click_LinearLayout_GUANZHU(){
             if (linearLayout) {
                 taskLog("找到linearLayout控件-Text：" + linearLayout.text() + ";ID = " + linearLayout.id());
                 
-				//fullId("com.zhiliaoapp.musically:id/ixc")
-                var linearLayout_click = clickId(TikTokPackageName +":id/ixc")
+				//fullId("com.zhiliaoapp.musically:id/iz8")
+                var linearLayout_click = clickId(TikTokPackageName +":id/iz8")
                 if (linearLayout_click) {
                     taskLog("找到LinearLayout控件:开始点击第一个" );
                     break;
