@@ -197,8 +197,8 @@ function click_Author_Page_Btn(){
 //点击点赞按钮
 function click_Like_Btn(){
     taskLog("开始准备点赞视频")
-    //fullId("com.zhiliaoapp.musically:id/e1x")
-    clickId(TikTokPackageName + ":id/e1x")
+    //fullId("com.zhiliaoapp.musically:id/e2n") 
+    clickId(TikTokPackageName + ":id/e2n")
 
 }
 
@@ -207,8 +207,8 @@ function click_Like_Btn(){
 //点击评论按钮
 function click_Comment_Btn(commentText){
     taskLog("开始准备评论视频")
-    //fullId("com.zhiliaoapp.musically:id/cwt")
-    clickId(TikTokPackageName + ":id/cwt")
+    //fullId("com.zhiliaoapp.musically:id/cxm")
+    clickId(TikTokPackageName + ":id/cxm")
 
     sleep(5000)
     var autoCompleteTextViews = className("android.widget.EditText").find();
@@ -227,14 +227,14 @@ function click_Comment_Btn(commentText){
             sleep(5000)
     
     
-            //发送按钮,如果某个tiktok视频，0评论，自己是首评，那么就会找不到fullId("com.zhiliaoapp.musically:id/cyq")
-            //所以必须要执行两次clickId(TikTokPackageName + ":id/cyq") ，因为0评论，和有评论的界面不一样
-            // fullId("com.zhiliaoapp.musically:id/cyq")
-            clickId(TikTokPackageName + ":id/cyq")
+            //发送按钮,如果某个tiktok视频，0评论，自己是首评，那么就会找不到fullId("com.zhiliaoapp.musically:id/czk")
+            //所以必须要执行两次clickId(TikTokPackageName + ":id/czk") ，因为0评论，和有评论的界面不一样
+            // fullId("com.zhiliaoapp.musically:id/czk")
+            clickId(TikTokPackageName + ":id/czk")
             sleep(random(2000, 3000))
             back()
             sleep(random(2000, 3000))
-            clickId(TikTokPackageName + ":id/cyq")
+            clickId(TikTokPackageName + ":id/czk")
     
     
             sleep(random(10000, 15000))
@@ -262,8 +262,8 @@ function click_Comment_Btn(commentText){
 //点击收藏按钮
 function click_Save_Btn(){
     taskLog("开始准备收藏视频")
-    //fullId("com.zhiliaoapp.musically:id/fc_")
-    clickId(TikTokPackageName + ":id/fc_")
+    //fullId("com.zhiliaoapp.musically:id/fdf")
+    clickId(TikTokPackageName + ":id/fdf")
 
 }
 
