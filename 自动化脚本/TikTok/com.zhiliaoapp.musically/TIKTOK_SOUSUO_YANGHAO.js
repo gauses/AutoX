@@ -216,8 +216,9 @@ function close_friend_suggest(){
 }
 
 
-//点击首页的右上角Search按钮
-function click_home_search_btn(){
+
+   //点击首页的右上角Search按钮
+   function click_home_search_btn(){
     var find_search_btn_count = 0
     if(find_search_btn_count > 5){
         console.error("首页寻找'搜索'按钮超过5次，抛出异常")
@@ -237,9 +238,10 @@ function click_home_search_btn(){
             if (img) {
                 taskLog("第" + (i+1) + "个Image控件-Text：" + img.text() + ";ID = " + img.id());
                 
-                if (img.id() == (TikTokPackageName+":id/gz5")) {
+                //fullId("com.zhiliaoapp.musically:id/h0i")
+                if (img.id() == (TikTokPackageName+":id/h0i")) {
                     gz5_img_count++;
-                    taskLog("这是第" + gz5_img_count + "个gz5按钮");
+                    taskLog("这是第" + gz5_img_count + "个h0i按钮");
                     
                     // 获取父容器信息
                     var parent = img.parent();
@@ -282,6 +284,7 @@ function click_home_search_btn(){
     sleep(random(2000, 5000));
 }
 
+
 //屏幕上滑
 function swipe_to_up(){
     // 获取设备屏幕的宽高
@@ -314,8 +317,8 @@ function click_Second_search_btn(){
             if (btn) {
                 // taskLog("找到Button控件-Text：" + btn.text() + ";ID = " + btn.id());
                 
-                // fullId("com.zhiliaoapp.musically:id/te3")
-                if (btn.id() == (TikTokPackageName +":id/te3")) {
+                // fullId("com.zhiliaoapp.musically:id/tk1")
+                if (btn.id() == (TikTokPackageName +":id/tk1")) {
                     // 正确调用bounds()方法并点击
                     toast("找到Button控件: 第二个页面的搜索框！" );
 
@@ -435,8 +438,8 @@ function click_Author_Page_Btn(){
 //点击点赞按钮
 function click_Like_Btn(){
     taskLog("开始准备点赞视频")
-    //fullId("com.zhiliaoapp.musically:id/e1x")
-    clickId(TikTokPackageName + ":id/e1x")
+    //fullId("com.zhiliaoapp.musically:id/e2n") 
+    clickId(TikTokPackageName + ":id/e2n")
 
 }
 
@@ -444,8 +447,8 @@ function click_Like_Btn(){
 //点击评论按钮
 function click_Comment_Btn(commentText){
     taskLog("开始准备评论视频")
-    //fullId("com.zhiliaoapp.musically:id/cwt")
-    clickId(TikTokPackageName + ":id/cwt")
+    //fullId("com.zhiliaoapp.musically:id/cxm")
+    clickId(TikTokPackageName + ":id/cxm")
 
     sleep(5000)
     var autoCompleteTextViews = className("android.widget.EditText").find();
@@ -464,14 +467,14 @@ function click_Comment_Btn(commentText){
             sleep(5000)
     
     
-            //发送按钮,如果某个tiktok视频，0评论，自己是首评，那么就会找不到fullId("com.zhiliaoapp.musically:id/cyq")
-            //所以必须要执行两次clickId(TikTokPackageName + ":id/cyq") ，因为0评论，和有评论的界面不一样
-            // fullId("com.zhiliaoapp.musically:id/cyq")
-            clickId(TikTokPackageName + ":id/cyq")
+            //发送按钮,如果某个tiktok视频，0评论，自己是首评，那么就会找不到fullId("com.zhiliaoapp.musically:id/czk")
+            //所以必须要执行两次clickId(TikTokPackageName + ":id/czk") ，因为0评论，和有评论的界面不一样
+            // fullId("com.zhiliaoapp.musically:id/czk")
+            clickId(TikTokPackageName + ":id/czk")
             sleep(random(2000, 3000))
             back()
             sleep(random(2000, 3000))
-            clickId(TikTokPackageName + ":id/cyq")
+            clickId(TikTokPackageName + ":id/czk")
     
     
             sleep(random(10000, 15000))
@@ -486,6 +489,11 @@ function click_Comment_Btn(commentText){
                 
             }
     }
+
+    
+
+
+
    
 }
 
@@ -494,8 +502,8 @@ function click_Comment_Btn(commentText){
 //点击收藏按钮
 function click_Save_Btn(){
     taskLog("开始准备收藏视频")
-    //fullId("com.zhiliaoapp.musically:id/fc_")
-    clickId(TikTokPackageName + ":id/fc_")
+    //fullId("com.zhiliaoapp.musically:id/fdf")
+    clickId(TikTokPackageName + ":id/fdf")
 
 }
 
