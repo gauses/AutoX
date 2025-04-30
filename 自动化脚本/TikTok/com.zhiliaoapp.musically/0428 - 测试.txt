@@ -1,6 +1,21 @@
-TIKTOK关注提供的用户列表  -OK ，已经提交更新
+下载TikTok APK：
+https://play.google.com/store/apps/details?id=com.ss.android.ugc.trill
+https://apkcombo.com/downloader/#package=com.ss.android.ugc.trill&arches=arm64-v8a
+
+
+https://play.google.com/store/apps/details?id=com.zhiliaoapp.musically
+https://apkcombo.com/downloader/#package=com.zhiliaoapp.musically&arches=arm64-v8a
+
+
+国际版：com.zhiliaoapp.musically ， 39.7.3(2023907030)
+
 
 Tiktok首页浏览养号 -OK，已经提交更新
+
+
+TIKTOK关注提供的用户列表 
+
+
 
 
 上传视频  - 没有测完
@@ -8,16 +23,26 @@ Tiktok首页浏览养号 -OK，已经提交更新
 
 
 
-将指定视频链接或者直播间链接分享给好友 -OK，已经提交更新
+将指定视频链接或者直播间链接分享给好友 
 1.目前不能支持直播，因为直播链接，测试时，无法从浏览器跳转到TikTok 
 
 
 
-TIKTOK给用户ID列表私信 - OK ，已经提交更新
+TIKTOK给用户ID列表私信
 
 
 
-TikTok根据关键词，搜索视频养号，可评论，点赞 - OK ，已经提交更新
+TikTok根据关键词，搜索视频养号，可评论，点赞 
+
+
+
+
+
+Asia版：com.ss.android.ugc.trill，39.7.3(390703)
+
+
+
+
 
 
 

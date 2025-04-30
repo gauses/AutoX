@@ -227,9 +227,10 @@ function click_home_search_btn(){
             if (img) {
                 taskLog("第" + (i+1) + "个Image控件-Text：" + img.text() + ";ID = " + img.id());
                 
-                if (img.id() == (TikTokPackageName+":id/gz5")) {
+                //fullId("com.zhiliaoapp.musically:id/h0i")
+                if (img.id() == (TikTokPackageName+":id/h0i")) {
                     gz5_img_count++;
-                    taskLog("这是第" + gz5_img_count + "个gz5按钮");
+                    taskLog("这是第" + gz5_img_count + "个h0i按钮");
                     
                     // 获取父容器信息
                     var parent = img.parent();
@@ -308,8 +309,8 @@ function click_Second_search_btn(){
             if (btn) {
                 // taskLog("找到Button控件-Text：" + btn.text() + ";ID = " + btn.id());
                 
-                // fullId("com.zhiliaoapp.musically:id/te3")
-                if (btn.id() == (TikTokPackageName +":id/te3")) {
+                // fullId("com.zhiliaoapp.musically:id/tk1")
+                if (btn.id() == (TikTokPackageName +":id/tk1")) {
                     // 正确调用bounds()方法并点击
                     toast("找到Button控件: 第二个页面的搜索框！" );
 
@@ -336,8 +337,8 @@ function click_LinearLayout_GUANZHU(){
             if (linearLayout) {
                 taskLog("找到linearLayout控件-Text：" + linearLayout.text() + ";ID = " + linearLayout.id());
                 
-				//fullId("com.zhiliaoapp.musically:id/ixc")
-                var linearLayout_click = clickId(TikTokPackageName +":id/ixc")
+				//fullId("com.zhiliaoapp.musically:id/iz8")
+                var linearLayout_click = clickId(TikTokPackageName +":id/iz8")
                 if (linearLayout_click) {
                     taskLog("找到LinearLayout控件:开始点击第一个" );
                     break;
@@ -483,62 +484,6 @@ function click_Author_Page_Btn(){
     sleep(random(3000,5000));
     back();
 }
-
-//点击点赞按钮
-function click_Like_Btn(){
-    taskLog("开始准备点赞视频")
-    clickId("dh4") 
-}
-
-
-
-//点击评论按钮
-function click_Comment_Btn(commentText){
-    taskLog("开始准备评论视频")
-    clickId("cgq")
-
-    sleep(5000)
-    var autoCompleteTextViews = className("android.widget.EditText").find();
-    for(var i = 0; i < autoCompleteTextViews.size(); i++) {
-        var textView = autoCompleteTextViews.get(i);
-        if(textView) {
-            taskLog("找到TextView控件-Text："+ textView.text());
-            sleep(1000)
-            taskLog("评论控件，设置内容：" +commentText );
-            textView.setText(commentText)
-            sleep(10000)
-
-            var flag = clickId("cik") //发送按钮
-            // if(flag){
-            //     sleep(3000)
-            //     back();
-            // }
-
-            sleep(2000)
-            // clickId("aru") //评论区右上角关闭按钮
-
-            var clickX = device.width  - 100 ; 
-            var clickY = device.width /4; 
-            taskLog("开始准备点击屏幕 clickX = " + clickX)
-            taskLog("开始准备点击屏幕 clickY = " + clickY)
-            click(clickX, clickY);
-            
-            
-        }
-    }
-   
-
-}
-
-//点击收藏按钮
-function click_Save_Btn(){
-    taskLog("开始准备收藏视频")
-    // id("egc").className("android.widget.ImageView").findOne().click()
-    clickId("egc")
-
-}
-
-
 
 
 
