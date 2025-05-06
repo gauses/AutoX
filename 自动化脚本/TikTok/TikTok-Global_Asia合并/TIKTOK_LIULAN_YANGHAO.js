@@ -28,6 +28,10 @@ const TT_Save_Count = "$${收藏概率}" //收藏概率
 const TT_Watch_Author_Page= 0 //查看作者主页的概率
 
 
+var targetPackageName = null;
+var targetClassName = null;
+
+
 //1.autox.js侧边栏的打开USB调试先打开
 //2.vscode ctrl+shift+p 输入start all server 确定
 //3.远程连接成功
@@ -47,7 +51,7 @@ var handleErrorFlag = false //默认没有错误，如果出现异常，那么�
         console.error("Tiktok根據推薦影片，自動瀏覽養號.評論.點讚---------------");
         console.error("脚本执行时间：" + new Date().toLocaleString());
     }else{
-        forceStop_APP(GLOBAL_TikTokPackageName)
+        forceStop_APP(targetPackageName)
         console.log("-----------------脚本功能执行结束：---------------");
         console.log("Tiktok根據推薦影片，自動瀏覽養號.評論.點讚---------------");
         console.log("脚本执行时间：" + new Date().toLocaleString());
@@ -57,7 +61,7 @@ var handleErrorFlag = false //默认没有错误，如果出现异常，那么�
 
 function handleError(e) {
     handleErrorFlag = true
-    forceStop_APP(GLOBAL_TikTokPackageName)
+    forceStop_APP(targetPackageName)
     console.error("===错误报告开始===");
     console.error("错误信息：" + e);
     console.error("错误堆栈：" + e.stack);
@@ -99,8 +103,7 @@ if (runningEngines.length > 1) {
 sleep(3000)
 taskLog("准备启动TikTok...")
 
-var targetPackageName = null;
-var targetClassName = null;
+
 
 function isAppInstalled(packageName) {
     var pm = context.getPackageManager();
