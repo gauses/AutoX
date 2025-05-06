@@ -94,17 +94,48 @@ if (runningEngines.length > 1) {
   })
 }
 
-forceStop_APP(GLOBAL_TikTokPackageName)
 
 sleep(3000)
 taskLog("准备启动TikTok...")
-toast("准备启动TikTok...")
+
+var targetPackageName = null;
+var targetClassName = null;
+
+function isAppInstalled(packageName) {
+    var pm = context.getPackageManager();
+    try {
+        pm.getPackageInfo(packageName, 0);
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
+
+if (isAppInstalled(GLOBAL_TikTokPackageName)) {
+    targetPackageName = GLOBAL_TikTokPackageName;
+    targetClassName = "com.ss.android.ugc.aweme.main.MainActivity";
+    taskLog("检测到已安装全球版TikTok，准备启动...");
+} else if (isAppInstalled(ASIA_TikTokPackageName)) {
+    targetPackageName = ASIA_TikTokPackageName;
+    targetClassName = "com.ss.android.ugc.aweme.main.MainActivity";
+    taskLog("检测到已安装亚洲版TikTok，准备启动...");
+} else {
+    toast("未检测到TikTok已安装，请先安装TikTok！");
+    taskLog("未检测到TikTok已安装，脚本终止。");
+    exit();
+}
+
+forceStop_APP(targetPackageName)
 sleep(3000)
+
 app.startActivity({
     action: "android.intent.action.VIEW",
-    packageName: GLOBAL_TikTokPackageName,
-    className: "com.ss.android.ugc.aweme.main.MainActivity"
+    packageName: targetPackageName,
+    className: targetClassName
 });
+
+
+sleep(random(3000, 5000))
 
 
 //强制停止TikTok 
@@ -195,14 +226,6 @@ function forceStop_APP(packageName){
 }
 
 
-//推荐好友的弹窗，直接关闭
-function close_friend_suggest(){
-    if(id("c67").exists()){
-        sleep(3000)
-        id("c67").click()
-    }
-}
-
 
 
 
@@ -228,7 +251,8 @@ function click_home_search_btn(){
                 taskLog("第" + (i+1) + "个Image控件-Text：" + img.text() + ";ID = " + img.id());
                 
                 //fullId("com.zhiliaoapp.musically:id/h0i")
-                if (img.id() == (GLOBAL_TikTokPackageName+":id/h0i")) {
+                //fullId("com.ss.android.ugc.trill:id/h0j")
+                if (img.id() == (GLOBAL_TikTokPackageName+":id/h0i") || img.id() == (ASIA_TikTokPackageName+":id/h0j")) {
                     gz5_img_count++;
                     taskLog("这是第" + gz5_img_count + "个h0i按钮");
                     
@@ -310,7 +334,8 @@ function click_Second_search_btn(){
                 // taskLog("找到Button控件-Text：" + btn.text() + ";ID = " + btn.id());
                 
                 // fullId("com.zhiliaoapp.musically:id/tk1")
-                if (btn.id() == (GLOBAL_TikTokPackageName +":id/tk1")) {
+                // fullId("com.ss.android.ugc.trill:id/tk4")
+                if (btn.id() == (GLOBAL_TikTokPackageName +":id/tk1") || btn.id() == (ASIA_TikTokPackageName +":id/tk4")) {
                     // 正确调用bounds()方法并点击
                     toast("找到Button控件: 第二个页面的搜索框！" );
 
@@ -338,16 +363,20 @@ function click_LinearLayout_GUANZHU(){
                 taskLog("找到linearLayout控件-Text：" + linearLayout.text() + ";ID = " + linearLayout.id());
                 
 				//fullId("com.zhiliaoapp.musically:id/iz8")
-                var linearLayout_click = clickId(GLOBAL_TikTokPackageName +":id/iz8")
-                if (linearLayout_click) {
-                    taskLog("找到LinearLayout控件:开始点击第一个" );
-                    break;
+                //fullId("com.ss.android.ugc.trill:id/iz9")
+
+                if (linearLayout.id() == (GLOBAL_TikTokPackageName +":id/iz8") || linearLayout.id() == (ASIA_TikTokPackageName +":id/iz9")) {
+                    var linearLayout_click = clickId(linearLayout.id())
+                    if (linearLayout_click) {
+                        taskLog("找到LinearLayout控件:开始点击第一个" );
+                        break;
                 }
                 
             }
         }
     }
     sleep(random(2000, 5000))
+}
 }
 
 
@@ -734,8 +763,8 @@ function find_textview_text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US)
 
 try{
     
-    taskLog("打开TikTok成功...")
-    sleep(10000)
+    taskLog("打开TikTok成功，首页会停留10-15秒...")
+    sleep(random(10000, 15000))
 
 
     // 用于存储评论的数组
@@ -765,14 +794,12 @@ try{
         comments = [];
     }
 
-    toast("可用的搜索用户ID, 一共的数量有： " + comments.length);
+    taskLog("可用的搜索用户ID, 一共的数量有： " + comments.length);
 
 
     taskLog("开始点击首页搜索按钮")
     click_home_search_btn()
     sleep(random(2000, 4000))
-
-
 
     // 按照顺序开始执行搜索User-ID
     toast("- 找到可用的搜索用户ID, 一共的数量有： " + comments.length);
