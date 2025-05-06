@@ -4,7 +4,7 @@ importClass(java.io.PrintWriter);
 importClass(java.io.FileWriter);
 
 //******************************************************************
-//***********************自動修改簡介(頭像.名稱.使用者名稱.個人簡介.)*************************
+//***********************上传视频*************************
 //******************************************************************
 
 
@@ -16,10 +16,10 @@ var taskLogImgName = "nest_task_log.png"
 
 
 //名稱.使用者名稱.個人簡介
-const TT_PROFILE_HEAD_IMAGE = '$${T_個人頭像地址}';
-const TT_PROFILE_NAME = '$${名稱}';
-const TT_PROFILE_USERNAME = '$${使用者名稱}';
-const TT_PROFILE_BIO = '$${個人簡介}';
+const TT_UPLOAD_VIDEO_URL = '$${T_需要上傳影片的本地地址}';
+const TT_UPLOAD_VIDEO_TITLE = '$${T_上傳影片的标题}';
+const TT_UPLOAD_VIDEO_DESC = '$${T_上傳影片的說明}';
+
 
 
 var ASIA_TikTokPackageName = 'com.ss.android.ugc.trill';
@@ -29,7 +29,7 @@ var targetPackageName = null;
 var targetClassName = null;
 
 //将需要处理的多媒体图片，单独copy一份放到这个文件夹里面，后面处理完成之后，再删除这个文件夹
-var A_NEST_TikTok_MEDIA = 'A_NEST_TikTok_MEDIA'; 
+var A_NEST_TikTok_MEDIA = 'A_NEST_TikTok_MEDIA';    
 
 
 //1.autox.js侧边栏的打开USB调试先打开
@@ -56,7 +56,7 @@ var handleErrorFlag = false //默认没有错误，如果出现异常，那么�
         console.error("Tiktok根據關鍵字，搜尋影片瀏覽養號，評論，點讚---------------");
         console.error("脚本执行时间：" + new Date().toLocaleString());
     }else{
-        forceStop_APP(targetPackageName)
+        forceStop_APP(GLOBAL_TikTokPackageName)
         console.log("-----------------脚本功能执行结束：---------------");
         console.log("Tiktok根據關鍵字，搜尋影片瀏覽養號，評論，點讚---------------");
         console.log("脚本执行时间：" + new Date().toLocaleString());
@@ -66,7 +66,7 @@ var handleErrorFlag = false //默认没有错误，如果出现异常，那么�
 
 function handleError(e) {
     handleErrorFlag = true
-    forceStop_APP(targetPackageName)
+    forceStop_APP(GLOBAL_TikTokPackageName)
     console.error("===错误报告开始===");
     console.error("错误信息：" + e);
     console.error("错误堆栈：" + e.stack);
@@ -90,7 +90,7 @@ function openLogActivity() {
 
 
 //显示控制窗：https://github.com/kkevsekk1/AutoX/issues/868
- //console.show()
+// console.show()
 
 
 
@@ -108,12 +108,10 @@ if (runningEngines.length > 1) {
   })
 }
 
-
 sleep(3000)
 taskLog("准备启动TikTok...")
 
-var targetPackageName = null;
-var targetClassName = null;
+
 
 function isAppInstalled(packageName) {
     var pm = context.getPackageManager();
@@ -149,30 +147,84 @@ app.startActivity({
 });
 
 
-taskLog("打开Tiktok，等待13-15秒..." )
+taskLog("等待TikTok启动完成, 等待时间：" + 13 - 15 + "s")
 sleep(random(13000, 15000))
+toast("本地视频地址：" + TT_UPLOAD_VIDEO_URL)
 
 
-// refreshMedia("/storage/emulated/0/Download/")
-
-// taskLog("头像地址：" + TT_PROFILE_HEAD_IMAGE)
 
 //******************************************************************
 //******************************************************************
 //******************************************************************
 
-//转移头像图片到Nest临时文件夹
-function transferHeadImageToNest(fileName){
-    let imagePath = null;
 
-    //检查文件是否存在
-    if (files.exists(fileName)) {
-        imagePath = fileName;
+
+
+//从评论数组中，顺序挑选一条标题
+function get_TITLE_comment_text(){
+    let comments = [];
+    // 户是否存在
+    taskLog("TT_UPLOAD_VIDEO_TITLE评论数组 =  " + TT_UPLOAD_VIDEO_TITLE)
+    const file = new java.io.File(TT_UPLOAD_VIDEO_TITLE);
+    if (file.exists() && file.isFile()) {
+        try {
+            // 读取文件内容
+            const reader = new java.io.BufferedReader(new java.io.FileReader(file));
+            let line;
+            while ((line = reader.readLine()) !== null) {
+                comments.push(line);
+            }
+            reader.close();
+        } catch (e) {
+            taskLog("读取文件时发生错误：" + e.message);
+        }
+    } else {
+        // 如果文件不存在，将文件名添加到数组中
+        comments.push(TT_UPLOAD_VIDEO_TITLE);
     }
     
-    if (!imagePath) {
-        console.error("未找到指定图片：" + fileName);
-        toast("未找到指定图片：" + fileName);
+    return comments
+}
+
+
+//从评论数组中，顺序挑选一条描述
+function get_DESC_comment_text(){
+    let comments = [];
+    // 户是否存在
+    taskLog("TT_UPLOAD_VIDEO_DESC评论数组 =  " + TT_UPLOAD_VIDEO_DESC)
+    const file = new java.io.File(TT_UPLOAD_VIDEO_DESC);
+    if (file.exists() && file.isFile()) {
+        try {
+            // 读取文件内容
+            const reader = new java.io.BufferedReader(new java.io.FileReader(file));
+            let line;
+            while ((line = reader.readLine()) !== null) {
+                comments.push(line);
+            }
+            reader.close();
+        } catch (e) {
+            taskLog("读取文件时发生错误：" + e.message);
+        }
+    } else {
+        // 如果文件不存在，将文件名添加到数组中
+        comments.push(TT_UPLOAD_VIDEO_DESC);
+    }
+    
+    return comments
+}
+
+
+//转移视频到Nest临时文件夹
+function transferVideoToNest(fileName){
+    let videoPath = null;
+    if (files.exists(fileName)) {
+        videoPath = fileName;
+    }
+    
+    if (!videoPath) {
+        console.error("未找到指定视频：" + fileName);
+        toast("未找到指定视频：" + fileName);
+        //throw new error("没有找到需要上传的视频，所以异常直接退出")
         return;
     }
 
@@ -183,53 +235,26 @@ function transferHeadImageToNest(fileName){
     if(!files.exists(newFolder)){
         files.ensureDir(newFolder);
         console.log("创建文件夹: " + newFolder);
-    }else{
-        files.removeDir(newFolder);
-        files.ensureDir(newFolder);
-        console.log("删除文件夹: " + newFolder);
     }
-    // 目标图片路径(在新文件夹中)
-    const targetFileName = files.getName(imagePath);
+
+    // 目标视频路径(在新文件夹中)
+    const targetFileName = files.getName(videoPath);
     const targetPath = newFolder + "/" + targetFileName;
-    console.log("新图片文件的绝对路径: " + targetPath);
+    console.log("新视频文件的绝对路径: " + targetPath);
     // 复制图片文件
     try {
-        files.copy(imagePath, targetPath);
+        files.copy(videoPath, targetPath);
         console.log("复制成功!");
-        console.log("新图片路径: " + targetPath);
+        console.log("新视频路径: " + targetPath);
     } catch(e) {
         console.error("复制失败: " + e);
     }
 
     sleep(3000);
 
-
     refreshMedia(newFolder)
-    sleep(10000);
 
 
-    // 创建文件对象并获取URI
-    let file = new java.io.File(targetPath);
-    let uri = app.getUriForFile(targetPath);
-    
-    // 创建打开图片的 Intent
-    let intent = new Intent(Intent.ACTION_VIEW);
-    intent.setDataAndType(uri, "image/*");
-    // 添加必要的权限标志
-    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-    intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-
-    // 指定使用系统默认的图库应用
-    intent.setPackage("com.android.gallery3d");  // 系统默认图库的包名
-    // 如果上面的包名不生效，可以尝试：
-    // intent.setPackage("com.google.android.apps.photos");  // Google Photos
-    // intent.setPackage("com.sec.android.gallery3d");  // 三星图库
-    // intent.setPackage("com.miui.gallery");  // 小米图库
-
-    // 启动图片查看Activity
-    // context.startActivity(intent);
-    // 等待界面加载
-    sleep(3000);
 
     return targetPath
 
@@ -259,9 +284,7 @@ function click_update_profile_head_image(){
             if (img) {
                 console.log("准备找Image控件: img ID = " + img.id() );
 
-                //fullId("com.zhiliaoapp.musically:id/gub")
-                //fullId("com.ss.android.ugc.trill:id/gvr")
-                if (img.id() == (GLOBAL_TikTokPackageName + ":id/gub") || img.id() == (ASIA_TikTokPackageName + ":id/gvr")) {
+                if (img.id() == (GLOBAL_TikTokPackageName +":id/fzc")) {
                     // 正确调用bounds()方法并点击
                     taskLog("找到Image控件: 个人头像修改按钮" );
 
@@ -288,9 +311,8 @@ function click_update_profile_head_image_from_photos(){
             var img = allImages.get(i);
             if (img) {
                 
-                // fullId("com.zhiliaoapp.musically:id/ve")
-                //fullId("com.ss.android.ugc.trill:id/ve")
-                if (img.id() == (GLOBAL_TikTokPackageName +":id/ve") || img.id() == (ASIA_TikTokPackageName +":id/ve")) {
+                // 检查ID是否为"u3"
+                if (img.id() == (GLOBAL_TikTokPackageName +":id/u3")) {
                     // 正确调用bounds()方法并点击
                     if(i == 1){
                         taskLog("找到Image控件: 从图片库中选择" );
@@ -314,11 +336,10 @@ function click_update_profile_head_image_from_photos(){
  * @param {string} fileName 要选择的图片文件名
  */
 function selectImageByButton(fileName) {
-
+    
     try {
 
-        //点击顶部按钮：全部
-        //TextView全部：fullId("com.ss.android.ugc.trill:id/rcg")
+        
         var allTextView = className("android.widget.TextView").find();
         taskLog("找到allTextView: 全部 = "  + allTextView.size());
         if (allTextView && allTextView.size() > 0) {
@@ -327,7 +348,8 @@ function selectImageByButton(fileName) {
                 if (textView) {
                     taskLog("找到textView控件-Text：" + textView.text());
                     
-                    //fullId("com.zhiliaoapp.musically:id/tke")
+                    //点击顶部按钮：全部
+                    //TextView全部：fullId("com.zhiliaoapp.musically:id/tke")
                     //fullId("com.ss.android.ugc.trill:id/tqj")
                     if (textView.id() == (GLOBAL_TikTokPackageName +":id/tke") || textView.id() == (ASIA_TikTokPackageName +":id/tqj")) {
                         // 正确调用bounds()方法并点击
@@ -368,68 +390,83 @@ function selectImageByButton(fileName) {
         }
 
 
-        sleep(3000);
+        sleep(5000);
         
         // 查找并点击指定按钮（其实只需要点击第一个图片的按钮就行了，因为肯定就是第一张图片）
-        //fullId("com.zhiliaoapp.musically:id/hj2")
+
+        // 使用fullId("com.zhiliaoapp.musically:id/hj2")来查找按钮
         //fullId("com.ss.android.ugc.trill:id/hkm")
-        let selectButton = null;
+        var autoSelectButton = null;
         if(targetPackageName == GLOBAL_TikTokPackageName){
-            selectButton = className("android.widget.Button")
-                .id(GLOBAL_TikTokPackageName +":id/hj2")
-                .findOne(5000);  // 等待最多5秒
+            autoSelectButton = id(GLOBAL_TikTokPackageName + ":id/hj2").find();
         }else{
-            selectButton = className("android.widget.Button")
-                .id(ASIA_TikTokPackageName +":id/hkm")
-                .findOne(5000);  // 等待最多5秒
+            autoSelectButton = id(ASIA_TikTokPackageName + ":id/hkm").find();
         }
-            
-        if (selectButton) {
-            // 点击选择按钮
-            selectButton.click();
-            console.log("成功点击选择按钮");
+        
+        for(var i = 0; i < autoSelectButton.size(); i++) {
+            var selectButton = autoSelectButton.get(i);
+            if(selectButton) {
+                sleep(1000)
+                // 点击选择按钮
+                selectButton.click();
+                console.log("成功点击选择按钮");
 
-            sleep(5000)
-            //点击下一步
-            //fullId("com.zhiliaoapp.musically:id/qxd")
-            //fullId("com.ss.android.ugc.trill:id/r1r")
-            if(targetPackageName == GLOBAL_TikTokPackageName){
-                clickId(GLOBAL_TikTokPackageName +":id/qxd")
-            }else{
-                clickId(ASIA_TikTokPackageName +":id/r1r")
+                sleep(5000)
+                //点击下一步
+                // fullId("com.zhiliaoapp.musically:id/qxd")
+                // fullId("com.ss.android.ugc.trill:id/r1r")
+                if(targetPackageName == GLOBAL_TikTokPackageName){
+                    clickId(GLOBAL_TikTokPackageName + ":id/qxd")
+                }else{
+                    clickId(ASIA_TikTokPackageName + ":id/r1r")
+                }
+
+                //发布视频时才会有这个按钮，修改头像时没有这个按钮
+                sleep(5000)
+                //点击下一步
+                // fullId("com.zhiliaoapp.musically:id/l4w")
+                // fullId("com.ss.android.ugc.trill:id/l7b")
+                if(targetPackageName == GLOBAL_TikTokPackageName){
+                    clickId(GLOBAL_TikTokPackageName + ":id/l4w")
+                }else{
+                    clickId(ASIA_TikTokPackageName + ":id/l7b")
+                }
+
+
+                //可能会出现一个下拉框，提示二次创作：text("確定")
+                find_btn_Text_base("確定", "确定", "OK")
+
+                sleep(3000)
+                click_Video_desc()
+
+                sleep(5000)
+                //点击Post
+                //fullId("com.zhiliaoapp.musically:id/neo")
+                //之前找不到ID，所以直接点击最后一个Button
+                var allPostButtons = className("android.widget.Button").find();
+                if (allPostButtons && allPostButtons.size() > 0) {
+                    var lastPostButton = allPostButtons.get(allPostButtons.size() - 1);
+                    if (lastPostButton) {
+                        lastPostButton.click();
+                        break
+                    }
+                }
+                sleep(5000)
+
+                //可能会出现一个下拉框，提示是否添加到主屏幕:text("ADD TO HOME SCREEN")
+                find_btn_Text_base("添加到主屏幕", "新增到主螢幕", "ADD TO HOME SCREEN")
+
+                sleep(60000) //上传需要耗时
+
+
+                //删除临时媒体文件夹
+                const delFolder = "/storage/emulated/0/Download/" + A_NEST_TikTok_MEDIA;  // 替换成你想要的文件夹路径
+                deleteNestMediaFile(delFolder)
+
+                break;
+
+
             }
-            sleep(5000)
-            //点击储存并发布
-            //fullId("com.zhiliaoapp.musically:id/sr9")
-            //fullId("com.ss.android.ugc.trill:id/swr")
-            if(targetPackageName == GLOBAL_TikTokPackageName){
-                clickId(GLOBAL_TikTokPackageName +":id/sr9")
-            }else{
-                clickId(ASIA_TikTokPackageName +":id/swr")
-            }
-            sleep(5000)
-
-            //出现一个下拉框，提示点击储存并发布
-            //fullId("com.zhiliaoapp.musically:id/mmy")
-            //在com.ss.android.ugc.trill 没有遇到过
-            if(targetPackageName == GLOBAL_TikTokPackageName){
-                clickId(GLOBAL_TikTokPackageName +":id/mmy")
-            }else{
-                //clickId(ASIA_TikTokPackageName +":id/mmy")
-            }
-
-
-
-
-            sleep(30000) //上传需要耗时
-
-            //删除临时媒体文件夹
-            deleteNestMediaFile("/storage/emulated/0/Download/" + A_NEST_TikTok_MEDIA)
-
-            return true;
-        } else {
-            console.error("未找到选择按钮");
-            return false;
         }
         
     } catch (e) {
@@ -524,24 +561,34 @@ function debugImageFind(fileName) {
 
 // 刷新指定路径的媒体库
 function refreshMedia(path) {
-    taskLog("开始刷新媒体库，用时5秒钟....");
-    // 发送媒体扫描广播
-    media.scanFile(path);
-    // 等待扫描完成
-    sleep(5000);
-    taskLog("媒体库刷新完成，开始下一步任务...");
+    try {
+        toast("开始刷新媒体库，用时5秒钟....");
+        // 发送媒体扫描广播
+        media.scanFile(path);
+        // 等待扫描完成
+        sleep(5000);
+        toast("媒体库刷新完成，开始下一步任务...");
+    } catch (error) {
+        toast("path = " + path + " 媒体库刷新失败，error = " + error);
+    }
+
 }
 
 // 刷新整个存储的媒体库
 function refreshAllMedia() {
-    toast("开始刷新媒体库，用时5秒钟....");
-    // 获取外部存储路径
-    let storage = files.externalStorage();
-    // 发送媒体扫描广播
-    media.scanFile(storage);
-    // 等待扫描完成
-    sleep(5000);
-    toast("媒体库刷新完成，开始下一步任务...");
+    try {
+        toast("开始刷新媒体库，用时5秒钟....");
+        // 获取外部存储路径
+        let storage = files.externalStorage();
+        // 发送媒体扫描广播
+        media.scanFile(storage);
+        // 等待扫描完成
+        sleep(5000);
+        toast("媒体库刷新完成，开始下一步任务...");
+    } catch (error) {
+        toast("refreshAllMedia , 媒体库刷新失败，error = " + error);
+    }
+    
 }
 
 function checkDownloadFiles(targetFileName) {
@@ -585,6 +632,7 @@ function checkDownloadFiles(targetFileName) {
         // 获取所有文件
         let fileList = files.listDir(DOWNLOAD_PATH);
         console.log("\n=== 文件列表（共" + fileList.length + "个文件）===");
+        toast("文件列表（共" + fileList.length + "个文件）")
         
         // 遍历所有文件
         let foundFiles = [];
@@ -634,6 +682,8 @@ function checkDownloadFiles(targetFileName) {
     
     console.log("\n========= 检查完成 =========");
 }
+
+
 
 
 
@@ -726,7 +776,6 @@ function forceStop_APP(packageName){
 }
 
 
-
 //推荐好友的弹窗，直接关闭
 function close_friend_suggest(){
     if(id("c67").exists()){
@@ -789,7 +838,6 @@ function clickId(a) {
     // 验证 X 和 Y 是否为正数
     if (X < 0 || Y < 0) {
         taskLog("坐标无效，中心点X或Y为负值: X=" + X + ", Y=" + Y);
-        toast("坐标无效，中心点X或Y为负值: X=" + X + ", Y=" + Y);
         return false;
     }
 
@@ -820,6 +868,7 @@ function clickId(a) {
 
 //打印日志
 function taskLog(_log){
+    toast(_log)
     console.log(getSystemDate("df") +":" +_log)
 
     //通过日志判断任务有没有结束：
@@ -921,9 +970,9 @@ function find_btn_Text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
          }
 
          // 查找控件
-         var button1 = className("android.widget.Button").text(findText_ZH_CN).findOne(1000);
-         var button2 = className("android.widget.Button").text(findText_ZH_TW).findOne(1000);
-         var button3 = className("android.widget.Button").text(findText_EN_US).findOne(1000);
+         var button1 = className("android.widget.Button").text(findText_ZH_CN).findOne(3000);
+         var button2 = className("android.widget.Button").text(findText_ZH_TW).findOne(3000);
+         var button3 = className("android.widget.Button").text(findText_EN_US).findOne(3000);
 
          if (button1) {
              taskLog("找到" + findText_ZH_CN);
@@ -1006,9 +1055,9 @@ function find_btn_desc_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
             //  var button1 = className("android.widget.Button").desc(findText_ZH_CN).findOne(1000);
             //  var button2 = className("android.widget.Button").desc(findText_ZH_TW).findOne(1000);
             //  var button3 = className("android.widget.Button").desc(findText_EN_US).findOne(1000);
-            var button1 = desc(findText_ZH_CN).findOne(1000);
-            var button2 = desc(findText_ZH_TW).findOne(1000);
-            var button3 = desc(findText_EN_US).findOne(1000);
+            var button1 = desc(findText_ZH_CN).findOne(3000);
+            var button2 = desc(findText_ZH_TW).findOne(3000);
+            var button3 = desc(findText_EN_US).findOne(3000);
 
 
              if (button1) {
@@ -1113,9 +1162,9 @@ function find_textview_text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US)
          }
 
          // 查找控件
-        var button1 = className("android.widget.TextView").text(findText_ZH_CN).findOne(1000);
-        var button2 = className("android.widget.TextView").text(findText_ZH_TW).findOne(1000);
-        var button3 = className("android.widget.TextView").text(findText_EN_US).findOne(1000);
+        var button1 = className("android.widget.TextView").text(findText_ZH_CN).findOne(3000);
+        var button2 = className("android.widget.TextView").text(findText_ZH_TW).findOne(3000);
+        var button3 = className("android.widget.TextView").text(findText_EN_US).findOne(3000);
 
         if (button1) {
             taskLog("找到" + findText_ZH_CN);
@@ -1195,173 +1244,281 @@ function find_textview_text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US)
 }
 
 
+// 已经知道底部View的id是iy8，获取到这个view，拿到宽高，再点击这个view的中心位置，即可
+// className("android.widget.LinearLayout")
+function click_bottom_center_for_post_video(){
+
+    toast("开始寻找底部➕号按钮....")
+    // 通过ID选择器查找控件
+
+    let view = id("com.ss.android.ugc.trill:id/iy8").className("android.widget.LinearLayout").findOne(3000);
+
+    if (view) {
+        let bounds = view.bounds();
+        let width = bounds.width();
+        let height = bounds.height();
+        
+        console.log("控件宽度: " + width);
+        console.log("控件高度: " + height);
+        
+        // 计算中心点坐标
+        let centerX = bounds.centerX();
+        let centerY = bounds.centerY();
+        
+        // 尝试点击，最多重试3次
+        let maxRetries = 3;
+        let clickSuccess = false;
+        
+        for (let i = 0; i < maxRetries && !clickSuccess; i++) {
+            console.log("尝试第" + (i + 1) + "次点击");
+            
+            // 先尝试控件点击
+            clickSuccess = view.click();
+            
+            if (!clickSuccess) {
+                // 如果控件点击失败，等待短暂时间后尝试坐标点击
+                sleep(500);
+                click(centerX, centerY);
+                
+                // 等待一下看是否点击成功（可以根据实际情况判断点击后的界面变化）
+                sleep(1000);
+                
+                // 这里可以添加判断点击是否成功的逻辑
+                // 比如检查界面是否发生预期变化
+                clickSuccess = true
+            }
+        }
+        
+        if (clickSuccess) {
+            console.log("点击成功");
+        } else {
+            console.log("多次尝试后仍然点击失败");
+            toast("因为一直没有找到底部的+号按钮，导致无法进入发布视频的界面，所以终止任务直接报错")
+            // throw new error("因为一直没有找到底部的+号按钮，导致无法进入发布视频的界面，所以终止任务直接报错")
+        }
+    } else {
+        console.log("未找到指定控件");
+    }
+}
+
+
+function click_choose_video_framelayout(){
+
+    click_permission_allow()
+
+    toast("开始点击选择图片的跳转按钮....")
+    // 通过ID选择器查找控件
+    // fullId("com.zhiliaoapp.musically:id/cg7")
+    let view = id(GLOBAL_TikTokPackageName + ":id/cg7").className("android.widget.FrameLayout").findOne();
+
+
+    if (view) {
+        let bounds = view.bounds();
+        let width = bounds.width();
+        let height = bounds.height();
+        
+        console.log("控件宽度: " + width);
+        console.log("控件高度: " + height);
+        
+        // 计算中心点坐标
+        let centerX = bounds.centerX();
+        let centerY = bounds.centerY();
+        
+        // 尝试点击，最多重试3次
+        let maxRetries = 3;
+        let clickSuccess = false;
+        
+        for (let i = 0; i < maxRetries && !clickSuccess; i++) {
+            console.log("尝试第" + (i + 1) + "次点击");
+            
+            // 先尝试控件点击
+            clickSuccess = view.click();
+            
+            if (!clickSuccess) {
+                // 如果控件点击失败，等待短暂时间后尝试坐标点击
+                sleep(500);
+                click(centerX, centerY);
+                
+                // 等待一下看是否点击成功（可以根据实际情况判断点击后的界面变化）
+                sleep(1000);
+                
+                // 这里可以添加判断点击是否成功的逻辑
+                // 比如检查界面是否发生预期变化
+                clickSuccess = true
+            }
+        }
+        
+        if (clickSuccess) {
+            console.log("点击成功");
+        } else {
+            console.log("多次尝试后仍然点击失败");
+            toast("因为一直没有找到底部的+号按钮，导致无法进入发布视频的界面，所以终止任务直接报错")
+            //throw new error("因为一直没有找到底部的+号按钮，导致无法进入发布视频的界面，所以终止任务直接报错")
+        }
+    } else {
+        console.log("未找到指定控件");
+    }
+}
+
+//给视频输入desc内容
+function click_Video_desc(){
+    taskLog("开始准备输入视频描述")
+
+    sleep(3000)
+    //短描述：fullId("com.zhiliaoapp.musically:id/epv")
+    //fullId("com.ss.android.ugc.trill:id/eqx")
+
+
+    //长描述：fullId("com.zhiliaoapp.musically:id/epu")
+    //fullId("com.ss.android.ugc.trill:id/eqw")
+
+    var autoCompleteTextViews = className("android.widget.EditText").find();
+    for(var i = 0; i < autoCompleteTextViews.size(); i++) {
+        var textView = autoCompleteTextViews.get(i);
+        if(textView) {
+
+            sleep(1000)
+
+            //标题
+            var all_TT_TITLE_text = []
+            if(TT_UPLOAD_VIDEO_TITLE && 
+                TT_UPLOAD_VIDEO_TITLE.trim() !== "" && 
+                TT_UPLOAD_VIDEO_TITLE.trim().toLowerCase() !== "off" && 
+                !TT_UPLOAD_VIDEO_TITLE.includes("$${")){
+                    all_TT_TITLE_text = get_TITLE_comment_text()
+            }
+
+            //描述
+            var all_TT_DESC_text = []
+            if(TT_UPLOAD_VIDEO_DESC && 
+                TT_UPLOAD_VIDEO_DESC.trim() !== "" && 
+                TT_UPLOAD_VIDEO_DESC.trim().toLowerCase() !== "off" && 
+                !TT_UPLOAD_VIDEO_DESC.includes("$${")){
+                    all_TT_DESC_text = get_DESC_comment_text()
+            }
+
+
+            if(all_TT_TITLE_text.length > 0){
+                var randTitleIdx = random(0, all_TT_TITLE_text.length - 1)
+                var titleText = all_TT_TITLE_text[randTitleIdx];
+                taskLog("标题：" + titleText);
+                //短描述
+                if(textView.id() == GLOBAL_TikTokPackageName + ":id/epv" || textView.id() == ASIA_TikTokPackageName + ":id/eqx"){
+                    textView.setText(titleText)
+                    sleep(random(3000,5000))
+                } 
+
+            }
+
+
+            if(all_TT_DESC_text.length > 0){
+                var randDescIdx = random(0, all_TT_DESC_text.length - 1)
+                var descText = all_TT_DESC_text[randDescIdx];
+                taskLog("描述：" + descText);
+                //长描述
+                if(textView.id() == GLOBAL_TikTokPackageName + ":id/epu" || textView.id() == ASIA_TikTokPackageName + ":id/eqw"){
+                    textView.setText(descText)
+                    sleep(random(3000,5000))
+                }   
+            }
+
+    
+        }
+    }
+}
+
+//可能会出现权限弹窗，如果弹出，那么允许
+function click_permission_allow(){
+    toast("开始处理权限问题.....")
+    // 等待权限弹窗出现
+    let allow_zh = textContains("允许").findOne(5000);
+    if(allow_zh){
+        // 获取控件的文本内容
+        let btnText_cn = allow_zh.text();
+        // 检查文本是否包含"不允许"，如果不包含才点击
+        if(!btnText_cn.includes("不允许")){
+            allow_zh.click();
+        }
+    }
+
+    // 等待权限弹窗出现
+    let allow_tw = textContains("允許").findOne(5000);
+    if(allow_tw){
+        // 获取控件的文本内容
+        let btnText_tw = allow_tw.text();
+        // 检查文本是否包含"不允许"，如果不包含才点击
+        if(!btnText_tw.includes("不允许")){
+            allow_tw.click();
+        }
+    }
+
+    // 等待权限弹窗出现
+    let allow_en = textContains("ONLY THIS TIME").findOne(5000);
+    if(allow_en){
+        // 获取控件的文本内容
+        let btnText_en = allow_en.text();
+        // 检查文本是否包含"不允许"，如果不包含才点击
+        if(!btnText_en.includes("DON'T ALLOW")){
+            allow_en.click();
+        }
+    }
+
+}
+
+
 try {
 
-    // close_friend_suggest()
-    //Tab：点击 FrameLayout("Profile")
-    find_btn_desc_base("個人資料","Profile","主页")
+    //Button:
+    //fullId("com.zhiliaoapp.musically:id/k3u")
+    //fullId("com.ss.android.ugc.trill:id/k6a")
+    if(targetPackageName == GLOBAL_TikTokPackageName){
+        clickId(GLOBAL_TikTokPackageName + ":id/k3u")
+    }else{
+        clickId(ASIA_TikTokPackageName + ":id/k6a")
+    }
     sleep(3000)
 
 
+    taskLog("开始处理权限问题.....")
+    sleep(3000)
+    click_permission_allow()    
+    sleep(3000)
+
+
+
     refreshMedia("/storage/emulated/0/Download/")
-    var imageTempPath = transferHeadImageToNest(TT_PROFILE_HEAD_IMAGE)
+    sleep(3000)
 
-    //点击：text("Edit profile")
-    find_textview_text_base("编辑主页","編輯個人資料","Edit profile")
-
+    taskLog("开始转移视频到临时文件夹,TT_UPLOAD_VIDEO_URL = " + TT_UPLOAD_VIDEO_URL)
+    sleep(2000)
+    var imageTempPath = transferVideoToNest(TT_UPLOAD_VIDEO_URL)
+    sleep(5000)
 
     
-    //可能右侧没有“编辑主页”，只有一个Button
-    //LinearLayout("Edit profile") :fullId("com.ss.android.ugc.trill:id/n9q")
-    //fullId("com.zhiliaoapp.musically:id/n9p")
+    // close_friend_suggest()
+
+    // 已经知道底部View的id是iy8，获取到这个view，拿到宽高，再点击这个view的中心位置，即可
+    // click_bottom_center_for_post_video()
+    // sleep(3000)
+    //点击白色圆圈的右边:RelativeLayout
+    //fullId("com.zhiliaoapp.musically:id/fqi")
+    //fullId("com.ss.android.ugc.trill:id/frq")
     if(targetPackageName == GLOBAL_TikTokPackageName){
-        clickId(GLOBAL_TikTokPackageName +":id/n9p")
+        clickId(GLOBAL_TikTokPackageName + ":id/fqi")
     }else{
-        // fullId("com.ss.android.ugc.trill:id/dmw")
-        // clickId(ASIA_TikTokPackageName +":id/dmw") //亚洲版，繁体中文，可能会出现“編輯個人資料”的LinearLayout
-        // sleep(3000)
-        clickId(ASIA_TikTokPackageName +":id/n9q")
+        clickId(ASIA_TikTokPackageName + ":id/frq")
     }
+    sleep(3000)
 
 
-
-    
-    //点击头像
-    click_update_profile_head_image()
-
-    click_update_profile_head_image_from_photos()
-
+    //可能会出现权限提示，直接允许
+    click_permission_allow()    
+    sleep(3000)
 
 
     //选中图片 
     selectImageWithRetry(imageTempPath) 
-    sleep(3000)
-
-
-
-    //点击：text("Name")
-    find_textview_text_base("名字","名稱","Name")
-    sleep(5000) //延迟5S，否则可能找不到EditText
-    //点击：EditText，输入Name
-    var search_name_edits = className("android.widget.EditText").find();
-    if(search_name_edits.size() > 0) {
-        var search_name_edit = search_name_edits.get(0);
-        if(search_name_edit) {
-            taskLog("找到TextView控件-Text："+ search_name_edit.text());
-            sleep(1000)
-            search_name_edit.setText(TT_PROFILE_NAME)
-            sleep(3000)
-
-            if(search_name_edit.text() == TT_PROFILE_NAME) {
-                var nameSave = find_btn_Text_base("保存","儲存","Save")
-                if(nameSave) {
-                    find_btn_Text_base("確認","確認","Confirm")
-                }else{
-                    back()
-                    sleep(5000)
-                }
-            }else{
-                taskLog("输入的Name与保存的Name不一致，请检查")
-                sleep(5000)
-                back()
-            }
-        }
-        
-    }else{
-        back()
-        sleep(5000)
-    }
-
-    
-
-
-
-    //点击：text("Username")
-    find_textview_text_base("用户名","使用者名稱","Username")
-    taskLog("准备输入Username：" + TT_PROFILE_USERNAME)
-    //点击：EditText，输入Username
-    sleep(5000) //延迟5S，否则可能找不到EditText
-    var search_Username_edits = className("android.widget.EditText").find();
-    if(search_Username_edits.size() > 0) {
-        var search_Username_edit = search_Username_edits.get(0);
-        if(search_Username_edit) {
-            taskLog("找到TextView控件-Text："+ search_Username_edit.text());
-            search_Username_edit.click()
-            sleep(5000)
-            search_Username_edit.setText(TT_PROFILE_USERNAME)
-
-            sleep(5000)
-            if(search_Username_edit.text() == TT_PROFILE_USERNAME) {
-                var usernameSave = find_btn_Text_base("保存","儲存","Save")
-                if(usernameSave) {
-                    //text("設定使用者名稱")
-                    find_btn_Text_base("設定使用者名稱","Set username","Set username")
-                }else{
-                    back()
-                    sleep(5000)
-                }
-            }else{
-                taskLog("输入的Username与保存的Username不一致，请检查")
-                sleep(5000)
-                back()
-            }
-
-        }
-        
-    }else{
-        back()
-        sleep(5000)
-    }
-    
-    
-
-    
-
-
-    
-    //点击：text("Bio")
-    // find_btn_Text_base("Bio","個人簡介","Bio")
-    //fullId("com.ss.android.ugc.trill:id/b93")
-    //fullId("com.zhiliaoapp.musically:id/b93")
-    if(targetPackageName == GLOBAL_TikTokPackageName){
-        clickId(GLOBAL_TikTokPackageName +":id/b93")
-    }else{
-        clickId(ASIA_TikTokPackageName +":id/b93")
-    }   
-
-    
-    //点击：EditText，输入Bio
-    sleep(5000) //延迟5S，否则可能找不到EditText
-    var search_Bio_edits = className("android.widget.EditText").find();
-    if(search_Bio_edits.size() > 0) {
-        var search_Bio_edit = search_Bio_edits.get(0);
-        if(search_Bio_edit) {
-            taskLog("找到TextView控件-Text："+ search_Bio_edit.text());
-            sleep(3000)
-            search_Bio_edit.setText(TT_PROFILE_BIO)
-            sleep(3000)
-
-            if(search_Bio_edit.text() == TT_PROFILE_BIO) {
-                var bioSave = find_btn_Text_base("保存","儲存","Save")
-                if(bioSave) {
-                    find_btn_Text_base("確認","確認","Confirm")
-                }else{
-                    back()
-                    sleep(5000)
-                }
-            }else{
-                taskLog("输入的Bio与保存的Bio不一致，请检查")
-                sleep(5000)
-                back()
-            }
-        }
-    }else{  
-        back()
-        sleep(5000)
-    }
-    
-    back()
-
+    sleep(30000)
 
 
 } catch (e) {
