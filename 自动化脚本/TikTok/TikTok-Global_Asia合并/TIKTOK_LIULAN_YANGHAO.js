@@ -269,12 +269,12 @@ function click_Comment_Btn(commentText){
             //发送按钮,如果某个tiktok视频，0评论，自己是首评，那么就会找不到fullId("com.zhiliaoapp.musically:id/czk")
             //所以必须要执行两次clickId(GLOBAL_TikTokPackageName + ":id/czk") ，因为0评论，和有评论的界面不一样
             // fullId("com.zhiliaoapp.musically:id/czk")
-            // fullId("com.ss.android.ugc.trill:id/czm")
+            // fullId("com.ss.android.ugc.trill:id/czl")
 
             if(targetPackageName == GLOBAL_TikTokPackageName){  
                 clickId(GLOBAL_TikTokPackageName + ":id/czk")
             }else{
-                clickId(ASIA_TikTokPackageName + ":id/czm")
+                clickId(ASIA_TikTokPackageName + ":id/czl")
             }
 
             sleep(random(2000, 3000))
@@ -284,7 +284,7 @@ function click_Comment_Btn(commentText){
             if(targetPackageName == GLOBAL_TikTokPackageName){  
                 clickId(GLOBAL_TikTokPackageName + ":id/czk")
             }else{
-                clickId(ASIA_TikTokPackageName + ":id/czm")
+                clickId(ASIA_TikTokPackageName + ":id/czl")
             }
     
     

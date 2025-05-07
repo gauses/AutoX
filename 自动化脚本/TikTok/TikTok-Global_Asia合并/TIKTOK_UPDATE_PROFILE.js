@@ -1240,7 +1240,7 @@ try {
 
 
     //点击：text("Name")
-    find_textview_text_base("名字","名稱","Name")
+    find_textview_text_base("名稱","Name","名字")
     sleep(5000) //延迟5S，否则可能找不到EditText
     //点击：EditText，输入Name
     var search_name_edits = className("android.widget.EditText").find();
