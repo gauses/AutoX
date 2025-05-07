@@ -339,7 +339,7 @@ function selectImageByButton(fileName) {
     
     try {
 
-        
+        taskLog("开始选择图片.....")
         var allTextView = className("android.widget.TextView").find();
         taskLog("找到allTextView: 全部 = "  + allTextView.size());
         if (allTextView && allTextView.size() > 0) {
@@ -349,9 +349,9 @@ function selectImageByButton(fileName) {
                     taskLog("找到textView控件-Text：" + textView.text());
                     
                     //点击顶部按钮：全部
-                    //TextView全部：fullId("com.zhiliaoapp.musically:id/tke")
+                    //TextView全部：fullId("com.zhiliaoapp.musically:id/tqg")
                     //fullId("com.ss.android.ugc.trill:id/tqj")
-                    if (textView.id() == (GLOBAL_TikTokPackageName +":id/tke") || textView.id() == (ASIA_TikTokPackageName +":id/tqj")) {
+                    if (textView.id() == (GLOBAL_TikTokPackageName +":id/tqg") || textView.id() == (ASIA_TikTokPackageName +":id/tqj")) {
                         // 正确调用bounds()方法并点击
                         taskLog("找到顶部控件: 全部" );
                         var bounds = textView.bounds();
@@ -1430,16 +1430,7 @@ function click_Video_desc(){
 //可能会出现权限弹窗，如果弹出，那么允许
 function click_permission_allow(){
     toast("开始处理权限问题.....")
-    // 等待权限弹窗出现
-    let allow_zh = textContains("允许").findOne(5000);
-    if(allow_zh){
-        // 获取控件的文本内容
-        let btnText_cn = allow_zh.text();
-        // 检查文本是否包含"不允许"，如果不包含才点击
-        if(!btnText_cn.includes("不允许")){
-            allow_zh.click();
-        }
-    }
+    
 
     // 等待权限弹窗出现
     let allow_tw = textContains("允許").findOne(5000);
@@ -1447,7 +1438,7 @@ function click_permission_allow(){
         // 获取控件的文本内容
         let btnText_tw = allow_tw.text();
         // 检查文本是否包含"不允许"，如果不包含才点击
-        if(!btnText_tw.includes("不允许")){
+        if(!btnText_tw.includes("不允許")){
             allow_tw.click();
         }
     }
@@ -1463,48 +1454,52 @@ function click_permission_allow(){
         }
     }
 
+    // 等待权限弹窗出现
+    let allow_zh = textContains("允许").findOne(5000);
+    if(allow_zh){
+        // 获取控件的文本内容
+        let btnText_cn = allow_zh.text();
+        // 检查文本是否包含"不允许"，如果不包含才点击
+        if(!btnText_cn.includes("不允许")){
+            allow_zh.click();
+        }
+    }
+
 }
 
 
 try {
 
     //Button:
-    //fullId("com.zhiliaoapp.musically:id/k3u")
+    //fullId("com.zhiliaoapp.musically:id/k6_")
     //fullId("com.ss.android.ugc.trill:id/k6a")
     if(targetPackageName == GLOBAL_TikTokPackageName){
-        clickId(GLOBAL_TikTokPackageName + ":id/k3u")
+        clickId(GLOBAL_TikTokPackageName + ":id/k6_")
     }else{
         clickId(ASIA_TikTokPackageName + ":id/k6a")
     }
     sleep(3000)
 
-
     taskLog("开始处理权限问题.....")
-    sleep(3000)
     click_permission_allow()    
     sleep(3000)
 
 
-
+    taskLog("开始刷新本地媒体库.....")
     refreshMedia("/storage/emulated/0/Download/")
     sleep(3000)
 
     taskLog("开始转移视频到临时文件夹,TT_UPLOAD_VIDEO_URL = " + TT_UPLOAD_VIDEO_URL)
     sleep(2000)
+    taskLog("开始转移视频到本地路径...")
     var imageTempPath = transferVideoToNest(TT_UPLOAD_VIDEO_URL)
     sleep(5000)
 
-    
-    // close_friend_suggest()
-
-    // 已经知道底部View的id是iy8，获取到这个view，拿到宽高，再点击这个view的中心位置，即可
-    // click_bottom_center_for_post_video()
-    // sleep(3000)
     //点击白色圆圈的右边:RelativeLayout
-    //fullId("com.zhiliaoapp.musically:id/fqi")
+    //fullId("com.zhiliaoapp.musically:id/frp")
     //fullId("com.ss.android.ugc.trill:id/frq")
     if(targetPackageName == GLOBAL_TikTokPackageName){
-        clickId(GLOBAL_TikTokPackageName + ":id/fqi")
+        clickId(GLOBAL_TikTokPackageName + ":id/frp")
     }else{
         clickId(ASIA_TikTokPackageName + ":id/frq")
     }
@@ -1512,11 +1507,13 @@ try {
 
 
     //可能会出现权限提示，直接允许
+    taskLog("开始处理权限问题.....")
     click_permission_allow()    
     sleep(3000)
 
 
     //选中图片 
+    taskLog("开始选择图片.....")
     selectImageWithRetry(imageTempPath) 
     sleep(30000)
 
