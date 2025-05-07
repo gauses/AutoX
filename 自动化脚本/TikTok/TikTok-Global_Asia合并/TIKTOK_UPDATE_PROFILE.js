@@ -1226,23 +1226,32 @@ try {
 
 
     
-    //点击头像
-    click_update_profile_head_image()
+    // //点击头像
+    // click_update_profile_head_image()
 
-    click_update_profile_head_image_from_photos()
+    // click_update_profile_head_image_from_photos()
 
 
 
-    //选中图片 
-    selectImageWithRetry(imageTempPath) 
-    sleep(3000)
+    // //选中图片 
+    // selectImageWithRetry(imageTempPath) 
+    // sleep(3000)
 
 
 
     //点击：text("Name")
-    find_textview_text_base("名稱","Name","名字")
+    sleep(5000) 
+    //fullId("com.zhiliaoapp.musically:id/iuz")
+    //fullId("com.ss.android.ugc.trill:id/iv0")
+    if(targetPackageName == GLOBAL_TikTokPackageName){
+        clickId(GLOBAL_TikTokPackageName +":id/iuz")
+    }else{
+        clickId(ASIA_TikTokPackageName +":id/iv0")
+    }   
+
     sleep(5000) //延迟5S，否则可能找不到EditText
     //点击：EditText，输入Name
+
     var search_name_edits = className("android.widget.EditText").find();
     if(search_name_edits.size() > 0) {
         var search_name_edit = search_name_edits.get(0);
@@ -1252,19 +1261,21 @@ try {
             search_name_edit.setText(TT_PROFILE_NAME)
             sleep(3000)
 
-            if(search_name_edit.text() == TT_PROFILE_NAME) {
-                var nameSave = find_btn_Text_base("保存","儲存","Save")
+            // if(search_name_edit.text() == TT_PROFILE_NAME) {
+                // taskLog("输入的Name与保存的Name一致，开始保存...")
+                var nameSave = find_btn_desc_base("儲存","Save","保存")
                 if(nameSave) {
+                    sleep(5000)
                     find_btn_Text_base("確認","確認","Confirm")
                 }else{
                     back()
                     sleep(5000)
                 }
-            }else{
-                taskLog("输入的Name与保存的Name不一致，请检查")
-                sleep(5000)
-                back()
-            }
+            // }else{
+            //     taskLog("输入的Name与保存的Name不一致，请检查")
+            //     sleep(5000)
+            //     back()
+            // }
         }
         
     }else{
@@ -1273,7 +1284,7 @@ try {
     }
 
     
-
+    sleep(5000000)
 
 
     //点击：text("Username")

@@ -973,36 +973,52 @@ try {
                     
 
                                 //点击发送按钮
-                                className("android.widget.ImageView").find().forEach((iv, idx) => {
-                                    taskLog("ImageView " + idx + ": " + iv.bounds());
-                                });
+                                // className("android.widget.ImageView").find().forEach((iv, idx) => {
+                                //     taskLog("ImageView " + idx + ": " + iv.bounds());
+                                // });
 
-                                taskLog("开始寻找发送按钮.....")
-                                taskLog("开始寻找发送按钮,device.width * 0.9 = " + device.width * 0.9)
-                                taskLog("开始寻找发送按钮,device.height * 0.9 = " + device.height * 0.9)
-
-
-                                let sendButton = className("android.widget.ImageView")
-                                .filter(function(w) {
-                                    let b = w.bounds();
-                                    // 检查是否在右下角区域
-                                    return b.centerX() > device.width * 0.8 && b.centerY() > device.height * 0.8;
-                                }).findOne(5000);
+                                // taskLog("开始寻找发送按钮.....")
+                                // taskLog("开始寻找发送按钮,device.width * 0.9 = " + device.width * 0.9)
+                                // taskLog("开始寻找发送按钮,device.height * 0.9 = " + device.height * 0.9)
 
 
+                                // let sendButton = className("android.widget.ImageView")
+                                // .filter(function(w) {
+                                //     let b = w.bounds();
+                                //     // 检查是否在右下角区域
+                                //     return b.centerX() > device.width * 0.8 && b.centerY() > device.height * 0.8;
+                                // }).findOne(5000);
 
-                                // 点击按钮
-                                if(sendButton) {
-                                    taskLog("找到发送按钮，开始点击")
-                                    let bounds = sendButton.bounds();
-                                    sleep(1000);  // 点击前等待
-                                    click(bounds.centerX(), bounds.centerY());
-                                    sleep(1000);  // 点击后等待
+
+                                var allImages = className("android.widget.ImageView").find();
+                                if (allImages && allImages.size() > 0) {
+                                    var lastIndex = allImages.size() - 1;
+                                    var lastImg = allImages.get(lastIndex);
+                                    if (lastImg) {
+                                        var bounds = lastImg.bounds();
+                                        if (lastImg.clickable()) {
+                                            lastImg.click();
+                                        } else {
+                                            click(bounds.centerX(), bounds.centerY());
+                                        }
+
+                                        }
+                                }
+
+
+
+                                // // 点击按钮
+                                // if(sendButton) {
+                                //     taskLog("找到发送按钮，开始点击")
+                                //     let bounds = sendButton.bounds();
+                                //     sleep(1000);  // 点击前等待
+                                //     click(bounds.centerX(), bounds.centerY());
+                                //     sleep(1000);  // 点击后等待
                                     
-                                }else{
-                                    taskLog("没有找到私信发送按钮！！！！")
-                                    // throw new Error("没有找到私信发送按钮，所以报错"); 
-                                } 
+                                // }else{
+                                //     taskLog("没有找到私信发送按钮！！！！")
+                                //     // throw new Error("没有找到私信发送按钮，所以报错"); 
+                                // } 
 
                                 sleep(3000)
                                 back()      
