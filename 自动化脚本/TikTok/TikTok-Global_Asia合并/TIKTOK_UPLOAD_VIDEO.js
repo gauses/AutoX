@@ -1430,40 +1430,68 @@ function click_Video_desc(){
 //可能会出现权限弹窗，如果弹出，那么允许
 function click_permission_allow(){
     toast("开始处理权限问题.....")
+
+    var allListTextView = className("android.widget.TextView").find();
+    taskLog("找到权限allListTextView: 全部 = "  + allListTextView.size());
+
+    for(var i = 0; i < allListTextView.size(); i++){
+        var textView = allListTextView.get(i);
+        taskLog("找到权限textView: " + textView.text());
+    }
+
+    // 找到所有按钮
+    var allListButton = className("android.widget.Button").find();
+    taskLog("找到权限allListButton: 全部 = "  + allListButton.size());
+
+    for(var i = 0; i < allListButton.size(); i++){
+        var button = allListButton.get(i);
+        taskLog("找到权限button: " + button.text());
+    }
     
 
     // 等待权限弹窗出现
-    let allow_tw = textContains("允許").findOne(5000);
+    let allow_tw = textContains("使用應用程式時").findOne(5000);
     if(allow_tw){
+        taskLog("点击 - 使用應用程式時")
+        allow_tw.click();
+    }
+
+    
+    // 等待权限弹窗出现
+    let allow_tw_02 = textContains("允許").findOne(5000);
+    if(allow_tw_02){
         // 获取控件的文本内容
-        let btnText_tw = allow_tw.text();
+        taskLog("点击 - 允許")
+        let btnText_tw = allow_tw_02.text();
         // 检查文本是否包含"不允许"，如果不包含才点击
         if(!btnText_tw.includes("不允許")){
-            allow_tw.click();
+            allow_tw_02.click();
         }
     }
+
+
 
     // 等待权限弹窗出现
     let allow_en = textContains("ONLY THIS TIME").findOne(5000);
     if(allow_en){
+        taskLog("点击 - ONLY THIS TIME")
+        allow_en.click();
+    }
+
+
+    // 等待权限弹窗出现
+    let allow_en_02 = textContains("ALLOW").findOne(5000);
+    if(allow_en_02){
         // 获取控件的文本内容
-        let btnText_en = allow_en.text();
+        taskLog("点击 - ALLOW")
+        let btnText_en = allow_en_02.text();
         // 检查文本是否包含"不允许"，如果不包含才点击
         if(!btnText_en.includes("DON'T ALLOW")){
-            allow_en.click();
+            allow_en_02.click();
         }
     }
 
-    // 等待权限弹窗出现
-    let allow_zh = textContains("允许").findOne(5000);
-    if(allow_zh){
-        // 获取控件的文本内容
-        let btnText_cn = allow_zh.text();
-        // 检查文本是否包含"不允许"，如果不包含才点击
-        if(!btnText_cn.includes("不允许")){
-            allow_zh.click();
-        }
-    }
+
 
 }
 
@@ -1494,6 +1522,11 @@ try {
     taskLog("开始转移视频到本地路径...")
     var imageTempPath = transferVideoToNest(TT_UPLOAD_VIDEO_URL)
     sleep(5000)
+
+    //可能会出现权限提示，直接允许
+    taskLog("开始处理权限问题.....")
+    click_permission_allow()    
+    sleep(3000)
 
     //点击白色圆圈的右边:RelativeLayout
     //fullId("com.zhiliaoapp.musically:id/frp")
