@@ -290,20 +290,26 @@ function click_Save_Btn(){
 //点击观看
 function click_Watch_Btn(){
     taskLog("开始准备观看视频")
-    //fullId("com.instagram.android:id/hint_icon_container")
-    clickId("com.instagram.android:id/hint_icon_container")
-    sleep(random(2000, 3000))
-
-    // // fullId("com.instagram.android:id/feed_preview_bottom_cta_container")
-    // clickId("com.instagram.android:id/feed_preview_bottom_cta_container")
-    // sleep(random(2000, 3000))
-
-
-    // // fullId("com.instagram.android:id/feed_preview_cta_container")
-    // clickId("com.instagram.android:id/feed_preview_cta_container")
-    // sleep(random(2000, 3000))
-
-    back()
+    try {
+        // 判断屏幕宽高是否有效
+        if (device.width > 0 && device.height > 0) {
+            let centerX = Math.floor(device.width / 2);
+            let centerY = Math.floor(device.height / 2);
+            // 再次校验中心点
+            if (centerX >= 0 && centerY >= 0) {
+                click(centerX, centerY);
+                taskLog("已点击屏幕中心: X=" + centerX + ", Y=" + centerY);
+            } else {
+                taskLog("屏幕中心坐标无效: X=" + centerX + ", Y=" + centerY);
+            }
+        } else {
+            taskLog("获取屏幕宽高失败，无法点击中心");
+        }
+    } catch (e) {
+        taskLog("点击屏幕中心时发生异常: " + e.message);
+    }
+    sleep(random(3000, 5000));
+    back();
 }
 
 
@@ -392,7 +398,7 @@ function clickDesc(a) {
 
 //结束当前任务
 function stopCurrentTask(){
-    saveImg()
+    // saveImg()
 
     sleep(3000)
 //    //将task的截图上报
@@ -764,8 +770,8 @@ try {
         //fullId("com.instagram.android:id/row_feed_button_like")
         var likeBtnList = id("com.instagram.android:id/row_feed_button_like").className("android.widget.Button").find()
         taskLog("当前页面的likeBtn数量 = " + likeBtnList.size())
-        sleep(random(3000, 5000))
-        click_Watch_Btn()
+        // click_Watch_Btn()
+        // sleep(random(3000, 5000))
 
 
         if(likeBtnList.size() > 0){
