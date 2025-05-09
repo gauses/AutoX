@@ -1541,13 +1541,14 @@ try {
     taskLog("找到gallery_grid_item_list: 全部 = "  + gallery_grid_item_list.size());
     sleep(3000)
 
-    for(var i = 0; i < gallery_grid_item_list.size(); i++){
-        var gallery_grid_item = gallery_grid_item_list.get(i);
-        if(gallery_grid_item){
-            gallery_grid_item.click();
-            sleep(3000)
-            break;
-            
+    if (gallery_grid_item_list.size() > 0) {
+        for (var i = 0; i < gallery_grid_item_list.size(); i++) {
+            var item = gallery_grid_item_list.get(i);
+            if (item) {
+                item.click();
+                sleep(3000);
+                break; // 找到并点击后立即退出循环
+            }
         }
     }
 
