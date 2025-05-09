@@ -159,8 +159,8 @@ toast("本地视频地址：" + INSTAGRAM_UPLOAD_VIDEO_URL)
 function get_TITLE_comment_text(){
     let comments = [];
     // 户是否存在
-    taskLog("TT_UPLOAD_VIDEO_TITLE评论数组 =  " + TT_UPLOAD_VIDEO_TITLE)
-    const file = new java.io.File(TT_UPLOAD_VIDEO_TITLE);
+    taskLog("INSTAGRAM_UPLOAD_VIDEO_TITLE评论数组 =  " + INSTAGRAM_UPLOAD_VIDEO_TITLE)
+    const file = new java.io.File(INSTAGRAM_UPLOAD_VIDEO_TITLE);
     if (file.exists() && file.isFile()) {
         try {
             // 读取文件内容
@@ -175,7 +175,7 @@ function get_TITLE_comment_text(){
         }
     } else {
         // 如果文件不存在，将文件名添加到数组中
-        comments.push(TT_UPLOAD_VIDEO_TITLE);
+        comments.push(INSTAGRAM_UPLOAD_VIDEO_TITLE);
     }
     
     return comments
@@ -1376,19 +1376,19 @@ function click_Video_desc(){
 
             //标题
             var all_TT_TITLE_text = []
-            if(TT_UPLOAD_VIDEO_TITLE && 
-                TT_UPLOAD_VIDEO_TITLE.trim() !== "" && 
-                TT_UPLOAD_VIDEO_TITLE.trim().toLowerCase() !== "off" && 
-                !TT_UPLOAD_VIDEO_TITLE.includes("$${")){
+            if(INSTAGRAM_UPLOAD_VIDEO_TITLE && 
+                INSTAGRAM_UPLOAD_VIDEO_TITLE.trim() !== "" && 
+                INSTAGRAM_UPLOAD_VIDEO_TITLE.trim().toLowerCase() !== "off" && 
+                !INSTAGRAM_UPLOAD_VIDEO_TITLE.includes("$${")){
                     all_TT_TITLE_text = get_TITLE_comment_text()
             }
 
             //描述
             var all_TT_DESC_text = []
-            if(TT_UPLOAD_VIDEO_DESC && 
-                TT_UPLOAD_VIDEO_DESC.trim() !== "" && 
-                TT_UPLOAD_VIDEO_DESC.trim().toLowerCase() !== "off" && 
-                !TT_UPLOAD_VIDEO_DESC.includes("$${")){
+            if(INSTAGRAM_UPLOAD_VIDEO_DESC && 
+                INSTAGRAM_UPLOAD_VIDEO_DESC.trim() !== "" && 
+                INSTAGRAM_UPLOAD_VIDEO_DESC.trim().toLowerCase() !== "off" && 
+                !INSTAGRAM_UPLOAD_VIDEO_DESC.includes("$${")){
                     all_TT_DESC_text = get_DESC_comment_text()
             }
 
@@ -1491,8 +1491,56 @@ function click_permission_allow(){
 }
 
 
+function swipe_up(){
+    //使用多段swipe实现曲线滑动
+    let screenHeight = device.height;
+    let startY = Math.floor(screenHeight * 0.9);  // 起点
+    let endY = Math.floor(screenHeight * 0.1);    // 终点
+    let distance = startY - endY;                 // 总距离
+    
+    // 第一段：向右倾斜
+    swipe(
+        device.width / 2,    // 起点X
+        startY,             // 起点Y
+        device.width * 0.7,  // 终点X
+        startY - distance/3, // 终点Y
+        700                 // 持续时间
+    );
+    sleep(200);
+    
+    // 第二段：向左倾斜
+    swipe(
+        device.width * 0.7,  // 起点X
+        startY - distance/3, // 起点Y
+        device.width * 0.3,  // 终点X
+        startY - distance*2/3, // 终点Y
+        700                 // 持续时间
+    );
+    sleep(200);
+    
+    // 第三段：回到中间
+    swipe(
+        device.width * 0.3,  // 起点X
+        startY - distance*2/3, // 起点Y
+        device.width / 2,    // 终点X
+        endY,               // 终点Y
+        600                 // 持续时间
+    );
+    sleep(3000); //等待滚动完成
+}
+
+
 //start
 try {
+
+    
+    swipe_up()
+
+    taskLog("开始刷新本地媒体库.....")
+    refreshMedia("/storage/emulated/0/Download/")
+    sleep(random(3000,5000))
+
+
 
     //Button:
     //fullId("com.instagram.android:id/creation_tab")
@@ -1500,107 +1548,106 @@ try {
     
     sleep(3000)
 
-    taskLog("开始处理权限问题.....")
+    taskLog("开始第一次检查权限问题 .....")
     click_permission_allow()    
-    sleep(3000)
+    sleep(random(2000,3000))
+    taskLog("开始第二次检查权限问题.....")
     click_permission_allow()    
-    sleep(3000)
+    sleep(random(2000,3000))
+    taskLog("开始第三次检查权限问题.....")
     click_permission_allow()    
-    sleep(3000)
+    sleep(random(2000,3000))
 
 
-    taskLog("开始刷新本地媒体库.....")
-    refreshMedia("/storage/emulated/0/Download/")
-    sleep(3000)
-
-    // taskLog("开始转移视频到临时文件夹,INSTAGRAM_UPLOAD_VIDEO_URL = " + INSTAGRAM_UPLOAD_VIDEO_URL)
-    // sleep(2000)
-    // taskLog("开始转移视频到本地路径...")
-    // var imageTempPath = transferVideoToNest(INSTAGRAM_UPLOAD_VIDEO_URL)
-    // sleep(5000)
-
-    // //可能会出现权限提示，直接允许
-    // taskLog("开始处理权限问题.....")
-    // click_permission_allow()    
-    // sleep(3000000)
-
-
-    //右上角有两个按钮，点击第一个：
-    //18:02:46.996/D: 2025-05-08 06:02:46:开始点击元素ID ：com.instagram.android:id/multi_select_slide_button_alt
-    //fullId("com.instagram.android:id/multi_select_slide_button_alt")
-    // clickId(INSTAGRAM_PACKAGE_NAME + ":id/multi_select_slide_button_alt")
 
     //fullId("com.instagram.android:id/slideout_iconview_icon")
     clickId(INSTAGRAM_PACKAGE_NAME + ":id/slideout_iconview_icon")
-    sleep(3000)
+    sleep(random(2000,3000))
 
 
     //选中图片的右上角的圆圈
     //fullId("com.instagram.android:id/gallery_grid_item_selection_circle")
     var gallery_grid_item_list = id(INSTAGRAM_PACKAGE_NAME + ":id/gallery_grid_item_selection_circle").className("android.widget.ImageView").find();
     taskLog("找到gallery_grid_item_list: 全部 = "  + gallery_grid_item_list.size());
-    sleep(3000)
+    sleep(random(2000,3000))
 
     if (gallery_grid_item_list.size() > 0) {
-        for (var i = 0; i < gallery_grid_item_list.size(); i++) {
-            var item = gallery_grid_item_list.get(i);
-            if (item) {
-                item.click();
-                sleep(3000);
-                break; // 找到并点击后立即退出循环
+        // for (var i = 0; i < gallery_grid_item_list.size(); i++) {
+        //     var item = gallery_grid_item_list.get(i);
+        //     if (item) {
+        //         item.click();
+        //         sleep(random(2000,3000));
+        //         break; // 找到并点击后立即退出循环
+        //     }
+        // }
+
+
+
+        //点击Next
+        // fullId("com.instagram.android:id/camera_settings_gear") - className("android.widget.Button")
+        var next = className("android.widget.Button").id(INSTAGRAM_PACKAGE_NAME + ":id/camera_settings_gear").find();
+        if(next){
+            taskLog("点击Next")
+            let element = next.get(0);
+            let X = element.bounds().centerX();
+            let Y = element.bounds().centerY();
+            click(X, Y);
+            taskLog("点击Next坐标 X = " + X + " Y = " + Y)
+
+            sleep(random(2000,3000)) 
+
+            //点击右下角继续
+            //fullId("com.instagram.android:id/creation_next_button")
+            clickId(INSTAGRAM_PACKAGE_NAME + ":id/creation_next_button")
+            sleep(random(2000,3000)) 
+
+
+            //下方会弹出询问：是否分享帖子
+            //fullId("com.instagram.android:id/bb_primary_action_container")
+            clickId(INSTAGRAM_PACKAGE_NAME + ":id/bb_primary_action_container")
+            sleep(random(2000,3000)) 
+
+
+            //开始写入说明
+            // fullId("com.instagram.android:id/caption_input_text_view")
+            //写入说明
+            //描述
+            var all_TT_DESC_text = []
+            if(INSTAGRAM_UPLOAD_VIDEO_DESC && 
+                INSTAGRAM_UPLOAD_VIDEO_DESC.trim() !== "" && 
+                INSTAGRAM_UPLOAD_VIDEO_DESC.trim().toLowerCase() !== "off" && 
+                !INSTAGRAM_UPLOAD_VIDEO_DESC.includes("$${")){
+                    all_TT_DESC_text = get_DESC_comment_text()
             }
+            
+            if(all_TT_DESC_text.length > 0){
+                var randDescIdx = random(0, all_TT_DESC_text.length - 1)
+                var descText = all_TT_DESC_text[randDescIdx];
+                taskLog("描述：" + descText);
+                //长描述
+                var caption_input_text_view = id(INSTAGRAM_PACKAGE_NAME + ":id/caption_input_text_view").findOne();
+                    taskLog("找到caption_input_text_view: " + caption_input_text_view.text());
+                    if(caption_input_text_view){
+                        caption_input_text_view.setText(INSTAGRAM_UPLOAD_VIDEO_DESC)
+                        sleep(3000)
+                }
+            }else{
+                taskLog("没有找到描述")
+            }
+            
+
+
+            //底部分享按钮
+            // fullId("com.instagram.android:id/share_footer_button")
+            clickId(INSTAGRAM_PACKAGE_NAME + ":id/share_footer_button")
+            sleep(random(2000,3000))
+        }else{
+            taskLog("没有找到Next按钮")
         }
+        
     }
 
-    //点击Next
-    // fullId("com.instagram.android:id/camera_settings_gear")
-    clickId(INSTAGRAM_PACKAGE_NAME + ":id/camera_settings_gear")
-    sleep(3000)
 
-    //点击右下角继续
-    //fullId("com.instagram.android:id/creation_next_button")
-    clickId(INSTAGRAM_PACKAGE_NAME + ":id/creation_next_button")
-    sleep(3000)
-
-
-    //下方会弹出询问：是否分享帖子
-    //fullId("com.instagram.android:id/bb_primary_action_container")
-    clickId(INSTAGRAM_PACKAGE_NAME + ":id/bb_primary_action_container")
-
-
-    //开始写入说明
-    // fullId("com.instagram.android:id/caption_input_text_view")
-    //写入说明
-    //描述
-    var all_TT_DESC_text = []
-    if(INSTAGRAM_UPLOAD_VIDEO_DESC && 
-        INSTAGRAM_UPLOAD_VIDEO_DESC.trim() !== "" && 
-        INSTAGRAM_UPLOAD_VIDEO_DESC.trim().toLowerCase() !== "off" && 
-        !INSTAGRAM_UPLOAD_VIDEO_DESC.includes("$${")){
-            all_TT_DESC_text = get_DESC_comment_text()
-    }
-    
-     if(all_TT_DESC_text.length > 0){
-        var randDescIdx = random(0, all_TT_DESC_text.length - 1)
-        var descText = all_TT_DESC_text[randDescIdx];
-        taskLog("描述：" + descText);
-        //长描述
-        var caption_input_text_view = id(INSTAGRAM_PACKAGE_NAME + ":id/caption_input_text_view").findOne();
-            taskLog("找到caption_input_text_view: " + caption_input_text_view.text());
-            if(caption_input_text_view){
-                caption_input_text_view.setText(TT_UPLOAD_VIDEO_DESC)
-                sleep(3000)
-        }
-    }else{
-        taskLog("没有找到描述")
-    }
-    
-
-
-    //底部分享按钮
-    // fullId("com.instagram.android:id/share_footer_button")
-    clickId(INSTAGRAM_PACKAGE_NAME + ":id/share_footer_button")
-    sleep(3000)
 
 
 
