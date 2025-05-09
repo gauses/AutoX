@@ -1261,21 +1261,31 @@ try {
             search_name_edit.setText(TT_PROFILE_NAME)
             sleep(3000)
 
-            // if(search_name_edit.text() == TT_PROFILE_NAME) {
-                // taskLog("输入的Name与保存的Name一致，开始保存...")
-                var nameSave = find_btn_desc_base("儲存","Save","保存")
-                if(nameSave) {
-                    sleep(5000)
-                    find_btn_Text_base("確認","確認","Confirm")
-                }else{
-                    back()
-                    sleep(5000)
-                }
+           //点击储存
+           //fullId("com.zhiliaoapp.musically:id/l07")
+           //fullId("com.ss.android.ugc.trill:id/l08")
+           if(targetPackageName == GLOBAL_TikTokPackageName){
+                clickId(GLOBAL_TikTokPackageName +":id/l07")
+           }else{
+                clickId(ASIA_TikTokPackageName +":id/l07")
+           }
+
+            // var nameSave = find_btn_desc_base("儲存","Save","保存")
+            // if(nameSave) {
+            sleep(5000)
+            var confirm = find_btn_Text_base("確認","確認","Confirm")
+            if(confirm) {
+                back()
+                sleep(5000)
+            }else{
+                back()
+                sleep(5000)
+            }
             // }else{
-            //     taskLog("输入的Name与保存的Name不一致，请检查")
-            //     sleep(5000)
             //     back()
+            //     sleep(5000)
             // }
+        
         }
         
     }else{

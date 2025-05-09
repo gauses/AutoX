@@ -258,7 +258,7 @@ function click_home_search_btn(){
     sleep(random(2000, 5000))
 
     var gz5_img_count = 0
-    var targetGz5 = null; // 用于存储第二个gz5按钮
+    var targetGz5 = null;
     
     var allImages = className("android.widget.ImageView").find();
     if (allImages && allImages.size() > 0) {
@@ -268,36 +268,19 @@ function click_home_search_btn(){
             var img = allImages.get(i);
             if (img) {
                 taskLog("第" + (i+1) + "个Image控件-Text：" + img.text() + ";ID = " + img.id());
-                
                 //fullId("com.zhiliaoapp.musically:id/h0i")
                 //fullId("com.ss.android.ugc.trill:id/h0j")
                 if (img.id() == (GLOBAL_TikTokPackageName+":id/h0i") || img.id() == (ASIA_TikTokPackageName+":id/h0j")) {
-                    gz5_img_count++;
-                    taskLog("这是第" + gz5_img_count + "个h0i按钮");
-                    
-                    // 获取父容器信息
-                    var parent = img.parent();
-                    taskLog("父容器类型：" + parent.className());
-                    taskLog("父容器ID：" + parent.id());
-                    
-                    var bounds = img.bounds();
-                    taskLog("元素位置：left=" + bounds.left + 
-                           ", top=" + bounds.top + 
-                           ", right=" + bounds.right + 
-                           ", bottom=" + bounds.bottom);
-                    
-                    // 存储第二个gz5按钮
-                    if(gz5_img_count == 2) {
-                        targetGz5 = img;
-                        break; // 找到第二个后就退出循环
-                    }
+                    targetGz5 = img; // 每次都赋值，最后一次就是最后一个
+                    // 你可以在这里输出调试信息
+                    taskLog("找到一个符合条件的h0i/h0j按钮，已暂存为targetGz5");
                 }
             }
         }
         
-        // 点击第二个gz5按钮
+        // 点击符合要求的gz5按钮
         if(targetGz5) {
-            taskLog("找到第二个gz5按钮，准备点击");
+            taskLog("找到gz5按钮，准备点击");
             var bounds = targetGz5.bounds();
             if(targetGz5.clickable()){
                 targetGz5.click();
@@ -309,7 +292,7 @@ function click_home_search_btn(){
     }
     
     //如果没找到合适的按钮，尝试滑动
-    taskLog("没有找到第二个gz5按钮，准备滑动屏幕");
+    taskLog("没有找到gz5按钮，准备滑动屏幕");
     swipe_to_up();
     find_search_btn_count++;
     
