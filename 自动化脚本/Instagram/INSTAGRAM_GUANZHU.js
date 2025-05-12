@@ -263,20 +263,21 @@ function swipe_to_up(){
 function click_LinearLayout_GUANZHU(){
 
     sleep(random(2000, 5000))
-    //className("android.widget.Button")
-    var allLinearLayout = className("android.widget.Button").find();
+    //className("android.widget.ImageView")
+    var allLinearLayout = className("android.widget.ImageView").find();
+    taskLog("头像.size() = " + allLinearLayout.size());
     if (allLinearLayout && allLinearLayout.size() > 0) {
         for (var i = 0; i < allLinearLayout.size(); i++) {
             var linearLayout = allLinearLayout.get(i);
             if (linearLayout) {
-                taskLog("找到Button控件-Text：" + linearLayout.text() + ";ID = " + linearLayout.id());
+                taskLog("找到头像控件-Text：" + linearLayout.text() + ";ID = " + linearLayout.id());
                 
-				// fullId("com.instagram.android:id/row_search_user_container")
+				// fullId("com.instagram.android:id/row_search_avatar_in_ring")
 
-                if (linearLayout.id() == ("com.instagram.android:id/row_search_user_container")) {
+                if (linearLayout.id() == ("com.instagram.android:id/row_search_avatar_in_ring")) {
                     var linearLayout_click = clickId(linearLayout.id())
                     if (linearLayout_click) {
-                        taskLog("找到LinearLayout控件:开始点击第一个" );
+                        taskLog("找到头像控件:开始点击第一个" );
                         break;
                 }
                 
@@ -708,9 +709,6 @@ try{
     // 如果get_all_TT_User_ID_text等于'off'，则清空用户USER_ID列表
     
     var UserIDList = get_all_TT_User_ID_text()  
-
-
-
     taskLog("可用的搜索用户ID, 一共的数量有： " + UserIDList.length);
 
 
@@ -718,9 +716,20 @@ try{
     click_home_search_btn()
     sleep(random(2000, 4000))
 
+    //点击顶部的搜索框
+    //fullId("com.instagram.android:id/action_bar_search_hints_text_layout")
+    clickId("com.instagram.android:id/action_bar_search_hints_text_layout")
+    sleep(random(3000, 5000))
+
+
     // 按照顺序开始执行搜索User-ID
     if (UserIDList.length > 0) {
-        taskLog("- 找到可用的搜索用户ID, 开始搜索观看 - ");
+
+        //要删除UserIDList中所有的空格
+        UserIDList = UserIDList.map(item => item.trim());
+
+
+        taskLog("- 找到可用的搜索用户ID, UserIDList.length = " + UserIDList.length);
         for (var randIdx = 0; randIdx < UserIDList.length; randIdx++) {
             var commentText = UserIDList[randIdx];
             taskLog("- 找到可用的搜索用户ID: "+commentText+", 开始搜索 - ");
@@ -730,39 +739,68 @@ try{
                 var search_edit = search_edits.get(i);
                 if(search_edit) {
                     taskLog("找到TextView控件-Text："+ search_edit.text());
-                    sleep(1000)
-                    taskLog("搜索控件，设置内容：" +commentText );
-                    search_edit.setText(commentText)    
-                    sleep(random(5000, 8000))
-                    
-                    taskLog("开始点击回车..")
-                    // press("enter"); //无效
-                    // shell("input keyevent 66", true); 
-                    // shell("input keyevent " + KeyEvent.KEYCODE_ENTER, true);
-
-
-
-                    //开始观看视频
-                    sleep(random(5000, 8000))
-                    toast("开始点击用户Tab按钮")
-                    // find_textview_text_base("用户","使用者","Users")
-                    find_btn_Text_base("Accounts","帳戶","Accounts")
-
+                    search_edit.click()
                     sleep(random(3000, 5000))
+                    taskLog("搜索控件，设置内容：" +commentText );
 
-                    click_LinearLayout_GUANZHU()
+                    // 点击搜索框
+                    // search_edit.click()
+                    // sleep(random(3000, 5000))
 
-                    
-                    //Button :fullId("com.instagram.android:id/profile_header_follow_button")
-                    var follow_btn = className("android.widget.Button").id("com.instagram.android:id/profile_header_follow_button").find()
-                    if(follow_btn){
-                        taskLog("找到Follow按钮，开始点击Follow按钮")
-                        click(follow_btn.bounds().centerX(), follow_btn.bounds().centerY()) 
-                        back()
+                    // 输入搜索内容，注意要删除@符号
+                    if(commentText.startsWith("@")){
+                        search_edit.setText(commentText.substring(1));
+                        sleep(random(3000, 5000))
                     }else{
-                        taskLog("没有找到Follow按钮，终止本次操作，开始下一个用户的Follow行为！！！");
+                        search_edit.setText(commentText);
+                        sleep(random(3000, 5000))
                     }
-                    sleep(random(2000, 4000))
+
+
+
+                    //点击左上角的放大镜，进行搜索
+                    // className("android.widget.ImageView") : fullId("com.instagram.android:id/row_search_profile_image")
+                    var search_profile_image = className("android.widget.ImageView").id("com.instagram.android:id/row_search_profile_image").findOne()  
+                    if(search_profile_image){
+                        taskLog("找到搜索头像控件，开始点击搜索头像控件")
+                        clickId("com.instagram.android:id/row_search_profile_image")
+                        sleep(random(3000, 5000))
+
+                        toast("开始点击用户Tab按钮")
+                        var user_tab_btn = find_btn_Text_base("Accounts","帳戶","账户")
+                        sleep(random(3000, 5000))
+                        
+                        if(user_tab_btn){
+                            taskLog("找到用户Tab按钮，开始点击用户Tab按钮")
+                            sleep(random(3000, 5000))
+                            click_LinearLayout_GUANZHU()
+
+     
+                            //className("android.view.ViewGroup") :fullId("com.instagram.android:id/profile_header_user_action_follow_button")
+                            //className("android.widget.Button") :fullId("com.instagram.android:id/profile_header_follow_button") desc("追蹤Milka❣️❣️❣️❣️❣️")
+                            var follow_btn = className("android.widget.Button").id("com.instagram.android:id/profile_header_follow_button").find()
+                            //已经follow：desc("正在追蹤Milka❣️❣️❣️❣️❣️")
+                            //未follow：desc("追蹤Milka❣️❣️❣️❣️❣️")
+                            if(follow_btn.desc().includes("正在追蹤")){
+                                taskLog("找到Follow按钮，已经关注了，终止本次操作，开始下一个用户的Follow行为！！！");
+                                back()
+                            }else{
+                                follow_btn.click()
+                                taskLog("找到Follow按钮，开始点击Follow :" + commentText);
+                            }
+                            sleep(random(2000, 4000))
+
+
+                        }else{
+                            taskLog("没有找到用户Tab按钮，终止本次操作，开始下一个用户的Follow行为！！！");
+                            continue;
+                        }
+
+                    }else{
+                        taskLog("没有找到搜索头像控件，终止本次操作，开始下一个用户的Follow行为！！！");
+                        continue;
+                    }
+                   
                 }
             }
 
