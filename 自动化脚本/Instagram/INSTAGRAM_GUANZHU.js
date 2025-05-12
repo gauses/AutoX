@@ -512,6 +512,7 @@ function stopCurrentTask(){
 //通过Button的Text
 function find_btn_Text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
 
+    var findText_result = false
 
     var loopCount  = 0
 
@@ -544,6 +545,7 @@ function find_btn_Text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
              // 验证 X 和 Y 是否为正数
              if (X1 >= 0 && Y1 >= 0) {
                 click(X1, Y1)
+                findText_result = true  
              }else{
                 taskLog("坐标无效，中心点X或Y为负值: X=" + X1 + ", Y=" + Y1);
              }
@@ -559,6 +561,7 @@ function find_btn_Text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
             // 验证 X 和 Y 是否为正数
             if (X2 >= 0 && Y2 >= 0) {
                click(X2, Y2)
+               findText_result = true
             }else{
                taskLog("坐标无效，中心点X或Y为负值: X=" + X2 + ", Y=" + Y2);
             }
@@ -574,6 +577,7 @@ function find_btn_Text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
             // 验证 X 和 Y 是否为正数
             if (X3 >= 0 && Y3 >= 0) {
                click(X3, Y3)
+               findText_result = true   
             }else{
                taskLog("坐标无效，中心点X或Y为负值: X=" + X3 + ", Y=" + Y3);
             }
@@ -582,6 +586,8 @@ function find_btn_Text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
          sleep(4000)
 
      }
+
+     return findText_result
 }
 
 
@@ -734,74 +740,79 @@ try{
             var commentText = UserIDList[randIdx];
             taskLog("- 找到可用的搜索用户ID: "+commentText+", 开始搜索 - ");
 
-            var search_edits = className("android.widget.EditText").find();
-            for(var i = 0; i < search_edits.size(); i++) {
-                var search_edit = search_edits.get(i);
-                if(search_edit) {
-                    taskLog("找到TextView控件-Text："+ search_edit.text());
-                    search_edit.click()
+            //className("android.widget.EditText") fullId("com.instagram.android:id/action_bar_search_edit_text")
+            var search_edit = className("android.widget.EditText").id("com.instagram.android:id/action_bar_search_edit_text").findOne()
+            if(search_edit){
+                taskLog("找到搜索框控件，开始点击搜索框控件")
+                search_edit.click()
+                sleep(random(3000, 5000))
+
+                sleep(random(3000, 5000))
+                taskLog("搜索控件，设置内容：" +commentText );
+
+                // 输入搜索内容，注意要删除@符号
+                if(commentText.startsWith("@")){
+                    search_edit.setText(commentText.substring(1));
                     sleep(random(3000, 5000))
-                    taskLog("搜索控件，设置内容：" +commentText );
+                }else{
+                    search_edit.setText(commentText);
+                    sleep(random(3000, 5000))
+                }
 
-                    // 点击搜索框
-                    // search_edit.click()
-                    // sleep(random(3000, 5000))
 
-                    // 输入搜索内容，注意要删除@符号
-                    if(commentText.startsWith("@")){
-                        search_edit.setText(commentText.substring(1));
+
+                //点击左上角的放大镜，进行搜索
+                // className("android.widget.ImageView") : fullId("com.instagram.android:id/row_search_profile_image")
+                var search_profile_image = className("android.widget.ImageView").id("com.instagram.android:id/row_search_profile_image").findOne()  
+                if(search_profile_image){
+                    taskLog("找到搜索头像控件，开始点击搜索头像控件")
+                    clickId("com.instagram.android:id/row_search_profile_image")
+                    sleep(random(3000, 5000))
+
+                    toast("开始点击用户Tab按钮")
+                    var user_tab_btn = find_btn_Text_base("Accounts","帳戶","账户")
+                    sleep(random(3000, 5000))
+
+                    if(user_tab_btn){
+                        taskLog("找到用户Tab按钮，开始点击用户Tab按钮")
                         sleep(random(3000, 5000))
-                    }else{
-                        search_edit.setText(commentText);
-                        sleep(random(3000, 5000))
-                    }
+                        click_LinearLayout_GUANZHU()
 
-
-
-                    //点击左上角的放大镜，进行搜索
-                    // className("android.widget.ImageView") : fullId("com.instagram.android:id/row_search_profile_image")
-                    var search_profile_image = className("android.widget.ImageView").id("com.instagram.android:id/row_search_profile_image").findOne()  
-                    if(search_profile_image){
-                        taskLog("找到搜索头像控件，开始点击搜索头像控件")
-                        clickId("com.instagram.android:id/row_search_profile_image")
-                        sleep(random(3000, 5000))
-
-                        toast("开始点击用户Tab按钮")
-                        var user_tab_btn = find_btn_Text_base("Accounts","帳戶","账户")
-                        sleep(random(3000, 5000))
-                        
-                        if(user_tab_btn){
-                            taskLog("找到用户Tab按钮，开始点击用户Tab按钮")
-                            sleep(random(3000, 5000))
-                            click_LinearLayout_GUANZHU()
-
-     
-                            //className("android.view.ViewGroup") :fullId("com.instagram.android:id/profile_header_user_action_follow_button")
-                            //className("android.widget.Button") :fullId("com.instagram.android:id/profile_header_follow_button") desc("追蹤Milka❣️❣️❣️❣️❣️")
-                            var follow_btn = className("android.widget.Button").id("com.instagram.android:id/profile_header_follow_button").find()
-                            //已经follow：desc("正在追蹤Milka❣️❣️❣️❣️❣️")
-                            //未follow：desc("追蹤Milka❣️❣️❣️❣️❣️")
-                            if(follow_btn.desc().includes("正在追蹤")){
+ 
+                        //className("android.view.ViewGroup") :fullId("com.instagram.android:id/profile_header_user_action_follow_button")
+                        //className("android.widget.Button") :fullId("com.instagram.android:id/profile_header_follow_button") desc("追蹤Milka❣️❣️❣️❣️❣️")
+                        var follow_btn = className("android.widget.Button").id("com.instagram.android:id/profile_header_follow_button").findOne()
+                        //已经follow：desc("正在追蹤Milka❣️❣️❣️❣️❣️")
+                        //未follow：desc("追蹤Milka❣️❣️❣️❣️❣️")
+                        //text("追蹤中")
+                        //text("追蹤")
+                        if(follow_btn){
+                            taskLog("找到Follow按钮，follow_btn = " + follow_btn.desc());
+                            if(follow_btn.text() == "追蹤中"){
                                 taskLog("找到Follow按钮，已经关注了，终止本次操作，开始下一个用户的Follow行为！！！");
                                 back()
-                            }else{
+                            }else if(follow_btn.text() == "追蹤"){
                                 follow_btn.click()
                                 taskLog("找到Follow按钮，开始点击Follow :" + commentText);
                             }
                             sleep(random(2000, 4000))
-
-
                         }else{
-                            taskLog("没有找到用户Tab按钮，终止本次操作，开始下一个用户的Follow行为！！！");
+                            taskLog("没有找到Follow按钮，终止本次操作，开始下一个用户的Follow行为！！！");
                             continue;
                         }
 
+
                     }else{
-                        taskLog("没有找到搜索头像控件，终止本次操作，开始下一个用户的Follow行为！！！");
+                        taskLog("没有找到用户Tab按钮，终止本次操作，开始下一个用户的Follow行为！！！");
                         continue;
                     }
-                   
+
+                }else{
+                    taskLog("没有找到搜索头像控件，终止本次操作，开始下一个用户的Follow行为！！！");
+                    continue;
                 }
+
+
             }
 
 
