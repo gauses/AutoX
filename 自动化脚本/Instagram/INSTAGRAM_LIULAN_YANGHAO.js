@@ -235,6 +235,11 @@ function click_Like_Btn(){
 
 //点击评论按钮
 function click_Comment_Btn(commentText){
+
+    //提前检查一下
+    check_save_btn_dialog()
+    sleep(random(2000 , 3000))
+
     taskLog("开始准备评论视频")
     //fullId("com.instagram.android:id/row_feed_button_comment")
     clickId("com.instagram.android:id/row_feed_button_comment")
@@ -285,6 +290,24 @@ function click_Save_Btn(){
     //fullId("com.instagram.android:id/row_feed_button_save")
     clickId("com.instagram.android:id/row_feed_button_save")
 
+    check_save_btn_dialog()
+
+}
+
+
+
+function check_save_btn_dialog(){
+    //可能出现一个下拉框，需要点击back
+
+    sleep(random(3000 , 5000))
+    taskLog("检查是否存在收藏下拉框")
+    //fullId("com.instagram.android:id/primary_action_button")
+    if(id("com.instagram.android:id/primary_action_button").exists()){
+        taskLog("存在收藏下拉框，点击back")
+        back()
+    }else{
+        taskLog("不存在收藏下拉框")
+    }
 }
 
 //点击观看
@@ -762,7 +785,7 @@ try {
         taskLog("开始模拟滑动")
         swipe_up()
 
-
+        check_save_btn_dialog()
         taskLog("开始准备寻找点赞按钮....");
         sleep(random(3000, 5000))
 
