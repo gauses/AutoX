@@ -1634,6 +1634,15 @@ try {
             }else{
                 taskLog("没有找到描述")
             }
+
+
+            //可能会出现一个提示，是否同步到Threads
+            //text("Not now")
+            var notNowBtn = find_btn_Text_base("Not now", "不要", "現在不要", "Not now")
+            if(notNowBtn){
+                taskLog("存在提示，点击Not now")
+            }
+            
             
 
 
