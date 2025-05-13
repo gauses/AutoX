@@ -278,13 +278,9 @@ function click_Comment_Btn(commentText){
             sleep(random(2000, 3000))
             back()
             sleep(random(2000, 3000))
-
-    
                 
             }
     }
-
-
    
 }
 
