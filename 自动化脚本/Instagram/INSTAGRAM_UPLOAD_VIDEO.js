@@ -132,6 +132,10 @@ if (isAppInstalled(INSTAGRAM_PACKAGE_NAME)) {
     exit();
 }
 
+sleep(random(3000, 5000))
+openAppSetting(targetPackageName)
+sleep(random(3000, 5000))
+
 forceStop_APP(targetPackageName)
 sleep(3000)
 

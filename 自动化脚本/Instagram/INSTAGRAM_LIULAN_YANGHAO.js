@@ -105,7 +105,7 @@ if (runningEngines.length > 1) {
 
 
 sleep(3000)
-taskLog("准备启动TikTok...")
+taskLog("准备启动Instagram...")
 
 
 
@@ -129,6 +129,10 @@ if (isAppInstalled(INSTAGRAM_PACKAGE_NAME)) {
     exit();
 }
 
+sleep(random(3000, 5000))
+openAppSetting(targetPackageName)
+sleep(random(3000, 5000))
+
 forceStop_APP(targetPackageName)
 sleep(3000)
 
@@ -140,6 +144,7 @@ app.startActivity({
 
 
 sleep(random(3000, 5000))
+
 
 
 
@@ -226,6 +231,7 @@ function click_Author_Page_Btn(){
 //点击点赞按钮
 function click_Like_Btn(){
     taskLog("开始准备点赞视频")
+    //className("android.widget.Button")
     //fullId("com.instagram.android:id/row_feed_button_like")
     clickId("com.instagram.android:id/row_feed_button_like")
 
