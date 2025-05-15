@@ -213,27 +213,24 @@ function click_Comment_Btn(commentText){
             //className("android.view.View") fullId("permalink_inline_composer_post_button") clickable("false")
             var autoViewList = className("android.view.View").find();
 
-            if(autoViewList.length > 0){
-                if(autoViewList.contains("permalink_inline_composer_post_button")){
-                    for (let i = 0; i < autoViewList.length; i++) {
-                        if (autoViewList[i] != null) {  
-                            if(autoViewList[i].id() == "permalink_inline_composer_post_button"){
-                                taskLog("找到发送按钮，开始点击发送")
-                                autoViewList[i].click()
-                                break;
-                            }
-                        }
-                    }
-                }else{
-                    taskLog("当前界面没有找到发送按钮，直接返回")
-                    back();
-                }
+            let foundSendBtn = false;
 
-            }else{
-                taskLog("当前界面没有找到任何View，直接返回")
+            if(autoViewList.length > 0){
+                // 遍历所有找到的View
+                for (let i = 0; i < autoViewList.length; i++) {
+                    if (autoViewList[i] != null && autoViewList[i].id() == "permalink_inline_composer_post_button") {
+                        taskLog("找到发送按钮，开始点击发送");
+                        autoViewList[i].click();
+                        foundSendBtn = true;
+                        break;
+                    }
+                }
+            
+            }
+            if (!foundSendBtn) {
+                taskLog("当前界面没有找到发送按钮，直接返回");
                 back();
             }
-
 
 
             sleep(random(3000, 5000))
