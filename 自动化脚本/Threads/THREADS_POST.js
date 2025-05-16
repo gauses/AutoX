@@ -827,18 +827,18 @@ try {
 
 
     //先点击What‘s New , 从而能进入一个新页面，来设置文本和图片
-    //className("android.widget.TextView") text("What's new?") clickable("false")
+    //className("android.view.View") fullId("barcelona_tab_create")  clickable("false")
     var foundWhatNew = false
-    var autoTextViewList = className("android.widget.TextView").find();
-    taskLog("当前页面找到 " + autoTextViewList.length + " 个TextView");
-    if(autoTextViewList.length > 0){
-        for (let i = 0; i < autoTextViewList.length; i++) {
-            if (autoTextViewList[i] != null) {  
-                taskLog("autoTextViewList[" + i + "] id = " + autoTextViewList[i].id());
-                if(autoTextViewList[i].text() == "What's new?"){
+    var autoViewList = className("android.view.View").find();
+    taskLog("当前页面找到 " + autoViewList.length + " 个View");
+    if(autoViewList.length > 0){
+        for (let i = 0; i < autoViewList.length; i++) {
+            if (autoViewList[i] != null) {  
+                taskLog("autoViewList[" + i + "] id = " + autoViewList[i].id());
+                if(autoViewList[i].id() == "barcelona_tab_create"){
                     taskLog("找到What's new?，开始点击")
                     // autoTextViewList[i].click()
-                    click(autoTextViewList[i].bounds().centerX(), autoTextViewList[i].bounds().centerY())
+                    click(autoViewList[i].bounds().centerX(), autoViewList[i].bounds().centerY())
                     foundWhatNew = true
                     sleep(random(3000, 5000))
                     break;
