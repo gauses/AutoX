@@ -208,19 +208,7 @@ function click_Comment_Btn(commentText){
             textView.setText(commentText)
             sleep(5000)
     
-    
             //发送按钮
-            //className("android.view.View") fullId("permalink_inline_composer_post_button") clickable("false")
-            // var sendBtn = className("android.view.View").id("permalink_inline_composer_post_button").findOne(1000);
-            // if(sendBtn){
-            //     taskLog("找到发送按钮，开始点击发送");
-            //     sendBtn.click();
-            // }else{
-            //     taskLog("当前界面没有找到发送按钮，直接返回");
-            //     back();
-            // }
-
-
             var autoViewList = className("android.view.View").find();
             let foundSendBtn = false;
 
@@ -759,7 +747,6 @@ try {
                         if (Math.random() * 100 < TT_Like_Count)  {
                             taskLog("找到点赞按钮，点击点赞按钮")
                             autoButtonList[i].click()
-                            sleep(3000)
                         }else{
                             taskLog("本次不需要触发点赞概率")
                         }
