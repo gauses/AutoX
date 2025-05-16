@@ -211,8 +211,17 @@ function click_Comment_Btn(commentText){
     
             //发送按钮
             //className("android.view.View") fullId("permalink_inline_composer_post_button") clickable("false")
-            var autoViewList = className("android.view.View").find();
+            // var sendBtn = className("android.view.View").id("permalink_inline_composer_post_button").findOne(1000);
+            // if(sendBtn){
+            //     taskLog("找到发送按钮，开始点击发送");
+            //     sendBtn.click();
+            // }else{
+            //     taskLog("当前界面没有找到发送按钮，直接返回");
+            //     back();
+            // }
 
+
+            var autoViewList = className("android.view.View").find();
             let foundSendBtn = false;
 
             if(autoViewList.length > 0){
