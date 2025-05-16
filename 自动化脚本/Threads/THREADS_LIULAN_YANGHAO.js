@@ -192,7 +192,7 @@ function clickId(a) {
 function click_Comment_Btn(commentText){
 
 
-    sleep(5000)
+    sleep(random(3000, 5000))
     //className("android.widget.EditText")
     var autoCompleteTextViews = className("android.widget.EditText").find();
     taskLog("autoCompleteTextViews长度 = " + autoCompleteTextViews.size())
@@ -206,7 +206,7 @@ function click_Comment_Btn(commentText){
             sleep(1000)
             taskLog("评论控件，设置内容：" +commentText );
             textView.setText(commentText)
-            sleep(5000)
+            sleep(random(3000, 5000))
     
             //发送按钮
             var autoViewList = className("android.view.View").find();
@@ -215,10 +215,15 @@ function click_Comment_Btn(commentText){
             if(autoViewList.length > 0){
                 // 遍历所有找到的View
                 for (let i = 0; i < autoViewList.length; i++) {
+                    // 或者输出控件的某个属性
+                    taskLog("autoViewList[" + i + "] id = " + autoViewList[i].id());
+
+                    //clickable("false")
                     if (autoViewList[i] != null && autoViewList[i].id() == "permalink_inline_composer_post_button") {
                         taskLog("找到发送按钮，开始点击发送");
-                        autoViewList[i].click();
+                        click(autoViewList[i].bounds().centerX(), autoViewList[i].bounds().centerY());
                         foundSendBtn = true;
+                        sleep(random(3000, 5000))
                         break;
                     }
                 }
@@ -737,7 +742,6 @@ try {
                 if (autoButtonList[i] != null) {  
                     // 或者输出控件的某个属性
                     taskLog("autoButtonList[" + i + "] id = " + autoButtonList[i].id());
-                    sleep(3000);
 
                     //点赞------------------------------------------
                     //feed_post_ufi_like_button
@@ -747,14 +751,15 @@ try {
                         if (Math.random() * 100 < TT_Like_Count)  {
                             taskLog("找到点赞按钮，点击点赞按钮")
                             autoButtonList[i].click()
+                            taskLog("等待3-5秒后，准备开始评论")
+                            sleep(random(3000, 5000))
                         }else{
                             taskLog("本次不需要触发点赞概率")
                         }
                     }
                     
 
-                    taskLog("等待3-5秒后，准备开始评论")
-                    sleep(random(3000, 5000))
+
 
                     //评论------------------------------------------
                     //feed_post_ufi_reply_button
