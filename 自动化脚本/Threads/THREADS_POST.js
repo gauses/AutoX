@@ -4,13 +4,14 @@ importClass(java.io.PrintWriter);
 importClass(java.io.FileWriter);
 
 //******************************************************************
-//***********************Threads首页浏览养号*************************
+//***********************Threads發佈串文（圖片、視屏）*************************
 //******************************************************************
 
 
 var THREADS_PACKAGE_NAME = 'com.instagram.barcelona';
 
-
+//将需要处理的多媒体图片，单独copy一份放到这个文件夹里面，后面处理完成之后，再删除这个文件夹
+var A_NEST_Threads_MEDIA = 'A_NEST_Threads_MEDIA';    
 
 //保证Java层和JS代码两边的日志文件一致
 var taskLogFileName = "nest_task_log.txt"
@@ -18,15 +19,10 @@ var taskLogImgName = "nest_task_log.png"
 
 
 //用户需要输入的评论内容
-const TT_Watch_Count = "$${瀏覽數量}" //观看视频个数
-const TT_commentFile = '$${T_留言內容}';
-const TT_Like_Count = "$${點讚概率}" //点赞概率
-const TT_Comment_Count = "$${留言概率}" //评论概率
+const THREADS_POST_VIDEO_URL = '$${T_需要上傳影片的本地地址}';
+const THREADS_POST_VIDEO_DESC = '$${T_上傳影片的說明}';
 
 
-// 计算循环次数
-const loopTimes = TT_Watch_Count;
-taskLog("自定義瀏覽总执行次数：" + loopTimes + "次");
 
 
 var targetPackageName = null;
@@ -634,8 +630,8 @@ function forceStop_APP(packageName){
 function get_all_TT_comment_text(){
     let comments = [];
     // 户是否存在
-    taskLog("TT评论数组 =  " + TT_commentFile)
-    const file = new java.io.File(TT_commentFile);
+    taskLog("TT评论数组 =  " + THREADS_POST_VIDEO_DESC)
+    const file = new java.io.File(THREADS_POST_VIDEO_DESC);
     if (file.exists() && file.isFile()) {
         try {
             // 读取文件内容
@@ -650,7 +646,7 @@ function get_all_TT_comment_text(){
         }
     } else {
         // 如果文件不存在，将文件名添加到数组中
-        comments.push(TT_commentFile);
+        comments.push(THREADS_POST_VIDEO_DESC);
     }
     
     return comments
@@ -661,7 +657,7 @@ function get_all_TT_comment_text(){
 function get_post_text(){
     // 用于存储私信用户的数组
     let comments = [];
-    const file = new java.io.File(TT_commentFile);
+    const file = new java.io.File(THREADS_POST_VIDEO_DESC);
     if (file.exists() && file.isFile()) {
         try {
             // 读取文件内容
@@ -676,7 +672,7 @@ function get_post_text(){
         }
     } else {
         // 如果文件不存在，将文件名添加到数组中
-        comments.push(TT_commentFile);
+        comments.push(THREADS_POST_VIDEO_DESC);
     }
     return comments
 
@@ -720,6 +716,91 @@ function swipe_up(){
     sleep(3000); //等待滚动完成
 }
 
+// 刷新指定路径的媒体库
+function refreshMedia(path) {
+    try {
+        toast("开始刷新媒体库，用时5秒钟....");
+        // 发送媒体扫描广播
+        media.scanFile(path);
+        // 等待扫描完成
+        sleep(5000);
+        toast("媒体库刷新完成，开始下一步任务...");
+    } catch (error) {
+        toast("path = " + path + " 媒体库刷新失败，error = " + error);
+    }
+
+}
+
+
+//转移视频到Nest临时文件夹
+function transferVideoToNest(fileName){
+    let videoPath = null;
+    if (files.exists(fileName)) {
+        videoPath = fileName;
+    }
+    
+    if (!videoPath) {
+        console.error("未找到指定视频：" + fileName);
+        toast("未找到指定视频：" + fileName);
+        //throw new error("没有找到需要上传的视频，所以异常直接退出")
+        return;
+    }
+
+
+    //开始拷贝一份，到本地自己的文件夹来单独处理，不处理原来的图片，
+    // 创建文件夹(如果不存在)
+    const newFolder = "/storage/emulated/0/Download/" + A_NEST_Threads_MEDIA;  // 替换成你想要的文件夹路径
+    if(!files.exists(newFolder)){
+        files.ensureDir(newFolder);
+        console.log("创建文件夹: " + newFolder);
+    }
+
+    // 目标视频路径(在新文件夹中)
+    const targetFileName = files.getName(videoPath);
+    const targetPath = newFolder + "/" + targetFileName;
+    console.log("新视频文件的绝对路径: " + targetPath);
+    // 复制图片文件
+    try {
+        files.copy(videoPath, targetPath);
+        console.log("复制成功!");
+        console.log("新视频路径: " + targetPath);
+    } catch(e) {
+        console.error("复制失败: " + e);
+    }
+
+    sleep(3000);
+
+    refreshMedia(newFolder)
+
+    return targetPath
+}
+
+//从评论数组中，顺序挑选一条描述
+function get_DESC_comment_text(){
+    let comments = [];
+    // 户是否存在
+    taskLog("THREADS_POST_VIDEO_DESC评论数组 =  " + THREADS_POST_VIDEO_DESC )
+    const file = new java.io.File(THREADS_POST_VIDEO_DESC);
+    if (file.exists() && file.isFile()) {
+        try {
+            // 读取文件内容
+            const reader = new java.io.BufferedReader(new java.io.FileReader(file));
+            let line;
+            while ((line = reader.readLine()) !== null) {
+                comments.push(line);
+            }
+            reader.close();
+        } catch (e) {
+            taskLog("读取文件时发生错误：" + e.message);
+        }
+    } else {
+        // 如果文件不存在，将文件名添加到数组中
+        comments.push(THREADS_POST_VIDEO_DESC);
+    }
+    
+    return comments
+}
+
 
 try {
     
@@ -727,90 +808,190 @@ try {
     var commentTextArrays = get_post_text()
     toast("评论文案个数：" + commentTextArrays.length)
 
-    for(let currentLoop = 1; currentLoop <= loopTimes; currentLoop++) {
-        toast("开始第 " + currentLoop + "/" + loopTimes + " 次执行");    
         
-        sleep(random(3000, 5000))
+    sleep(random(3000, 5000))
 
-        taskLog("开始模拟滑动")
-        swipe_up()
 
-        var autoButtonList = className("android.widget.Button").find();
-        taskLog("当前页面找到 " + autoButtonList.length + " 个按钮");
-        if(autoButtonList.length > 0){
-            for (let i = 0; i < autoButtonList.length; i++) {
-                if (autoButtonList[i] != null) {  
-                    // 或者输出控件的某个属性
-                    taskLog("autoButtonList[" + i + "] id = " + autoButtonList[i].id());
+    //转移图片到临时文件夹
+    taskLog("开始刷新本地媒体库.....")
+    refreshMedia("/storage/emulated/0/Download/")
+    sleep(3000)
 
-                    //点赞------------------------------------------
-                    //feed_post_ufi_like_button
-                    if(autoButtonList[i].id() == "feed_post_ufi_like_button"){
-                        taskLog("找到点赞按钮，开始检查点赞概率")
-
-                        if (Math.random() * 100 < TT_Like_Count)  {
-                            taskLog("找到点赞按钮，点击点赞按钮")
-                            autoButtonList[i].click()
-                            taskLog("等待3-5秒后，准备开始评论")
-                            sleep(random(3000, 5000))
-                        }else{
-                            taskLog("本次不需要触发点赞概率")
-                        }
-                    }
-                    
+    taskLog("开始转移视频到临时文件夹,THREADS_POST_VIDEO_URL = " + THREADS_POST_VIDEO_URL)
+    sleep(2000)
+    taskLog("开始转移视频到本地路径...")
+    var imageTempPath = transferVideoToNest(THREADS_POST_VIDEO_URL)
+    sleep(5000)
 
 
 
-                    //评论------------------------------------------
-                    //feed_post_ufi_reply_button
-                    if(autoButtonList[i].id() == "feed_post_ufi_reply_button"){
-                        taskLog("找到评论按钮，开始检查评论概率")
 
-                        if (Math.random() * 100 < TT_Comment_Count)  {
-                            if(commentTextArrays.length > 0){
-
-                                var randIdx = random(0, commentTextArrays.length - 1)
-                                var messageText = commentTextArrays[randIdx];
-                
-                                toast("评论文案：" + messageText)
-                                toast("准备点击评论按钮....");
-
-                                autoButtonList[i].click()
-                                sleep(random(500, 1000))
-
-                                click_Comment_Btn(messageText)
-                                sleep(3000)
-                
-                                taskLog("等待3-5秒后，准备返回上一个页面")
-                                sleep(random(3000, 5000))
-                
-                
-                            }else{
-                                toast("评论文案为空，所以不点击评论按钮");
-                            }
-    
-                        }else{
-                            taskLog("本次不需要触发评论概率")
-                        }
-                    }
-                } else {
-                    taskLog("这个位置按钮为空 = " + i + " 个按钮");
+    //先点击What‘s New , 从而能进入一个新页面，来设置文本和图片
+    //className("android.widget.TextView") text("What's new?") clickable("false")
+    var foundWhatNew = false
+    var autoTextViewList = className("android.widget.TextView").find();
+    taskLog("当前页面找到 " + autoTextViewList.length + " 个TextView");
+    if(autoTextViewList.length > 0){
+        for (let i = 0; i < autoTextViewList.length; i++) {
+            if (autoTextViewList[i] != null) {  
+                taskLog("autoTextViewList[" + i + "] id = " + autoTextViewList[i].id());
+                if(autoTextViewList[i].text() == "What's new?"){
+                    taskLog("找到What's new?，开始点击")
+                    // autoTextViewList[i].click()
+                    click(autoTextViewList[i].bounds().centerX(), autoTextViewList[i].bounds().centerY())
+                    foundWhatNew = true
+                    sleep(random(3000, 5000))
+                    break;
                 }
             }
-        }else{
-            taskLog("没有找到按钮，直接滑动到下一个页面")
-        }
-        
-
-        if(currentLoop < loopTimes) {
-            taskLog("等待5秒后开始下一次循环...");
-            sleep(random(3000, 5000))
-        }else{
-            taskLog("所有循环执行完毕，准备结束任务...");
-            stopCurrentTask()
         }
     }
 
+
+    //描述
+    var all_TT_DESC_text = []
+    if(THREADS_POST_VIDEO_DESC && 
+        THREADS_POST_VIDEO_DESC.trim() !== "" && 
+        THREADS_POST_VIDEO_DESC.trim().toLowerCase() !== "off" && 
+        !THREADS_POST_VIDEO_DESC.includes("$${")){
+            all_TT_DESC_text = get_DESC_comment_text()
+
+            //从数组中，随机挑选一条描述
+            var randomIndex = Math.floor(Math.random() * all_TT_DESC_text.length);
+            var randomDesc = all_TT_DESC_text[randomIndex];
+            taskLog("随机挑选的描述 = " + randomDesc)
+
+            //输入内容
+            //className("android.widget.EditText") fullId("new_thread_screen_composer") clickable("true")
+            var autoEditTextList = className("android.widget.EditText").find();
+            taskLog("当前页面找到 " + autoEditTextList.length + " 个EditText");
+            if(autoEditTextList.length > 0){
+                for (let i = 0; i < autoEditTextList.length; i++) {
+                    if (autoEditTextList[i] != null) {
+                        taskLog("autoEditTextList[" + i + "] id = " + autoEditTextList[i].id());    
+                        if(autoEditTextList[i].id() == "new_thread_screen_composer"){
+                            taskLog("找到输入框，开始输入内容")
+                            autoEditTextList[i].setText(randomDesc)
+                            sleep(random(3000, 5000))
+                            break;
+                        }   
+                    }
+                }
+            }else{
+                taskLog("没有找到输入框，直接无视")
+            }
+            
+    }else{
+        taskLog("没有设置文本，所以不需要设文本")
+    }
+
+
+    //图片&视频
+    var foundClickIMGAE = false
+    if(THREADS_POST_VIDEO_URL && 
+        THREADS_POST_VIDEO_URL.trim() !== "" && 
+        THREADS_POST_VIDEO_URL.trim().toLowerCase() !== "off" && 
+        !THREADS_POST_VIDEO_URL.includes("$${")){
+
+            if(foundWhatNew){
+                taskLog("找到What's new?，开始寻找图片按钮")
+                var autoButtonList = className("android.widget.Button").find();
+                taskLog("当前页面找到 " + autoButtonList.length + " 个按钮");
+                if(autoButtonList.length > 0){
+                    for (let i = 0; i < autoButtonList.length; i++) {
+                        if (autoButtonList[i] != null) {  
+                            // 或者输出控件的某个属性
+                            taskLog("autoButtonList[" + i + "] id = " + autoButtonList[i].id());
+            
+                            //点击第一个按钮
+                            //fullId("new_thread_screen_gallery_button")
+                            if(autoButtonList[i].id() == "new_thread_screen_gallery_button"){
+                                taskLog("找到按钮，开始准备寻找图片")
+                                autoButtonList[i].click()
+                                foundClickIMGAE = true
+                                sleep(random(3000, 5000))
+                                break;
+                            }
+                            
+                        } else {
+                            taskLog("这个位置按钮为空 = " + i + " 个按钮");
+                        }
+                    }
+                }else{
+                    taskLog("没有找到按钮，直接无视图片")
+                }
+        
+        
+        
+                if(foundClickIMGAE){
+                    //开始点击图片：className("android.view.ViewGroup") fullId("com.instagram.barcelona:id/gallery_picker_grid_item_container") clickable("true")
+                    var autoGalleryList = className("android.view.ViewGroup").find();
+                    taskLog("当前页面找到 " + autoGalleryList.length + " 个图片");
+                    if(autoGalleryList.length > 0){
+                        for (let i = 0; i < autoGalleryList.length; i++) {
+                            if (autoGalleryList[i] != null) {  
+                                taskLog("autoGalleryList[" + i + "] id = " + autoGalleryList[i].id());
+                                if(autoGalleryList[i].id() == THREADS_PACKAGE_NAME + ":id/gallery_picker_grid_item_container"){
+                                    taskLog("找到图片，开始点击")
+                                    autoGalleryList[i].click()
+                                    sleep(random(3000, 5000))
+
+                                    //选中图片之后，点击done ：className("android.widget.Button") text("Done") clickable("true")
+                                    var autoDoneButtonList = className("android.widget.Button").find();
+                                    taskLog("当前页面找到 " + autoButtonList.length + " 个Button按钮");
+                                    if(autoButtonList.length > 0){
+                                        for (let i = 0; i < autoButtonList.length; i++) {
+                                            if(autoDoneButtonList[i].text() == "Done"){
+                                                taskLog("找到Done按钮，开始点击")
+                                                autoDoneButtonList[i].click()
+                                                sleep(random(3000, 5000))
+                                                break;
+                                            }
+                                        }
+                                    }else{
+                                        back()
+                                    }
+
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                }
+
+            }
+            
+    }else{
+        taskLog("没有设置图片视频地址，所以不需要上传图片，只设置文字即可")
+    }
+
+
+
+
+    //最后点击POST
+    //className("android.view.View")  fullId("new_thread_screen_post_button") clickable("false")
+    var autoViewList = className("android.view.View").find();
+    taskLog("当前页面找到 " + autoViewList.length + " 个View");
+    if(autoViewList.length > 0){
+        for (let i = 0; i < autoViewList.length; i++) {
+            if(autoViewList[i].id() == "new_thread_screen_post_button"){
+                taskLog("找到POST按钮，开始点击")
+                click(autoViewList[i].bounds().centerX(), autoViewList[i].bounds().centerY())   
+                sleep(random(3000, 5000))
+                break;
+            }
+        }
+    }
+
+
+
+
+
+
+    
+
+    
 
 } catch (e) {
     handleError(e);
