@@ -937,11 +937,12 @@ try {
                                     sleep(random(3000, 5000))
 
                                     //选中图片之后，点击done ：className("android.widget.Button") text("Done") clickable("true")
+                                    //繁体中文：text("完成")
                                     var autoDoneButtonList = className("android.widget.Button").find();
                                     taskLog("当前页面找到 " + autoButtonList.length + " 个Button按钮");
                                     if(autoButtonList.length > 0){
                                         for (let i = 0; i < autoButtonList.length; i++) {
-                                            if(autoDoneButtonList[i].text() == "Done"){
+                                            if(autoDoneButtonList[i].text() == "Done" || autoDoneButtonList[i].text() == "完成"){ 
                                                 taskLog("找到Done按钮，开始点击")
                                                 autoDoneButtonList[i].click()
                                                 sleep(random(3000, 5000))
