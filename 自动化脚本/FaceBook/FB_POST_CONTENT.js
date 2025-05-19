@@ -82,13 +82,47 @@ if (runningEngines.length > 1) {
   })
 }
 
+sleep(3000)
 taskLog("准备启动Facebook...")
-sleep(5000)
+
+var targetPackageName = null;
+var targetClassName = null;
+
+function isAppInstalled(packageName) {
+    var pm = context.getPackageManager();
+    try {
+        pm.getPackageInfo(packageName, 0);
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
+
+if (isAppInstalled(FacebookPackageName)) {
+    targetPackageName = FacebookPackageName;
+    targetClassName = "com.facebook.katana.activity.FbMainTabActivity";
+    taskLog("检测到已安装Facebook，准备启动...");
+} else {
+    toast("未检测到Facebook已安装，请先安装Facebook！");
+    taskLog("未检测到Facebook已安装，脚本终止。");
+    exit();
+}
+
+sleep(random(3000, 5000))
+openAppSetting(targetPackageName)
+sleep(random(3000, 5000))
+
+forceStop_APP(targetPackageName)
+sleep(3000)
+
 app.startActivity({
     action: "android.intent.action.VIEW",
-    packageName: FacebookPackageName,
-    className: "com.facebook.katana.activity.FbMainTabActivity"
+    packageName: targetPackageName,
+    className: targetClassName
 });
+
+
+sleep(random(3000, 5000))
 
 
 
@@ -98,22 +132,23 @@ app.startActivity({
  
     //发布content
     //className("android.widget.Button").desc("Make a post on Facebook").findOne().click()
-    find_btn_desc_base("Make a post on Facebook", "發布到 Facebook", "Make a post on Facebook")
+    //desc("在 Facebook 撰寫貼文")
+    find_btn_desc_base("Make a post on Facebook", "在 Facebook 撰寫貼文", "發布到 Facebook")
     sleep(5000)
 
 
-    // 获取屏幕的宽度和高度
-    let screenWidth = device.width;
-    let screenHeight = device.height;
-    taskLog("屏幕区域的宽高坐标: (" + screenWidth + ", " + screenHeight + ")");
-    // 计算屏幕上方2/3区域的底部位置
-    let twoThirdsHeight = screenHeight * (2/3);
-    // 计算该区域的中心点坐标
-    let centerX = screenWidth / 2;
-    let centerY = twoThirdsHeight - (screenHeight / 3) / 2;
-    // 打印屏幕上方2/3区域的中心点坐标
-    taskLog("准备点击屏幕上方2/3区域的中心点坐标: (" + centerX + ", " + centerY + ")");
-    click(centerX,centerY)
+    // // 获取屏幕的宽度和高度
+    // let screenWidth = device.width;
+    // let screenHeight = device.height;
+    // taskLog("屏幕区域的宽高坐标: (" + screenWidth + ", " + screenHeight + ")");
+    // // 计算屏幕上方2/3区域的底部位置
+    // let twoThirdsHeight = screenHeight * (2/3);
+    // // 计算该区域的中心点坐标
+    // let centerX = screenWidth / 2;
+    // let centerY = twoThirdsHeight - (screenHeight / 3) / 2;
+    // // 打印屏幕上方2/3区域的中心点坐标
+    // taskLog("准备点击屏幕上方2/3区域的中心点坐标: (" + centerX + ", " + centerY + ")");
+    // click(centerX,centerY)
 
 
     taskLog("准备输入分享内容....");
@@ -163,7 +198,8 @@ app.startActivity({
     taskLog("准备点击POST....");
     sleep(5000)
     //className("android.view.ViewGroup").text("POST").findOne().click()
-    find_viewGroup_text_base("POST", "發布" , "POST")
+    //desc("發佈")
+    find_viewGroup_text_base("POST", "發佈" , "發布")
 
 
     //删除临时图片库 :A_NEST_FaceBook_MEDIA
@@ -180,7 +216,6 @@ app.startActivity({
 
 
 function post_Image(){
-    taskLog("开始检查图片条件判断...")
     taskLog("FB_input_IMAGE的实际值: " + FB_input_IMAGE)
     
     // 检查是否是有效的图片路径（不是模板字符串且文件存在）
@@ -189,18 +224,20 @@ function post_Image(){
         FB_input_IMAGE.trim().toLowerCase() !== "off" && 
         !FB_input_IMAGE.includes("$${")){
             taskLog("检测到有效的图片路径，准备处理图片...")
-            toast("图片不是空")    
 
+            taskLog("开始刷新媒体库，用时5秒钟....")
             refreshMedia("/storage/emulated/0/Download/")
             var imageTempPath = transferHeadImageToNest(FB_input_IMAGE)
             sleep(10000)
 
             //className("android.widget.Button").desc("Photo/video").findOne().click()
-            find_btn_desc_base("Photo/video", "照片/影片", "Photo/video")
+            taskLog("准备点击 - 相片／影片....")
+            find_btn_desc_base("Photo/video", "相片／影片", "Photo/video")
             sleep(5000)
 
             //点击权限
             //className("android.widget.Button").desc("Allow access").findOne().click()
+            taskLog("准备检查权限....")
             find_btn_desc_base("Allow access", "允許存取", "Allow access")
             sleep(3000)
 
@@ -267,10 +304,9 @@ function post_Image(){
                         return;
                     }
                     
-                    toast("选择图片描述 = " + buttonDesc);
                     taskLog("选择图片描述 = " + buttonDesc);
                     
-                    if (buttonDesc.indexOf("Photo taken on") !== -1) {
+                    if (buttonDesc.indexOf("Photo taken on") !== -1 || buttonDesc.indexOf("的相片") !== -1)  {
                         taskLog("找到目标图片：" + buttonDesc);
                         var bounds = button.bounds();
                         if (bounds) {
@@ -332,7 +368,7 @@ function transferHeadImageToNest(fileName){
     // 目标图片路径(在新文件夹中)
     const targetFileName = files.getName(imagePath);
     const targetPath = newFolder + "/" + targetFileName;
-    console.log("新图片文件的绝对路径: " + targetPath);
+    taskLog("新图片文件的绝对路径: " + targetPath);
     // 复制图片文件
     try {
         files.copy(imagePath, targetPath);
@@ -344,7 +380,7 @@ function transferHeadImageToNest(fileName){
 
     sleep(3000);
 
-
+    taskLog("重新刷新媒体库，用时5秒钟....")
     refreshMedia(newFolder)
     sleep(10000);
 
@@ -381,6 +417,7 @@ function transferHeadImageToNest(fileName){
 
 //打印日志
 function taskLog(_log){
+    toast(_log)
     console.log(getSystemDate("df") +":" +_log)
 }
 
@@ -550,25 +587,23 @@ function find_btn_desc_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
 }
 
 
-//强制停止FaceBook 
-function forceStop_FaceBook(){
-    taskLog("准备强杀FaceBook...")
-    // 先启动应用
-    // app.launchPackage(TikTokPackageName);
-    // 等待应用启动
+
+//强制停止TikTok 
+function forceStop_APP(packageName){
+    taskLog("准备强杀:" + packageName + "...")
     sleep(1000);
-    app.openAppSetting(FacebookPackageName)
+    app.openAppSetting(packageName)
     sleep(5000)
 
     //繁体
-    if (text("強行停止").exists()) {
-        let forceStopBtn = text("強行停止").findOne();
+    if (text("強制停止").exists()) {
+        let forceStopBtn = text("強制停止").findOne();
         if (forceStopBtn && forceStopBtn.clickable()) {
             forceStopBtn.click();
             sleep(1000);
             // 确认操作
             if (text("確定").exists()) {
-                taskLog("已经找到可点击的'強行停止'按钮！！！！！！！！！！");
+                taskLog("已经找到可点击的'強制停止'按钮！！！！！！！！！！");
                 text("確定").findOne().click();
             }
         } else {
