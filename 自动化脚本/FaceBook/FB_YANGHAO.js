@@ -16,6 +16,8 @@ var taskLogImgName = "nest_task_log.png"
 
 
 //用户需要输入的评论内容
+const FB_Like_Count = "$${點讚概率}" //点赞概率
+const FB_Comment_Count = "$${留言概率}" //评论概率
 const FB_input_text = '$${T_FB_输入评论文案}';
 const FB_input_Time = "$${FB_自定義总执行次数}"
 
@@ -56,15 +58,44 @@ if (runningEngines.length > 1) {
 }
 
 
+sleep(3000)
 taskLog("准备启动Facebook...")
-    sleep(5000)
-    app.startActivity({
-        action: "android.intent.action.VIEW",
-        packageName: FacebookPackageName,
-        className: "com.facebook.katana.activity.FbMainTabActivity"
-    });
 
-    taskLog("打开Facebook成功...")
+var targetPackageName = null;
+var targetClassName = null;
+
+function isAppInstalled(packageName) {
+    var pm = context.getPackageManager();
+    try {
+        pm.getPackageInfo(packageName, 0);
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
+
+if (isAppInstalled(FacebookPackageName)) {
+    targetPackageName = FacebookPackageName;
+    targetClassName = "com.facebook.katana.activity.FbMainTabActivity";
+    taskLog("检测到已安装Facebook，准备启动...");
+} else {
+    toast("未检测到Facebook已安装，请先安装Facebook！");
+    taskLog("未检测到Facebook已安装，脚本终止。");
+    exit();
+}
+
+sleep(random(3000, 5000))
+openAppSetting(targetPackageName)
+sleep(random(3000, 5000))
+
+forceStop_APP(targetPackageName)
+sleep(3000)
+
+app.startActivity({
+    action: "android.intent.action.VIEW",
+    packageName: targetPackageName,
+    className: targetClassName
+});
 
 
 
@@ -89,61 +120,140 @@ for(let currentLoop = 1; currentLoop <= loopTimes; currentLoop++) {
     swipe_up()
 
 
-    taskLog("准备点击点赞按钮....");
     sleep(5000)
 
     //检查是不是有点赞按钮
-    var likeBtn =  find_viewGroup_desc_base("讚","Like", "Like")
-    sleep(2000)
-    if(likeBtn){
-        toast("找到点赞按钮, 直接继续进行")
+    var likeBtnList = className("android.view.ViewGroup").find();
+    if(likeBtnList.size() > 0){
+        for(var i = 0; i < likeBtnList.size(); i++) {
+            var likeBtn = likeBtnList.get(i);
+            if(likeBtn){
+                if (likeBtn.desc() == "Like" || likeBtn.desc() == "讚" || likeBtn.desc() == "Like" )  {
 
-        if(commentTextArrays.length > 0){
-
-            var randIdx = random(0, commentTextArrays.length - 1)
-            var messageText = commentTextArrays[randIdx];
-
-            toast("评论文案：" + messageText)
-            toast("准备点击评论按钮....");
-            sleep(5000)
-            var findCommentBtn = find_btn_desc_base("留言", "Comment" , "Comment")
-            if(findCommentBtn){
-                toast("找到评论按钮");
-                sleep(5000)
-    
-                var autoCompleteTextViews = className("android.widget.AutoCompleteTextView").find();
-                if(autoCompleteTextViews.size() > 0 ){
-                    for(var i = 0; i < autoCompleteTextViews.size(); i++) {
-                        var textView = autoCompleteTextViews.get(i);
-                        if(textView) {
-                            taskLog("找到AutoCompleteTextView控件-Text："+ textView.text());
-                            sleep(2000)
-                            textView.setText(messageText)
-                        }
+                    if (Math.random() * 100 < FB_Like_Count)  {
+                        taskLog("开始触发点赞概率")
+                        click(likeBtn.bounds().centerX() , likeBtn.bounds().centerY())  
+                        sleep(random(3000, 5000))
+                    }else{
+                        taskLog("虽然找到点赞按钮，没有触发点赞概率")
                     }
+                                
+
+
+                }else if(likeBtn.desc() == "Comment" || likeBtn.desc() == "留言" || likeBtn.desc() == "Comment"){
+
+                    if (Math.random() * 100 < FB_Comment_Count)  { 
+
+                        if(commentTextArrays.length > 0){
+
+                            click(likeBtn.bounds().centerX() , likeBtn.bounds().centerY())  
+
+                            var randIdx = random(0, commentTextArrays.length - 1)
+                            var messageText = commentTextArrays[randIdx];
+                
+                            toast("评论文案：" + messageText)
+                            sleep(random(5000, 8000))
+                
+                            var autoCompleteTextViews = className("android.widget.AutoCompleteTextView").find();
+                            if(autoCompleteTextViews.size() > 0 ){
+                                for(var i = 0; i < autoCompleteTextViews.size(); i++) {
+                                    var textView = autoCompleteTextViews.get(i);
+                                    if(textView) {
+                                        taskLog("找到AutoCompleteTextView控件-Text："+ textView.text());
+                                        sleep(2000)
+                                        textView.setText(messageText)
+                                    }
+                                }
+                            }
+                    
+                            //发送
+                            sleep(5000)
+                            find_btn_desc_base("傳送", "Send" , "Send")
+
+                            sleep(5000)
+                            back() //键盘收起
+                            sleep(1000)
+                            back() //返回上一个页面
+
+                        }else{
+                            toast("评论文案为空，所以不点击评论按钮");
+                        }
+
+
+                    }else{
+                        taskLog("虽然找到评论按钮，没有触发评论概率")
+                    }
+                    break;
+
+                }else{
+                    taskLog("没有找到点赞或者评论按钮，直接下一个循环页面")
                 }
-        
-                //发送
-                sleep(5000)
-                find_btn_desc_base("傳送", "Send" , "Send")
-        
-        
-                sleep(5000)
-                back() //键盘收起
-                sleep(1000)
-                back() //返回上一个页面
-        
-        
-            }else{
-                toast("没有找到评论按钮");
             }
-        }else{
-            toast("评论文案为空，所以不点击评论按钮");
         }
-        
+
+
     }else{
-        toast("没有找到点赞按钮，直接下一次循环页面")
+        taskLog("没有找到任何ViewGroup，直接下一个循环页面")
     }
+
+
+
+    // var likeBtn =  find_viewGroup_desc_base("讚","Like", "Like")
+    // sleep(2000)
+    // if(likeBtn){
+    //     if (Math.random() * 100 < TT_Like_Count)  {
+    //         taskLog("开始触发点赞概率")
+
+
+    //     }
+
+
+    //     if(commentTextArrays.length > 0){
+
+    //         var randIdx = random(0, commentTextArrays.length - 1)
+    //         var messageText = commentTextArrays[randIdx];
+
+    //         toast("评论文案：" + messageText)
+    //         toast("准备点击评论按钮....");
+    //         sleep(5000)
+    //         var findCommentBtn = find_btn_desc_base("留言", "Comment" , "Comment")
+    //         if(findCommentBtn){
+    //             toast("找到评论按钮");
+    //             sleep(5000)
+    
+    //             var autoCompleteTextViews = className("android.widget.AutoCompleteTextView").find();
+    //             if(autoCompleteTextViews.size() > 0 ){
+    //                 for(var i = 0; i < autoCompleteTextViews.size(); i++) {
+    //                     var textView = autoCompleteTextViews.get(i);
+    //                     if(textView) {
+    //                         taskLog("找到AutoCompleteTextView控件-Text："+ textView.text());
+    //                         sleep(2000)
+    //                         textView.setText(messageText)
+    //                     }
+    //                 }
+    //             }
+        
+    //             //发送
+    //             sleep(5000)
+    //             find_btn_desc_base("傳送", "Send" , "Send")
+        
+        
+    //             sleep(5000)
+    //             back() //键盘收起
+    //             sleep(1000)
+    //             back() //返回上一个页面
+        
+        
+    //         }else{
+    //             toast("没有找到评论按钮");
+    //         }
+    //     }else{
+    //         toast("评论文案为空，所以不点击评论按钮");
+    //     }
+        
+    // }else{
+    //     toast("没有找到点赞按钮，直接下一次循环页面")
+    // }
 
 
     if(currentLoop < loopTimes) {
@@ -463,7 +573,7 @@ function find_viewGroup_desc_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US
 }
 
 
-
+//强制停止TikTok 
 function forceStop_APP(packageName){
     taskLog("准备强杀:" + packageName + "...")
     sleep(1000);
@@ -471,14 +581,14 @@ function forceStop_APP(packageName){
     sleep(5000)
 
     //繁体
-    if (text("強行停止").exists()) {
-        let forceStopBtn = text("強行停止").findOne();
+    if (text("強制停止").exists()) {
+        let forceStopBtn = text("強制停止").findOne();
         if (forceStopBtn && forceStopBtn.clickable()) {
             forceStopBtn.click();
             sleep(1000);
             // 确认操作
             if (text("確定").exists()) {
-                taskLog("已经找到可点击的'強行停止'按钮！！！！！！！！！！");
+                taskLog("已经找到可点击的'強制停止'按钮！！！！！！！！！！");
                 text("確定").findOne().click();
             }
         } else {
