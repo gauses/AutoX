@@ -64,19 +64,48 @@ if (runningEngines.length > 1) {
 }
 
 
-toast("先尝试杀Facebook进程...")
-forceStop_APP(FacebookPackageName)
-sleep(5000)
 
+sleep(3000)
 taskLog("准备启动Facebook...")
-    sleep(5000)
-    app.startActivity({
-        action: "android.intent.action.VIEW",
-        packageName: FacebookPackageName,
-        className: "com.facebook.katana.activity.FbMainTabActivity"
-    });
 
-    taskLog("打开Facebook成功...")
+var targetPackageName = null;
+var targetClassName = null;
+
+function isAppInstalled(packageName) {
+    var pm = context.getPackageManager();
+    try {
+        pm.getPackageInfo(packageName, 0);
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
+
+if (isAppInstalled(FacebookPackageName)) {
+    targetPackageName = FacebookPackageName;
+    targetClassName = "com.facebook.katana.activity.FbMainTabActivity";
+    taskLog("检测到已安装Facebook，准备启动...");
+} else {
+    toast("未检测到Facebook已安装，请先安装Facebook！");
+    taskLog("未检测到Facebook已安装，脚本终止。");
+    exit();
+}
+
+sleep(random(3000, 5000))
+openAppSetting(targetPackageName)
+sleep(random(3000, 5000))
+
+forceStop_APP(targetPackageName)
+sleep(3000)
+
+app.startActivity({
+    action: "android.intent.action.VIEW",
+    packageName: targetPackageName,
+    className: targetClassName
+});
+
+
+
 
 
 
@@ -85,7 +114,7 @@ taskLog("准备启动Facebook...")
     sleep(5000)
 
     var all_group_comment_text = get_all_groups_comment_text()
-    toast("所有Group评论数量 = " + all_group_comment_text.length)
+    toast("所有评论数量 = " + all_group_comment_text.length)
     sleep(5000) 
 
     
@@ -130,6 +159,7 @@ stopCurrentTask()
 
 //打印日志
 function taskLog(_log){
+    toast(_log)
     console.log(getSystemDate("df") +":" +_log)
 }
 
@@ -772,7 +802,7 @@ function fina_all_Comment(){
     //设置开始时间
     let startTime = new Date().getTime();
     //设置超时时间（60秒 * 评论次数）
-    const TIMEOUT = 60 * 1000 * FB_common_count;  // 转换为毫秒
+    const TIMEOUT = 180 * 1000 * FB_common_count;  // 转换为毫秒
 
     toast("开始寻找Comment按钮，超时时间 = " + (TIMEOUT/1000) + "秒,评论次数 = " + FB_common_count);
     
@@ -904,17 +934,20 @@ function post_content(){
     try {
         var randIdx = random(0, all_group_comment_text.length - 1)
         var messageText = all_group_comment_text[randIdx];
-        toast("输入内容 = " + messageText);
+        taskLog("输入内容 = " + messageText);
 
         //检查是不是已经到了FB提示页面
         check_comment_result()
         sleep(3000)
 
-        let textBox = className("android.widget.AutoCompleteTextView").findOne(10000); // 5秒超时
-        if(textBox) {
-            textBox.setText(messageText);
+        //className("android.widget.AutoCompleteTextView")
+        let textBoxList = className("android.widget.AutoCompleteTextView").find(); 
+        if(textBoxList.length > 0) {
+            textBoxList[0].click();
+            sleep(random(1000, 2000))
+            textBoxList[0].setText(messageText);
         } else {
-            toast("未找到输入框");
+            taskLog("未找到输入框");
             sleep(1000)
             back()
 
@@ -1059,65 +1092,71 @@ function post_Image(){
 
             //className("android.widget.Button").desc("Show photos and videos").findOne().click()
             //desc("顯示相片和影片")
-            find_btn_desc_base("Show photos and videos", "顯示相片和影片", "Show photos and videos")
-            sleep(5000)
+            var findImageBtn = find_btn_desc_base("Show photos and videos", "顯示相片和影片", "Show photos and videos")
+            if(findImageBtn){
 
-            //点击权限
-            //className("android.widget.Button").desc("Allow access").findOne().click()
-            find_btn_desc_base("Allow access", "允許存取", "Allow access")
-            sleep(3000)
+                sleep(5000)
 
-            //再次点击权限
-            // id("(name removed)").className("android.widget.Button").text("ALLOW").findOne().click()
-            find_btn_Text_base("ALLOW", "允許", "ALLOW")
-            sleep(3000)
-
-            //系统弹窗
-            find_btn_Text_base("允许", "允許", "Allow")
-            sleep(3000)
-
-
-
-            //选中一张图片即可
-            var isPhotoSelected = false;  // 添加标志位
-            className("android.widget.GridView").findOne().children().forEach(child => {
-                if (isPhotoSelected) return;  // 如果已经选中图片就跳过后续循环
-
-                var button = child.findOne(className("android.widget.Button"));
-                if (!button) {
-                    taskLog("未找到Button控件，跳过");
-                    return;
-                }
-                
-                var buttonDesc = button.desc();
-                if (!buttonDesc) {
-                    taskLog("Button没有描述文本，跳过");
-                    return;
-                }
-                
-                toast("选择图片描述 = " + buttonDesc);
-                taskLog("选择图片描述 = " + buttonDesc);
-                
-                if (buttonDesc.indexOf("Photo taken on") !== -1 || buttonDesc.indexOf("的相片") !== -1)  {
-                    taskLog("找到目标图片：" + buttonDesc);
-                    var bounds = button.bounds();
-                    if (bounds) {
-                        click(bounds.centerX(), bounds.centerY());
-                        taskLog("点击坐标：" + bounds.centerX() + ", " + bounds.centerY());
-                        isPhotoSelected = true;  // 设置标志位为true
-                        sleep(2000);
+                //点击权限
+                //className("android.widget.Button").desc("Allow access").findOne().click()
+                find_btn_desc_base("Allow access", "允許存取", "Allow access")
+                sleep(3000)
+    
+                //再次点击权限
+                // id("(name removed)").className("android.widget.Button").text("ALLOW").findOne().click()
+                find_btn_Text_base("ALLOW", "允許", "ALLOW")
+                sleep(3000)
+    
+                //系统弹窗
+                find_btn_Text_base("允许", "允許", "Allow")
+                sleep(3000)
+    
+    
+    
+                //选中一张图片即可
+                var isPhotoSelected = false;  // 添加标志位
+                className("android.widget.GridView").findOne().children().forEach(child => {
+                    if (isPhotoSelected) return;  // 如果已经选中图片就跳过后续循环
+    
+                    var button = child.findOne(className("android.widget.Button"));
+                    if (!button) {
+                        taskLog("未找到Button控件，跳过");
+                        return;
                     }
+                    
+                    var buttonDesc = button.desc();
+                    if (!buttonDesc) {
+                        taskLog("Button没有描述文本，跳过");
+                        return;
+                    }
+                    
+                    toast("选择图片描述 = " + buttonDesc);
+                    taskLog("选择图片描述 = " + buttonDesc);
+                    
+                    if (buttonDesc.indexOf("Photo taken on") !== -1 || buttonDesc.indexOf("的相片") !== -1)  {
+                        taskLog("找到目标图片：" + buttonDesc);
+                        var bounds = button.bounds();
+                        if (bounds) {
+                            click(bounds.centerX(), bounds.centerY());
+                            taskLog("点击坐标：" + bounds.centerX() + ", " + bounds.centerY());
+                            isPhotoSelected = true;  // 设置标志位为true
+                            sleep(2000);
+                        }
+                    }
+                });
+    
+                if (isPhotoSelected) {
+                    //点击Next
+                    toast("已经选中图库中的第一张图片");
+                    sleep(5000);
+                } else {
+                    taskLog("未找到任何符合条件的图片");
+                    toast("未找到任何符合条件的图片");
                 }
-            });
 
-            if (isPhotoSelected) {
-                //点击Next
-                toast("已经选中图库中的第一张图片");
-                sleep(5000);
-            } else {
-                taskLog("未找到任何符合条件的图片");
-                toast("未找到任何符合条件的图片");
+                
             }
+
         
 
             
