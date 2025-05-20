@@ -60,20 +60,45 @@ if (runningEngines.length > 1) {
   })
 }
 
-toast("先尝试杀Facebook进程...")
-forceStop_APP(FacebookPackageName)
-sleep(5000)
 
+sleep(3000)
 taskLog("准备启动Facebook...")
-    sleep(5000)
-    app.startActivity({
-        action: "android.intent.action.VIEW",
-        packageName: FacebookPackageName,
-        className: "com.facebook.katana.activity.FbMainTabActivity"
-    });
 
-    taskLog("打开Facebook成功...")
+var targetPackageName = null;
+var targetClassName = null;
 
+function isAppInstalled(packageName) {
+    var pm = context.getPackageManager();
+    try {
+        pm.getPackageInfo(packageName, 0);
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
+
+if (isAppInstalled(FacebookPackageName)) {
+    targetPackageName = FacebookPackageName;
+    targetClassName = "com.facebook.katana.activity.FbMainTabActivity";
+    taskLog("检测到已安装Facebook，准备启动...");
+} else {
+    toast("未检测到Facebook已安装，请先安装Facebook！");
+    taskLog("未检测到Facebook已安装，脚本终止。");
+    exit();
+}
+
+sleep(random(3000, 5000))
+openAppSetting(targetPackageName)
+sleep(random(3000, 5000))
+
+forceStop_APP(targetPackageName)
+sleep(3000)
+
+app.startActivity({
+    action: "android.intent.action.VIEW",
+    packageName: targetPackageName,
+    className: targetClassName
+});
 
 
     var all_friends = get_all_groups()
