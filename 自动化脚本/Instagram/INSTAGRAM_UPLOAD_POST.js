@@ -4,7 +4,7 @@ importClass(java.io.PrintWriter);
 importClass(java.io.FileWriter);
 
 //******************************************************************
-//***********************指定圖片or視屏 （點愛心、評論）
+//***********************上传视频*************************
 //******************************************************************
 
 
@@ -13,14 +13,22 @@ importClass(java.io.FileWriter);
 //保证Java层和JS代码两边的日志文件一致
 var taskLogFileName = "nest_task_log.txt"
 var taskLogImgName = "nest_task_log.png"
-var chromePackageName = 'com.kiwibrowser.browser';
+
 
 //名稱.使用者名稱.個人簡介
-const TT_VIDEO_URL = '$${T_指定视频链接/直播間鏈接}';
-const TT_VIDEO_SHARE_TEXT = '$${T_分享文案}';
+const INSTAGRAM_UPLOAD_VIDEO_URL = '$${T_需要上傳影片的本地地址}';
+const INSTAGRAM_UPLOAD_VIDEO_TITLE = '$${T_上傳影片的标题}';
+const INSTAGRAM_UPLOAD_VIDEO_DESC = '$${T_上傳影片的說明}';
 
 
 var INSTAGRAM_PACKAGE_NAME = 'com.instagram.android';
+
+
+var targetPackageName = null;
+var targetClassName = null;
+
+//将需要处理的多媒体图片，单独copy一份放到这个文件夹里面，后面处理完成之后，再删除这个文件夹
+var A_NEST_Instagram_MEDIA = 'A_NEST_Instagram_MEDIA';    
 
 
 //1.autox.js侧边栏的打开USB调试先打开
@@ -31,6 +39,8 @@ var INSTAGRAM_PACKAGE_NAME = 'com.instagram.android';
 
 //会在在无障碍服务启动后继续运行。
 auto.waitFor();
+
+
 
 //出现异常错误时，打印的日志错误信息
 var handleErrorFlag = false //默认没有错误，如果出现异常，那么该值是true
@@ -45,6 +55,7 @@ var handleErrorFlag = false //默认没有错误，如果出现异常，那么�
         console.error("Tiktok根據關鍵字，搜尋影片瀏覽養號，評論，點讚---------------");
         console.error("脚本执行时间：" + new Date().toLocaleString());
     }else{
+        forceStop_APP(targetPackageName)
         console.log("-----------------脚本功能执行结束：---------------");
         console.log("Tiktok根據關鍵字，搜尋影片瀏覽養號，評論，點讚---------------");
         console.log("脚本执行时间：" + new Date().toLocaleString());
@@ -54,6 +65,7 @@ var handleErrorFlag = false //默认没有错误，如果出现异常，那么�
 
 function handleError(e) {
     handleErrorFlag = true
+    forceStop_APP(targetPackageName)
     console.error("===错误报告开始===");
     console.error("错误信息：" + e);
     console.error("错误堆栈：" + e.stack);
@@ -74,8 +86,21 @@ function openLogActivity() {
 
 
 
+
+
 //显示控制窗：https://github.com/kkevsekk1/AutoX/issues/868
 // console.show()
+
+// 替代 app.openAppSetting 的方式
+function openAppSettings(packageName) {
+    var intent = new Intent();
+    intent.setAction(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+    intent.setData(android.net.Uri.parse("package:" + packageName));
+    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    app.startActivity(intent);
+}
+
+
 
 
 taskLog("开始强制关闭同名的脚本...")
@@ -92,14 +117,8 @@ if (runningEngines.length > 1) {
   })
 }
 
-
-
 sleep(3000)
-taskLog("准备启动Instagram...")
-
-var targetPackageName = null;
-var targetClassName = null;
-
+taskLog("准备检查Instagram是否已安装...")
 
 function isAppInstalled(packageName) {
     var pm = context.getPackageManager();
@@ -114,39 +133,168 @@ function isAppInstalled(packageName) {
 if (isAppInstalled(INSTAGRAM_PACKAGE_NAME)) {
     targetPackageName = INSTAGRAM_PACKAGE_NAME;
     targetClassName = "com.instagram.mainactivity.InstagramMainActivity";
-    taskLog("检测到已安装Instagram，准备启动...");
-} else {
+}  else {
     toast("未检测到Instagram已安装，请先安装Instagram！");
     taskLog("未检测到Instagram已安装，脚本终止。");
     exit();
 }
 
 sleep(random(3000, 5000))
-openAppSetting(targetPackageName)
+taskLog("检测到已安装Instagram，准备启动...");
+app.startActivity({
+    action: "android.intent.action.VIEW",
+    packageName: targetPackageName,
+    className: targetClassName
+});
+
+
+sleep(random(5000, 8000))
+openAppSettings(INSTAGRAM_PACKAGE_NAME)
 sleep(random(3000, 5000))
-forceStop_APP(targetPackageName)
+
+forceStop_APP(INSTAGRAM_PACKAGE_NAME)
 sleep(3000)
 
-sleep(random(3000, 5000))
-openAppSetting(chromePackageName)
-sleep(random(3000, 5000))
-forceStop_APP(chromePackageName)
-sleep(3000)
+app.startActivity({
+    action: "android.intent.action.VIEW",
+    packageName: targetPackageName,
+    className: targetClassName
+});
 
 
-// app.startActivity({
-//     action: "android.intent.action.VIEW",
-//     packageName: targetPackageName,
-//     className: targetClassName
-// });
+taskLog("等待Instagram启动完成, 等待时间：" + 13 - 15 + "s")
+sleep(random(13000, 15000))
+toast("本地视频地址：" + INSTAGRAM_UPLOAD_VIDEO_URL)
 
-
-sleep(random(3000, 5000))
 
 
 //******************************************************************
 //******************************************************************
 //******************************************************************
+
+
+
+
+//从评论数组中，顺序挑选一条标题
+function get_TITLE_comment_text(){
+    let comments = [];
+    // 户是否存在
+    taskLog("INSTAGRAM_UPLOAD_VIDEO_TITLE评论数组 =  " + INSTAGRAM_UPLOAD_VIDEO_TITLE)
+    const file = new java.io.File(INSTAGRAM_UPLOAD_VIDEO_TITLE);
+    if (file.exists() && file.isFile()) {
+        try {
+            // 读取文件内容
+            const reader = new java.io.BufferedReader(new java.io.FileReader(file));
+            let line;
+            while ((line = reader.readLine()) !== null) {
+                comments.push(line);
+            }
+            reader.close();
+        } catch (e) {
+            taskLog("读取文件时发生错误：" + e.message);
+        }
+    } else {
+        // 如果文件不存在，将文件名添加到数组中
+        comments.push(INSTAGRAM_UPLOAD_VIDEO_TITLE);
+    }
+    
+    return comments
+}
+
+
+//从评论数组中，顺序挑选一条描述
+function get_DESC_comment_text(){
+    let comments = [];
+    // 户是否存在
+    taskLog("INSTAGRAM_UPLOAD_VIDEO_DESC评论数组 =  " + INSTAGRAM_UPLOAD_VIDEO_DESC)
+    const file = new java.io.File(INSTAGRAM_UPLOAD_VIDEO_DESC);
+    if (file.exists() && file.isFile()) {
+        try {
+            // 读取文件内容
+            const reader = new java.io.BufferedReader(new java.io.FileReader(file));
+            let line;
+            while ((line = reader.readLine()) !== null) {
+                comments.push(line);
+            }
+            reader.close();
+        } catch (e) {
+            taskLog("读取文件时发生错误：" + e.message);
+        }
+    } else {
+        // 如果文件不存在，将文件名添加到数组中
+        comments.push(INSTAGRAM_UPLOAD_VIDEO_DESC);
+    }
+    
+    return comments
+}
+
+
+
+
+
+// 检查完整路径
+function checkPath(fileName) {
+    const path = "/storage/emulated/0/Download/" + fileName;
+    console.log("checkPath 完整路径: " + path);
+    console.log("checkPath 文件是否存在1111: " + files.exists(path));
+    let file = new java.io.File(path);
+    console.log("checkPath 文件是否存在2222: " + file.exists());
+
+    // 列出目录下所有文件
+    // let fileList = files.listDir("/storage/emulated/0/Download/");
+    // console.log("目录下的文件: " + fileList.join("\n"));
+}
+
+// 遍历并打印出实际的文件名
+function listAllFiles(dirPath) {
+    let files = new java.io.File(dirPath).listFiles();
+    for(let file of files) {
+        console.log("文件名: " + file.getName());
+        // 打印文件名的每个字符的编码
+        let name = file.getName();
+        for(let i = 0; i < name.length; i++) {
+            console.log(name[i] + ": " + name.charCodeAt(i));
+        }
+    }
+}
+
+
+// 刷新指定路径的媒体库
+function refreshMedia(path) {
+    try {
+        toast("开始刷新媒体库，用时5秒钟....");
+        // 发送媒体扫描广播
+        media.scanFile(path);
+        // 等待扫描完成
+        sleep(5000);
+        toast("媒体库刷新完成，开始下一步任务...");
+    } catch (error) {
+        toast("path = " + path + " 媒体库刷新失败，error = " + error);
+    }
+
+}
+
+// 刷新整个存储的媒体库
+function refreshAllMedia() {
+    try {
+        toast("开始刷新媒体库，用时5秒钟....");
+        // 获取外部存储路径
+        let storage = files.externalStorage();
+        // 发送媒体扫描广播
+        media.scanFile(storage);
+        // 等待扫描完成
+        sleep(5000);
+        toast("媒体库刷新完成，开始下一步任务...");
+    } catch (error) {
+        toast("refreshAllMedia , 媒体库刷新失败，error = " + error);
+    }
+    
+}
+
+
+
+
+
 
 //强制停止TikTok 
 function forceStop_APP(packageName){
@@ -235,14 +383,6 @@ function forceStop_APP(packageName){
 
 }
 
-
-//推荐好友的弹窗，直接关闭
-function close_friend_suggest(){
-    if(id("c67").exists()){
-        sleep(3000)
-        id("c67").click()
-    }
-}
 
 
 
@@ -430,9 +570,9 @@ function find_btn_Text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
          }
 
          // 查找控件
-         var button1 = className("android.widget.Button").text(findText_ZH_CN).findOne(1000);
-         var button2 = className("android.widget.Button").text(findText_ZH_TW).findOne(1000);
-         var button3 = className("android.widget.Button").text(findText_EN_US).findOne(1000);
+         var button1 = className("android.widget.Button").text(findText_ZH_CN).findOne(3000);
+         var button2 = className("android.widget.Button").text(findText_ZH_TW).findOne(3000);
+         var button3 = className("android.widget.Button").text(findText_EN_US).findOne(3000);
 
          if (button1) {
              taskLog("找到" + findText_ZH_CN);
@@ -515,9 +655,9 @@ function find_btn_desc_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
             //  var button1 = className("android.widget.Button").desc(findText_ZH_CN).findOne(1000);
             //  var button2 = className("android.widget.Button").desc(findText_ZH_TW).findOne(1000);
             //  var button3 = className("android.widget.Button").desc(findText_EN_US).findOne(1000);
-            var button1 = desc(findText_ZH_CN).findOne(1000);
-            var button2 = desc(findText_ZH_TW).findOne(1000);
-            var button3 = desc(findText_EN_US).findOne(1000);
+            var button1 = desc(findText_ZH_CN).findOne(3000);
+            var button2 = desc(findText_ZH_TW).findOne(3000);
+            var button3 = desc(findText_EN_US).findOne(3000);
 
 
              if (button1) {
@@ -622,9 +762,9 @@ function find_textview_text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US)
          }
 
          // 查找控件
-        var button1 = className("android.widget.TextView").text(findText_ZH_CN).findOne(1000);
-        var button2 = className("android.widget.TextView").text(findText_ZH_TW).findOne(1000);
-        var button3 = className("android.widget.TextView").text(findText_EN_US).findOne(1000);
+        var button1 = className("android.widget.TextView").text(findText_ZH_CN).findOne(3000);
+        var button2 = className("android.widget.TextView").text(findText_ZH_TW).findOne(3000);
+        var button3 = className("android.widget.TextView").text(findText_EN_US).findOne(3000);
 
         if (button1) {
             taskLog("找到" + findText_ZH_CN);
@@ -703,153 +843,201 @@ function find_textview_text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US)
      return findText_result
 }
 
-function firstOpenBrowser(){
-    app.startActivity({
-        action: "android.intent.action.VIEW",
-        packageName: chromePackageName,
-        className: "org.chromium.chrome.browser.ChromeTabbedActivity"
-      });
 
-      sleep(3000);
+// 已经知道底部View的id是iy8，获取到这个view，拿到宽高，再点击这个view的中心位置，即可
+// className("android.widget.LinearLayout")
+function click_bottom_center_for_post_video(){
 
-    //   //可能部分设备弹出"NestBrowser不能运行在没有GMS的设备"的弹出框，需要点击确定
-    //   if (id('button1').exists()) {
-    //     id('button1').findOne(3000).click();
-    //   }
-      
-      //可能存在欢迎界面的"continue"按钮，点击
-      if(id("com.kiwibrowser.browser:id/signin_fre_continue_button").exists()){
-        toast("存在欢迎界面的continue按钮，点击")
-        id("com.kiwibrowser.browser:id/signin_fre_continue_button").findOne().click()
-      }else{
-        toast("不存在欢迎界面的continue按钮")
-      }
+    toast("开始寻找底部➕号按钮....")
+    // 通过ID选择器查找控件
 
+    let view = id("com.ss.android.ugc.trill:id/iy8").className("android.widget.LinearLayout").findOne(3000);
 
-}
-
-function openBrowser(url){
-
-    app.startActivity({
-        action: "android.intent.action.VIEW",
-        data: url,
-        packageName: chromePackageName,
-        className: "org.chromium.chrome.browser.ChromeTabbedActivity",
-        flags: [
-          "activity_new_task",
-          "activity_clear_top"
-          ],
-      extras: {
-          // 设置打开方式偏好
-          "browser.application_id": targetPackageName,  
-          "create_new_tab": true,
-          "open_in_external_app": true
-      }
-      });
-}
-
-
-//从视频列表数组中，顺序挑选一条
-function get_all_video_link(){
-    // 用于存储用户的数组
-    let comments = [];
-    // 户是否存在
-    const file = new java.io.File(TT_VIDEO_URL);
-    if (file.exists() && file.isFile()) {
-        try {
-            // 读取文件内容
-            const reader = new java.io.BufferedReader(new java.io.FileReader(file));
-            let line;
-            while ((line = reader.readLine()) !== null) {
-                comments.push(line);
-            }
-            reader.close();
-        } catch (e) {
-            taskLog("读取文件时发生错误：" + e.message);
-        }
-    } else {
-        // 如果文件不存在，将文件名添加到数组中
-        comments.push(TT_VIDEO_URL);
-    }
-
-    
-    return comments
-}
-
-
-//点击点赞按钮
-function click_Like_Btn(){
-    taskLog("开始准备点赞视频")
-    //fullId("com.instagram.android:id/row_feed_button_like")
-    clickId("com.instagram.android:id/row_feed_button_like")
-
-}
-
-//从评论列表数组中，随机挑选一条内容，翻译
-function get_post_text(){
-    // 用于存储私信用户的数组
-    let comments = [];
-    const file = new java.io.File(TT_VIDEO_SHARE_TEXT);
-    if (file.exists() && file.isFile()) {
-        try {
-            // 读取文件内容
-            const reader = new java.io.BufferedReader(new java.io.FileReader(file));
-            let line;
-            while ((line = reader.readLine()) !== null) {
-                comments.push(line);
-            }
-            reader.close();
-        } catch (e) {
-            taskLog("读取文件时发生错误：" + e.message);
-        }
-    } else {
-        // 如果文件不存在，将文件名添加到数组中
-        comments.push(TT_VIDEO_SHARE_TEXT);
-    }
-    return comments
-
-}
-
-
-//点击评论按钮
-function click_Comment_Btn(commentText){
-
-    
-    sleep(random(2000 , 3000))
-
-    taskLog("开始准备评论视频")
-    //fullId("com.instagram.android:id/row_feed_button_comment")
-    clickId("com.instagram.android:id/row_feed_button_comment")
-
-
-    sleep(5000)
-    //className("android.widget.AutoCompleteTextView")
-    var autoCompleteTextViews = className("android.widget.AutoCompleteTextView").find();
-    taskLog("autoCompleteTextViews长度 = " + autoCompleteTextViews.size())
-
-
-    if(autoCompleteTextViews.size() >0){
-        var textView = autoCompleteTextViews.get(autoCompleteTextViews.size() - 1);
-        if(textView) {
-            taskLog("找到TextView控件-Text："+ textView.text());
-            textView.click()
-            sleep(1000)
-            taskLog("评论控件，设置内容：" +commentText );
-            textView.setText(commentText)
-            sleep(5000)
-    
-    
-            //发送按钮
-            //fullId("com.instagram.android:id/layout_comment_thread_post_button_icon")
-            clickId("com.instagram.android:id/layout_comment_thread_post_button_icon")
-
-            sleep(random(2000, 3000))
-
+    if (view) {
+        let bounds = view.bounds();
+        let width = bounds.width();
+        let height = bounds.height();
+        
+        console.log("控件宽度: " + width);
+        console.log("控件高度: " + height);
+        
+        // 计算中心点坐标
+        let centerX = bounds.centerX();
+        let centerY = bounds.centerY();
+        
+        // 尝试点击，最多重试3次
+        let maxRetries = 3;
+        let clickSuccess = false;
+        
+        for (let i = 0; i < maxRetries && !clickSuccess; i++) {
+            console.log("尝试第" + (i + 1) + "次点击");
+            
+            // 先尝试控件点击
+            clickSuccess = view.click();
+            
+            if (!clickSuccess) {
+                // 如果控件点击失败，等待短暂时间后尝试坐标点击
+                sleep(500);
+                click(centerX, centerY);
                 
+                // 等待一下看是否点击成功（可以根据实际情况判断点击后的界面变化）
+                sleep(1000);
+                
+                // 这里可以添加判断点击是否成功的逻辑
+                // 比如检查界面是否发生预期变化
+                clickSuccess = true
             }
+        }
+        
+        if (clickSuccess) {
+            console.log("点击成功");
+        } else {
+            console.log("多次尝试后仍然点击失败");
+            toast("因为一直没有找到底部的+号按钮，导致无法进入发布视频的界面，所以终止任务直接报错")
+            // throw new error("因为一直没有找到底部的+号按钮，导致无法进入发布视频的界面，所以终止任务直接报错")
+        }
+    } else {
+        console.log("未找到指定控件");
     }
-   
 }
+
+
+
+//给视频输入desc内容
+function click_Video_desc(){
+    taskLog("开始准备输入视频描述")
+
+    sleep(3000)
+    //短描述：fullId("com.zhiliaoapp.musically:id/epv")
+    //fullId("com.ss.android.ugc.trill:id/eqx")
+
+
+    //长描述：fullId("com.zhiliaoapp.musically:id/epu")
+    //fullId("com.ss.android.ugc.trill:id/eqw")
+
+    var autoCompleteTextViews = className("android.widget.EditText").find();
+    for(var i = 0; i < autoCompleteTextViews.size(); i++) {
+        var textView = autoCompleteTextViews.get(i);
+        if(textView) {
+
+            sleep(1000)
+
+            //标题
+            var all_TT_TITLE_text = []
+            if(INSTAGRAM_UPLOAD_VIDEO_TITLE && 
+                INSTAGRAM_UPLOAD_VIDEO_TITLE.trim() !== "" && 
+                INSTAGRAM_UPLOAD_VIDEO_TITLE.trim().toLowerCase() !== "off" && 
+                !INSTAGRAM_UPLOAD_VIDEO_TITLE.includes("$${")){
+                    all_TT_TITLE_text = get_TITLE_comment_text()
+            }
+
+            //描述
+            var all_TT_DESC_text = []
+            if(INSTAGRAM_UPLOAD_VIDEO_DESC && 
+                INSTAGRAM_UPLOAD_VIDEO_DESC.trim() !== "" && 
+                INSTAGRAM_UPLOAD_VIDEO_DESC.trim().toLowerCase() !== "off" && 
+                !INSTAGRAM_UPLOAD_VIDEO_DESC.includes("$${")){
+                    all_TT_DESC_text = get_DESC_comment_text()
+            }
+
+
+            if(all_TT_TITLE_text.length > 0){
+                var randTitleIdx = random(0, all_TT_TITLE_text.length - 1)
+                var titleText = all_TT_TITLE_text[randTitleIdx];
+                taskLog("标题：" + titleText);
+                //短描述
+                if(textView.id() == targetPackageName + ":id/epv" || textView.id() == targetPackageName + ":id/eqx"){
+                    textView.setText(titleText)
+                    sleep(random(3000,5000))
+                } 
+
+            }
+
+
+            if(all_TT_DESC_text.length > 0){
+                var randDescIdx = random(0, all_TT_DESC_text.length - 1)
+                var descText = all_TT_DESC_text[randDescIdx];
+                taskLog("描述：" + descText);
+                //长描述
+                if(textView.id() == targetPackageName + ":id/epu" || textView.id() == targetPackageName + ":id/eqw"){
+                    textView.setText(descText)
+                    sleep(random(3000,5000))
+                }   
+            }
+
+    
+        }
+    }
+}
+
+//可能会出现权限弹窗，如果弹出，那么允许
+function click_permission_allow(){
+    toast("开始处理权限问题.....")
+
+    var allListTextView = className("android.widget.TextView").find();
+    taskLog("找到权限allListTextView: 全部 = "  + allListTextView.size());
+
+    for(var i = 0; i < allListTextView.size(); i++){
+        var textView = allListTextView.get(i);
+        taskLog("找到权限textView: " + textView.text());
+    }
+
+    // 找到所有按钮
+    var allListButton = className("android.widget.Button").find();
+    taskLog("找到权限allListButton: 全部 = "  + allListButton.size());
+
+    for(var i = 0; i < allListButton.size(); i++){
+        var button = allListButton.get(i);
+        taskLog("找到权限button: " + button.text());
+    }
+    
+
+    // 等待权限弹窗出现
+    let allow_tw = textContains("使用應用程式時").findOne(5000);
+    if(allow_tw){
+        taskLog("点击 - 使用應用程式時")
+        allow_tw.click();
+    }
+
+    
+    // 等待权限弹窗出现
+    let allow_tw_02 = textContains("允許").findOne(5000);
+    if(allow_tw_02){
+        // 获取控件的文本内容
+        taskLog("点击 - 允許")
+        let btnText_tw = allow_tw_02.text();
+        // 检查文本是否包含"不允许"，如果不包含才点击
+        if(!btnText_tw.includes("不允許")){
+            allow_tw_02.click();
+        }
+    }
+
+
+
+    // 等待权限弹窗出现
+    let allow_en = textContains("ONLY THIS TIME").findOne(5000);
+    if(allow_en){
+        taskLog("点击 - ONLY THIS TIME")
+        allow_en.click();
+    }
+
+
+    // 等待权限弹窗出现
+    let allow_en_02 = textContains("ALLOW").findOne(5000);
+    if(allow_en_02){
+        // 获取控件的文本内容
+        taskLog("点击 - ALLOW")
+        let btnText_en = allow_en_02.text();
+        // 检查文本是否包含"不允许"，如果不包含才点击
+        if(!btnText_en.includes("DON'T ALLOW")){
+            allow_en_02.click();
+        }
+    }
+
+
+
+}
+
 
 function swipe_up(){
     //使用多段swipe实现曲线滑动
@@ -890,217 +1078,129 @@ function swipe_up(){
 }
 
 
-//有可能传入的是一个reel视频，就是一个完全不同的布局
-//https://www.instagram.com/reel/DJEmRtNT_rC/?utm_source=ig_web_copy_link
-function click_reels_vide(){
-
-    //点赞：className("android.widget.ImageView") fullId("com.instagram.android:id/like_button") clickable("true")
-    var likeBtnList = className("android.widget.ImageView").id("com.instagram.android:id/like_button").find()
-    if(likeBtnList.size() > 0){
-        taskLog("当前页面有like按钮坐标 = " + likeBtnList.get(0).bounds().centerX() + " " + likeBtnList.get(0).bounds().centerY() )
-        sleep(random(3000, 5000))
-        clickId(likeBtnList.get(0))
-    }
-
-    //评论：className("android.widget.ImageView") fullId("com.instagram.android:id/comment_button") clickable("true")   
-    var commentBtnList = className("android.widget.ImageView").id("com.instagram.android:id/comment_button").find()
-    if(commentBtnList.size() > 0){
-        taskLog("当前页面有comment按钮坐标 = " + commentBtnList.get(0).bounds().centerX() + " " + commentBtnList.get(0).bounds().centerY() )
-        sleep(random(3000, 5000))
-        clickId(commentBtnList.get(0))
-    }
-
-
-    //如果评论文案不为空，则随机挑选一条，翻译，然后点击评论按钮
-    if(commentTextArrays.length > 0){
-
-        var randIdx = random(0, commentTextArrays.length - 1)
-        var messageText = commentTextArrays[randIdx];
-
-        toast("评论文案：" + messageText)
-        taskLog("准备点击评论按钮....");
-        
-        sleep(5000)
-        var autoCompleteTextViews = className("android.widget.AutoCompleteTextView").find();
-        taskLog("autoCompleteTextViews长度 = " + autoCompleteTextViews.size())
-
-        if(autoCompleteTextViews.size() >0){
-            var textView = autoCompleteTextViews.get(autoCompleteTextViews.size() - 1);
-            if(textView) {
-                taskLog("找到TextView控件-Text："+ textView.text());
-                textView.click()
-                sleep(1000)
-                taskLog("评论控件，设置内容：" +commentText );
-                textView.setText(commentText)
-                sleep(5000)
-        
-        
-                //发送按钮
-                //fullId("com.instagram.android:id/layout_comment_thread_post_button_icon")
-                clickId("com.instagram.android:id/layout_comment_thread_post_button_icon")
-
-                sleep(random(2000, 3000))
-
-                    
-                }
-        }
-
-
-        taskLog("等待5秒后，准备返回上一个页面")
-        sleep(random(3000, 5000))
-    }else{
-        toast("评论文案为空，所以不点击评论按钮");
-    }
-
-
-
-
-}
-
-
-
-
+//start
 try {
 
-   
-    //用浏览器打开链接
-    taskLog("检测是否第一次打开浏览器...")
-    firstOpenBrowser()
-    sleep(5000)
-
-        
-    taskLog("打开浏览器成功...")
-    sleep(5000)
-
-    var all_TT_VIDEO_LINK = get_all_video_link()
-    taskLog("所有需要分享的视频数量 = " + all_TT_VIDEO_LINK.length)
-    sleep(5000)
     
-    if(all_TT_VIDEO_LINK.length == 0){
-        taskLog("没有需要分享的视频") 
-        stopCurrentTask()
-    }else{
+    swipe_up()
 
-         // 开始主循环
-        var commentTextArrays = get_post_text()
-        toast("评论文案个数：" + commentTextArrays.length)
-
-        for(var i = 0; i < all_TT_VIDEO_LINK.length; i++){
-            taskLog("当前Instagram帖子在第" + (i+1) + "个 = " + all_TT_VIDEO_LINK[i])      
-            var video_info_link = all_TT_VIDEO_LINK[i]
-            sleep(2000)
+    taskLog("开始刷新本地媒体库.....")
+    refreshMedia("/storage/emulated/0/Download/")
+    sleep(random(3000,5000))
 
 
-            taskLog("准备打开Instagram帖子链接：" + video_info_link)      
-            openBrowser(video_info_link)
-            sleep(random(5000,8000))
 
-            //可能需要点击一下浏览器界面的"開啟 Instagram"
-            find_btn_Text_base("開啟 Instagram","Open Instagram","開啟應用程式")
-            toast("出现開啟 Instagram按钮，点击.")
+    //Button:
+    //fullId("com.instagram.android:id/creation_tab")
+    clickId(INSTAGRAM_PACKAGE_NAME + ":id/creation_tab")
+    
+    sleep(3000)
 
-            //可能会出现"Continue"按钮，点击：fullId("com.kiwibrowser.browser:id/message_primary_button")
-            if(id("com.kiwibrowser.browser:id/message_primary_button").exists()){
-                toast("出现Continue按钮，点击.")
-                id("com.kiwibrowser.browser:id/message_primary_button").findOne().click()
+    taskLog("开始第一次检查权限问题 .....")
+    click_permission_allow()    
+    sleep(random(2000,3000))
+    taskLog("开始第二次检查权限问题.....")
+    click_permission_allow()    
+    sleep(random(2000,3000))
+    taskLog("开始第三次检查权限问题.....")
+    click_permission_allow()    
+    sleep(random(2000,3000))
+
+
+
+    //fullId("com.instagram.android:id/slideout_iconview_icon")
+    clickId(INSTAGRAM_PACKAGE_NAME + ":id/slideout_iconview_icon")
+    sleep(random(2000,3000))
+
+
+    //选中图片的右上角的圆圈
+    //fullId("com.instagram.android:id/gallery_grid_item_selection_circle")
+    var gallery_grid_item_list = id(INSTAGRAM_PACKAGE_NAME + ":id/gallery_grid_item_selection_circle").className("android.widget.ImageView").find();
+    taskLog("找到gallery_grid_item_list: 全部 = "  + gallery_grid_item_list.size());
+    sleep(random(2000,3000))
+
+    if (gallery_grid_item_list.size() > 0) {
+       
+
+        //点击Next
+        // fullId("com.instagram.android:id/camera_settings_gear") - className("android.widget.Button")
+        var next = className("android.widget.Button").id(INSTAGRAM_PACKAGE_NAME + ":id/camera_settings_gear").find();
+        if(next){
+            taskLog("已经找到Next按钮，点击Next,next个数 = " + next.size())
+            let element = next.get(0);
+            let X = element.bounds().centerX();
+            let Y = element.bounds().centerY();
+            click(X, Y);
+            taskLog("点击Next坐标 X = " + X + " Y = " + Y)
+
+            sleep(random(2000,3000)) 
+
+            //点击右下角继续
+            //fullId("com.instagram.android:id/clips_right_action_button")
+            clickId(INSTAGRAM_PACKAGE_NAME + ":id/clips_right_action_button")
+            sleep(random(2000,3000)) 
+
+
+            //下方会弹出询问：是否分享帖子
+            //fullId("com.instagram.android:id/bb_primary_action_container")
+            clickId(INSTAGRAM_PACKAGE_NAME + ":id/bb_primary_action_container")
+            sleep(random(2000,3000)) 
+
+
+            //开始写入说明
+            // fullId("com.instagram.android:id/caption_input_text_view")
+            //写入说明
+            //描述
+            var all_TT_DESC_text = []
+            if(INSTAGRAM_UPLOAD_VIDEO_DESC && 
+                INSTAGRAM_UPLOAD_VIDEO_DESC.trim() !== "" && 
+                INSTAGRAM_UPLOAD_VIDEO_DESC.trim().toLowerCase() !== "off" && 
+                !INSTAGRAM_UPLOAD_VIDEO_DESC.includes("$${")){
+                    all_TT_DESC_text = get_DESC_comment_text()
             }
-            sleep(5000)
-
-
-            taskLog("打开Instagram成功...")
-            sleep(random(10000,15000))
-
-            //需要页面有没有like按钮
-            //className("android.widget.Button") fullId("com.instagram.android:id/row_feed_button_like") clickable("false")
-            var likeBtnList = className("android.widget.Button").id("com.instagram.android:id/row_feed_button_like").find()
-            // var likeBtnList = id("com.instagram.android:id/row_feed_button_like").className("android.widget.Button").find()
-            taskLog("当前页面的likeBtn数量 = " + likeBtnList.size() )
-            sleep(random(3000, 5000))
-
-
-            var commentBtnList = className("android.widget.Button").id("com.instagram.android:id/row_feed_button_comment").find()
-            taskLog("当前页面的commentBtn数量 = " + commentBtnList.size()  )
-            sleep(random(3000, 5000))
-
-
-            if(likeBtnList.size() > 0){
-
-                taskLog("当前点赞坐标是否对用户可见 = " + likeBtnList.get(0).visibleToUser() )
-                taskLog("当前页面有like按钮坐标 = " + likeBtnList.get(0).bounds().centerX() + " " + likeBtnList.get(0).bounds().centerY() )
-                taskLog("当前设备坐标 = " + device.width + " " + device.height )
-                sleep(random(3000, 5000))
-                click(likeBtnList.get(0).bounds().centerX(), likeBtnList.get(0).bounds().centerY())
-                
-
-                //直接连续双击屏幕中间位置，也可以作为点赞
-                // click(device.width / 2, device.height / 2)
-                // sleep(500)
-                // click(device.width / 2, device.height / 2)
-                // sleep(random(3000, 5000))
-
-                //如果评论文案不为空，则随机挑选一条，翻译，然后点击评论按钮
-                if(commentTextArrays.length > 0){
-
-                    var randIdx = random(0, commentTextArrays.length - 1)
-                    var messageText = commentTextArrays[randIdx];
-
-                    toast("评论文案：" + messageText)
-                    taskLog("准备点击评论按钮....");
-                    click_Comment_Btn(messageText)
-
-                    taskLog("等待5秒后，准备返回上一个页面")
-                    sleep(random(3000, 5000))
-                }else{
-                    toast("评论文案为空，所以不点击评论按钮");
+            
+            if(all_TT_DESC_text.length > 0){
+                var randDescIdx = random(0, all_TT_DESC_text.length - 1)
+                var descText = all_TT_DESC_text[randDescIdx];
+                taskLog("描述：" + descText);
+                //长描述
+                var caption_input_text_view = id(INSTAGRAM_PACKAGE_NAME + ":id/caption_input_text_view").findOne();
+                    taskLog("找到caption_input_text_view: " + caption_input_text_view.text());
+                    if(caption_input_text_view){
+                        caption_input_text_view.setText(INSTAGRAM_UPLOAD_VIDEO_DESC)
+                        sleep(3000)
                 }
-
-
-
             }else{
-                taskLog("当前页面没有like按钮，往上滑动，继续寻找like按钮")
-                swipe_up()
-                sleep(random(3000, 5000))
-                var likeBtnList02 = className("android.widget.Button").id("com.instagram.android:id/row_feed_button_like").find()
-                taskLog("当前页面的likeBtn数量 = " + likeBtnList.size() )
-
-                if(likeBtnList02.size() > 0){
-                    taskLog("当前页面有like按钮，开始点赞")
-                    taskLog("当前页面有like按钮坐标 = " + likeBtnList02.get(0).bounds().centerX() + " " + likeBtnList02.get(0).bounds().centerY() )
-                    clickId(likeBtnList02.get(0))
+                taskLog("没有找到描述")
+            }
 
 
-
-                    //如果评论文案不为空，则随机挑选一条，翻译，然后点击评论按钮
-                    if(commentTextArrays.length > 0){
-
-                        var randIdx = random(0, commentTextArrays.length - 1)
-                        var messageText = commentTextArrays[randIdx];
-
-                        toast("评论文案：" + messageText)
-                        taskLog("准备点击评论按钮....");
-                        click_Comment_Btn(messageText)
-
-                        taskLog("等待5秒后，准备返回上一个页面")
-                        sleep(random(3000, 5000))
-                    }else{
-                        toast("评论文案为空，所以不点击评论按钮");
-                    }
-
-
-
-                }else{
-                    taskLog("当前页面没有like按钮，不再处理")
-                }
-                }
+            //可能会出现一个提示，是否同步到Threads
+            //text("Not now")
+            var notNowBtn = find_btn_Text_base("Not now", "不要", "現在不要", "Not now")
+            if(notNowBtn){
+                taskLog("存在提示，点击Not now")
+            }
             
             
 
+
+            //底部分享按钮
+            // className("android.widget.FrameLayout") fullId("com.instagram.android:id/share_button")  clickable("true")
+            clickId(INSTAGRAM_PACKAGE_NAME + ":id/share_button")
+            sleep(random(2000,3000))
+        }else{
+            taskLog("没有找到Next按钮，本次任务终止.")
+            throw new Error("没有找到Next按钮，本次任务终止.")
         }
-
+        
     }
 
-    
-    
+
+
+
+
+
 } catch (e) {
     handleError(e);
 }
