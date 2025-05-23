@@ -104,11 +104,21 @@ if (runningEngines.length > 1) {
 }
 
 
-sleep(3000)
-taskLog("准备启动TikTok...")
+// 替代 app.openAppSetting 的方式
+function openAppSettings(packageName) {
+    var intent = new Intent();
+    intent.setAction(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+    intent.setData(android.net.Uri.parse("package:" + packageName));
+    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    app.startActivity(intent);
+}
 
-var targetPackageName = null;
-var targetClassName = null;
+
+
+sleep(3000)
+taskLog("准备检查TikTok是否已安装...")
+
+
 
 function isAppInstalled(packageName) {
     var pm = context.getPackageManager();
@@ -124,18 +134,51 @@ if (isAppInstalled(GLOBAL_TikTokPackageName)) {
     targetPackageName = GLOBAL_TikTokPackageName;
     targetClassName = "com.ss.android.ugc.aweme.main.MainActivity";
     taskLog("检测到已安装全球版TikTok，准备启动...");
+
+
+    sleep(random(3000, 5000))
+    taskLog("准备启动全球版TikTok...");
+    app.startActivity({
+        action: "android.intent.action.VIEW",
+        packageName: GLOBAL_TikTokPackageName,
+        className: "com.ss.android.ugc.aweme.main.MainActivity"
+    });
+
+
+    sleep(random(5000, 8000))
+    openAppSettings(GLOBAL_TikTokPackageName)
+    sleep(random(3000, 5000))
+
+    forceStop_APP(GLOBAL_TikTokPackageName)
+    sleep(3000)
+
 } else if (isAppInstalled(ASIA_TikTokPackageName)) {
     targetPackageName = ASIA_TikTokPackageName;
     targetClassName = "com.ss.android.ugc.aweme.main.MainActivity";
     taskLog("检测到已安装亚洲版TikTok，准备启动...");
+
+    sleep(random(3000, 5000))
+    taskLog("准备启动亚洲版TikTok...");
+    app.startActivity({
+        action: "android.intent.action.VIEW",
+        packageName: ASIA_TikTokPackageName,
+        className: "com.ss.android.ugc.aweme.main.MainActivity"
+    });
+
+
+    sleep(random(5000, 8000))
+    openAppSettings(ASIA_TikTokPackageName)
+    sleep(random(3000, 5000))
+
+    forceStop_APP(ASIA_TikTokPackageName)
+    sleep(3000)
+
 } else {
     toast("未检测到TikTok已安装，请先安装TikTok！");
     taskLog("未检测到TikTok已安装，脚本终止。");
     exit();
 }
 
-forceStop_APP(targetPackageName)
-sleep(3000)
 
 app.startActivity({
     action: "android.intent.action.VIEW",

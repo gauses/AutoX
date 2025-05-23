@@ -1,14 +1,16 @@
 
 
 
-
-TIKTOK_UPDATE_PROFILE ： 无法更新Name，UserName，Bio
-TK英语(trill)-FB02
+0509问题：
 
 
+1.TK評論第一次都會發空白的
 
-TIKTOK_UPLOAD_VIDEO：没有提交OSS
 
+2.在启动自动化的时候，可能FORCE STOP会直接把autojs给强制停止了
+
+
+3.客戶說的计划任务自動開機未執行
 
 
 
