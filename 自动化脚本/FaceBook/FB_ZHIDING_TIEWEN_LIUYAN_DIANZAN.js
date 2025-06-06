@@ -172,8 +172,12 @@ try {
         openFacebookLink_test(friend_info_link)
         sleep(5000)
 
+        //点赞
+        find_like_button()
+
         find_comment_button()
 
+        //评论
         find_post_button()
 
     }
@@ -689,8 +693,110 @@ function forceStop_APP(packageName){
 //可能是reels视频，所以要先点击评论按钮
 function find_comment_button(){
     //desc("Comment") className("android.widget.Button") clickable("true")
-    var commentButton = find_btn_desc_base("Comment", "評論")
+    var commentButton = find_btn_desc_base("Comment", "留言")
     toastLog("commentButton = " + commentButton)
+    
+    
+}
+
+//通过Button的Desc
+function find_viewGroup_desc_base(findText_ZH_TW, findText_EN_US){
+
+    var findBtn = false
+
+    var loopCount  = 0
+
+     while (true) {
+         taskLog(findText_ZH_TW + " - 循环寻找执行：" + (++loopCount));
+         // 检查计数器是否达到3
+         if (loopCount >= 3) {
+             // 打印一条消息并退出循环
+             taskLog("寻找" + findText_ZH_TW + "按钮失败");
+             taskLog("循环已执行3次，即将退出循环。");
+
+             //不能抛出异常，因为可能Facebook记忆功能，自动跳转到输入页面
+//                 throw new Error(findText_ZH_CN +"按钮没有找到");
+            break;
+         }
+
+
+         // 查找控件
+         var button1 = className("android.view.ViewGroup").desc(findText_ZH_TW).findOne(1000);
+         var button2 = className("android.view.ViewGroup").desc(findText_EN_US).findOne(1000);
+         if (button1) {
+             findBtn = true
+             taskLog("找到" + findText_ZH_TW);
+             click(button1.bounds().centerX() , button1.bounds().centerY())
+             break; // 跳出循环
+         }else if(button2){
+             findBtn = true
+             taskLog("找到" + findText_EN_US);
+             click(button2.bounds().centerX() , button2.bounds().centerY())
+             break; // 跳出循环
+         }
+
+         sleep(1000)
+
+     }
+
+     return findBtn
+
+}
+
+function find_like_button(){
+
+    // //desc("讚") className("android.view.ViewGroup") clickable("false")
+    // var all_viewGroup  = className("android.view.ViewGroup").find()
+    // taskLog("当前页面所有viewGroup = " + all_viewGroup.length)
+    // if(all_viewGroup.length > 1){
+    //     for(var i = 0; i < all_viewGroup.length; i++){  
+    //         var viewGroup = all_viewGroup[i]
+    //         var viewGroupDesc = viewGroup.desc()
+    //         taskLog("viewGroupDesc = " + viewGroupDesc)
+    //         if(viewGroupDesc == "讚" || viewGroupDesc == "Like"){
+    //             click(viewGroup.bounds().centerX() , viewGroup.bounds().centerY())
+    //             sleep(3000)
+    //             break
+    //         }
+    //     }
+    // }else{
+    //     taskLog("当前页面不存在viewGroup")
+    // }
+
+    // sleep(30000000000000000)
+
+
+
+    sleep(random(1000, 3000))
+    //desc("讚") className("android.widget.Button") clickable("false")
+    var viewGroup_like_TW = className("android.widget.Button").desc("讚").findOne(1000);
+
+    if(viewGroup_like_TW){
+        taskLog("当前页面存在点赞按钮：讚")
+        click(viewGroup_like_TW.bounds().centerX() , viewGroup_like_TW.bounds().centerY())
+        sleep(3000)
+    }else{
+        taskLog("当前页面不存在按钮：讚")
+    }
+
+
+
+    //寻找英文的like按钮：desc("Like")
+    var viewGroup_like_EN = className("android.widget.Button").desc("Like").findOne(1000);
+    if(viewGroup_like_EN){
+        taskLog("当前页面存在点赞按钮：Like")
+        click(viewGroup_like_EN.bounds().centerX() , viewGroup_like_EN.bounds().centerY())
+        sleep(3000)
+    }else{
+        taskLog("当前页面不存在点赞按钮：Like")
+    }
+
+
+    // find_viewGroup_desc_base("讚","Like")
+    // find_btn_desc_base("Like","讚")
+    sleep(30000000000000000)
+
+    sleep(random(1000, 3000))
     
     
 }
