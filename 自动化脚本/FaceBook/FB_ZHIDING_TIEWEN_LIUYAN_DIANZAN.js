@@ -745,59 +745,77 @@ function find_viewGroup_desc_base(findText_ZH_TW, findText_EN_US){
 
 function find_like_button(){
 
-    // //desc("讚") className("android.view.ViewGroup") clickable("false")
-    // var all_viewGroup  = className("android.view.ViewGroup").find()
-    // taskLog("当前页面所有viewGroup = " + all_viewGroup.length)
-    // if(all_viewGroup.length > 1){
-    //     for(var i = 0; i < all_viewGroup.length; i++){  
-    //         var viewGroup = all_viewGroup[i]
-    //         var viewGroupDesc = viewGroup.desc()
-    //         taskLog("viewGroupDesc = " + viewGroupDesc)
-    //         if(viewGroupDesc == "讚" || viewGroupDesc == "Like"){
-    //             click(viewGroup.bounds().centerX() , viewGroup.bounds().centerY())
-    //             sleep(3000)
-    //             break
-    //         }
-    //     }
-    // }else{
-    //     taskLog("当前页面不存在viewGroup")
-    // }
-
-    // sleep(30000000000000000)
-
-
+    //如果是reels，那么完全不一样
+    //className("android.widget.Button") desc("Like button. Double tap and hold to react.")  clickable("true")
+    //desc("「讚」按鈕。點按兩下並按住即可傳達心情。")
+    var findReelsLikeButton = false // 找到了Reels页面的点赞Button
+    var all_Buttons  = className("android.widget.Button").find()
+    taskLog("当前页面所有Buttons = " + all_Buttons.length)
+    if(all_Buttons.length > 1){
+        for(var i = 0; i < all_Buttons.length; i++){  
+            var viewGroup = all_Buttons[i]
+            var viewGroupDesc = viewGroup.desc()
+            taskLog("viewGroupDesc = " + viewGroupDesc)
+            //这种主要针对reels视频：https://www.facebook.com/reel/689492360538949
+            if(viewGroupDesc ){
+                if(viewGroupDesc.indexOf("讚」按鈕") !== -1 || viewGroupDesc.indexOf("Like button") !== -1){
+                    click(viewGroup.bounds().centerX() , viewGroup.bounds().centerY())
+                    sleep(3000)
+                    findReelsLikeButton = true
+                    break
+                }
+            }
+            
+        }
+    }else{
+        taskLog("当前页面不存在Button")
+    }
 
     sleep(random(1000, 3000))
+
+
+
+    taskLog("当前页面不存在「讚」按鈕或Like button，所以不是reels视频，更换其他方式寻找点赞按钮")
+    //这种主要针对文章POST等类型链接：https://www.facebook.com/share/p/15WRnMZL1s/
+    //等待页面加载
     //desc("讚") className("android.widget.Button") clickable("false")
-    var viewGroup_like_TW = className("android.widget.Button").desc("讚").findOne(1000);
+    if(!findReelsLikeButton){
+        var loopCount = 0
+        while(true){
+            taskLog("等待页面加载 - 循环寻找执行：" + (++loopCount));
+            if(loopCount >= 5){
+                taskLog("等待页面加载失败，循环5次，即将退出点赞功能");
+                break;
+            }else{
+                sleep(random(1000, 3000))
+                //className("android.view.ViewGroup") 
+                //className("android.widget.Button")
+                var Button_like_TW = className("android.widget.Button").desc("讚").findOne(1000);
+                var Button_like_EN = className("android.widget.Button").desc("Like").findOne(1000);
+                var viewGroup_like_TW = className("android.view.ViewGroup").desc("讚").findOne(1000);
+                var viewGroup_like_EN = className("android.view.ViewGroup").desc("Like").findOne(1000);
 
-    if(viewGroup_like_TW){
-        taskLog("当前页面存在点赞按钮：讚")
-        click(viewGroup_like_TW.bounds().centerX() , viewGroup_like_TW.bounds().centerY())
-        sleep(3000)
-    }else{
-        taskLog("当前页面不存在按钮：讚")
+                if(Button_like_TW){
+                    taskLog("当前页面存在点赞按钮：讚")
+                    click(Button_like_TW.bounds().centerX() , Button_like_TW.bounds().centerY())
+                }else if(Button_like_EN){
+                    taskLog("当前页面存在点赞按钮：Like")
+                    click(Button_like_EN.bounds().centerX() , Button_like_EN.bounds().centerY())
+                }else if(viewGroup_like_TW){
+                    taskLog("当前页面存在点赞ViewGroup：讚")
+                    click(viewGroup_like_TW.bounds().centerX() , viewGroup_like_TW.bounds().centerY())
+                }else if(viewGroup_like_EN){
+                    taskLog("当前页面存在点赞ViewGroup：Like")
+                    click(viewGroup_like_EN.bounds().centerX() , viewGroup_like_EN.bounds().centerY())
+                }else{
+                    taskLog("当前页面不存在点赞按钮：讚或Like")
+                    swipe_up() //向上滑动
+                }
+                    sleep(random(2000, 3000))
+                }
+            }
     }
 
-
-
-    //寻找英文的like按钮：desc("Like")
-    var viewGroup_like_EN = className("android.widget.Button").desc("Like").findOne(1000);
-    if(viewGroup_like_EN){
-        taskLog("当前页面存在点赞按钮：Like")
-        click(viewGroup_like_EN.bounds().centerX() , viewGroup_like_EN.bounds().centerY())
-        sleep(3000)
-    }else{
-        taskLog("当前页面不存在点赞按钮：Like")
-    }
-
-
-    // find_viewGroup_desc_base("讚","Like")
-    // find_btn_desc_base("Like","讚")
-    sleep(30000000000000000)
-
-    sleep(random(1000, 3000))
-    
     
 }
 
