@@ -878,7 +878,7 @@ function post_Image(){
 
             taskLog("FB_input_IMAGE = " + FB_input_IMAGE)
 
-            // refreshMedia("/storage/emulated/0/Download/")
+            refreshMedia("/storage/emulated/0/Download/")
             // var imageTempPath = transferHeadImageToNest(FB_input_IMAGE)
             // sleep(10000)
 
