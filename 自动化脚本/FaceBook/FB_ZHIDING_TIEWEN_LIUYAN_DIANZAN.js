@@ -174,11 +174,19 @@ try {
 
         //点赞
         find_like_button()
+        sleep(random(1000, 3000))   
 
-        find_comment_button()
 
-        //评论
-        find_post_button()
+        if(FB_group_comment_text && FB_group_comment_text.trim() !== "" && FB_group_comment_text.trim().toLowerCase() !== "off"){
+            find_comment_button()
+            //评论
+            find_post_button()
+
+        }else{
+            taskLog("当前Group没有评论，跳过评论功能")
+        }
+        sleep(random(1000, 3000))
+
 
     }
 
@@ -757,7 +765,7 @@ function find_like_button(){
             var viewGroupDesc = viewGroup.desc()
             taskLog("viewGroupDesc = " + viewGroupDesc)
             //这种主要针对reels视频：https://www.facebook.com/reel/689492360538949
-            if(viewGroupDesc ){
+            if(viewGroupDesc && viewGroup.visibleToUser() ){
                 if(viewGroupDesc.indexOf("讚」按鈕") !== -1 || viewGroupDesc.indexOf("Like button") !== -1){
                     click(viewGroup.bounds().centerX() , viewGroup.bounds().centerY())
                     sleep(3000)
@@ -779,6 +787,7 @@ function find_like_button(){
     //这种主要针对文章POST等类型链接：https://www.facebook.com/share/p/15WRnMZL1s/
     //等待页面加载
     //desc("讚") className("android.widget.Button") clickable("false")
+    taskLog("寻找Reels按钮：findReelsLikeButton = " + findReelsLikeButton)
     if(!findReelsLikeButton){
         var loopCount = 0
         while(true){
@@ -798,15 +807,19 @@ function find_like_button(){
                 if(Button_like_TW){
                     taskLog("当前页面存在点赞按钮：讚")
                     click(Button_like_TW.bounds().centerX() , Button_like_TW.bounds().centerY())
+                    break;
                 }else if(Button_like_EN){
                     taskLog("当前页面存在点赞按钮：Like")
                     click(Button_like_EN.bounds().centerX() , Button_like_EN.bounds().centerY())
+                    break;
                 }else if(viewGroup_like_TW){
                     taskLog("当前页面存在点赞ViewGroup：讚")
                     click(viewGroup_like_TW.bounds().centerX() , viewGroup_like_TW.bounds().centerY())
+                    break;
                 }else if(viewGroup_like_EN){
                     taskLog("当前页面存在点赞ViewGroup：Like")
                     click(viewGroup_like_EN.bounds().centerX() , viewGroup_like_EN.bounds().centerY())
+                    break;
                 }else{
                     taskLog("当前页面不存在点赞按钮：讚或Like")
                     swipe_up() //向上滑动
