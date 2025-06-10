@@ -79,10 +79,10 @@ function generateTOTP(base32Key) {
     return ("000000" + otp).slice(-6);
 }
 
-// 示例用法
-var key = "ym3md5futsca4qiwxbbklycbscxardiy";
-console.log("当前 OTP 是: " + generateTOTP(key));
-sleep(3000);
+// // 示例用法
+// var key = "32xy nmjl vppw l65p ksto 7zus r5i2 ff2g";
+// console.log("当前 OTP 是: " + generateTOTP(key));
+// sleep(3000);
 
 
 //-------------------------------------------------------------
@@ -103,7 +103,7 @@ var taskLogImgName = "nest_task_log.png"
 
 
 //用户需要输入的关注用户ID列表
-// const TT_Like_User_ID_GROUP = '$${T_用户ID列表}';
+const GOOGLE_ACCOUNT_PASSWORD_2FA = '$${Google账号密码2FA}';
 
 var GOOGLE_PACKAGE_NAME =  'com.android.vending';
 
@@ -158,6 +158,14 @@ function handleError(e) {
     exit()
 }
 
+// 替代 app.openAppSetting 的方式
+function openAppSettings(packageName) {
+    var intent = new Intent();
+    intent.setAction(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+    intent.setData(android.net.Uri.parse("package:" + packageName));
+    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    app.startActivity(intent);
+}
 
 
 
@@ -206,16 +214,13 @@ if (isAppInstalled(GOOGLE_PACKAGE_NAME)) {
     exit();
 }
 
-sleep(random(3000, 5000))
-openAppSetting(targetPackageName)
-sleep(random(3000, 5000))
+
+
 
 forceStop_APP(targetPackageName)
 sleep(3000)
 
 app.launchPackage("com.android.vending");
-
-
 sleep(random(3000, 5000))
 
 
@@ -223,7 +228,7 @@ sleep(random(3000, 5000))
 function forceStop_APP(packageName){
     taskLog("准备强杀:" + packageName + "...")
     sleep(1000);
-    app.openAppSetting(packageName)
+    openAppSetting(packageName)
     sleep(5000)
 
     //繁体
@@ -307,8 +312,43 @@ function forceStop_APP(packageName){
 }
 
 
+//在打开Google play的时候，会弹出Checking info...，如果存在，则等待30秒，直到消失
+//每隔3秒检查一次，直到消失，一共检查10次，如果10次后，Checking info...还存在，则认为Google play没有打开成功，则退出脚本
+//Checking info...
+function check_Google_play_checking_info_exist() {
+    taskLog("check_Google_play_checking_info_exist start...");
+    var maxTries = 15;
+    var interval = 2000; // 2秒
+    for (var i = 0; i < maxTries; i++) {
+        taskLog("正在检查Google Play加载状态：第" + (i+1) + "/" + maxTries + "次");
+        var checkingInfo = className("android.widget.TextView").id("com.google.android.gms:id/suc_layout_title").findOne(2000);
+        if (checkingInfo == null) {
+            return true;
+        }
+        sleep(interval);
+    }
+    taskLog("Google play未能成功打开，检测到'Checking info...'一直存在，脚本退出");
+    return false;
+}
+
+
 
 try {
+
+
+    //最先要解析一下GOOGLE_ACCOUNT_PASSWORD_2FA，三个信息都是以|来分割
+    var GOOGLE_ACCOUNT_PASSWORD_2FA_ARRAY = GOOGLE_ACCOUNT_PASSWORD_2FA.split("|");
+    var GOOGLE_ACCOUNT_EMAIL = GOOGLE_ACCOUNT_PASSWORD_2FA_ARRAY[0];
+    var GOOGLE_ACCOUNT_PASSWORD = GOOGLE_ACCOUNT_PASSWORD_2FA_ARRAY[1];
+    var GOOGLE_ACCOUNT_TOTP_KEY = GOOGLE_ACCOUNT_PASSWORD_2FA_ARRAY[2];
+
+    taskLog(GOOGLE_ACCOUNT_EMAIL + "/" + GOOGLE_ACCOUNT_PASSWORD );
+    
+    var GOOGLE_ACCOUNT_2FA_KEY = generateTOTP(GOOGLE_ACCOUNT_TOTP_KEY);
+    taskLog("当前 OTP 是: " + GOOGLE_ACCOUNT_2FA_KEY);
+
+
+
     //开始执行主要逻辑
     //1.点击Google play的首页登录按钮
     //className("android.widget.Button") fullId("com.android.vending:id/0_resource_name_obfuscated") clickable("true")
@@ -317,7 +357,17 @@ try {
     if(loginBtn){
         loginBtn.click();
 
-        sleep(random(13000, 15000))
+        
+        //检查页面是否存在：Checking info...，如果存在，则等待30秒，直到消失
+        if(!check_Google_play_checking_info_exist()){
+            taskLog("Google play未能成功打开，检测到'Checking info...'一直存在，脚本退出");
+            exit();
+        }
+        // return true 只会让上面 if 判断为 false，继续往下执行
+        taskLog("检测到'Checking info...'已经不存在，开始等待10秒");
+        sleep(10000)
+
+
 
         //2.输入电子邮件
         //className("android.widget.EditText") fullId("identifierId")
@@ -326,7 +376,7 @@ try {
             for(var i = 0; i < allEditText.size(); i++){
                 var editText = allEditText.get(i);
                 if(editText){
-                    editText.setText("vangchungbinhumj@gmail.com");
+                    editText.setText(GOOGLE_ACCOUNT_EMAIL);
                     sleep(random(3000, 5000))
 
 
@@ -335,13 +385,13 @@ try {
                     var nextBtnList = className("android.widget.Button").find();
                     if(nextBtnList && nextBtnList.size() > 0){
                         nextBtnList.get(nextBtnList.size() - 1).click(); //直接点击最后一个按钮
-                        sleep(random(3000, 5000))
+                        sleep(random(8000, 10000))
 
 
                         //4.输入密码
                         var passwordEditText = className("android.widget.EditText").find();
                         if(passwordEditText && passwordEditText.size() > 0){
-                            passwordEditText.get(passwordEditText.size() - 1).setText("anhcong123");
+                            passwordEditText.get(passwordEditText.size() - 1).setText(GOOGLE_ACCOUNT_PASSWORD);
                             sleep(random(3000, 5000))
 
 
@@ -349,7 +399,7 @@ try {
                             var nextBtnList = className("android.widget.Button").find();
                             if(nextBtnList && nextBtnList.size() > 0){
                                 nextBtnList.get(nextBtnList.size() - 1).click(); //直接点击最后一个按钮
-                                sleep(random(3000, 5000))
+                                sleep(random(8000, 10000))
                             }
 
 
@@ -359,23 +409,25 @@ try {
                             if(totpTextView && totpTextView.size() > 0){
                                 for(var i = 0; i < totpTextView.size(); i++){
                                     var totpText = totpTextView.get(i);
-                                    if (totpText.text().includes("Google")) {
+                                    //text("Get a verification code from the Google Authenticator app")
+                                    if (totpText.text().includes("Google Authenticator app")) {
                                         totpText.click();
+                                        break;  
                                         sleep(random(3000, 5000))
                                     }
                                 }
 
+                                //等待10秒
+                                sleep(random(8000, 10000))
 
 
 
                                 //7.输入TOTP
                                 var totpEditText = className("android.widget.EditText").find();
                                 if(totpEditText && totpEditText.size() > 0){
-                                    totpEditText.get(totpEditText.size() - 1).setText(generateTOTP(key));
-                                    sleep(random(3000, 5000))
+                                    totpEditText.get(totpEditText.size() - 1).setText(generateTOTP(GOOGLE_ACCOUNT_TOTP_KEY));
+                                    sleep(random(8000, 10000))
                                 } 
-
-
 
 
                                 //8.点击下一步
@@ -385,15 +437,26 @@ try {
                                     sleep(random(3000, 5000))
                                 }
 
+                                sleep(random(8000, 10000))
 
+                                //9.点击“I agree” ：className("android.widget.Button") text("I agree") clickable("true")  //英文
+                                var agreeBtn = className("android.widget.Button").text("I agree").findOne(3000); //英文
+                                if(agreeBtn){
+                                    agreeBtn.click();
+                                    sleep(random(3000, 5000))
+                                }
 
-                                
+                                sleep(random(8000, 10000))
+
+                                //10.点击右下角的“ACCEPT”
+                                var acceptBtn = className("android.widget.Button").text("ACCEPT").findOne(3000); //英文
+                                if(acceptBtn){
+                                    acceptBtn.click();
+                                    sleep(random(3000, 5000))
+                                }
+
+                                sleep(random(8000, 10000))
                             }
-
-
-
-                            
-                            
                             
                         }
                     }
