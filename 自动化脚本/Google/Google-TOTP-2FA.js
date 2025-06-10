@@ -217,18 +217,18 @@ if (isAppInstalled(GOOGLE_PACKAGE_NAME)) {
 
 
 
-forceStop_APP(targetPackageName)
+forceStop_APP(GOOGLE_PACKAGE_NAME)
 sleep(3000)
 
-app.launchPackage("com.android.vending");
+app.launchPackage(GOOGLE_PACKAGE_NAME);
 sleep(random(3000, 5000))
 
 
 //强制停止
 function forceStop_APP(packageName){
     taskLog("准备强杀:" + packageName + "...")
-    sleep(1000);
-    openAppSetting(packageName)
+    sleep(3000);
+    openAppSettings(packageName)
     sleep(5000)
 
     //繁体
@@ -315,6 +315,7 @@ function forceStop_APP(packageName){
 //在打开Google play的时候，会弹出Checking info...，如果存在，则等待30秒，直到消失
 //每隔3秒检查一次，直到消失，一共检查10次，如果10次后，Checking info...还存在，则认为Google play没有打开成功，则退出脚本
 //Checking info...
+//text("正在檢查資訊…")
 function check_Google_play_checking_info_exist() {
     taskLog("check_Google_play_checking_info_exist start...");
     var maxTries = 15;
@@ -322,14 +323,63 @@ function check_Google_play_checking_info_exist() {
     for (var i = 0; i < maxTries; i++) {
         taskLog("正在检查Google Play加载状态：第" + (i+1) + "/" + maxTries + "次");
         var checkingInfo = className("android.widget.TextView").id("com.google.android.gms:id/suc_layout_title").findOne(2000);
-        if (checkingInfo == null) {
+        if (checkingInfo != null) {
+            var textStr = checkingInfo.text();
+            if (textStr.includes("Checking info") || textStr.includes("正在檢查資訊")) {
+                taskLog("检测到'Checking info...'存在");
+                sleep(interval);
+            } else {
+                // 已经不在"Checking info..."页面，说明加载完成
+                return true;
+            }
+        } else {
+            // 没有找到该控件，说明"Checking info..."页面已经消失
             return true;
         }
-        sleep(interval);
     }
     taskLog("Google play未能成功打开，检测到'Checking info...'一直存在，脚本退出");
     return false;
 }
+
+
+function swipe_up(){
+    //使用多段swipe实现曲线滑动
+    let screenHeight = device.height;
+    let startY = Math.floor(screenHeight * 0.9);  // 起点
+    let endY = Math.floor(screenHeight * 0.1);    // 终点
+    let distance = startY - endY;                 // 总距离
+    
+    // 第一段：向右倾斜
+    swipe(
+        device.width / 2,    // 起点X
+        startY,             // 起点Y
+        device.width * 0.7,  // 终点X
+        startY - distance/3, // 终点Y
+        700                 // 持续时间
+    );
+    sleep(200);
+    
+    // 第二段：向左倾斜
+    swipe(
+        device.width * 0.7,  // 起点X
+        startY - distance/3, // 起点Y
+        device.width * 0.3,  // 终点X
+        startY - distance*2/3, // 终点Y
+        700                 // 持续时间
+    );
+    sleep(200);
+    
+    // 第三段：回到中间
+    swipe(
+        device.width * 0.3,  // 起点X
+        startY - distance*2/3, // 起点Y
+        device.width / 2,    // 终点X
+        endY,               // 终点Y
+        600                 // 持续时间
+    );
+    sleep(3000); //等待滚动完成
+}
+
 
 
 
@@ -410,7 +460,8 @@ try {
                                 for(var i = 0; i < totpTextView.size(); i++){
                                     var totpText = totpTextView.get(i);
                                     //text("Get a verification code from the Google Authenticator app")
-                                    if (totpText.text().includes("Google Authenticator app")) {
+                                    //text("從 Google Authenticator 應用程式取得驗證碼")
+                                    if (totpText.text().includes("Google Authenticator")) {
                                         totpText.click();
                                         break;  
                                         sleep(random(3000, 5000))
@@ -430,6 +481,27 @@ try {
                                 } 
 
 
+                                //在输入2FA之后吗，如果是中文繁体，那么需要往下滑动到最底部，然后点击"下一步"这个按钮才可以点击
+                                swipe_up() //向上滑动
+                                sleep(random(3000, 5000))
+                                swipe_up() //向上滑动
+                                sleep(random(3000, 5000))
+                                swipe_up() //向上滑动
+                                sleep(random(3000, 5000))
+
+
+                                //在中文繁体，会有一个是否填写电话号码的弹窗，需要点击"略過"
+                                //text("略過")
+                                var skipBtn = className("android.widget.Button").text("略過").findOne(3000);
+                                if(skipBtn){
+                                    skipBtn.click();
+                                    sleep(random(3000, 5000))
+                                }
+
+                                sleep(random(8000, 10000))
+
+
+
                                 //8.点击下一步
                                 var nextBtnList = className("android.widget.Button").find();
                                 if(nextBtnList && nextBtnList.size() > 0){
@@ -439,20 +511,26 @@ try {
 
                                 sleep(random(8000, 10000))
 
-                                //9.点击“I agree” ：className("android.widget.Button") text("I agree") clickable("true")  //英文
-                                var agreeBtn = className("android.widget.Button").text("I agree").findOne(3000); //英文
-                                if(agreeBtn){
-                                    agreeBtn.click();
-                                    sleep(random(3000, 5000))
+                                //9.点击"I agree" ：className("android.widget.Button") text("I agree") clickable("true")  //英文
+                                //text("我同意")
+                                var agreeBtn_EN = className("android.widget.Button").text("I agree").findOne(3000); //英文
+                                var agreeBtn_ZH_TW = className("android.widget.Button").text("我同意").findOne(3000); //中文繁体
+                                if(agreeBtn_EN){
+                                    agreeBtn_EN.click();
+                                }else if(agreeBtn_ZH_TW){
+                                    agreeBtn_ZH_TW.click();
                                 }
-
                                 sleep(random(8000, 10000))
 
-                                //10.点击右下角的“ACCEPT”
-                                var acceptBtn = className("android.widget.Button").text("ACCEPT").findOne(3000); //英文
-                                if(acceptBtn){
-                                    acceptBtn.click();
-                                    sleep(random(3000, 5000))
+
+                                //10.点击右下角的"ACCEPT" 
+                                //text("接受")
+                                var acceptBtn_EN = className("android.widget.Button").text("ACCEPT").findOne(3000); //英文
+                                var acceptBtn_ZH_TW = className("android.widget.Button").text("接受").findOne(3000); //中文繁体
+                                if(acceptBtn_EN){   
+                                    acceptBtn_EN.click();
+                                }else if(acceptBtn_ZH_TW){
+                                    acceptBtn_ZH_TW.click();
                                 }
 
                                 sleep(random(8000, 10000))
