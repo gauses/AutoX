@@ -666,7 +666,7 @@ try {
     if (yearSeekBar) {
         let minYear = 1900;
         let maxYear = 2024;
-        let targetYear = 1995;
+        let targetYear = random(1980, 2000); // 1980-2000之间的随机整数
         let currentYear = 2024; // 当前初始显示的年份
 
         let bounds = yearSeekBar.bounds();
@@ -709,7 +709,7 @@ try {
 
 
 
-    //8.设置好生日之后，点击“继续”
+    //8.设置好生日之后，点击"继续"
     //fullId("com.ss.android.ugc.trill:id/a8r")  className("android.widget.Button")  clickable("true")
     var continueBtn = className("android.widget.Button").id("com.ss.android.ugc.trill:id/a8r").findOne(3000);
     if(continueBtn){
@@ -718,13 +718,17 @@ try {
     }
 
     
+    sleep(random(13000, 15000))
 
+    //9.设置名字，默认就已经有名字了
+    //fullId("com.ss.android.ugc.trill:id/dn2") className("android.widget.Button") clickable("true")
+    var nameBtn = className("android.widget.Button").id("com.ss.android.ugc.trill:id/dn2").findOne(3000);
+    if(nameBtn){
+        nameBtn.click();
+        sleep(random(3000, 5000))
+    }
 
-
-
-    
-
-
+    sleep(random(50000, 600000))
 
 
     } catch (e) {
