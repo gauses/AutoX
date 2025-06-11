@@ -318,7 +318,7 @@ function forceStop_APP(packageName){
 //text("正在檢查資訊…")
 function check_Google_play_checking_info_exist() {
     taskLog("check_Google_play_checking_info_exist start...");
-    var maxTries = 15;
+    var maxTries = 60;
     var interval = 2000; // 2秒
     for (var i = 0; i < maxTries; i++) {
         taskLog("正在检查Google Play加载状态：第" + (i+1) + "/" + maxTries + "次");
@@ -435,7 +435,7 @@ try {
                     var nextBtnList = className("android.widget.Button").find();
                     if(nextBtnList && nextBtnList.size() > 0){
                         nextBtnList.get(nextBtnList.size() - 1).click(); //直接点击最后一个按钮
-                        sleep(random(8000, 10000))
+                        sleep(random(13000, 15000))
 
 
                         //4.输入密码
@@ -449,7 +449,7 @@ try {
                             var nextBtnList = className("android.widget.Button").find();
                             if(nextBtnList && nextBtnList.size() > 0){
                                 nextBtnList.get(nextBtnList.size() - 1).click(); //直接点击最后一个按钮
-                                sleep(random(8000, 10000))
+                                sleep(random(13000, 15000))
                             }
 
 
@@ -469,7 +469,7 @@ try {
                                 }
 
                                 //等待10秒
-                                sleep(random(8000, 10000))
+                                sleep(random(13000, 15000))
 
 
 
@@ -477,8 +477,16 @@ try {
                                 var totpEditText = className("android.widget.EditText").find();
                                 if(totpEditText && totpEditText.size() > 0){
                                     totpEditText.get(totpEditText.size() - 1).setText(generateTOTP(GOOGLE_ACCOUNT_TOTP_KEY));
-                                    sleep(random(8000, 10000))
+                                    sleep(random(3000, 5000))
                                 } 
+                                var nextBtnList = className("android.widget.Button").find();
+                                if(nextBtnList && nextBtnList.size() > 0){
+                                    nextBtnList.get(nextBtnList.size() - 1).click(); //直接点击最后一个按钮
+                                    sleep(random(13000, 15000))
+                                }
+
+    
+
 
 
                                 //在输入2FA之后吗，如果是中文繁体，那么需要往下滑动到最底部，然后点击"下一步"这个按钮才可以点击
@@ -492,13 +500,18 @@ try {
 
                                 //在中文繁体，会有一个是否填写电话号码的弹窗，需要点击"略過"
                                 //text("略過")
+                                //text("Skip")
                                 var skipBtn = className("android.widget.Button").text("略過").findOne(3000);
+                                var skipBtn_EN = className("android.widget.Button").text("Skip").findOne(3000);
                                 if(skipBtn){
                                     skipBtn.click();
                                     sleep(random(3000, 5000))
+                                }else if(skipBtn_EN){
+                                    skipBtn_EN.click();
+                                    sleep(random(3000, 5000))
                                 }
 
-                                sleep(random(8000, 10000))
+                                sleep(random(16000, 18000))
 
 
 

@@ -597,7 +597,77 @@ function find_textview_text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US)
 
 
 
+//可能会出现权限弹窗，如果弹出，那么允许
+function click_permission_allow(){
+    toast("开始处理权限问题.....")
 
+    // var allListTextView = className("android.widget.TextView").find();
+    // taskLog("找到权限allListTextView: 全部 = "  + allListTextView.size());
+
+    // for(var i = 0; i < allListTextView.size(); i++){
+    //     var textView = allListTextView.get(i);
+    //     taskLog("找到权限textView: " + textView.text());
+    // }
+
+    // 找到所有按钮
+    var allListButton = className("android.widget.Button").find();
+    taskLog("找到权限allListButton: 全部 = "  + allListButton.size());
+
+    for(var i = 0; i < allListButton.size(); i++){
+        var button = allListButton.get(i);
+        taskLog("找到权限button: " + button.text());
+    }
+    
+
+    // 等待权限弹窗出现
+    let allow_tw = textContains("使用應用程式時").findOne(3000);
+    if(allow_tw){
+        // taskLog("点击 - 使用應用程式時")
+        // allow_tw.click();
+        back()
+    }
+
+    
+    // 等待权限弹窗出现
+    let allow_tw_02 = textContains("允許").findOne(3000);
+    if(allow_tw_02){
+        // // 获取控件的文本内容
+        // taskLog("点击 - 允許")
+        // let btnText_tw = allow_tw_02.text();
+        // // 检查文本是否包含"不允许"，如果不包含才点击
+        // if(!btnText_tw.includes("不允許")){
+        //     allow_tw_02.click();
+        // }
+        back()
+    }
+
+
+
+    // 等待权限弹窗出现
+    let allow_en = textContains("ONLY THIS TIME").findOne(3000);
+    if(allow_en){
+        // taskLog("点击 - ONLY THIS TIME")
+        // allow_en.click();
+        back()
+    }
+
+
+    // 等待权限弹窗出现
+    let allow_en_02 = textContains("ALLOW").findOne(5000);
+    if(allow_en_02){
+        // // 获取控件的文本内容
+        // taskLog("点击 - ALLOW")
+        // let btnText_en = allow_en_02.text();
+        // // 检查文本是否包含"不允许"，如果不包含才点击
+        // if(!btnText_en.includes("DON'T ALLOW")){
+        //     allow_en_02.click();
+        // }
+        back()
+    }
+
+
+
+}
 
 
 
@@ -611,27 +681,44 @@ try {
 
     //1.首页：text("同意並繼續")  clickable("true")
     //fullId("com.ss.android.ugc.trill:id/d7o")
-    var agreeBtn = className("android.widget.Button").id("com.ss.android.ugc.trill:id/d7o").findOne(3000);
+    //fullId("com.zhiliaoapp.musically:id/d7n")
+    if(targetPackageName == ASIA_TikTokPackageName){      
+        var agreeBtn = className("android.widget.Button").id("com.ss.android.ugc.trill:id/d7o").findOne(3000);
+    }else{
+        var agreeBtn = className("android.widget.Button").id("com.zhiliaoapp.musically:id/d7n").findOne(3000);
+    }
     if(agreeBtn){
         agreeBtn.click();
-        sleep(random(3000, 5000))
+        sleep(random(6000, 8000))
     }
+
+    swipe_to_up()
 
     //2.跳过 clickable("true")
     //fullId("com.ss.android.ugc.trill:id/bub")
-    var skipBtn = className("android.widget.Button").id("com.ss.android.ugc.trill:id/bub").findOne(3000);
+    //fullId("com.zhiliaoapp.musically:id/bub")
+    if(targetPackageName == ASIA_TikTokPackageName){      
+        var skipBtn = className("android.widget.Button").id("com.ss.android.ugc.trill:id/bub").findOne(3000);
+    }else{
+        var skipBtn = className("android.widget.Button").id("com.zhiliaoapp.musically:id/bub").findOne(3000);
+    }
     if(skipBtn){
         skipBtn.click();
-        sleep(random(3000, 5000))
+        sleep(random(6000, 8000))
     }
 
 
     //3.text("開始觀看")
     //fullId("com.ss.android.ugc.trill:id/qeh")
-    var startWatchBtn = className("android.widget.Button").id("com.ss.android.ugc.trill:id/qeh").findOne(3000);
+    //fullId("com.zhiliaoapp.musically:id/qeg")
+    if(targetPackageName == ASIA_TikTokPackageName){      
+        var startWatchBtn = className("android.widget.Button").id("com.ss.android.ugc.trill:id/qeh").findOne(3000);
+    }else{
+        var startWatchBtn = className("android.widget.Button").id("com.zhiliaoapp.musically:id/qeg").findOne(3000);
+    }
     if(startWatchBtn){
         startWatchBtn.click();
-        sleep(random(3000, 5000))
+        sleep(random(6000, 8000))
     }
 
 
@@ -642,26 +729,49 @@ try {
 
     //5点击使用：desc("使用 Google 繼續")  clickable("true")
     //fullId("com.ss.android.ugc.trill:id/d8t")
-    var useGoogleBtn = desc("使用 Google 繼續").findOne(3000);
+    //fullId("com.zhiliaoapp.musically:id/d8s")
+    if(targetPackageName == ASIA_TikTokPackageName){      
+        var useGoogleBtn = className("android.widget.Button").id("com.ss.android.ugc.trill:id/d8t").findOne(3000);
+    }else{
+        var useGoogleBtn = className("android.widget.Button").id("com.zhiliaoapp.musically:id/d8s").findOne(3000);
+    }
     if(useGoogleBtn){
         useGoogleBtn.click();
         sleep(random(3000, 5000))
     }
-    
 
-    //6.点击：类似 text("以「Qadir」的身分登入繼續使用")
-    //fullId("com.google.android.gms:id/continue_button") clickable("true")
+    sleep(random(13000, 15000))
+
+    //6.(1)第一种登陆形式 ：直接在底部弹出google的身份框
+    // 点击：类似 text("以「Qadir」的身分登入繼續使用")
+    // fullId("com.google.android.gms:id/continue_button") clickable("true") 
     var continueBtn = className("android.widget.Button").id("com.google.android.gms:id/continue_button").findOne(5000);
     if(continueBtn){
         continueBtn.click();
         sleep(random(3000, 5000))
     }
+
+
+    //(2)第二种登陆形式 ：在中间弹出google的身份框 - "選擇帳戶，以繼續使用「TikTok」
+    // 点击：类似 text("以「Qadir」的身分登入繼續使用")
+    // fullId("com.google.android.gms:id/container") clickable("true")  className("android.widget.LinearLayout")
+    var googleLoginBtn = className("android.widget.LinearLayout").id("com.google.android.gms:id/container").findOne(5000);
+    if(googleLoginBtn){
+        googleLoginBtn.click();
+        sleep(random(3000, 5000))
+    }
+
     
 
     sleep(random(13000, 15000))
 
+    //7.可能会出现权限:是否允许Tiktok获取你的联络人
+    taskLog("开始处理权限问题.....")
+    click_permission_allow() 
 
-    //7.设置生日
+
+
+    //8.设置生日
     var yearSeekBar = className("android.widget.SeekBar").id("com.ss.android.ugc.trill:id/v44").findOne(3000);
     if (yearSeekBar) {
         let minYear = 1900;
@@ -709,7 +819,7 @@ try {
 
 
 
-    //8.设置好生日之后，点击"继续"
+    //9.设置好生日之后，点击"继续"
     //fullId("com.ss.android.ugc.trill:id/a8r")  className("android.widget.Button")  clickable("true")
     var continueBtn = className("android.widget.Button").id("com.ss.android.ugc.trill:id/a8r").findOne(3000);
     if(continueBtn){
@@ -720,13 +830,20 @@ try {
     
     sleep(random(13000, 15000))
 
-    //9.设置名字，默认就已经有名字了
+    //10.设置名字，默认就已经有名字了
     //fullId("com.ss.android.ugc.trill:id/dn2") className("android.widget.Button") clickable("true")
     var nameBtn = className("android.widget.Button").id("com.ss.android.ugc.trill:id/dn2").findOne(3000);
     if(nameBtn){
         nameBtn.click();
         sleep(random(3000, 5000))
     }
+
+    sleep(random(15000, 20000))
+    
+    //7.可能会出现权限:是否允许Tiktok获取你的联络人
+    taskLog("开始处理权限问题.....")
+    click_permission_allow() 
+
 
     sleep(random(50000, 600000))
 
