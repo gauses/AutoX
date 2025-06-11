@@ -663,29 +663,66 @@ try {
 
     //7.设置生日
 
-    //年
-    //className("android.widget.SeekBar")
-    //fullId("com.ss.android.ugc.trill:id/v44") clickable("false")
+    // //年份SeekBar操作
+    // var yearSeekBar = className("android.widget.SeekBar").id("com.ss.android.ugc.trill:id/v44").findOne(3000);
+    // if (yearSeekBar) {
+    //     // 定义最小值和最大值
+    //     let minYear = 1900;
+    //     let maxYear = 2024;
+    //     // 目标范围
+    //     let targetMin = 1990;
+    //     let targetMax = 2000;
+    //     // 生成目标年份
+    //     let targetYear = random(targetMin, targetMax); // 随机年份
+    //     // 获取 SeekBar 的坐标和宽度
+    //     let bounds = yearSeekBar.bounds();
+    //     let startX = bounds.left;
+    //     let endX = bounds.right;
+    //     let y = bounds.centerY();
+    //     // 计算目标X坐标
+    //     let totalYears = maxYear - minYear;
+    //     let percent = (targetYear - minYear) / totalYears;
+    //     let targetX = startX + (endX - startX) * percent;
+    //     taskLog("准备设置年份为：" + targetYear);
+    //     // 先点击激活SeekBar
+    //     click((startX + endX) / 2, y);
+    //     sleep(random(500, 1000));
+    //     // 多次微调滑动，确保设置到目标年份
+    //     for (let i = 0; i < 3; i++) {
+    //         swipe(startX, y, targetX, y, 500);
+    //         sleep(random(500, 1000));
+    //     }
+    //     taskLog("已尝试滑动设置年份为：" + targetYear);
+    // } else {
+    //     taskLog("未找到年份SeekBar控件");
+    // }
+
     var yearSeekBar = className("android.widget.SeekBar").id("com.ss.android.ugc.trill:id/v44").findOne(3000);
-    // 定义最小值和最大值
-    let minYear = 1900;
-    let maxYear = 2024;
+    if (yearSeekBar) {
+        let bounds = yearSeekBar.bounds();
+        let centerX = bounds.centerX();
+        let centerY = bounds.centerY();
+        let step = Math.floor(bounds.height() / 5); // 经验值，实际可调整
 
-    // 目标范围
-    let targetMin = 1990;
-    let targetMax = 2000;
+        // 目标年份
+        let targetYear = 1995;
+        let currentYear = 2024; // 你可以先手动设定，后续可用OCR识别
+        let delta = currentYear - targetYear;
 
-    // 生成目标年份
-    let targetYear = random(targetMin, targetMax); // 随机年份
-
-    // 计算对应的 progress 值
-    let progress = targetYear - minYear;
-
-    yearSeekBar.setProgress(progress);
-    toast("设置年份为：" + targetYear);
-
-
-
+        for (let i = 0; i < Math.abs(delta); i++) {
+            if (delta > 0) {
+                // 向上滑动，年份变小
+                swipe(centerX, centerY, centerX, centerY + step, 300);
+            } else {
+                // 向下滑动，年份变大
+                swipe(centerX, centerY, centerX, centerY - step, 300);
+            }
+            sleep(500);
+        }
+        taskLog("已尝试纵向滑动设置年份为：" + targetYear);
+    } else {
+        taskLog("未找到年份SeekBar控件");
+    }
     sleep(3000000000000)
 
     //月
