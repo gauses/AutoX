@@ -546,7 +546,7 @@ try {
                                     acceptBtn_ZH_TW.click();
                                 }
 
-                                sleep(random(8000, 10000))
+                                sleep(random(25000, 30000))
                             }
                             
                         }
