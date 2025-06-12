@@ -692,7 +692,6 @@ try {
         sleep(random(6000, 8000))
     }
 
-    swipe_to_up()
 
     //2.跳过 clickable("true")
     //fullId("com.ss.android.ugc.trill:id/bub")
@@ -722,22 +721,40 @@ try {
     }
 
 
+    //可能会有一个新手引导的动画，导致无法点击“個人資料”，所以需要滑动一下
+    swipe_to_up()
+    sleep(random(3000, 5000))
+
+    swipe_to_up()
+    sleep(random(3000, 5000))
+
+
+
+
     //4.点击最右侧：個人資料
     find_btn_desc_base("個人資料","Profile","主页")
-    sleep(random(3000, 5000))
+    sleep(random(5000, 7000))
 
 
     //5点击使用：desc("使用 Google 繼續")  clickable("true")
     //fullId("com.ss.android.ugc.trill:id/d8t")
     //fullId("com.zhiliaoapp.musically:id/d8s")
     if(targetPackageName == ASIA_TikTokPackageName){      
-        var useGoogleBtn = className("android.widget.Button").id("com.ss.android.ugc.trill:id/d8t").findOne(3000);
+        var useGoogleBtnList = className("android.widget.Button").id("com.ss.android.ugc.trill:id/d8t").find();
     }else{
-        var useGoogleBtn = className("android.widget.Button").id("com.zhiliaoapp.musically:id/d8s").findOne(3000);
+        var useGoogleBtnList = className("android.widget.Button").id("com.zhiliaoapp.musically:id/d8s").find();
     }
-    if(useGoogleBtn){
-        useGoogleBtn.click();
-        sleep(random(3000, 5000))
+    //注意：界面可能会有三个登陆按钮，三个按钮的ID都是"com.ss.android.ugc.trill:id/d8t"，但是desc是不同的
+    //desc("Continue with Google")
+    taskLog("useGoogleBtnList: " + useGoogleBtnList.size());
+    for(var i = 0; i < useGoogleBtnList.size(); i++){
+        var useGoogleBtn = useGoogleBtnList.get(i);
+        taskLog("useGoogleBtn: " + useGoogleBtn.desc());
+        if(useGoogleBtn && useGoogleBtn.desc().includes("Google")){
+            useGoogleBtn.click();
+            sleep(random(3000, 5000))
+            break;
+        }
     }
 
     sleep(random(13000, 15000))
