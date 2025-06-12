@@ -670,6 +670,19 @@ function click_permission_allow(){
 }
 
 
+//无法使用findOne满足时候，就需要使用这个方法 ，因为一个界面可能会有多个相同ID的按钮
+function waitForButtons(classNameStr, idStr, timeout) {
+    var interval = 200;
+    var elapsed = 0;
+    var btnList = null;
+    while (elapsed < timeout) {
+        btnList = className(classNameStr).id(idStr).find();
+        if (btnList.size() > 0) break;
+        sleep(interval);
+        elapsed += interval;
+    }
+    return btnList;
+}
 
 
 
@@ -740,24 +753,38 @@ try {
     //fullId("com.ss.android.ugc.trill:id/d8t")
     //fullId("com.zhiliaoapp.musically:id/d8s")
     if(targetPackageName == ASIA_TikTokPackageName){      
-        var useGoogleBtnList = className("android.widget.Button").id("com.ss.android.ugc.trill:id/d8t").find();
+        var useGoogleBtnList = waitForButtons("android.widget.Button", "com.ss.android.ugc.trill:id/d8t", 5000);
     }else{
-        var useGoogleBtnList = className("android.widget.Button").id("com.zhiliaoapp.musically:id/d8s").find();
+        var useGoogleBtnList = waitForButtons("android.widget.Button", "com.zhiliaoapp.musically:id/d8s", 5000);
     }
-    //注意：界面可能会有三个登陆按钮，三个按钮的ID都是"com.ss.android.ugc.trill:id/d8t"，但是desc是不同的
-    //desc("Continue with Google")
-    taskLog("useGoogleBtnList: " + useGoogleBtnList.size());
-    for(var i = 0; i < useGoogleBtnList.size(); i++){
-        var useGoogleBtn = useGoogleBtnList.get(i);
-        taskLog("useGoogleBtn: " + useGoogleBtn.desc());
-        if(useGoogleBtn && useGoogleBtn.desc().includes("Google")){
-            useGoogleBtn.click();
-            sleep(random(3000, 5000))
-            break;
+    if (useGoogleBtnList.size() > 0) {
+        //注意：界面可能会有三个登陆按钮，三个按钮的ID都是"com.ss.android.ugc.trill:id/d8t"，但是desc是不同的
+        //desc("Continue with Google")
+        taskLog("useGoogleBtnList: " + useGoogleBtnList.size());
+        for(var i = 0; i < useGoogleBtnList.size(); i++){
+            var useGoogleBtn = useGoogleBtnList.get(i);
+            taskLog("useGoogleBtn: " + useGoogleBtn.desc());
+            if(useGoogleBtn && useGoogleBtn.desc().includes("Google")){
+                useGoogleBtn.click();
+                sleep(random(3000, 5000))
+                break;
+            }
         }
     }
-
     sleep(random(13000, 15000))
+
+
+
+    //fix:可能会在底部先弹出一个google的框，问你要不要用google登陆
+    //fullId("com.google.android.gms:id/cancel_button")
+    var cancelBtn = className("android.widget.Button").id("com.google.android.gms:id/cancel_button").findOne(5000);
+    if(cancelBtn){
+        cancelBtn.click();
+        sleep(random(3000, 5000))
+    }
+
+    sleep(random(3000, 5000))
+    
 
     //6.(1)第一种登陆形式 ：直接在底部弹出google的身份框
     // 点击：类似 text("以「Qadir」的身分登入繼續使用")
@@ -834,6 +861,8 @@ try {
         taskLog("未找到年份SeekBar控件");
     }
 
+
+    sleep(random(3000, 5000))
 
 
     //9.设置好生日之后，点击"继续"
