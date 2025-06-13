@@ -706,38 +706,44 @@ function setBirthdayYear(){
         // 数字高度一般是控件高度的1/3
         let numberHeight = bounds.height() / 3;
         let startY = bounds.top + numberHeight * 1.5; // 2024数字正中间
-        let step = numberHeight; // 每次滑动一个数字的高度
 
-        taskLog("控件中心X: " + centerX + ", 2024数字中心Y: " + startY + ", 单位步长: " + step);
+        taskLog("控件中心X: " + centerX + ", 2024数字中心Y: " + startY);
 
         // 先点击激活控件
         click(centerX, startY);
         sleep(500);
 
         let delta = currentYear - targetYear;
-
-        for (let i = 0; i < Math.abs(delta); i++) {
-            if (delta > 0) {
-                // 选中2024，手指从2024数字正中间往下滑动，年份变小
-                let endY = startY + step;
-                taskLog("第" + (i+1) + "次滑动: startY=" + startY + ", endY=" + endY);
-                swipe(centerX, startY, centerX, endY, 300);
-                sleep(500);
-            } else {
-                // 选中2024，手指从2024数字正中间往上滑动，年份变大
-                let endY = startY - step;
-                taskLog("第" + (i+1) + "次滑动: startY=" + startY + ", endY=" + endY);
-                swipe(centerX, startY, centerX, endY, 300);
-                sleep(500);
-            }
-            sleep(random(1000, 2000));
+        
+        if (delta > 0) {
+            // 计算需要滑动的总距离
+            let totalDistance = numberHeight * delta;
+            // 从2024直接滑动到目标年份，使用较长的滑动距离和较快的滑动速度
+            let endY = startY + totalDistance;
+            taskLog("开始滑动: 从" + currentYear + "年滑动到" + targetYear + "年");
+            taskLog("滑动距离: " + totalDistance);
             
+            // 使用较快的滑动速度（500ms）和较大的滑动距离
+            swipe(centerX, startY, centerX, endY, 500);
+            
+            // 等待动画结束
+            sleep(1000);
+            
+            // 微调以确保准确性
+            for(let i = 0; i < 2; i++) {
+                if(random(0, 1) > 0.5) {
+                    swipe(centerX, startY, centerX, startY + numberHeight, 200);
+                } else {
+                    swipe(centerX, startY, centerX, startY - numberHeight, 200);
+                }
+                sleep(300);
+            }
         }
-        taskLog("已尝试滑动设置年份为：" + targetYear);
+        
+        taskLog("已尝试快速滑动设置年份为：" + targetYear);
     } else {
         taskLog("未找到年份SeekBar控件");
     }
-  
 }
 
 
@@ -751,50 +757,49 @@ function setBirthdayMonth(){
         var yearSeekBar = className("android.widget.SeekBar").id("com.zhiliaoapp.musically:id/klt").findOne(3000);
     }
     if (yearSeekBar) {
-        let minYear = 1;
-        let maxYear = 12;
-        let targetYear = random(1, 12); 
-        let currentYear = 12; // 当前初始显示的月份
-
         let bounds = yearSeekBar.bounds();
         let centerX = bounds.centerX();
 
         // 数字高度一般是控件高度的1/3
         let numberHeight = bounds.height() / 3;
-        let startY = bounds.top + numberHeight * 1.5; 
-        let step = numberHeight; // 每次滑动一个数字的高度
+        let startY = bounds.top + numberHeight * 1.5;
 
-        taskLog("控件中心X: " + centerX + ", 2024数字中心Y: " + startY + ", 单位步长: " + step);
+        taskLog("控件中心X: " + centerX + ", 月份选择器中心Y: " + startY);
 
         // 先点击激活控件
         click(centerX, startY);
         sleep(500);
 
-        // let delta = currentYear - targetYear;
-        let delta = random(2, 6)
+        // 随机决定滑动方向和距离
+        let direction = random(0, 1) > 0.5 ? 1 : -1; // 1表示向下滑动，-1表示向上滑动
+        let slideDistance = numberHeight * random(3, 8); // 随机滑动3-8个月份的距离
 
-        for (let i = 0; i < Math.abs(delta); i++) {
-            if (delta > 0) {
-                // 选中2024，手指从正中间往下滑动，年份变小
-                let endY = startY + step;
-                taskLog("第" + (i+1) + "次滑动: startY=" + startY + ", endY=" + endY);
-                swipe(centerX, startY, centerX, endY, 300);
-                sleep(500);
+        // 计算结束位置
+        let endY = startY + (slideDistance * direction);
+        
+        taskLog("开始随机滑动月份选择器");
+        taskLog("滑动距离: " + slideDistance + ", 方向: " + (direction > 0 ? "向下" : "向上"));
+
+        // 执行快速滑动
+        swipe(centerX, startY, centerX, endY, 500);
+        
+        // 等待动画结束
+        sleep(1000);
+        
+        // 微调以确保最终选择随机
+        for(let i = 0; i < 2; i++) {
+            if(random(0, 1) > 0.5) {
+                swipe(centerX, startY, centerX, startY + numberHeight, 200);
             } else {
-                // 选中2024，手指从正中间往上滑动，年份变大
-                let endY = startY - step;
-                taskLog("第" + (i+1) + "次滑动: startY=" + startY + ", endY=" + endY);
-                swipe(centerX, startY, centerX, endY, 300);
-                sleep(500);
+                swipe(centerX, startY, centerX, startY - numberHeight, 200);
             }
-            sleep(random(1000, 2000));
-            
+            sleep(300);
         }
-        // taskLog("已尝试滑动设置月份为：" + targetYear);
+        
+        taskLog("月份随机滑动完成");
     } else {
         taskLog("未找到月份SeekBar控件");
     }
-  
 }
 
 //在设置好生日之后，点击"確定"
@@ -802,13 +807,13 @@ function setBirthday_OK(){
     //fix:可能会出现一个弹窗，问你是否确定你的出生日期
     //packageName("com.ss.android.ugc.trill") className("android.widget.Button") text("確定") 
     //packageName("com.zhiliaoapp.musically") className("android.widget.Button") text("確定") 
-    //text("Let’s go")
+    //text("Let's go")
     if(targetPackageName == ASIA_TikTokPackageName){      
         var confirmBtn = className("android.widget.Button").text("確定").findOne(3000);
-        var letGoBtn = className("android.widget.Button").text("Let’s go").findOne(3000);
+        var letGoBtn = className("android.widget.Button").text("Let's go").findOne(3000);
     }else{
         var confirmBtn = className("android.widget.Button").text("確定").findOne(3000);
-        var letGoBtn = className("android.widget.Button").text("Let’s go").findOne(3000);
+        var letGoBtn = className("android.widget.Button").text("Let's go").findOne(3000);
     }
     if(confirmBtn){
         confirmBtn.click();
@@ -869,7 +874,7 @@ try {
     }
 
 
-    //可能会有一个新手引导的动画，导致无法点击“個人資料”，所以需要滑动一下
+    //可能会有一个新手引导的动画，导致无法点击"個人資料"，所以需要滑动一下
     swipe_to_up()
     sleep(random(3000, 5000))
 
