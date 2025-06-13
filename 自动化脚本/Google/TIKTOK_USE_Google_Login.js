@@ -826,6 +826,59 @@ function setBirthday_OK(){
     
 }
 
+function setBirthdayDay(){
+    //fullId("com.ss.android.ugc.trill:id/dru")
+    //fullId("com.zhiliaoapp.musically:id/drt")
+    if(targetPackageName == ASIA_TikTokPackageName){      
+        var daySeekBar = className("android.widget.SeekBar").id("com.ss.android.ugc.trill:id/dru").findOne(3000);
+    }else{
+        var daySeekBar = className("android.widget.SeekBar").id("com.zhiliaoapp.musically:id/drt").findOne(3000);
+    }
+    if (daySeekBar) {
+        let bounds = daySeekBar.bounds();
+        let centerX = bounds.centerX();
+
+        // 数字高度一般是控件高度的1/3
+        let numberHeight = bounds.height() / 3;
+        let startY = bounds.top + numberHeight * 1.5;
+
+        taskLog("控件中心X: " + centerX + ", 日期选择器中心Y: " + startY);
+
+        // 先点击激活控件
+        click(centerX, startY);
+        sleep(500);
+
+        // 随机决定滑动方向和距离
+        let direction = random(0, 1) > 0.5 ? 1 : -1; // 1表示向下滑动，-1表示向上滑动
+        let slideDistance = numberHeight * random(5, 15); // 随机滑动5-15个日期的距离
+
+        // 计算结束位置
+        let endY = startY + (slideDistance * direction);
+        
+        taskLog("开始随机滑动日期选择器");
+        taskLog("滑动距离: " + slideDistance + ", 方向: " + (direction > 0 ? "向下" : "向上"));
+
+        // 执行快速滑动
+        swipe(centerX, startY, centerX, endY, 500);
+        
+        // 等待动画结束
+        sleep(1000);
+        
+        // 微调以确保最终选择随机
+        for(let i = 0; i < 2; i++) {
+            if(random(0, 1) > 0.5) {
+                swipe(centerX, startY, centerX, startY + numberHeight, 200);
+            } else {
+                swipe(centerX, startY, centerX, startY - numberHeight, 200);
+            }
+            sleep(300);
+        }
+        
+        taskLog("日期随机滑动完成");
+    } else {
+        taskLog("未找到日期SeekBar控件");
+    }
+}
 
 
 try {
@@ -959,6 +1012,8 @@ try {
     setBirthdayYear()
     sleep(random(3000, 5000))
     setBirthdayMonth()
+    sleep(random(3000, 5000))
+    setBirthdayDay()
     sleep(random(3000, 5000))
 
 
