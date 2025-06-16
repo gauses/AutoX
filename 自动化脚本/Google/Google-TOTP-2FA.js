@@ -105,6 +105,7 @@ var taskLogImgName = "nest_task_log.png"
 //用户需要输入的关注用户ID列表
 const GOOGLE_ACCOUNT_PASSWORD_2FA = '$${Google账号密码2FA}';
 
+
 var GOOGLE_PACKAGE_NAME =  'com.android.vending';
 
 //1.autox.js侧边栏的打开USB调试先打开
@@ -385,6 +386,10 @@ function swipe_up(){
 
 try {
 
+    taskLog("等待5-15秒后开始执行脚本,减少被检测到风险的概率...")
+    sleep(random(5000, 15000))
+
+
 
     //最先要解析一下GOOGLE_ACCOUNT_PASSWORD_2FA，三个信息都是以|来分割
     var GOOGLE_ACCOUNT_PASSWORD_2FA_ARRAY = GOOGLE_ACCOUNT_PASSWORD_2FA.split("|");
@@ -544,6 +549,18 @@ try {
                                     acceptBtn_EN.click();
                                 }else if(acceptBtn_ZH_TW){
                                     acceptBtn_ZH_TW.click();
+                                }
+
+
+                                sleep(random(8000, 10000))
+
+
+                                //11.最后可能会弹窗，显示是否同意google play 政策， text("接受")  text("拒絕")
+                                //fullId("com.android.vending:id/0_resource_name_obfuscated") text("接受") className("android.widget.Button")
+                                var acceptBtn = className("android.widget.Button").id("com.android.vending:id/0_resource_name_obfuscated").findOne(5000);
+                                if(acceptBtn){
+                                    taskLog("检测到ACCEPT弹窗，点击'接受'");
+                                    acceptBtn.click();
                                 }
 
                                 sleep(random(25000, 30000))
