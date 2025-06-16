@@ -927,7 +927,18 @@ try {
     }
 
 
+    //可能会有一个弹窗：className("android.widget.Button") text("同意並繼續")  clickable("true")
+    var agreeDialogBtn = className("android.widget.Button").text("同意並繼續").findOne(3000);
+    if(agreeDialogBtn){
+        agreeDialogBtn.click();
+        sleep(random(3000, 5000))
+    }
+
+
     //可能会有一个新手引导的动画，导致无法点击"個人資料"，所以需要滑动一下
+    swipe_to_up()
+    sleep(random(3000, 5000))
+
     swipe_to_up()
     sleep(random(3000, 5000))
 
