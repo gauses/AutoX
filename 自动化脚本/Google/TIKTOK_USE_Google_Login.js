@@ -687,8 +687,6 @@ function waitForButtons(classNameStr, idStr, timeout) {
 
 //修改生日的年份
 function setBirthdayYear(){
-    //fullId("com.zhiliaoapp.musically:id/v41")
-    //fullId("com.ss.android.ugc.trill:id/v44")
     if(targetPackageName == ASIA_TikTokPackageName){      
         var yearSeekBar = className("android.widget.SeekBar").id("com.ss.android.ugc.trill:id/v44").findOne(3000);
     }else{
@@ -702,45 +700,41 @@ function setBirthdayYear(){
 
         let bounds = yearSeekBar.bounds();
         let centerX = bounds.centerX();
-
-        // 数字高度一般是控件高度的1/3
         let numberHeight = bounds.height() / 3;
-        let startY = bounds.top + numberHeight * 1.5; // 2024数字正中间
+        let startY = bounds.top + numberHeight * 1.5;
 
         taskLog("控件中心X: " + centerX + ", 2024数字中心Y: " + startY);
 
-        // 先点击激活控件
         click(centerX, startY);
-        sleep(500);
+        sleep(random(800, 1500));
 
         let delta = currentYear - targetYear;
-        
         if (delta > 0) {
-            // 计算需要滑动的总距离
-            let totalDistance = numberHeight * delta;
-            // 从2024直接滑动到目标年份，使用较长的滑动距离和较快的滑动速度
-            let endY = startY + totalDistance;
-            taskLog("开始滑动: 从" + currentYear + "年滑动到" + targetYear + "年");
-            taskLog("滑动距离: " + totalDistance);
-            
-            // 使用较快的滑动速度（500ms）和较大的滑动距离
-            swipe(centerX, startY, centerX, endY, 500);
-            
-            // 等待动画结束
-            sleep(1000);
-            
-            // 微调以确保准确性
-            for(let i = 0; i < 2; i++) {
+            // 分5-8次滑动，每次滑动2-4年
+            let steps = random(5, 8);
+            let yearsPerStep = Math.max(1, Math.floor(delta / steps));
+            let remain = delta - yearsPerStep * steps;
+            let y = startY;
+            for(let i = 0; i < steps; i++) {
+                let thisStep = yearsPerStep + (i < remain ? 1 : 0);
+                let distance = numberHeight * thisStep;
+                let endY = y + distance;
+                taskLog("第" + (i+1) + "次滑动: 距离=" + distance);
+                swipe(centerX, y, centerX, endY, random(600, 1200));
+                y = endY;
+                sleep(random(1500, 2500));
+            }
+            // 微调3-4次
+            for(let i = 0; i < random(3, 4); i++) {
                 if(random(0, 1) > 0.5) {
-                    swipe(centerX, startY, centerX, startY + numberHeight, 200);
+                    swipe(centerX, y, centerX, y + numberHeight, random(200, 400));
                 } else {
-                    swipe(centerX, startY, centerX, startY - numberHeight, 200);
+                    swipe(centerX, y, centerX, y - numberHeight, random(200, 400));
                 }
-                sleep(300);
+                sleep(random(500, 900));
             }
         }
-        
-        taskLog("已尝试快速滑动设置年份为：" + targetYear);
+        taskLog("已尝试更慢分步滑动设置年份为：" + targetYear);
     } else {
         taskLog("未找到年份SeekBar控件");
     }
@@ -749,54 +743,51 @@ function setBirthdayYear(){
 
 //修改生日的月份
 function setBirthdayMonth(){
-    //com.ss.android.ugc.trill:id/klu
-    //fullId("com.zhiliaoapp.musically:id/klt")
     if(targetPackageName == ASIA_TikTokPackageName){      
-        var yearSeekBar = className("android.widget.SeekBar").id("com.ss.android.ugc.trill:id/klu").findOne(3000);
+        var monthSeekBar = className("android.widget.SeekBar").id("com.ss.android.ugc.trill:id/klu").findOne(3000);
     }else{
-        var yearSeekBar = className("android.widget.SeekBar").id("com.zhiliaoapp.musically:id/klt").findOne(3000);
+        var monthSeekBar = className("android.widget.SeekBar").id("com.zhiliaoapp.musically:id/klt").findOne(3000);
     }
-    if (yearSeekBar) {
-        let bounds = yearSeekBar.bounds();
+    if (monthSeekBar) {
+        let bounds = monthSeekBar.bounds();
         let centerX = bounds.centerX();
-
-        // 数字高度一般是控件高度的1/3
         let numberHeight = bounds.height() / 3;
         let startY = bounds.top + numberHeight * 1.5;
 
         taskLog("控件中心X: " + centerX + ", 月份选择器中心Y: " + startY);
 
-        // 先点击激活控件
         click(centerX, startY);
-        sleep(500);
+        sleep(random(800, 1500));
 
-        // 随机决定滑动方向和距离
-        let direction = random(0, 1) > 0.5 ? 1 : -1; // 1表示向下滑动，-1表示向上滑动
-        let slideDistance = numberHeight * random(3, 8); // 随机滑动3-8个月份的距离
-
-        // 计算结束位置
-        let endY = startY + (slideDistance * direction);
-        
-        taskLog("开始随机滑动月份选择器");
-        taskLog("滑动距离: " + slideDistance + ", 方向: " + (direction > 0 ? "向下" : "向上"));
-
-        // 执行快速滑动
-        swipe(centerX, startY, centerX, endY, 500);
-        
-        // 等待动画结束
-        sleep(1000);
-        
-        // 微调以确保最终选择随机
-        for(let i = 0; i < 2; i++) {
-            if(random(0, 1) > 0.5) {
-                swipe(centerX, startY, centerX, startY + numberHeight, 200);
-            } else {
-                swipe(centerX, startY, centerX, startY - numberHeight, 200);
+        // 随机目标月份（1-12月）
+        let targetMonth = random(1, 12);
+        let currentMonth = 12; // 假设初始为12月
+        let delta = currentMonth - targetMonth;
+        if (delta !== 0) {
+            let direction = delta > 0 ? 1 : -1;
+            let absDelta = Math.abs(delta);
+            // 分5-8次滑动，每次滑动1-2个月
+            let steps = random(5, 8);
+            let monthsPerStep = Math.max(1, Math.floor(absDelta / steps));
+            let remain = absDelta - monthsPerStep * steps;
+            let y = startY;
+            for(let i = 0; i < steps; i++) {
+                let thisStep = monthsPerStep + (i < remain ? 1 : 0);
+                let distance = numberHeight * thisStep * direction;
+                let endY = y + distance;
+                taskLog("第" + (i+1) + "次滑动: 距离=" + distance);
+                swipe(centerX, y, centerX, endY, random(600, 1200));
+                y = endY;
+                sleep(random(1500, 2500));
             }
-            sleep(300);
+            // 微调3-4次
+            for(let i = 0; i < random(3, 4); i++) {
+                let tweakDir = random(0, 1) > 0.5 ? 1 : -1;
+                swipe(centerX, y, centerX, y + numberHeight * tweakDir, random(200, 400));
+                sleep(random(500, 900));
+            }
         }
-        
-        taskLog("月份随机滑动完成");
+        taskLog("已尝试更慢分步滑动设置月份为：" + targetMonth);
     } else {
         taskLog("未找到月份SeekBar控件");
     }
@@ -827,8 +818,6 @@ function setBirthday_OK(){
 }
 
 function setBirthdayDay(){
-    //fullId("com.ss.android.ugc.trill:id/dru")
-    //fullId("com.zhiliaoapp.musically:id/drt")
     if(targetPackageName == ASIA_TikTokPackageName){      
         var daySeekBar = className("android.widget.SeekBar").id("com.ss.android.ugc.trill:id/dru").findOne(3000);
     }else{
@@ -837,44 +826,43 @@ function setBirthdayDay(){
     if (daySeekBar) {
         let bounds = daySeekBar.bounds();
         let centerX = bounds.centerX();
-
-        // 数字高度一般是控件高度的1/3
         let numberHeight = bounds.height() / 3;
         let startY = bounds.top + numberHeight * 1.5;
 
         taskLog("控件中心X: " + centerX + ", 日期选择器中心Y: " + startY);
 
-        // 先点击激活控件
         click(centerX, startY);
-        sleep(500);
+        sleep(random(800, 1500));
 
-        // 随机决定滑动方向和距离
-        let direction = random(0, 1) > 0.5 ? 1 : -1; // 1表示向下滑动，-1表示向上滑动
-        let slideDistance = numberHeight * random(5, 15); // 随机滑动5-15个日期的距离
-
-        // 计算结束位置
-        let endY = startY + (slideDistance * direction);
-        
-        taskLog("开始随机滑动日期选择器");
-        taskLog("滑动距离: " + slideDistance + ", 方向: " + (direction > 0 ? "向下" : "向上"));
-
-        // 执行快速滑动
-        swipe(centerX, startY, centerX, endY, 500);
-        
-        // 等待动画结束
-        sleep(1000);
-        
-        // 微调以确保最终选择随机
-        for(let i = 0; i < 2; i++) {
-            if(random(0, 1) > 0.5) {
-                swipe(centerX, startY, centerX, startY + numberHeight, 200);
-            } else {
-                swipe(centerX, startY, centerX, startY - numberHeight, 200);
+        // 随机目标日期（1-28日，避免2月特殊情况）
+        let targetDay = random(1, 28);
+        let currentDay = 28; // 假设初始为28日
+        let delta = currentDay - targetDay;
+        if (delta !== 0) {
+            let direction = delta > 0 ? 1 : -1;
+            let absDelta = Math.abs(delta);
+            // 分5-8次滑动，每次滑动2-4天
+            let steps = random(5, 8);
+            let daysPerStep = Math.max(1, Math.floor(absDelta / steps));
+            let remain = absDelta - daysPerStep * steps;
+            let y = startY;
+            for(let i = 0; i < steps; i++) {
+                let thisStep = daysPerStep + (i < remain ? 1 : 0);
+                let distance = numberHeight * thisStep * direction;
+                let endY = y + distance;
+                taskLog("第" + (i+1) + "次滑动: 距离=" + distance);
+                swipe(centerX, y, centerX, endY, random(600, 1200));
+                y = endY;
+                sleep(random(1500, 2500));
             }
-            sleep(300);
+            // 微调3-4次
+            for(let i = 0; i < random(3, 4); i++) {
+                let tweakDir = random(0, 1) > 0.5 ? 1 : -1;
+                swipe(centerX, y, centerX, y + numberHeight * tweakDir, random(200, 400));
+                sleep(random(500, 900));
+            }
         }
-        
-        taskLog("日期随机滑动完成");
+        taskLog("已尝试更慢分步滑动设置日期为：" + targetDay);
     } else {
         taskLog("未找到日期SeekBar控件");
     }
