@@ -712,23 +712,34 @@ function get_all_TT_comment_text(){
 function get_post_text(){
     // 用于存储私信用户的数组
     let comments = [];
-    const file = new java.io.File(TT_commentFile);
-    if (file.exists() && file.isFile()) {
-        try {
-            // 读取文件内容
-            const reader = new java.io.BufferedReader(new java.io.FileReader(file));
-            let line;
-            while ((line = reader.readLine()) !== null) {
-                comments.push(line);
-            }
-            reader.close();
-        } catch (e) {
-            taskLog("读取文件时发生错误：" + e.message);
+
+
+    if(TT_commentFile && 
+        TT_commentFile.trim() !== "" && 
+        TT_commentFile.trim().toLowerCase() !== "off" && 
+        !TT_commentFile.includes("$${")){
+            
+                const file = new java.io.File(TT_commentFile);
+                if (file.exists() && file.isFile()) {
+                    try {
+                        // 读取文件内容
+                        const reader = new java.io.BufferedReader(new java.io.FileReader(file));
+                        let line;
+                        while ((line = reader.readLine()) !== null) {
+                            comments.push(line);
+                        }
+                        reader.close();
+                    } catch (e) {
+                        taskLog("读取文件时发生错误：" + e.message);
+                    }
+                } else {
+                    // 如果文件不存在，将文件名添加到数组中
+                    comments.push(TT_commentFile);
+                }
         }
-    } else {
-        // 如果文件不存在，将文件名添加到数组中
-        comments.push(TT_commentFile);
-    }
+
+
+
     return comments
 
 }
@@ -816,23 +827,34 @@ try {
             }
             sleep(random(3000, 5000))
 
+            if (Math.random() * 100 < TT_Comment_Count)  {
+                taskLog("开始触发评论概率")
+                
+                if(commentTextArrays.length > 0){
 
-            if(commentTextArrays.length > 0){
+                    var randIdx = random(0, commentTextArrays.length - 1)
+                    var messageText = commentTextArrays[randIdx];
 
-                var randIdx = random(0, commentTextArrays.length - 1)
-                var messageText = commentTextArrays[randIdx];
+                    toast("评论文案：" + messageText)
+                    toast("准备点击评论按钮....");
+                    click_Comment_Btn(messageText)
 
-                toast("评论文案：" + messageText)
-                toast("准备点击评论按钮....");
-                click_Comment_Btn(messageText)
-
-                taskLog("等待5秒后，准备返回上一个页面")
-                sleep(random(3000, 5000))
+                    taskLog("等待5秒后，准备返回上一个页面")
+                    sleep(random(3000, 5000))
 
 
+                }else{
+                    toast("评论文案为空，所以不点击评论按钮");
+                }
+
+
+
+                
             }else{
-                toast("评论文案为空，所以不点击评论按钮");
+                taskLog("本次不需要触发评论视频概率")
             }
+
+
             
         }else{
             taskLog("没有找到点赞按钮，直接下一次循环页面")
