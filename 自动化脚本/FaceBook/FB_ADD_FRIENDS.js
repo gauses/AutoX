@@ -155,18 +155,18 @@ app.startActivity({
 
 
     var all_friends = get_all_friedns()
-    toast("所有好友数量 = " + all_friends.length)
-    sleep(5000)
+    taskLog("所有好友数量 = " + all_friends.length)
+    sleep(random(3000, 5000))
 
 
     if(all_friends.length == 0){
-        toast("没有好友") 
+        taskLog("没有好友") 
         stopCurrentTask()
     }else{
         for(var i = 0; i < all_friends.length; i++){
-            toast("当前好友在第" + (i+1) + "个 = " + all_friends[i])      
+            taskLog("当前好友在第" + (i+1) + "个 = " + all_friends[i])      
             var friend_info_link = all_friends[i]
-            sleep(2000)
+            sleep(random(2000, 3000))
     
             var openUrlFlag = openFacebookLink_test(friend_info_link)
             if(openUrlFlag){
@@ -177,24 +177,24 @@ app.startActivity({
                 //className("android.widget.Button") desc("Add friend")
                 var add_friend = find_btn_desc_base("加朋友","Add friend","Add friend")
                 if(add_friend){
-                    toast("已经点击Add friend好友")    
+                    taskLog("已经点击Add friend好友")    
                     sleep(random(3000, 5000))
-                    toast("开始模拟滑动")
+                    taskLog("开始模拟滑动")
                     swipe_up()
                 }else{
-                    toast("没有找到Add friend按钮")
+                    taskLog("没有找到Add friend按钮")
 
                     //测试：https://www.facebook.com/profile.php?id=100083184186096
                     //className("android.view.View").text("Follow").findOne().click()
                     //desc("追蹤")
                     var follow = find_btn_desc_base("追蹤","Follow","Follow")
                     if(follow){
-                        toast("已经点击Follow好友")
+                        taskLog("已经点击Follow好友")
                         sleep(random(3000, 5000))
-                        toast("开始模拟滑动")
+                        taskLog("开始模拟滑动")
                         swipe_up()
                     }else{
-                        toast("没有找到Follow按钮") 
+                        taskLog("没有找到Follow按钮") 
 
                         //测试：https://www.facebook.com/profile.php?id=61572758800839
                         var like = find_btn_desc_base("讚","Like","Like")    
