@@ -816,17 +816,16 @@ function find_post_button(){
 
 
         toast("准备点击POST....");
-        sleep(3000)
+        sleep(random(3000, 5000))
         find_btn_desc_base("發佈", "POST", "發佈")
     
         //删除临时图片库 :A_NEST_FaceBook_MEDIA
-        sleep(10000)
+        sleep(random(3000, 5000))
         delete_temp_image("/storage/emulated/0/Download/" + A_NEST_FaceBook_MEDIA)
-
 
         toast("开始模拟滑动")
         swipe_up()
-        sleep(5000)
+        sleep(random(3000, 5000))
 
     }else{
         toast("未找到在Group群组发表po文的按钮，进行下一个Group任务");
@@ -836,41 +835,41 @@ function find_post_button(){
 
 function post_Image(){
     taskLog("开始检查图片条件判断...")
-    taskLog("FB_input_IMAGE的实际值: " + FB_input_IMAGE)
     
     // 检查是否是有效的图片路径（不是模板字符串且文件存在）
     if(FB_input_IMAGE && 
         FB_input_IMAGE.trim() !== "" && 
         FB_input_IMAGE.trim().toLowerCase() !== "off" && 
         !FB_input_IMAGE.includes("$${")){
-            taskLog("检测到有效的图片路径，准备处理图片...")
-            toast("图片不是空")    
 
-            toast("FB_input_IMAGE = " + FB_input_IMAGE)
-
+            taskLog("开始刷新媒体库，用时5秒钟....")
             refreshMedia("/storage/emulated/0/Download/")
             var imageTempPath = transferHeadImageToNest(FB_input_IMAGE)
-            sleep(10000)
+            sleep(random(3000, 5000))
 
             //className("android.widget.Button").desc("Photo/video").findOne().click()
+            taskLog("开始点击Photo/video按钮，用时3秒钟....")
             find_btn_desc_base("Photo/video", "相片／影片", "Photo/video")
-            sleep(5000)
+            sleep(random(3000, 5000))
 
             //点击权限
             //className("android.widget.Button").desc("Allow access").findOne().click()
+            taskLog("开始检查权限，用时3秒钟....")
             find_btn_desc_base("Allow access", "允許存取", "Allow access")
-            sleep(3000)
+            sleep(random(1000, 3000))
 
             //再次点击权限
             // id("(name removed)").className("android.widget.Button").text("ALLOW").findOne().click()
+            taskLog("开始再次检查权限，用时3秒钟....")
             find_btn_Text_base("ALLOW", "允許", "ALLOW")
-            sleep(3000)
+            sleep(random(1000, 3000))
 
             //系统弹窗
+            taskLog("开始再次检查权限，用时3秒钟....")
             find_btn_Text_base("允许", "允許", "Allow")
-            sleep(3000)
+            sleep(random(1000, 3000))
 
-
+            taskLog("开始检查图片库....")
             className("android.widget.GridView").findOne().children().forEach(child => {
                 var target = child.findOne(className("android.widget.Spinner"));
                 if(target == null){
@@ -878,19 +877,18 @@ function post_Image(){
                     return;
                 }
                 target.click();
-                sleep(5000)
+                sleep(random(3000, 5000))
 
 
                 //点击对应的targetPath：A_NEST_FaceBook_MEDIA
+                taskLog("开始检查指定需要上传图片目录....")
                 var allListTextView = className("android.view.ViewGroup").find();
-                taskLog("找到allListTextView: 全部 = "  + allListTextView.size());
                 if (allListTextView && allListTextView.size() > 0) {
                     for (var i = 0; i < allListTextView.size(); i++) {
                         var listTextView = allListTextView.get(i);
                         if (listTextView) {
                             taskLog("找到listTextView控件-Text：" + listTextView.desc());
                             
-                            // 检查text是否为"A_NEST_TikTok_MEDIA"
                             if (listTextView.desc() != null && listTextView.desc().includes("A_NEST_FaceBook_MEDIA")) {
                                 // 正确调用bounds()方法并点击
                                 taskLog("找到对应目录" + listTextView.desc());
@@ -903,14 +901,15 @@ function post_Image(){
                     }
                 }
 
-                sleep(5000)
+                sleep(random(3000, 5000))
 
 
                 //选择图片
                 find_btn_desc_base("Select multiple", "選擇多個", "Select multiple")
-                sleep(5000)
+                sleep(random(3000, 5000))
 
                 //选中所有图片
+                taskLog("开始选中该目录下所有图片....")
                 className("android.widget.GridView").findOne().children().forEach(child => {
                     var button = child.findOne(className("android.widget.Button"));
                     if (!button) {
@@ -924,7 +923,6 @@ function post_Image(){
                         return;
                     }
                     
-                    toast("选择图片描述 = " + buttonDesc);
                     taskLog("选择图片描述 = " + buttonDesc);
                     
                     //繁体：desc("在4月 26, 2025 23:16拍攝的相片")
@@ -943,7 +941,7 @@ function post_Image(){
 
                 //点击Nest
                 find_btn_desc_base("繼續", "Next", "Next")
-                sleep(3000)
+                sleep(random(1000, 3000))
 
             });
             
@@ -961,7 +959,6 @@ function refreshMedia(path) {
     media.scanFile(path);
     // 等待扫描完成
     sleep(5000);
-    toast("媒体库刷新完成，开始下一步任务...");
 }
 
 //转移头像图片到Nest临时文件夹
@@ -1000,24 +997,21 @@ function transferHeadImageToNest(fileName){
 
     sleep(3000);
 
-
     refreshMedia(newFolder)
-    sleep(10000);
 
 
-    // 创建文件对象并获取URI
-    let file = new java.io.File(targetPath);
-    let uri = app.getUriForFile(targetPath);
-    
-    // 创建打开图片的 Intent
-    let intent = new Intent(Intent.ACTION_VIEW);
-    intent.setDataAndType(uri, "image/*");
-    // 添加必要的权限标志
-    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-    intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+    // // 创建文件对象并获取URI
+    // let file = new java.io.File(targetPath);
+    // let uri = app.getUriForFile(targetPath);
+    // // 创建打开图片的 Intent
+    // let intent = new Intent(Intent.ACTION_VIEW);
+    // intent.setDataAndType(uri, "image/*");
+    // // 添加必要的权限标志
+    // intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    // intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
 
-    // 指定使用系统默认的图库应用
-    intent.setPackage("com.android.gallery3d");  // 系统默认图库的包名
+    // // 指定使用系统默认的图库应用
+    // intent.setPackage("com.android.gallery3d");  // 系统默认图库的包名
     // 如果上面的包名不生效，可以尝试：
     // intent.setPackage("com.google.android.apps.photos");  // Google Photos
     // intent.setPackage("com.sec.android.gallery3d");  // 三星图库
@@ -1026,7 +1020,6 @@ function transferHeadImageToNest(fileName){
     // 启动图片查看Activity
     // context.startActivity(intent);
     // 等待界面加载
-    sleep(3000);
 
     return targetPath
 
