@@ -57,20 +57,57 @@ taskLog("准备启动Facebook...")
 var targetPackageName = null;
 var targetClassName = null;
 
+// function openFacebookLink_test(fbUrl){
+//     taskLog("准备打开链接 = " + fbUrl)
+//     var intent = new android.content.Intent(android.content.Intent.ACTION_VIEW);
+//     // intent.setData(android.net.Uri.parse("https://www.facebook.com/watch/huacemedia/")); //不行
+//     // intent.setData(android.net.Uri.parse("https://www.facebook.com/share/r/1CdK7F3fRp/"));  //Reels -OK
+//     // intent.setData(android.net.Uri.parse("https://www.facebook.com/groups/850798899131453/"));  //Group -OK
+//     // intent.setData(android.net.Uri.parse("https://www.facebook.com/share/v/16cLEnDJoT/"));   //Live - OK
+//     // intent.setData(android.net.Uri.parse("https://www.facebook.com/profile.php?id=100079449592509"));  //Friend - OK
+//     // intent.setData(android.net.Uri.parse("https://www.facebook.com/share/v/14Dj3UQ6q2b/"));  //watch - OK（https://www.facebook.com/watch/?v=689492360538949&rdid=PU3MOv69wqSgVeh5）
+    
+//     intent.setData(android.net.Uri.parse(fbUrl));
+
+//     intent.setPackage("com.facebook.katana");
+//     intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+//     app.startActivity(intent);
+// }
+
+
 function openFacebookLink_test(fbUrl){
+
+
+    //是否打开成功，如果打开失败，那么直接进行下一个任务
+    var openUrlFlag = false
+
     taskLog("准备打开链接 = " + fbUrl)
     var intent = new android.content.Intent(android.content.Intent.ACTION_VIEW);
     // intent.setData(android.net.Uri.parse("https://www.facebook.com/watch/huacemedia/")); //不行
+    // intent.setData(android.net.Uri.parse("https://www.facebook.com/samsul.ujex"));  //加好友，异常
     // intent.setData(android.net.Uri.parse("https://www.facebook.com/share/r/1CdK7F3fRp/"));  //Reels -OK
     // intent.setData(android.net.Uri.parse("https://www.facebook.com/groups/850798899131453/"));  //Group -OK
     // intent.setData(android.net.Uri.parse("https://www.facebook.com/share/v/16cLEnDJoT/"));   //Live - OK
     // intent.setData(android.net.Uri.parse("https://www.facebook.com/profile.php?id=100079449592509"));  //Friend - OK
     // intent.setData(android.net.Uri.parse("https://www.facebook.com/share/v/14Dj3UQ6q2b/"));  //watch - OK（https://www.facebook.com/watch/?v=689492360538949&rdid=PU3MOv69wqSgVeh5）
+    
     intent.setData(android.net.Uri.parse(fbUrl));
-
-    intent.setPackage("com.facebook.katana");
     intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
-    app.startActivity(intent);
+    intent.setPackage("com.facebook.katana");
+    try {
+        app.startActivity(intent);
+        openUrlFlag = true
+    } catch (e) {
+
+        // 如果 Facebook App 无法处理，则用浏览器打开
+        taskLog("Facebook无法处理该链接，所以跳过 = " + fbUrl);
+        // var browserIntent = new android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(fbUrl));
+        // browserIntent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+        // app.startActivity(browserIntent);
+        // openUrlFlag = true
+    }
+
+    return openUrlFlag
 }
 
 
@@ -131,58 +168,54 @@ app.startActivity({
             var friend_info_link = all_friends[i]
             sleep(2000)
     
-            openFacebookLink_test(friend_info_link)
-            sleep(5000)
+            var openUrlFlag = openFacebookLink_test(friend_info_link)
+            if(openUrlFlag){
+                sleep(random(5000, 8000))
 
-            //可能会出现“Continue”按钮，点击：
-            if(id("message_primary_button").exists()){
-                toast("出现Continue按钮，点击.")
-                id("message_primary_button").findOne().click()
+                //测试：https://www.facebook.com/profile.php?id=100070600397434
+                //className("android.view.View").text("Add friend").findOne().click()
+                //className("android.widget.Button") desc("Add friend")
+                var add_friend = find_btn_desc_base("加朋友","Add friend","Add friend")
+                if(add_friend){
+                    toast("已经点击Add friend好友")    
+                    sleep(random(3000, 5000))
+                    toast("开始模拟滑动")
+                    swipe_up()
+                }else{
+                    toast("没有找到Add friend按钮")
+
+                    //测试：https://www.facebook.com/profile.php?id=100083184186096
+                    //className("android.view.View").text("Follow").findOne().click()
+                    //desc("追蹤")
+                    var follow = find_btn_desc_base("追蹤","Follow","Follow")
+                    if(follow){
+                        toast("已经点击Follow好友")
+                        sleep(random(3000, 5000))
+                        toast("开始模拟滑动")
+                        swipe_up()
+                    }else{
+                        toast("没有找到Follow按钮") 
+
+                        //测试：https://www.facebook.com/profile.php?id=61572758800839
+                        var like = find_btn_desc_base("讚","Like","Like")    
+                        if(like){
+                            toast("已经点击Like好友")
+                            sleep(random(3000, 5000))
+                            toast("开始模拟滑动")
+                            swipe_up()
+                        }else{
+                            toast("没有找到任何执行按钮，进行下一个好友链接任务.")
+                            sleep(random(3000, 5000))
+                        }   
+                        sleep(random(3000, 5000))
+                    }   
+                    sleep(random(3000, 5000))
+
+                }   
+            }else{
+                sleep(random(3000, 5000))
             }
-            sleep(5000)
-
-    
-            find_textview_text_base("開啟應用程式","開啟應用程式","Open app")
-            sleep(5000)
             
-            //测试：https://www.facebook.com/profile.php?id=100070600397434
-            //className("android.view.View").text("Add friend").findOne().click()
-            var add_friend = find_view_desc_base("加朋友","Add friend","Add friend")
-            if(add_friend){
-                toast("已经点击Add friend好友")
-            }else{
-                toast("没有找到Add friend按钮")
-            }   
-            sleep(5000)
-            
-            //测试：https://www.facebook.com/profile.php?id=100083184186096
-            //className("android.view.View").text("Follow").findOne().click()
-            //desc("追蹤")
-            var follow = find_view_desc_base("追蹤","Follow","Follow")
-            if(follow){
-                toast("已经点击Follow好友")
-            }else{
-                toast("没有找到Follow按钮") 
-            }   
-            sleep(5000) 
-
-            //测试：https://www.facebook.com/profile.php?id=61572758800839
-            var like = find_view_desc_base("讚","Like","Like")    
-            if(like){
-                toast("已经点击Like好友")
-            }else{
-                toast("没有找到Like按钮")
-            }   
-            sleep(5000) 
-            
-            toast("开始模拟滑动")
-            swipe_up()
-
-
-            //检查页面是否存在多个“Add friend”按钮，因为可能会跳转到一个新页面
-            // check_add_friend_page()
-            // sleep(5000)
-    
     
         }
     }
@@ -387,7 +420,10 @@ function get_all_friedns(){
             const reader = new java.io.BufferedReader(new java.io.FileReader(file));
             let line;
             while ((line = reader.readLine()) !== null) {
-                comments.push(line);
+                // 去除首尾空格后判断是否为空行
+                if (line.trim() !== "") {
+                    comments.push(line);
+                }
             }
             reader.close();
         } catch (e) {
@@ -563,7 +599,7 @@ function find_view_desc_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
 
 //在加好友之后，可能会跳转到一个新页面，这个页面是推荐你add friend，需要点击back返回
 function check_add_friend_page(){
-    //检查页面是否存在“Add friend”按钮 :desc("Add friend")
+    //检查页面是否存在"Add friend"按钮 :desc("Add friend")
     var add_friends_viewGroup = className("android.view.ViewGroup").desc("Add friend").find()
     toast("当前页面所有viewGroup = " + add_friends_viewGroup.length)
 
@@ -594,14 +630,14 @@ function forceStop_APP(packageName){
             sleep(1000);
             // 确认操作
             if (text("確定").exists()) {
-                taskLog("已经找到可点击的‘強行停止’按钮！！！！！！！！！！");
+                taskLog("已经找到可点击的'強行停止'按钮！！！！！！！！！！");
                 text("確定").findOne().click();
             }
         } else {
-            taskLog("未找到可点击的‘強制停止’按钮");
+            taskLog("未找到可点击的'強制停止'按钮");
         }
     } else {
-        taskLog("未找到‘強制停止’按钮");
+        taskLog("未找到'強制停止'按钮");
     }
     sleep(3000)
 
@@ -616,10 +652,10 @@ function forceStop_APP(packageName){
                 text("确定").findOne().click();
             }
         } else {
-            taskLog("未找到可点击的‘强行停止’按钮");
+            taskLog("未找到可点击的'强行停止'按钮");
         }
     } else {
-        taskLog("未找到‘强行停止’按钮");
+        taskLog("未找到'强行停止'按钮");
     }
 
     sleep(3000)
@@ -636,10 +672,10 @@ function forceStop_APP(packageName){
                 text("OK").findOne().click();
             }
         } else {
-            taskLog("未找到可点击的‘Force stop’按钮");
+            taskLog("未找到可点击的'Force stop'按钮");
         }
     } else {
-        taskLog("未找到‘Force stop’按钮");
+        taskLog("未找到'Force stop'按钮");
     }
     sleep(3000)
 
@@ -654,10 +690,10 @@ function forceStop_APP(packageName){
                 text("OK").findOne().click();
             }
         } else {
-            taskLog("未找到可点击的‘FORCE STOP’按钮");
+            taskLog("未找到可点击的'FORCE STOP'按钮");
         }
     } else {
-        taskLog("未找到‘FORCE STOP’按钮");
+        taskLog("未找到'FORCE STOP'按钮");
     }
     sleep(3000)
 
