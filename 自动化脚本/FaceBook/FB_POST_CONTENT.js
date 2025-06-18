@@ -98,6 +98,16 @@ function isAppInstalled(packageName) {
     }
 }
 
+
+// 替代 app.openAppSetting 的方式
+function openAppSettings(packageName) {
+    var intent = new Intent();
+    intent.setAction(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+    intent.setData(android.net.Uri.parse("package:" + packageName));
+    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    app.startActivity(intent);
+}
+
 if (isAppInstalled(FacebookPackageName)) {
     targetPackageName = FacebookPackageName;
     targetClassName = "com.facebook.katana.activity.FbMainTabActivity";
@@ -109,9 +119,6 @@ if (isAppInstalled(FacebookPackageName)) {
 }
 
 sleep(random(3000, 5000))
-openAppSetting(targetPackageName)
-sleep(random(3000, 5000))
-
 forceStop_APP(targetPackageName)
 sleep(3000)
 
@@ -127,8 +134,6 @@ sleep(random(3000, 5000))
 
 
     taskLog("打开Facebook成功...")
-    taskLog("FB_input_IMAGE:" + FB_input_IMAGE)
-    toast("FB_input_IMAGE:" + FB_input_IMAGE)
  
     //发布content
     //className("android.widget.Button").desc("Make a post on Facebook").findOne().click()
@@ -374,6 +379,9 @@ function transferHeadImageToNest(fileName){
         files.copy(imagePath, targetPath);
         console.log("复制成功!");
         console.log("新图片路径: " + targetPath);
+        // 复制成功后删除原图片
+        files.remove(imagePath);
+        console.log("已删除原图片: " + imagePath);
     } catch(e) {
         console.error("复制失败: " + e);
     }
@@ -382,31 +390,30 @@ function transferHeadImageToNest(fileName){
 
     taskLog("重新刷新媒体库，用时5秒钟....")
     refreshMedia(newFolder)
-    sleep(10000);
 
 
-    // 创建文件对象并获取URI
-    let file = new java.io.File(targetPath);
-    let uri = app.getUriForFile(targetPath);
+    // // 创建文件对象并获取URI
+    // let file = new java.io.File(targetPath);
+    // let uri = app.getUriForFile(targetPath);
     
-    // 创建打开图片的 Intent
-    let intent = new Intent(Intent.ACTION_VIEW);
-    intent.setDataAndType(uri, "image/*");
-    // 添加必要的权限标志
-    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-    intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+    // // 创建打开图片的 Intent
+    // let intent = new Intent(Intent.ACTION_VIEW);
+    // intent.setDataAndType(uri, "image/*");
+    // // 添加必要的权限标志
+    // intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    // intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
 
-    // 指定使用系统默认的图库应用
-    intent.setPackage("com.android.gallery3d");  // 系统默认图库的包名
-    // 如果上面的包名不生效，可以尝试：
-    // intent.setPackage("com.google.android.apps.photos");  // Google Photos
-    // intent.setPackage("com.sec.android.gallery3d");  // 三星图库
-    // intent.setPackage("com.miui.gallery");  // 小米图库
+    // // 指定使用系统默认的图库应用
+    // intent.setPackage("com.android.gallery3d");  // 系统默认图库的包名
+    // // 如果上面的包名不生效，可以尝试：
+    // // intent.setPackage("com.google.android.apps.photos");  // Google Photos
+    // // intent.setPackage("com.sec.android.gallery3d");  // 三星图库
+    // // intent.setPackage("com.miui.gallery");  // 小米图库
 
-    // 启动图片查看Activity
-    // context.startActivity(intent);
-    // 等待界面加载
-    sleep(3000);
+    // // 启动图片查看Activity
+    // // context.startActivity(intent);
+    // // 等待界面加载
+    // sleep(3000);
 
     return targetPath
 
@@ -592,8 +599,8 @@ function find_btn_desc_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
 function forceStop_APP(packageName){
     taskLog("准备强杀:" + packageName + "...")
     sleep(1000);
-    app.openAppSetting(packageName)
-    sleep(5000)
+    openAppSettings(packageName)
+    sleep(random(3000, 5000))
 
     //繁体
     if (text("強制停止").exists()) {
