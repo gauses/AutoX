@@ -991,9 +991,14 @@ function transferHeadImageToNest(fileName){
         files.copy(imagePath, targetPath);
         console.log("复制成功!");
         console.log("新图片路径: " + targetPath);
+        // 复制成功后删除原图片
+        files.remove(imagePath);
+        console.log("已删除原图片: " + imagePath);
     } catch(e) {
         console.error("复制失败: " + e);
     }
+
+    
 
     sleep(3000);
 
