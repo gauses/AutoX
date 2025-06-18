@@ -16,8 +16,6 @@ importClass(java.io.FileWriter);
 //保证Java层和JS代码两边的日志文件一致
 var taskLogFileName = "nest_task_log.txt"
 var taskLogImgName = "nest_task_log.png"
-var chromePackageName = 'com.kiwibrowser.browser';
-
 
 //需要添加的用户好友
 const FB_Group_links = '$${T_FB_输入需要動態文章发文的所有Group}';
@@ -61,6 +59,14 @@ if (runningEngines.length > 1) {
   })
 }
 
+// 替代 app.openAppSetting 的方式
+function openAppSettings(packageName) {
+    var intent = new Intent();
+    intent.setAction(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+    intent.setData(android.net.Uri.parse("package:" + packageName));
+    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    app.startActivity(intent);
+}
 
 
 sleep(3000)
@@ -90,9 +96,6 @@ if (isAppInstalled(FacebookPackageName)) {
 }
 
 sleep(random(3000, 5000))
-openAppSetting(targetPackageName)
-sleep(random(3000, 5000))
-
 forceStop_APP(targetPackageName)
 sleep(3000)
 
@@ -106,38 +109,23 @@ app.startActivity({
 
     var all_friends = get_all_groups()
     toast("所有Group数量 = " + all_friends.length)
-    sleep(5000)
+    sleep(random(3000, 5000))
 
     var all_group_comment_text = get_all_groups_comment_text()
     toast("所有Group评论数量 = " + all_group_comment_text.length)
-    sleep(5000) 
+    sleep(random(3000, 5000))
 
     
-    //用浏览器打开链接
-    firstOpenBrowser()
-    sleep(5000)
 
 
     for(var i = 0; i < all_friends.length; i++){
-        sleep(5000)
 
         var friend_info_link = all_friends[i]
         toast("当前Group信息 = " + friend_info_link)
-        sleep(5000)
+        sleep(random(3000, 5000))
 
-        openBrowser(friend_info_link)
-        sleep(5000)
-
-        //可能会出现"Continue"按钮，点击：
-        if(id("message_primary_button").exists()){
-            toast("出现Continue按钮，点击.")
-            id("message_primary_button").findOne().click()
-        }
-        sleep(5000)
-
-        find_textview_text_base("開啟應用程式","開啟應用程式","Open app")
-        sleep(5000)
-
+        openFacebookLink_test(friend_info_link)
+        sleep(random(5000, 8000))
  
         //找到在Group群组发表po文的按钮
         find_post_button()
@@ -233,7 +221,6 @@ function stopCurrentTask(){
     console.hide()
     forceStop_APP(FacebookPackageName)
     sleep(3000)
-    forceStop_APP(chromePackageName)
 
 }
 
@@ -335,6 +322,7 @@ function find_btn_desc_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
 
 
 
+
 //从好友列表数组中，顺序挑选一条内容
 function get_all_groups(){
     // 用于存储用户的数组
@@ -348,7 +336,10 @@ function get_all_groups(){
             const reader = new java.io.BufferedReader(new java.io.FileReader(file));
             let line;
             while ((line = reader.readLine()) !== null) {
-                comments.push(line);
+                // 去除首尾空格后判断是否为空行
+                if (line.trim() !== "") {
+                    comments.push(line);
+                }
             }
             reader.close();
         } catch (e) {
@@ -358,12 +349,13 @@ function get_all_groups(){
         // 如果文件不存在，将文件名添加到数组中
         comments.push(FB_Group_links);
     }
-    
+
     FB_common_count = comments.length
     toast("一共有" + FB_common_count + "个Group")
-
+    
     return comments
 }
+
 
 //从group评论数组中，顺序挑选一条内容
 function get_all_groups_comment_text(){
@@ -393,50 +385,42 @@ function get_all_groups_comment_text(){
 }
 
 
-function firstOpenBrowser(){
-    app.startActivity({
-        action: "android.intent.action.VIEW",
-        packageName: chromePackageName,
-        className: "org.chromium.chrome.browser.ChromeTabbedActivity"
-      });
-
-      sleep(3000);
-
-    //   //可能部分设备弹出"NestBrowser不能运行在没有GMS的设备"的弹出框，需要点击确定
-    //   if (id('button1').exists()) {
-    //     id('button1').findOne(3000).click();
-    //   }
-      
-      //可能存在欢迎界面的"continue"按钮，点击
-      if(id("com.kiwibrowser.browser:id/signin_fre_continue_button").exists()){
-        toast("存在欢迎界面的continue按钮，点击")
-        id("com.kiwibrowser.browser:id/signin_fre_continue_button").findOne().click()
-      }else{
-        toast("不存在欢迎界面的continue按钮")
-      }
 
 
-}
+
+function openFacebookLink_test(fbUrl){
 
 
-function openBrowser(url){
+    //是否打开成功，如果打开失败，那么直接进行下一个任务
+    var openUrlFlag = false
 
-    app.startActivity({
-        action: "android.intent.action.VIEW",
-        data: url,
-        packageName: chromePackageName,
-        className: "org.chromium.chrome.browser.ChromeTabbedActivity",
-        flags: [
-          "activity_new_task",
-          "activity_clear_top"
-          ],
-      extras: {
-          // 设置打开方式偏好
-          "browser.application_id": FacebookPackageName,  
-          "create_new_tab": true,
-          "open_in_external_app": true
-      }
-      });
+    taskLog("准备打开链接 = " + fbUrl)
+    var intent = new android.content.Intent(android.content.Intent.ACTION_VIEW);
+    // intent.setData(android.net.Uri.parse("https://www.facebook.com/watch/huacemedia/")); //不行
+    // intent.setData(android.net.Uri.parse("https://www.facebook.com/samsul.ujex"));  //加好友，异常
+    // intent.setData(android.net.Uri.parse("https://www.facebook.com/share/r/1CdK7F3fRp/"));  //Reels -OK
+    // intent.setData(android.net.Uri.parse("https://www.facebook.com/groups/850798899131453/"));  //Group -OK
+    // intent.setData(android.net.Uri.parse("https://www.facebook.com/share/v/16cLEnDJoT/"));   //Live - OK
+    // intent.setData(android.net.Uri.parse("https://www.facebook.com/profile.php?id=100079449592509"));  //Friend - OK
+    // intent.setData(android.net.Uri.parse("https://www.facebook.com/share/v/14Dj3UQ6q2b/"));  //watch - OK（https://www.facebook.com/watch/?v=689492360538949&rdid=PU3MOv69wqSgVeh5）
+    
+    intent.setData(android.net.Uri.parse(fbUrl));
+    intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+    intent.setPackage("com.facebook.katana");
+    try {
+        app.startActivity(intent);
+        openUrlFlag = true
+    } catch (e) {
+
+        // 如果 Facebook App 无法处理，则用浏览器打开
+        taskLog("Facebook无法处理该链接，所以跳过 = " + fbUrl);
+        // var browserIntent = new android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(fbUrl));
+        // browserIntent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+        // app.startActivity(browserIntent);
+        // openUrlFlag = true
+    }
+
+    return openUrlFlag
 }
 
 
@@ -703,7 +687,7 @@ function find_view_text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
 function forceStop_APP(packageName){
     taskLog("准备强杀:" + packageName + "...")
     sleep(1000);
-    app.openAppSetting(packageName)
+    openAppSettings(packageName)
     sleep(5000)
 
     //繁体
@@ -808,14 +792,24 @@ function find_post_button(){
         var all_group_comment_text = get_all_groups_comment_text()
         toast("所有Group评论数量 = " + all_group_comment_text.length)
         sleep(5000) 
-        
-        
-        var randIdx = random(0, all_group_comment_text.length - 1)
-        var messageText = all_group_comment_text[randIdx];
-        toast("输入内容 = " + messageText);
 
-        className("android.widget.AutoCompleteTextView").findOne().setText(messageText)
-        sleep(5000)
+        
+        if(FB_group_comment_text && 
+            FB_group_comment_text.trim() !== "" && 
+            FB_group_comment_text.trim().toLowerCase() !== "off" && 
+            !FB_group_comment_text.includes("$${")){
+
+                var randIdx = random(0, all_group_comment_text.length - 1)
+                var messageText = all_group_comment_text[randIdx];
+                toast("输入内容 = " + messageText);
+
+                className("android.widget.AutoCompleteTextView").findOne().setText(messageText)
+                sleep(5000)
+
+        }else{
+            toast("没有填写输入内容或者输入内容有误，所以跳过输入内容")
+        }
+        
 
         //检查是否需要发图片
         post_Image()
@@ -823,7 +817,6 @@ function find_post_button(){
 
         toast("准备点击POST....");
         sleep(3000)
-        // find_viewGroup_desc_base("發布", "POST", "發布")
         find_btn_desc_base("發佈", "POST", "發佈")
     
         //删除临时图片库 :A_NEST_FaceBook_MEDIA
