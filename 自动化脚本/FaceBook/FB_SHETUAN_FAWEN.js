@@ -111,29 +111,31 @@ app.startActivity({
     toast("所有Group数量 = " + all_friends.length)
     sleep(random(3000, 5000))
 
-    var all_group_comment_text = get_all_groups_comment_text()
-    toast("所有Group评论数量 = " + all_group_comment_text.length)
-    sleep(random(3000, 5000))
-
-    
-
 
     for(var i = 0; i < all_friends.length; i++){
 
         var friend_info_link = all_friends[i]
         toast("当前Group信息 = " + friend_info_link)
-        sleep(random(3000, 5000))
+        sleep(random(1000, 3000))
 
-        openFacebookLink_test(friend_info_link)
-        sleep(random(5000, 8000))
- 
-        //找到在Group群组发表po文的按钮
-        find_post_button()
+        var oepnUrlFlag = openFacebookLink_test(friend_info_link)
+        if(oepnUrlFlag){
+            taskLog("正在加载当前Group页面信息..." )
+            sleep(random(5000, 8000))
+            //找到在Group群组发表po文的按钮
+            find_post_button()
+        }else{
+            taskLog("打开链接失败，跳过 = " + friend_info_link)
+        }
+        
 
     }
 
 
-    
+//删除临时图片库 :A_NEST_FaceBook_MEDIA
+sleep(random(3000, 5000))
+delete_temp_image("/storage/emulated/0/Download/" + A_NEST_FaceBook_MEDIA)
+
 toast("所有循环执行完毕，准备结束任务...");
 stopCurrentTask()
 
@@ -143,6 +145,7 @@ stopCurrentTask()
 
 //打印日志
 function taskLog(_log){
+    toast(_log)
     console.log(getSystemDate("df") +":" +_log)
 }
 
@@ -361,8 +364,6 @@ function get_all_groups(){
 function get_all_groups_comment_text(){
     // 用于存储用户的数组
     let comments = [];
-    // 户是否存在
-    taskLog("group评论数组 =  " + FB_group_comment_text)
     const file = new java.io.File(FB_group_comment_text);
     if (file.exists() && file.isFile()) {
         try {
@@ -777,21 +778,21 @@ function forceStop_APP(packageName){
 function find_post_button(){
     // className("android.widget.Button").text("Write something...").findOne().click()
 
-
+    taskLog("开始寻找在Group群组发表po文的按钮...")
     var postBtn = find_btn_desc_base("Write something...","留個言吧……","Write something...")   
     if(postBtn){
         //已经点击过了，准备输入文字和图片
         taskLog("准备输入分享内容....");
         //text("Create a public post…")
         className("android.widget.AutoCompleteTextView").findOne().click()
-        sleep(5000)
+        sleep(random(3000, 5000))
         className("android.widget.AutoCompleteTextView").findOne().setText("")
-        sleep(5000)
+        sleep(random(3000, 5000))
 
 
         var all_group_comment_text = get_all_groups_comment_text()
         toast("所有Group评论数量 = " + all_group_comment_text.length)
-        sleep(5000) 
+        sleep(random(3000, 5000)) 
 
         
         if(FB_group_comment_text && 
@@ -801,10 +802,8 @@ function find_post_button(){
 
                 var randIdx = random(0, all_group_comment_text.length - 1)
                 var messageText = all_group_comment_text[randIdx];
-                toast("输入内容 = " + messageText);
-
                 className("android.widget.AutoCompleteTextView").findOne().setText(messageText)
-                sleep(5000)
+                sleep(random(3000, 5000))
 
         }else{
             toast("没有填写输入内容或者输入内容有误，所以跳过输入内容")
@@ -819,10 +818,6 @@ function find_post_button(){
         sleep(random(3000, 5000))
         find_btn_desc_base("發佈", "POST", "發佈")
     
-        //删除临时图片库 :A_NEST_FaceBook_MEDIA
-        sleep(random(3000, 5000))
-        delete_temp_image("/storage/emulated/0/Download/" + A_NEST_FaceBook_MEDIA)
-
         toast("开始模拟滑动")
         swipe_up()
         sleep(random(3000, 5000))
@@ -998,9 +993,6 @@ function transferHeadImageToNest(fileName){
         console.error("复制失败: " + e);
     }
 
-    
-
-    sleep(3000);
 
     refreshMedia(newFolder)
 
@@ -1034,7 +1026,6 @@ function transferHeadImageToNest(fileName){
 //删除临时图片文件夹
 function delete_temp_image(folderPath) {
     taskLog("准备删除临时文件夹: " + folderPath);
-    toast("准备删除临时文件夹: " + folderPath);
     
     if (!files.exists(folderPath)) {
         taskLog("文件夹不存在，无需删除");

@@ -17,7 +17,6 @@ importClass(java.io.FileWriter);
 //保证Java层和JS代码两边的日志文件一致
 var taskLogFileName = "nest_task_log.txt"
 var taskLogImgName = "nest_task_log.png"
-var chromePackageName = 'com.kiwibrowser.browser';
 
 
 //需要添加的用户好友
@@ -71,6 +70,53 @@ function isAppInstalled(packageName) {
     }
 }
 
+// 替代 app.openAppSetting 的方式
+function openAppSettings(packageName) {
+    var intent = new Intent();
+    intent.setAction(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+    intent.setData(android.net.Uri.parse("package:" + packageName));
+    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    app.startActivity(intent);
+}
+
+
+function openFacebookLink_test(fbUrl){
+
+
+    //是否打开成功，如果打开失败，那么直接进行下一个任务
+    var openUrlFlag = false
+
+    taskLog("准备打开链接 = " + fbUrl)
+    var intent = new android.content.Intent(android.content.Intent.ACTION_VIEW);
+    // intent.setData(android.net.Uri.parse("https://www.facebook.com/watch/huacemedia/")); //不行
+    // intent.setData(android.net.Uri.parse("https://www.facebook.com/samsul.ujex"));  //加好友，异常
+    // intent.setData(android.net.Uri.parse("https://www.facebook.com/share/r/1CdK7F3fRp/"));  //Reels -OK
+    // intent.setData(android.net.Uri.parse("https://www.facebook.com/groups/850798899131453/"));  //Group -OK
+    // intent.setData(android.net.Uri.parse("https://www.facebook.com/share/v/16cLEnDJoT/"));   //Live - OK
+    // intent.setData(android.net.Uri.parse("https://www.facebook.com/profile.php?id=100079449592509"));  //Friend - OK
+    // intent.setData(android.net.Uri.parse("https://www.facebook.com/share/v/14Dj3UQ6q2b/"));  //watch - OK（https://www.facebook.com/watch/?v=689492360538949&rdid=PU3MOv69wqSgVeh5）
+    
+    intent.setData(android.net.Uri.parse(fbUrl));
+    intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+    intent.setPackage("com.facebook.katana");
+    try {
+        app.startActivity(intent);
+        openUrlFlag = true
+    } catch (e) {
+
+        // 如果 Facebook App 无法处理，则用浏览器打开
+        taskLog("Facebook无法处理该链接，所以跳过 = " + fbUrl);
+        // var browserIntent = new android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(fbUrl));
+        // browserIntent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+        // app.startActivity(browserIntent);
+        // openUrlFlag = true
+    }
+
+    return openUrlFlag
+}
+
+
+
 if (isAppInstalled(FacebookPackageName)) {
     targetPackageName = FacebookPackageName;
     targetClassName = "com.facebook.katana.activity.FbMainTabActivity";
@@ -82,9 +128,6 @@ if (isAppInstalled(FacebookPackageName)) {
 }
 
 sleep(random(3000, 5000))
-openAppSetting(targetPackageName)
-sleep(random(3000, 5000))
-
 forceStop_APP(targetPackageName)
 sleep(3000)
 
@@ -98,47 +141,35 @@ app.startActivity({
 
 
     var all_friends = get_all_friedns()
-    toast("所有Group数量 = " + all_friends.length)
-    sleep(5000)
+    taskLog("所有Group数量 = " + all_friends.length)
+    sleep(random(3000, 5000))
     
-    //用浏览器打开链接
-    firstOpenBrowser()
-    sleep(5000)
 
 
     for(var i = 0; i < all_friends.length; i++){
-        sleep(5000)
+        sleep(random(3000, 5000))
 
         var friend_info_link = all_friends[i]
         toast("当前Group信息 = " + friend_info_link)
-        sleep(5000)
+        sleep(random(3000, 5000))
 
-        openBrowser(friend_info_link)
-        sleep(5000)
+        var openUrlFlag = openFacebookLink_test(friend_info_link)
+        if(openUrlFlag){
+            taskLog("正在加载当前Group页面信息..." )
+            sleep(random(5000, 8000))
 
-        //可能会出现“Continue”按钮，点击：
-        if(id("message_primary_button").exists()){
-            toast("出现Continue按钮，点击.")
-            id("message_primary_button").findOne().click()
+            //测试：https://www.facebook.com/groups/403644813716642/
+            //className("android.view.ViewGroup").text("Join group").findOne().click()
+            //desc("加入社團")
+            find_viewGroup_desc_base("加入社團","Join group","Join group")
+            sleep(random(3000, 5000))
+
+            //测试：https://www.facebook.com/groups/232736963482941
+            answer_all_questions()
+
+        }else{
+            taskLog("打开链接失败，跳过 = " + friend_info_link)
         }
-        sleep(5000)
-
-        find_textview_text_base("開啟應用程式","開啟應用程式","Open app")
-        sleep(5000)
-
-
-        //测试：https://www.facebook.com/groups/403644813716642/
-        //className("android.view.ViewGroup").text("Join group").findOne().click()
-        //desc("加入社團")
-        find_viewGroup_desc_base("加入社團","Join group","Join group")
-        sleep(5000)
-
-        //测试：https://www.facebook.com/groups/232736963482941
-        answer_all_questions()
-
-
-        toast("已经点击添加Group")
-
 
 
     }
@@ -154,6 +185,7 @@ stopCurrentTask()
 
 //打印日志
 function taskLog(_log){
+    toast(_log) 
     console.log(getSystemDate("df") +":" +_log)
 }
 
@@ -232,7 +264,6 @@ function stopCurrentTask(){
     console.hide()
     forceStop_APP(FacebookPackageName)
     sleep(3000)
-    forceStop_APP(chromePackageName)
 
 }
 
@@ -379,7 +410,10 @@ function get_all_friedns(){
             const reader = new java.io.BufferedReader(new java.io.FileReader(file));
             let line;
             while ((line = reader.readLine()) !== null) {
-                comments.push(line);
+                // 去除首尾空格后判断是否为空行
+                if (line.trim() !== "") {
+                    comments.push(line);
+                }
             }
             reader.close();
         } catch (e) {
@@ -394,51 +428,9 @@ function get_all_friedns(){
 }
 
 
-function firstOpenBrowser(){
-    app.startActivity({
-        action: "android.intent.action.VIEW",
-        packageName: chromePackageName,
-        className: "org.chromium.chrome.browser.ChromeTabbedActivity"
-      });
-
-      sleep(3000);
-
-    //   //可能部分设备弹出"NestBrowser不能运行在没有GMS的设备"的弹出框，需要点击确定
-    //   if (id('button1').exists()) {
-    //     id('button1').findOne(3000).click();
-    //   }
-      
-      //可能存在欢迎界面的"continue"按钮，点击
-      if(id("com.kiwibrowser.browser:id/signin_fre_continue_button").exists()){
-        toast("存在欢迎界面的continue按钮，点击")
-        id("com.kiwibrowser.browser:id/signin_fre_continue_button").findOne().click()
-      }else{
-        toast("不存在欢迎界面的continue按钮")
-      }
 
 
-}
 
-
-function openBrowser(url){
-
-    app.startActivity({
-        action: "android.intent.action.VIEW",
-        data: url,
-        packageName: chromePackageName,
-        className: "org.chromium.chrome.browser.ChromeTabbedActivity",
-        flags: [
-          "activity_new_task",
-          "activity_clear_top"
-          ],
-      extras: {
-          // 设置打开方式偏好
-          "browser.application_id": FacebookPackageName,  
-          "create_new_tab": true,
-          "open_in_external_app": true
-      }
-      });
-}
 
 
 //通过TextView的text
@@ -704,7 +696,7 @@ function find_view_text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
 function forceStop_APP(packageName){
     taskLog("准备强杀:" + packageName + "...")
     sleep(1000);
-    app.openAppSetting(packageName)
+    openAppSettings(packageName)
     sleep(5000)
 
     //繁体
@@ -793,7 +785,7 @@ function forceStop_APP(packageName){
 function answer_all_questions(){
     //获取当前页面所有EditText
     var editTexts = className("android.widget.EditText").find()
-    toast("当前页面所有EditText = " + editTexts.length)
+    toast("当前页面所有输入框个数 = " + editTexts.length)
 
     if(editTexts.length == 0){
         taskLog("当前页面没有EditText")
@@ -812,7 +804,7 @@ function answer_all_questions(){
             let endY = screenHeight * 0.2;    // 滑动到屏幕20%的位置
             
             swipe(device.width / 2, startY, device.width / 2, endY, 500);
-            sleep(2000) //等待滚动完成
+            sleep(random(1000, 3000)) //等待滚动完成
             
             //重新获取EditText列表
             editTexts = className("android.widget.EditText").find()
@@ -825,7 +817,7 @@ function answer_all_questions(){
         if(editText && editText.visibleToUser()){
             //填入内容
             editText.setText("YES, This is awesome! 😎")            
-            sleep(5000)
+            sleep(random(3000, 5000))
         } else {
             taskLog("警告:第" + (i+1) + "个EditText仍然不可见或已不存在,跳过此项")
         }
@@ -837,12 +829,12 @@ function answer_all_questions(){
         taskLog("注意:页面上可能还有" + remainingEditTexts.length + "个未处理的EditText")
     }
     
-    sleep(10000)
+    sleep(random(8000, 10000))
 
     //点击同意的checkbook
     // className("android.view.View").text("I agree to the group rules").findOne().click()
     find_view_text_base("I agree to the group rules","我同意社團規則","I agree to the group rules")
-    sleep(5000)
+    sleep(random(3000, 5000))
 
     //点击提交按钮
     toast("开始检测submit按钮")
@@ -853,5 +845,5 @@ function answer_all_questions(){
     //Facebook语言是繁体时：ViewGroup - 提交
     find_viewGroup_desc_base("提交","Submit","Submit")   
     
-    sleep(10000)
+    sleep(random(8000, 10000))
 }
