@@ -18,7 +18,6 @@ importClass(java.io.FileWriter);
 //保证Java层和JS代码两边的日志文件一致
 var taskLogFileName = "nest_task_log.txt"
 var taskLogImgName = "nest_task_log.png"
-var chromePackageName = 'com.kiwibrowser.browser';
 
 
 //需要添加的用户好友
@@ -71,6 +70,53 @@ taskLog("准备启动Facebook...")
 var targetPackageName = null;
 var targetClassName = null;
 
+
+// 替代 app.openAppSetting 的方式
+function openAppSettings(packageName) {
+    var intent = new Intent();
+    intent.setAction(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+    intent.setData(android.net.Uri.parse("package:" + packageName));
+    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    app.startActivity(intent);
+}
+
+
+function openFacebookLink_test(fbUrl){
+
+
+    //是否打开成功，如果打开失败，那么直接进行下一个任务
+    var openUrlFlag = false
+
+    taskLog("准备打开链接 = " + fbUrl)
+    var intent = new android.content.Intent(android.content.Intent.ACTION_VIEW);
+    // intent.setData(android.net.Uri.parse("https://www.facebook.com/watch/huacemedia/")); //不行
+    // intent.setData(android.net.Uri.parse("https://www.facebook.com/samsul.ujex"));  //加好友，异常
+    // intent.setData(android.net.Uri.parse("https://www.facebook.com/share/r/1CdK7F3fRp/"));  //Reels -OK
+    // intent.setData(android.net.Uri.parse("https://www.facebook.com/groups/850798899131453/"));  //Group -OK
+    // intent.setData(android.net.Uri.parse("https://www.facebook.com/share/v/16cLEnDJoT/"));   //Live - OK
+    // intent.setData(android.net.Uri.parse("https://www.facebook.com/profile.php?id=100079449592509"));  //Friend - OK
+    // intent.setData(android.net.Uri.parse("https://www.facebook.com/share/v/14Dj3UQ6q2b/"));  //watch - OK（https://www.facebook.com/watch/?v=689492360538949&rdid=PU3MOv69wqSgVeh5）
+    
+    intent.setData(android.net.Uri.parse(fbUrl));
+    intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+    intent.setPackage("com.facebook.katana");
+    try {
+        app.startActivity(intent);
+        openUrlFlag = true
+    } catch (e) {
+
+        // 如果 Facebook App 无法处理，则用浏览器打开
+        taskLog("Facebook无法处理该链接，所以跳过 = " + fbUrl);
+        // var browserIntent = new android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(fbUrl));
+        // browserIntent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+        // app.startActivity(browserIntent);
+        // openUrlFlag = true
+    }
+
+    return openUrlFlag
+}
+
+
 function isAppInstalled(packageName) {
     var pm = context.getPackageManager();
     try {
@@ -86,13 +132,11 @@ if (isAppInstalled(FacebookPackageName)) {
     targetClassName = "com.facebook.katana.activity.FbMainTabActivity";
     taskLog("检测到已安装Facebook，准备启动...");
 } else {
-    toast("未检测到Facebook已安装，请先安装Facebook！");
+    taskLog("未检测到Facebook已安装，请先安装Facebook！");
     taskLog("未检测到Facebook已安装，脚本终止。");
     exit();
 }
 
-sleep(random(3000, 5000))
-openAppSetting(targetPackageName)
 sleep(random(3000, 5000))
 
 forceStop_APP(targetPackageName)
@@ -105,52 +149,35 @@ app.startActivity({
 });
 
 
-
-
-
-
     var all_friends = get_all_groups()
-    toast("所有Group数量 = " + all_friends.length)
-    sleep(5000)
-
-    var all_group_comment_text = get_all_groups_comment_text()
-    toast("所有评论数量 = " + all_group_comment_text.length)
-    sleep(5000) 
-
-    
-    //用浏览器打开链接
-    firstOpenBrowser()
-    sleep(5000)
+    taskLog("所有Group数量 = " + all_friends.length)
+    sleep(random(3000, 5000))   
 
 
     for(var i = 0; i < all_friends.length; i++){
-        sleep(5000)
+        sleep(random(3000, 5000))
 
         var friend_info_link = all_friends[i]
-        toast("当前Group信息 = " + friend_info_link)
-        sleep(5000)
+        taskLog("当前Group信息 = " + friend_info_link)
+        sleep(random(3000, 5000))
 
-        openBrowser(friend_info_link)
-        sleep(5000)
-
-        //可能会出现"Continue"按钮，点击：
-        if(id("message_primary_button").exists()){
-            toast("出现Continue按钮，点击.")
-            id("message_primary_button").findOne().click()
+        var openUrlFlag = openFacebookLink_test(friend_info_link)
+        if(openUrlFlag){
+            taskLog("正在加载当前Group页面信息..." )
+            sleep(random(5000, 8000))
+            fina_all_Comment()
+        }else{
+            taskLog("打开链接失败，跳过 = " + friend_info_link)
         }
-        sleep(5000)
 
-        find_textview_text_base("開啟應用程式","開啟應用程式","Open app")
-        sleep(5000)
-
-
-        fina_all_Comment()
 
     }
 
 
-    
-toast("所有循环执行完毕，准备结束任务...");
+//删除临时图片库 :A_NEST_FaceBook_MEDIA
+sleep(random(3000, 5000))
+delete_temp_image("/storage/emulated/0/Download/" + A_NEST_FaceBook_MEDIA)  
+taskLog("所有循环执行完毕，准备结束任务...");
 stopCurrentTask()
 
 
@@ -179,9 +206,9 @@ function saveImg(){
 
     if(!requestScreenCapture()){
         taskLog("请求截图失败...");
-        toast("请求截图失败");
+        taskLog("请求截图失败");
     }else{
-        toast("请求截图");
+        taskLog("请求截图");
     }
     //截图并保存
     taskLog("请求截图开始保存...");
@@ -238,7 +265,6 @@ function stopCurrentTask(){
     console.hide()
     forceStop_APP(FacebookPackageName)
     sleep(3000)
-    forceStop_APP(chromePackageName)
 
 }
 
@@ -353,7 +379,10 @@ function get_all_groups(){
             const reader = new java.io.BufferedReader(new java.io.FileReader(file));
             let line;
             while ((line = reader.readLine()) !== null) {
-                comments.push(line);
+                // 去除首尾空格后判断是否为空行
+                if (line.trim() !== "") {
+                    comments.push(line);
+                }
             }
             reader.close();
         } catch (e) {
@@ -395,51 +424,7 @@ function get_all_groups_comment_text(){
 }
 
 
-function firstOpenBrowser(){
-    app.startActivity({
-        action: "android.intent.action.VIEW",
-        packageName: chromePackageName,
-        className: "org.chromium.chrome.browser.ChromeTabbedActivity"
-      });
 
-      sleep(3000);
-
-    //   //可能部分设备弹出"NestBrowser不能运行在没有GMS的设备"的弹出框，需要点击确定
-    //   if (id('button1').exists()) {
-    //     id('button1').findOne(3000).click();
-    //   }
-      
-      //可能存在欢迎界面的"continue"按钮，点击
-      if(id("com.kiwibrowser.browser:id/signin_fre_continue_button").exists()){
-        toast("存在欢迎界面的continue按钮，点击")
-        id("com.kiwibrowser.browser:id/signin_fre_continue_button").findOne().click()
-      }else{
-        toast("不存在欢迎界面的continue按钮")
-      }
-
-
-}
-
-
-function openBrowser(url){
-
-    app.startActivity({
-        action: "android.intent.action.VIEW",
-        data: url,
-        packageName: chromePackageName,
-        className: "org.chromium.chrome.browser.ChromeTabbedActivity",
-        flags: [
-          "activity_new_task",
-          "activity_clear_top"
-          ],
-      extras: {
-          // 设置打开方式偏好
-          "browser.application_id": FacebookPackageName,  
-          "create_new_tab": true,
-          "open_in_external_app": true
-      }
-      });
-}
 
 
 //通过TextView的text
@@ -705,7 +690,7 @@ function find_view_text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
 function forceStop_APP(packageName){
     taskLog("准备强杀:" + packageName + "...")
     sleep(1000);
-    app.openAppSetting(packageName)
+    openAppSettings(packageName)
     sleep(5000)
 
     //繁体
@@ -804,14 +789,14 @@ function fina_all_Comment(){
     //设置超时时间（60秒 * 评论次数）
     const TIMEOUT = 180 * 1000 * FB_common_count;  // 转换为毫秒
 
-    toast("开始寻找Comment按钮，超时时间 = " + (TIMEOUT/1000) + "秒,评论次数 = " + FB_common_count);
+    taskLog("开始寻找Comment按钮，超时时间 = " + (TIMEOUT/1000) + "秒,评论次数 = " + FB_common_count);
     
     //循环直到点击了需要的Comment按钮次数
     var FB_group_common_count = parseInt(FB_common_count);
     while(clickedCount < FB_group_common_count){
         //检查是否超时
         if(new Date().getTime() - startTime > TIMEOUT){
-            toast("执行时间超过" + (TIMEOUT/1000) + "秒，自动退出");
+            taskLog("执行时间超过" + (TIMEOUT/1000) + "秒，自动退出");
             return;
         }
 
@@ -822,16 +807,16 @@ function fina_all_Comment(){
         var comments_zh = className("android.widget.Button").desc("留言").find();
 
 
-        toast("当前页面所有Comment-EN按钮 = " + comments_eng.length);
-        toast("当前页面所有Comment-ZH按钮 = " + comments_zh.length);
+        taskLog("当前页面所有Comment-EN按钮 = " + comments_eng.length);
+        taskLog("当前页面所有Comment-ZH按钮 = " + comments_zh.length);
         
         if(comments_eng.length == 0 && comments_zh.length == 0){
             noCommentScrollCount++; // 增加未找到计数
-            toast("当前页面没有Comment按钮，准备下滑页面，这是第" + noCommentScrollCount + "次连续未找到");
+            taskLog("当前页面没有Comment按钮，准备下滑页面，这是第" + noCommentScrollCount + "次连续未找到");
             
             //如果连续5次下滑都没找到，退出循环
             if(noCommentScrollCount >= 5){
-                toast("连续5次下滑都未找到Comment按钮，终止任务");
+                taskLog("连续5次下滑都未找到Comment按钮，终止任务");
                 return;
             }
             
@@ -844,7 +829,7 @@ function fina_all_Comment(){
             
             //如果滑动后还是没有找到Comment按钮，继续下一次循环
             if(comments_eng.length == 0 && comments_zh.length == 0){
-                toast("下滑后仍未找到Comment按钮，继续寻找");
+                taskLog("下滑后仍未找到Comment按钮，继续寻找");
 
                 //检查是不是已经到了FB提示页面      
                 check_comment_result()
@@ -857,29 +842,29 @@ function fina_all_Comment(){
         //找到Comment按钮后，点击最后一个
         if(comments_eng.length > 0 || comments_zh.length > 0){
             noCommentScrollCount = 0; // 重置未找到计数
-            toast("找到Comment按钮，准备点击第" + (clickedCount + 1) + "次");
+            taskLog("找到Comment按钮，准备点击第" + (clickedCount + 1) + "次");
             if(comments_eng.length > 0){    
                 comments_eng[comments_eng.length - 1].click(); // 选择最后一个元素
             }else{
                 comments_zh[comments_zh.length - 1].click(); // 选择最后一个元素
             }
             post_content()
-            sleep(3000)
+            sleep(random(3000, 5000))
 
             clickedCount++;
-            sleep(5000); //等待点击操作完成
+            sleep(random(3000, 5000)); //等待点击操作完成
             
             swipe_up()
         }
     }
     
-    toast("已完成" + FB_group_common_count + "次Comment按钮的点击操作");
+    taskLog("已完成" + FB_group_common_count + "次Comment按钮的点击操作");
 
     check_comment_result()
-    sleep(3000)
+    sleep(random(3000, 5000)) 
 
     back()
-    sleep(3000)
+    sleep(random(3000, 5000))
 
     back()
 }
@@ -893,30 +878,30 @@ function post_content(){
     //检查总时间的函数
     function checkTimeout() {
         if(new Date().getTime() - startTime > 60 * 1000) {  // 60秒 = 60 * 1000毫秒
-            toast("评论操作总时间超过60秒，自动退出");
+            taskLog("评论操作总时间超过60秒，自动退出");
             sleep(1000)
             back()
             sleep(3000)
             return true;
         }
-        toast("评论操作总时间没有超过60秒，继续进行");
+        taskLog("评论操作总时间没有超过60秒，继续进行");
         return false;
     }
 
 
     
     taskLog("准备输入评论内容....");
-    toast("准备输入评论内容....");
+    taskLog("准备输入评论内容....");
 
     //尝试点击输入框
     try {
         let inputBox = className("android.widget.AutoCompleteTextView").findOne(10000); // 5秒超时
         if(inputBox) {
             inputBox.click();
-            toast("点击输入框成功");
+            taskLog("点击输入框成功");
         } else {
             sleep(3000)
-            toast("未找到输入框");
+            taskLog("未找到输入框");
             sleep(1000)
             back()
             sleep(3000)
@@ -932,6 +917,7 @@ function post_content(){
 
     //尝试输入文本
     try {
+        var all_group_comment_text = get_all_groups_comment_text()  
         var randIdx = random(0, all_group_comment_text.length - 1)
         var messageText = all_group_comment_text[randIdx];
         taskLog("输入内容 = " + messageText);
@@ -981,7 +967,7 @@ function post_content(){
         // if(sendBtn) {
         //     sendBtn.click();
         // } else {
-        //     toast("未找到发送按钮");
+        //     taskLog("未找到发送按钮");
         //     sleep(1000)
         //     back()
         //     sleep(3000)
@@ -990,7 +976,7 @@ function post_content(){
 
         let sendBtn = find_btn_desc_base("Send", "傳送", "Send")
         if(!sendBtn){
-            toast("未找到发送按钮");
+            taskLog("未找到发送按钮");
             sleep(1000)
             back()
             sleep(3000)
@@ -1021,11 +1007,11 @@ function post_content(){
 //在评论之后，要检查一下，有没有出现一个新页面：desc("We removed your comment")
 function check_comment_result(){
     var check_comment_result = find_view_desc_base("We removed your comment","我們移除了您的評論","We removed your comment")
-    toast("先检查是否处于FaceBook警告页面： = " + check_comment_result);
+    taskLog("先检查是否处于FaceBook警告页面： = " + check_comment_result);
     if(check_comment_result){
-        toast("目前处于FaceBook警告页面，需要关闭");
+        taskLog("目前处于FaceBook警告页面，需要关闭");
         find_btn_desc_base("Close","關閉","Close")
-        sleep(3000)
+        sleep(random(3000, 5000))
     }
 }
 
@@ -1067,7 +1053,7 @@ function swipe_up(){
         endY,               // 终点Y
         600                 // 持续时间
     );
-    sleep(3000); //等待滚动完成
+    sleep(random(3000, 5000)); //等待滚动完成
 }
 
 
@@ -1082,9 +1068,9 @@ function post_Image(){
         FB_input_IMAGE.trim().toLowerCase() !== "off" && 
         !FB_input_IMAGE.includes("$${")){
             taskLog("检测到有效的图片路径，准备处理图片...")
-            toast("图片不是空")    
+            taskLog("图片不是空")    
 
-            toast("FB_input_IMAGE = " + FB_input_IMAGE)
+            taskLog("FB_input_IMAGE = " + FB_input_IMAGE)
 
             refreshMedia("/storage/emulated/0/Download/")
             var imageTempPath = transferHeadImageToNest(FB_input_IMAGE)
@@ -1130,7 +1116,7 @@ function post_Image(){
                         return;
                     }
                     
-                    toast("选择图片描述 = " + buttonDesc);
+                    taskLog("选择图片描述 = " + buttonDesc);
                     taskLog("选择图片描述 = " + buttonDesc);
                     
                     if (buttonDesc.indexOf("Photo taken on") !== -1 || buttonDesc.indexOf("的相片") !== -1)  {
@@ -1147,11 +1133,11 @@ function post_Image(){
     
                 if (isPhotoSelected) {
                     //点击Next
-                    toast("已经选中图库中的第一张图片");
+                    taskLog("已经选中图库中的第一张图片");
                     sleep(5000);
                 } else {
                     taskLog("未找到任何符合条件的图片");
-                    toast("未找到任何符合条件的图片");
+                    taskLog("未找到任何符合条件的图片");
                 }
 
                 
@@ -1167,12 +1153,12 @@ function post_Image(){
 
 // 刷新指定路径的媒体库
 function refreshMedia(path) {
-    toast("开始刷新媒体库，用时5秒钟....");
+    taskLog("开始刷新媒体库，用时5秒钟....");
     // 发送媒体扫描广播
     media.scanFile(path);
     // 等待扫描完成
     sleep(5000);
-    toast("媒体库刷新完成，开始下一步任务...");
+    taskLog("媒体库刷新完成，开始下一步任务...");
 }
 
 //转移头像图片到Nest临时文件夹
@@ -1184,7 +1170,7 @@ function transferHeadImageToNest(fileName){
     
     if (!imagePath) {
         console.error("未找到指定图片：" + fileName);
-        toast("未找到指定图片：" + fileName);
+        taskLog("未找到指定图片：" + fileName);
         return;
     }
 
@@ -1205,39 +1191,38 @@ function transferHeadImageToNest(fileName){
         files.copy(imagePath, targetPath);
         console.log("复制成功!");
         console.log("新图片路径: " + targetPath);
+        // 复制成功后删除原图片
+        files.remove(imagePath);
+        console.log("已删除原图片: " + imagePath);
     } catch(e) {
         console.error("复制失败: " + e);
     }
 
-    sleep(3000);
-
 
     refreshMedia(newFolder)
-    sleep(10000);
 
-
-    // 创建文件对象并获取URI
-    let file = new java.io.File(targetPath);
-    let uri = app.getUriForFile(targetPath);
+    // // 创建文件对象并获取URI
+    // let file = new java.io.File(targetPath);
+    // let uri = app.getUriForFile(targetPath);
     
-    // 创建打开图片的 Intent
-    let intent = new Intent(Intent.ACTION_VIEW);
-    intent.setDataAndType(uri, "image/*");
-    // 添加必要的权限标志
-    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-    intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+    // // 创建打开图片的 Intent
+    // let intent = new Intent(Intent.ACTION_VIEW);
+    // intent.setDataAndType(uri, "image/*");
+    // // 添加必要的权限标志
+    // intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    // intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
 
-    // 指定使用系统默认的图库应用
-    intent.setPackage("com.android.gallery3d");  // 系统默认图库的包名
-    // 如果上面的包名不生效，可以尝试：
-    // intent.setPackage("com.google.android.apps.photos");  // Google Photos
-    // intent.setPackage("com.sec.android.gallery3d");  // 三星图库
-    // intent.setPackage("com.miui.gallery");  // 小米图库
+    // // 指定使用系统默认的图库应用
+    // intent.setPackage("com.android.gallery3d");  // 系统默认图库的包名
+    // // 如果上面的包名不生效，可以尝试：
+    // // intent.setPackage("com.google.android.apps.photos");  // Google Photos
+    // // intent.setPackage("com.sec.android.gallery3d");  // 三星图库
+    // // intent.setPackage("com.miui.gallery");  // 小米图库
 
-    // 启动图片查看Activity
-    // context.startActivity(intent);
-    // 等待界面加载
-    sleep(3000);
+    // // 启动图片查看Activity
+    // // context.startActivity(intent);
+    // // 等待界面加载
+    // sleep(3000);
 
     return targetPath
 
@@ -1247,7 +1232,7 @@ function transferHeadImageToNest(fileName){
 //删除临时图片文件夹
 function delete_temp_image(folderPath) {
     taskLog("准备删除临时文件夹: " + folderPath);
-    toast("准备删除临时文件夹: " + folderPath);
+    taskLog("准备删除临时文件夹: " + folderPath);
     
     if (!files.exists(folderPath)) {
         taskLog("文件夹不存在，无需删除");
