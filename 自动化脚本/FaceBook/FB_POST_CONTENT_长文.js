@@ -232,106 +232,132 @@ function post_Image(){
 
             taskLog("开始刷新媒体库，用时5秒钟....")
             refreshMedia("/storage/emulated/0/Download/")
-            var imageTempPath = transferHeadImageToNest(FB_input_IMAGE)
-            sleep(10000)
+            //FB_input_IMAGE的实际值: /sdcard/Download/01
+            var transferImage = transferHeadImageToNest(FB_input_IMAGE)
+            taskLog("transferImage = " + transferImage)
+            taskLog("transferImage =============================== " )
+            taskLog("transferImage =============================== " )
+            taskLog("transferImage =============================== " )
+            taskLog("transferImage =============================== " )
+            taskLog("transferImage =============================== " )
+            taskLog("transferImage =============================== " )
+            taskLog("transferImage =============================== " )
+            taskLog("transferImage =============================== " )
+            taskLog("transferImage =============================== " )
+            taskLog("transferImage =============================== " )
 
-            //className("android.widget.Button").desc("Photo/video").findOne().click()
-            taskLog("准备点击 - 相片／影片....")
-            find_btn_desc_base("Photo/video", "相片／影片", "Photo/video")
-            sleep(5000)
-
-            //点击权限
-            //className("android.widget.Button").desc("Allow access").findOne().click()
-            taskLog("准备检查权限....")
-            find_btn_desc_base("Allow access", "允許存取", "Allow access")
-            sleep(3000)
-
-            //再次点击权限
-            // id("(name removed)").className("android.widget.Button").text("ALLOW").findOne().click()
-            find_btn_Text_base("ALLOW", "允許", "ALLOW")
-            sleep(3000)
-
-            //系统弹窗
-            find_btn_Text_base("允许", "允許", "Allow")
-            sleep(3000)
+            sleep(50000000000000)
 
 
-            className("android.widget.GridView").findOne().children().forEach(child => {
-                var target = child.findOne(className("android.widget.Spinner"));
-                if(target == null){
-                    taskLog("未找到target控件，跳过");
-                    return;
-                }
-                target.click();
+            if(transferImage){
+                taskLog("转移图片成功，开始处理图片...")
+                sleep(random(3000, 5000))
+
+                //className("android.widget.Button").desc("Photo/video").findOne().click()
+                taskLog("准备点击 - 相片／影片....")
+                find_btn_desc_base("Photo/video", "相片／影片", "Photo/video")
                 sleep(5000)
 
+                //点击权限
+                //className("android.widget.Button").desc("Allow access").findOne().click()
+                taskLog("准备检查权限....")
+                find_btn_desc_base("Allow access", "允許存取", "Allow access")
+                sleep(3000)
 
-                //点击对应的targetPath：A_NEST_FaceBook_MEDIA
-                var allListTextView = className("android.view.ViewGroup").find();
-                taskLog("找到allListTextView: 全部 = "  + allListTextView.size());
-                if (allListTextView && allListTextView.size() > 0) {
-                    for (var i = 0; i < allListTextView.size(); i++) {
-                        var listTextView = allListTextView.get(i);
-                        if (listTextView) {
-                            taskLog("找到listTextView控件-Text：" + listTextView.desc());
-                            
-                            // 检查text是否为"A_NEST_TikTok_MEDIA"
-                            if (listTextView.desc() != null && listTextView.desc().includes("A_NEST_FaceBook_MEDIA")) {
-                                // 正确调用bounds()方法并点击
-                                taskLog("找到对应目录" + listTextView.desc());
-                                var bounds = listTextView.bounds();
-                                click(bounds.centerX(), bounds.centerY());
-                                // 找到并点击后可以跳出循环
-                                break;
+                //再次点击权限
+                // id("(name removed)").className("android.widget.Button").text("ALLOW").findOne().click()
+                find_btn_Text_base("ALLOW", "允許", "ALLOW")
+                sleep(3000)
+
+                //系统弹窗
+                find_btn_Text_base("允许", "允許", "Allow")
+                sleep(3000)
+
+
+                className("android.widget.GridView").findOne().children().forEach(child => {
+                    var target = child.findOne(className("android.widget.Spinner"));
+                    if(target == null){
+                        taskLog("未找到target控件，跳过");
+                        return;
+                    }
+                    target.click();
+                    sleep(5000)
+
+
+                    //点击对应的targetPath：A_NEST_FaceBook_MEDIA
+                    var allListTextView = className("android.view.ViewGroup").find();
+                    taskLog("找到allListTextView: 全部 = "  + allListTextView.size());
+                    if (allListTextView && allListTextView.size() > 0) {
+                        for (var i = 0; i < allListTextView.size(); i++) {
+                            var listTextView = allListTextView.get(i);
+                            if (listTextView) {
+                                taskLog("找到listTextView控件-Text：" + listTextView.desc());
+                                
+                                // 检查text是否为"A_NEST_TikTok_MEDIA"
+                                if (listTextView.desc() != null && listTextView.desc().includes("A_NEST_FaceBook_MEDIA")) {
+                                    // 正确调用bounds()方法并点击
+                                    taskLog("找到对应目录" + listTextView.desc());
+                                    var bounds = listTextView.bounds();
+                                    click(bounds.centerX(), bounds.centerY());
+                                    // 找到并点击后可以跳出循环
+                                    break;
+                                }
                             }
                         }
                     }
-                }
 
-                sleep(5000)
+                    sleep(random(3000, 5000))
 
 
-                //选择图片
-                find_btn_desc_base("Select multiple", "選擇多張", "Select multiple")
-                sleep(5000)
+                    //选择图片
+                    find_btn_desc_base("Select multiple", "選擇多張", "Select multiple")
+                    sleep(random(3000, 5000))
 
-                //选中所有图片
-                className("android.widget.GridView").findOne().children().forEach(child => {
-                    var button = child.findOne(className("android.widget.Button"));
-                    if (!button) {
-                        taskLog("未找到Button控件，跳过");
-                        return;
-                    }
-                    
-                    var buttonDesc = button.desc();
-                    if (!buttonDesc) {
-                        taskLog("Button没有描述文本，跳过");
-                        return;
-                    }
-                    
-                    taskLog("选择图片描述 = " + buttonDesc);
-                    
-                    if (buttonDesc.indexOf("Photo taken on") !== -1 || buttonDesc.indexOf("的相片") !== -1)  {
-                        taskLog("找到目标图片：" + buttonDesc);
-                        var bounds = button.bounds();
-                        if (bounds) {
-                            click(bounds.centerX(), bounds.centerY());
-                            taskLog("点击坐标：" + bounds.centerX() + ", " + bounds.centerY());
-                            sleep(2000);
+                    //选中所有图片
+                    className("android.widget.GridView").findOne().children().forEach(child => {
+                        var button = child.findOne(className("android.widget.Button"));
+                        if (!button) {
+                            taskLog("未找到Button控件，跳过");
+                            return;
                         }
-                    }
-                    sleep(3000);
+                        
+                        var buttonDesc = button.desc();
+                        if (!buttonDesc) {
+                            taskLog("Button没有描述文本，跳过");
+                            return;
+                        }
+                        
+                        taskLog("选择图片描述 = " + buttonDesc);
+                        
+                        if (buttonDesc.indexOf("Photo taken on") !== -1 || buttonDesc.indexOf("的相片") !== -1)  {
+                            taskLog("找到目标图片：" + buttonDesc);
+                            var bounds = button.bounds();
+                            if (bounds) {
+                                click(bounds.centerX(), bounds.centerY());
+                                taskLog("点击坐标：" + bounds.centerX() + ", " + bounds.centerY());
+                                sleep(random(2000, 3000));
+                            }
+                        }
+                        sleep(random(3000, 5000));
+                    });
+
+
+
+                    //点击Nest
+                    //className("android.widget.Button").desc("Next").findOne().click()
+                    find_btn_desc_base("Next", "下一步", "Next")
+                    sleep(random(3000, 5000))
+
                 });
-
-
-
-                //点击Nest
-                //className("android.widget.Button").desc("Next").findOne().click()
-                find_btn_desc_base("Next", "下一步", "Next")
-                sleep(5000)
-
-            });
             
+
+                
+
+            }else{
+                taskLog("转移图片失败，脚本终止。")
+            }
+
+
 
             
 
@@ -349,75 +375,82 @@ function refreshMedia(path) {
     toast("媒体库刷新完成，开始下一步任务...");
 }
 
-//转移头像图片到Nest临时文件夹
-function transferHeadImageToNest(fileName){
-    let imagePath = null;
-    if (files.exists(fileName)) {
-        imagePath = fileName;
-    }
-    
-    if (!imagePath) {
-        console.error("未找到指定图片：" + fileName);
-        toast("未找到指定图片：" + fileName);
-        return;
+//转移头像图片到Nest临时文件夹（支持文件夹批量处理，不判断扩展名，返回true/false）
+function transferHeadImageToNest(folderPath){
+    //folderPath: /sdcard/Download/01
+    function getParentDir(path) {
+        if (path.endsWith("/")) path = path.slice(0, -1);
+        let idx = path.lastIndexOf("/");
+        if (idx === -1) return "";
+        return path.substring(0, idx);
     }
 
-
-    //开始拷贝一份，到本地自己的文件夹来单独处理，不处理原来的图片，
-    // 创建文件夹(如果不存在)
-    const newFolder = "/storage/emulated/0/Download/" + A_NEST_FaceBook_MEDIA;  // 替换成你想要的文件夹路径
-    if(!files.exists(newFolder)){
-        files.ensureDir(newFolder);
-        console.log("创建文件夹: " + newFolder);
+    function copyDir(src, dest) {
+        files.ensureDir(dest);
+        let filesList = files.listDir(src);
+        for (let i = 0; i < filesList.length; i++) {
+            let name = filesList[i];
+            let srcPath = src + "/" + name;
+            let destPath = dest + "/" + name;
+            if (files.isDir(srcPath)) {
+                if (!copyDir(srcPath, destPath)) return false;
+            } else {
+                try {
+                    files.copy(srcPath, destPath);
+                } catch(e) {
+                    console.error("复制文件失败: " + srcPath + " -> " + destPath + "，错误：" + e);
+                    return false;
+                }
+            }
+        }
+        return true;
     }
-    // 目标图片路径(在新文件夹中)
-    const targetFileName = files.getName(imagePath);
-    const targetPath = newFolder + "/" + targetFileName;
-    taskLog("新图片文件的绝对路径: " + targetPath);
-    // 复制图片文件
+
+    const parentDir = getParentDir(folderPath); // /sdcard/Download
+    const newFolder = parentDir + "/A_NEST_FaceBook_MEDIA";
+
+    taskLog("准备复制文件夹: " + folderPath + " -> " + newFolder);
+
+    // 判断原文件夹是否存在
+    if (!files.exists(folderPath) || !files.isDir(folderPath)) {
+        console.error("原文件夹不存在: " + folderPath);
+        toast("原文件夹不存在: " + folderPath);
+        return false;
+    }
+
+    // 如果目标文件夹已存在，先删除
+    if (files.exists(newFolder)) {
+        try {
+            files.removeDir(newFolder);
+            taskLog("已删除原有目标文件夹: " + newFolder);
+        } catch(e) {
+            console.error("删除原有目标文件夹失败: " + e);
+            return false;
+        }
+    }
+
+    // 递归复制文件夹
+    if (!copyDir(folderPath, newFolder)) {
+        console.error("递归复制文件夹失败");
+        return false;
+    }
+    taskLog("复制文件夹成功: " + newFolder);
+
+    // 删除原文件夹
     try {
-        files.copy(imagePath, targetPath);
-        console.log("复制成功!");
-        console.log("新图片路径: " + targetPath);
-        // 复制成功后删除原图片
-        files.remove(imagePath);
-        console.log("已删除原图片: " + imagePath);
+        files.removeDir(folderPath);
+        taskLog("删除原文件夹成功: " + folderPath);
     } catch(e) {
-        console.error("复制失败: " + e);
+        console.error("删除原文件夹失败: " + e);
+        // 复制成功但删除失败，也算部分成功
     }
 
+    // 刷新媒体库
     sleep(3000);
+    taskLog("重新刷新媒体库，用时5秒钟....");
+    refreshMedia(newFolder);
 
-    taskLog("重新刷新媒体库，用时5秒钟....")
-    refreshMedia(newFolder)
-
-
-    // // 创建文件对象并获取URI
-    // let file = new java.io.File(targetPath);
-    // let uri = app.getUriForFile(targetPath);
-    
-    // // 创建打开图片的 Intent
-    // let intent = new Intent(Intent.ACTION_VIEW);
-    // intent.setDataAndType(uri, "image/*");
-    // // 添加必要的权限标志
-    // intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-    // intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-
-    // // 指定使用系统默认的图库应用
-    // intent.setPackage("com.android.gallery3d");  // 系统默认图库的包名
-    // // 如果上面的包名不生效，可以尝试：
-    // // intent.setPackage("com.google.android.apps.photos");  // Google Photos
-    // // intent.setPackage("com.sec.android.gallery3d");  // 三星图库
-    // // intent.setPackage("com.miui.gallery");  // 小米图库
-
-    // // 启动图片查看Activity
-    // // context.startActivity(intent);
-    // // 等待界面加载
-    // sleep(3000);
-
-    return targetPath
-
-
+    return true;
 }
 
 
