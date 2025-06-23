@@ -207,14 +207,12 @@ sleep(random(3000, 5000))
     find_viewGroup_text_base("POST", "發佈" , "發布")
 
 
+    taskLog("等待分享结果，大约60s左右....");
+    sleep(random(50000,60000))
+
+
     //删除临时图片库 :A_NEST_FaceBook_MEDIA
-    sleep(5000)
     delete_temp_image("/storage/emulated/0/Download/" + A_NEST_FaceBook_MEDIA)
-
-
-    taskLog("等待分享结果，大约30s左右....");
-    sleep(30000)
-    //stopCurrentTask()
 
 
 
@@ -234,19 +232,9 @@ function post_Image(){
             refreshMedia("/storage/emulated/0/Download/")
             //FB_input_IMAGE的实际值: /sdcard/Download/01
             var transferImage = transferHeadImageToNest(FB_input_IMAGE)
-            taskLog("transferImage = " + transferImage)
-            taskLog("transferImage =============================== " )
-            taskLog("transferImage =============================== " )
-            taskLog("transferImage =============================== " )
-            taskLog("transferImage =============================== " )
-            taskLog("transferImage =============================== " )
-            taskLog("transferImage =============================== " )
-            taskLog("transferImage =============================== " )
-            taskLog("transferImage =============================== " )
-            taskLog("transferImage =============================== " )
-            taskLog("transferImage =============================== " )
+            // taskLog("transferImage = " + transferImage)
 
-            sleep(50000000000000)
+            // sleep(random(5000, 10000))
 
 
             if(transferImage){
@@ -256,22 +244,22 @@ function post_Image(){
                 //className("android.widget.Button").desc("Photo/video").findOne().click()
                 taskLog("准备点击 - 相片／影片....")
                 find_btn_desc_base("Photo/video", "相片／影片", "Photo/video")
-                sleep(5000)
+                sleep(random(3000, 5000))
 
                 //点击权限
                 //className("android.widget.Button").desc("Allow access").findOne().click()
                 taskLog("准备检查权限....")
                 find_btn_desc_base("Allow access", "允許存取", "Allow access")
-                sleep(3000)
+                // sleep(3000)
 
                 //再次点击权限
                 // id("(name removed)").className("android.widget.Button").text("ALLOW").findOne().click()
                 find_btn_Text_base("ALLOW", "允許", "ALLOW")
-                sleep(3000)
+                // sleep(3000)
 
                 //系统弹窗
                 find_btn_Text_base("允许", "允許", "Allow")
-                sleep(3000)
+                // sleep(3000)
 
 
                 className("android.widget.GridView").findOne().children().forEach(child => {
@@ -524,15 +512,15 @@ function clickDesc(a) {
 
 //结束当前任务
 function stopCurrentTask(){
-    saveImg()
+    // saveImg()
 
     sleep(3000)
-    //将task的截图上报
-    var res = http.postMultipart(url, {
-        taskId: "xxxxxxxxxxx",
-        file: open("/sdcard/Download/" + taskLogImgName)
-    });
-    log(res.body.string());
+    // //将task的截图上报
+    // var res = http.postMultipart(url, {
+    //     taskId: "xxxxxxxxxxx",
+    //     file: open("/sdcard/Download/" + taskLogImgName)
+    // });
+    // log(res.body.string());
 
     console.hide()
 
