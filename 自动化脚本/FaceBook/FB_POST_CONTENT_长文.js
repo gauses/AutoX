@@ -46,7 +46,7 @@ var handleErrorFlag = false //默认没有错误，如果出现异常，那么�
         console.error("Facebook個人發文以及图片---------------");
         console.error("脚本执行时间：" + new Date().toLocaleString());
     }else{
-        forceStop_FaceBook()
+        forceStop_APP(targetPackageName)
         console.log("-----------------脚本功能执行结束：---------------");
         console.log("Facebook個人發文以及图片---------------");
         console.log("脚本执行时间：" + new Date().toLocaleString());
@@ -56,7 +56,7 @@ var handleErrorFlag = false //默认没有错误，如果出现异常，那么�
 
 function handleError(e) {
     handleErrorFlag = true
-    forceStop_FaceBook()
+    forceStop_APP(targetPackageName)
     console.error("===错误报告开始===");
     console.error("错误信息：" + e);
     console.error("错误堆栈：" + e.stack);
@@ -134,26 +134,9 @@ sleep(random(3000, 5000))
 
     taskLog("打开Facebook成功...")
  
-    //发布content
-    //className("android.widget.Button").desc("Make a post on Facebook").findOne().click()
     //desc("在 Facebook 撰寫貼文")
-    find_btn_desc_base("Make a post on Facebook", "在 Facebook 撰寫貼文", "發布到 Facebook")
-    sleep(5000)
-
-
-    // // 获取屏幕的宽度和高度
-    // let screenWidth = device.width;
-    // let screenHeight = device.height;
-    // taskLog("屏幕区域的宽高坐标: (" + screenWidth + ", " + screenHeight + ")");
-    // // 计算屏幕上方2/3区域的底部位置
-    // let twoThirdsHeight = screenHeight * (2/3);
-    // // 计算该区域的中心点坐标
-    // let centerX = screenWidth / 2;
-    // let centerY = twoThirdsHeight - (screenHeight / 3) / 2;
-    // // 打印屏幕上方2/3区域的中心点坐标
-    // taskLog("准备点击屏幕上方2/3区域的中心点坐标: (" + centerX + ", " + centerY + ")");
-    // click(centerX,centerY)
-
+    find_btn_desc_base("Make a post on Facebook", "在 Facebook 撰寫貼文")
+    sleep(random(5000, 6000))
 
     var postContent = read_FB_input_text()
     if(postContent && 
@@ -175,10 +158,10 @@ sleep(random(3000, 5000))
     //检查是否需要发图片
     post_Image()
 
-
     taskLog("准备点击下一步....");
     sleep(5000)
-    find_btn_desc_base("下一步", "下一步" , "NEXT")
+    find_btn_desc_base("下一步", "NEXT")
+
 
     //className("android.widget.Button").desc("POST").findOne().click()
     taskLog("准备点击POST....");
@@ -207,39 +190,31 @@ function post_Image(){
         FB_input_IMAGE.trim() !== "" && 
         FB_input_IMAGE.trim().toLowerCase() !== "off" && 
         !FB_input_IMAGE.includes("$${")){
-            taskLog("检测到有效的图片路径，准备处理图片...")
 
-            taskLog("开始刷新媒体库，用时5秒钟....")
             refreshMedia("/storage/emulated/0/Download/")
             //FB_input_IMAGE的实际值: /sdcard/Download/01
             var transferImage = transferHeadImageToNest(FB_input_IMAGE)
-            // taskLog("transferImage = " + transferImage)
-
-            // sleep(random(5000, 10000))
-
 
             if(transferImage){
-                taskLog("转移图片成功，开始处理图片...")
-                sleep(random(3000, 5000))
 
                 //className("android.widget.Button").desc("Photo/video").findOne().click()
                 taskLog("准备点击 - 相片／影片....")
-                find_btn_desc_base("Photo/video", "相片／影片", "Photo/video")
+                find_btn_desc_base("Photo/video", "相片／影片")
                 sleep(random(3000, 5000))
 
                 //点击权限
                 //className("android.widget.Button").desc("Allow access").findOne().click()
                 taskLog("准备检查权限....")
-                find_btn_desc_base("Allow access", "允許存取", "Allow access")
+                find_btn_desc_base("Allow access", "允許存取")
                 // sleep(3000)
 
                 //再次点击权限
                 // id("(name removed)").className("android.widget.Button").text("ALLOW").findOne().click()
-                find_btn_Text_base("ALLOW", "允許", "ALLOW")
+                find_btn_Text_base("ALLOW", "允許")
                 // sleep(3000)
 
                 //系统弹窗
-                find_btn_Text_base("允许", "允許", "Allow")
+                find_btn_Text_base("允許", "Allow")
                 // sleep(3000)
 
 
@@ -279,7 +254,7 @@ function post_Image(){
 
 
                     //选择图片
-                    find_btn_desc_base("Select multiple", "選擇多張", "Select multiple")
+                    find_btn_desc_base("Select multiple", "選擇多張")
                     sleep(random(3000, 5000))
 
                     //选中所有图片
@@ -314,7 +289,7 @@ function post_Image(){
 
                     //点击Nest
                     //className("android.widget.Button").desc("Next").findOne().click()
-                    find_btn_desc_base("Next", "下一步", "Next")
+                    find_btn_desc_base("Next", "下一步")
                     sleep(random(3000, 5000))
 
                 });
@@ -323,7 +298,7 @@ function post_Image(){
                 
 
             }else{
-                taskLog("转移图片失败，脚本终止。")
+                taskLog("转移图片失败，停止上传图片")
             }
 
 
@@ -336,12 +311,11 @@ function post_Image(){
 
 // 刷新指定路径的媒体库
 function refreshMedia(path) {
-    toast("开始刷新媒体库，用时5秒钟....");
+    taskLog("开始刷新媒体库，用时5秒钟....")
     // 发送媒体扫描广播
     media.scanFile(path);
     // 等待扫描完成
     sleep(5000);
-    toast("媒体库刷新完成，开始下一步任务...");
 }
 
 //转移头像图片到Nest临时文件夹（支持文件夹批量处理，不判断扩展名，返回true/false）
@@ -415,8 +389,6 @@ function transferHeadImageToNest(folderPath){
     }
 
     // 刷新媒体库
-    sleep(3000);
-    taskLog("重新刷新媒体库，用时5秒钟....");
     refreshMedia(newFolder);
 
     return true;
@@ -511,39 +483,31 @@ function stopCurrentTask(){
 
 
 //通过Button的Text
-function find_btn_Text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
+function find_btn_Text_base(findText_ZH_TW, findText_EN_US){
 
 
         var loopCount  = 0
 
          while (true) {
-             taskLog(findText_ZH_CN + " - 循环寻找执行：" + (++loopCount));
+             taskLog(findText_ZH_TW + " - 循环寻找执行：" + (++loopCount));
              // 检查计数器是否达到3
              if (loopCount >= 3) {
-                 // 打印一条消息并退出循环
-                 taskLog("循环已执行3次，即将退出循环。");
-
-                 //不能抛出异常，因为可能Facebook记忆功能，自动跳转到输入页面
-//                 throw new Error(findText_ZH_CN +"按钮没有找到");
+                // 打印一条消息并退出循环
+                taskLog("循环已执行3次，即将退出循环。");
                 break;
              }
 
              // 查找控件
-             var button1 = className("android.widget.Button").text(findText_ZH_CN).findOne(1000);
-             var button2 = className("android.widget.Button").text(findText_ZH_TW).findOne(1000);
-             var button3 = className("android.widget.Button").text(findText_EN_US).findOne(1000);
+             var button1 = className("android.widget.Button").text(findText_ZH_TW).findOne(1000);
+             var button2 = className("android.widget.Button").text(findText_EN_US).findOne(1000);
 
              if (button1) {
-                 taskLog("找到" + findText_ZH_CN);
+                 taskLog("找到" + findText_ZH_TW);
                  button1.click();
                  break; // 跳出循环
              }else if(button2){
-                 taskLog("找到" + findText_ZH_TW);
-                 button2.click();
-                 break; // 跳出循环
-             }else if(button3){
                  taskLog("找到" + findText_EN_US);
-                 button3.click();
+                 button2.click();
                  break; // 跳出循环
              }
 
@@ -555,38 +519,29 @@ function find_btn_Text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
 
 
 //通过Button的Desc
-function find_btn_desc_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
+function find_btn_desc_base(findText_ZH_TW, findText_EN_US){
 
         var loopCount  = 0
 
          while (true) {
-             taskLog(findText_ZH_CN + " - 循环寻找执行：" + (++loopCount));
+             taskLog(findText_ZH_TW + " - 循环寻找执行：" + (++loopCount));
              // 检查计数器是否达到3
              if (loopCount >= 3) {
-                 // 打印一条消息并退出循环
-                 taskLog("循环已执行3次，即将退出循环。");
-
-                 //不能抛出异常，因为可能Facebook记忆功能，自动跳转到输入页面
-//                 throw new Error(findText_ZH_CN +"按钮没有找到");
+                taskLog("循环已执行3次，即将退出循环。");
                 break;
              }
 
 
              // 查找控件
-             var button1 = className("android.widget.Button").desc(findText_ZH_CN).findOne(1000);
-             var button2 = className("android.widget.Button").desc(findText_ZH_TW).findOne(1000);
-             var button3 = className("android.widget.Button").desc(findText_EN_US).findOne(1000);
+             var button1 = className("android.widget.Button").desc(findText_ZH_TW).findOne(1000);
+             var button2 = className("android.widget.Button").desc(findText_EN_US).findOne(1000);
              if (button1) {
-                 taskLog("找到" + findText_ZH_CN);
+                 taskLog("找到" + findText_ZH_TW);
                  button1.click();
                  break; // 跳出循环
              }else if(button2){
-                 taskLog("找到" + findText_ZH_TW);
-                 button2.click();
-                 break; // 跳出循环
-             }else if(button3){
                  taskLog("找到" + findText_EN_US);
-                 button3.click();
+                 button2.click();
                  break; // 跳出循环
              }
 
