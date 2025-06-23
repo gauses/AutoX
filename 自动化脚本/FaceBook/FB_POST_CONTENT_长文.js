@@ -128,7 +128,6 @@ app.startActivity({
     className: targetClassName
 });
 
-
 sleep(random(3000, 5000))
 
 
@@ -156,40 +155,22 @@ sleep(random(3000, 5000))
     // click(centerX,centerY)
 
 
-    taskLog("准备输入分享内容....");
-    className("android.widget.AutoCompleteTextView").findOne().click()
-    sleep(5000)
-    className("android.widget.AutoCompleteTextView").findOne().setText("")
-    sleep(5000)
-
-
-    //输入文案
-    // 用于存储私信用户的数组
-    let comments = [];
-    // 私信用户是否存在
-    taskLog("私信用户地址 =  " + FB_input_text)
-    const file = new java.io.File(FB_input_text);
-    if (file.exists() && file.isFile()) {
-        try {
-            // 读取文件内容
-            const reader = new java.io.BufferedReader(new java.io.FileReader(file));
-            let line;
-            while ((line = reader.readLine()) !== null) {
-                comments.push(line);
-            }
-            reader.close();
-        } catch (e) {
-            taskLog("读取文件时发生错误：" + e.message);
-        }
-    } else {
-        // 如果文件不存在，将文件名添加到数组中
-        comments.push(FB_input_text);
+    var postContent = read_FB_input_text()
+    if(postContent && 
+        postContent.trim() !== "" && 
+        postContent.trim().toLowerCase() !== "off" && 
+        !postContent.includes("$${")){
+            taskLog("准备输入分享内容....");
+            className("android.widget.AutoCompleteTextView").findOne().click()
+            sleep(5000)
+            className("android.widget.AutoCompleteTextView").findOne().setText("")
+            sleep(5000)
+            className("android.widget.AutoCompleteTextView").findOne().setText(postContent)
+            sleep(random(5000, 10000))
+    }else{
+        taskLog("输入PO文内容是空，所以不需要输入文本")
     }
-    // var randIdx = random(0, comments.length - 1)
-    // taskLog("评论文案的下标randIdx："+randIdx)
-    // var messageText = comments[randIdx];
-    className("android.widget.AutoCompleteTextView").findOne().setText(comments)
-    sleep(random(5000, 10000))
+    
 
     //检查是否需要发图片
     post_Image()
@@ -614,6 +595,38 @@ function find_btn_desc_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
          }
 }
 
+
+
+//读取本地txt的文本内容
+function read_FB_input_text(){
+
+    //输入文案
+    let postContent = "";
+    const file = new java.io.File(FB_input_text);
+    if (file.exists() && file.isFile()) {
+        try {
+            // 读取文件内容
+            const reader = new java.io.BufferedReader(new java.io.FileReader(file));
+            let lines = [];
+            let line;
+            while ((line = reader.readLine()) !== null) {
+                lines.push(line);
+            }
+            reader.close();
+            postContent = lines.join('\n'); // 使用换行符连接每行内容
+        } catch (e) {
+            taskLog("读取文件时发生错误：" + e.message);
+        }
+    } else {
+        // 如果文件不存在，将输入内容本身作为文本
+        postContent = FB_input_text;
+    }
+
+    return postContent
+
+
+
+}
 
 
 //强制停止TikTok 
