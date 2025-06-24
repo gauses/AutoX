@@ -246,7 +246,16 @@ function post_Image(){
                                     // 正确调用bounds()方法并点击
                                     taskLog("找到对应目录" + listTextView.desc());
                                     var bounds = listTextView.bounds();
-                                    click(bounds.centerX(), bounds.centerY());
+                                    if (isFullyVisible(bounds)) {
+                                        click(bounds.centerX(), bounds.centerY());
+                                        taskLog("点击坐标：" + bounds.centerX() + ", " + bounds.centerY());
+                                    } else {
+                                        // 可选：点击可见区域的某个点，比如top+10, left+10
+                                        let x = Math.min(bounds.centerX(), device.width - 10);
+                                        let y = Math.min(bounds.top + 10, device.height - 10);
+                                        click(x, y);
+                                        taskLog("点击部分可见图片的坐标：" + x + ", " + y);
+                                    }
                                     // 找到并点击后可以跳出循环
                                     break;
                                 }
@@ -279,8 +288,13 @@ function post_Image(){
                             if ((buttonDesc.indexOf("Photo taken on") !== -1 || buttonDesc.indexOf("的相片") !== -1)) {
                                 if(button.selected() === false){
                                     let bounds = button.bounds();
-                                    click(bounds.centerX(), bounds.centerY());
-                                    taskLog("点击坐标：" + bounds.centerX() + ", " + bounds.centerY());
+                                    let safePoint = getSafeClickPoint(bounds);
+                                    if (safePoint) {
+                                        click(safePoint.x, safePoint.y);
+                                        taskLog("点击最上方可见点：" + safePoint.x + ", " + safePoint.y);
+                                    } else {
+                                        taskLog("Button完全不可见，跳过点击：" + JSON.stringify(bounds));
+                                    }
                                     newSelected++;
                                     selectedSet.add(boundsStr);
                                 }
@@ -771,4 +785,29 @@ function swipe_up(){
     let endY = device.height * 0.3;
     swipe(x, startY, x, endY, 600);
     sleep(3000); // 加长等待
+}
+
+function isFullyVisible(bounds) {
+    return bounds.top >= 0 && bounds.left >= 0 &&
+           bounds.right <= device.width && bounds.bottom <= device.height;
+}
+
+function getSafeClickPoint(bounds) {
+    // 计算可见区域
+    let left = Math.max(bounds.left, 0);
+    let top = Math.max(bounds.top, 0);
+    let right = Math.min(bounds.right, device.width);
+    let bottom = Math.min(bounds.bottom, device.height);
+
+    // 如果完全不可见，跳过
+    if (left >= right || top >= bottom) return null;
+
+    // 尽量点图片的上半部分中间
+    let x = Math.floor((left + right) / 2);
+    let y = top + 10; // 距离顶部10像素，避免点到边缘
+
+    // 如果可见高度很小，点到最上面
+    if ((bottom - top) < 20) y = top + 2;
+
+    return { x, y };
 }
