@@ -7,6 +7,9 @@ importClass(java.io.FileWriter);
 //***********************Facebook個人發文*************************
 //******************************************************************
 
+// 刷新媒体库：
+// adb shell am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d file:///sdcard/Download
+
 
 
 
@@ -218,6 +221,7 @@ function post_Image(){
                 // sleep(3000)
 
 
+
                 className("android.widget.GridView").findOne().children().forEach(child => {
                     var target = child.findOne(className("android.widget.Spinner"));
                     if(target == null){
@@ -257,33 +261,41 @@ function post_Image(){
                     find_btn_desc_base("Select multiple", "選擇多張")
                     sleep(random(3000, 5000))
 
-                    //选中所有图片
-                    className("android.widget.GridView").findOne().children().forEach(child => {
-                        var button = child.findOne(className("android.widget.Button"));
-                        if (!button) {
-                            taskLog("未找到Button控件，跳过");
-                            return;
-                        }
-                        
-                        var buttonDesc = button.desc();
-                        if (!buttonDesc) {
-                            taskLog("Button没有描述文本，跳过");
-                            return;
-                        }
-                        
-                        taskLog("选择图片描述 = " + buttonDesc);
-                        
-                        if (buttonDesc.indexOf("Photo taken on") !== -1 || buttonDesc.indexOf("的相片") !== -1)  {
-                            taskLog("找到目标图片：" + buttonDesc);
-                            var bounds = button.bounds();
-                            if (bounds) {
-                                click(bounds.centerX(), bounds.centerY());
-                                taskLog("点击坐标：" + bounds.centerX() + ", " + bounds.centerY());
-                                sleep(random(2000, 3000));
+                    //选中所有图片（支持滑动选取，使用 bounds 唯一标识）
+                    let selectedSet = new Set();
+                    let tryCount = 0;
+                    while (true) {
+                        let gridView = className("android.widget.GridView").findOne();
+                        let children = gridView.children();
+                        let newSelected = 0;
+                        for (let i = 0; i < children.size(); i++) {
+                            let child = children.get(i);
+                            let button = child.findOne(className("android.widget.Button"));
+                            if (!button) continue;
+                            let buttonDesc = button.desc();
+                            let boundsStr = JSON.stringify(button.bounds());
+                            if (selectedSet.has(boundsStr)) continue; // 跳过已选
+                            taskLog("buttonDesc: " + buttonDesc + "，button.selected(): " + button.selected());
+                            if ((buttonDesc.indexOf("Photo taken on") !== -1 || buttonDesc.indexOf("的相片") !== -1)) {
+                                if(button.selected() === false){
+                                    let bounds = button.bounds();
+                                    click(bounds.centerX(), bounds.centerY());
+                                    taskLog("点击坐标：" + bounds.centerX() + ", " + bounds.centerY());
+                                    newSelected++;
+                                    selectedSet.add(boundsStr);
+                                }
+                                sleep(1000); // 不要太长
                             }
                         }
-                        sleep(random(3000, 5000));
-                    });
+                        if (newSelected === 0) {
+                            tryCount++;
+                            if (tryCount >= 3) break;
+                        } else {
+                            tryCount = 0;
+                        }
+                        swipe_up();
+                        sleep(3000); // 加长等待
+                    }
 
 
 
@@ -293,6 +305,13 @@ function post_Image(){
                     sleep(random(3000, 5000))
 
                 });
+
+
+
+
+
+
+
             
 
                 
@@ -741,4 +760,15 @@ function find_viewGroup_text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US
 
      return findBtn
 
+}
+
+
+function swipe_up(){
+    //使用多段swipe实现曲线滑动
+    let screenHeight = device.height;
+    let x = device.width / 2;
+    let startY = device.height * 0.7;
+    let endY = device.height * 0.3;
+    swipe(x, startY, x, endY, 600);
+    sleep(3000); // 加长等待
 }
