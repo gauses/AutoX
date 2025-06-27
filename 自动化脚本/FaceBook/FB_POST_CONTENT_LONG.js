@@ -26,6 +26,9 @@ var FacebookPackageName = 'com.facebook.katana';
 //将需要处理的多媒体图片，单独copy一份放到这个文件夹里面，后面处理完成之后，再删除这个文件夹
 var A_NEST_FaceBook_MEDIA = 'A_NEST_FaceBook_MEDIA'; 
 
+//选中图片时候，包含视频的个数这样来决定需要sleep多长时间
+var containVideoCount  = 0
+
 
 //1.autox.js侧边栏的打开USB调试先打开
 //2.vscode ctrl+shift+p 输入start all server 确定
@@ -178,6 +181,16 @@ sleep(random(3000, 5000))
     taskLog("等待分享结果，大约60s左右....");
     sleep(random(50000,60000))
 
+    taskLog("包含视频的个数：" + containVideoCount)
+    var sleepVideoTime = 1000
+    if(containVideoCount > 0){
+        taskLog("包含视频的个数：" + containVideoCount + "，所以需要sleep多长时间")
+        sleepVideoTime = containVideoCount * 50000
+    }else{
+        taskLog("包含视频的个数：" + containVideoCount + "，所以不需要sleep多长时间")
+    }
+    sleep(sleepVideoTime)
+
 
     //删除临时图片库 :A_NEST_FaceBook_MEDIA
     delete_temp_image("/storage/emulated/0/Download/" + A_NEST_FaceBook_MEDIA)
@@ -287,6 +300,12 @@ function post_Image(){
                             if (selectedSet.has(boundsStr)) continue; // 跳过已选
                             taskLog("buttonDesc: " + buttonDesc + "，button.selected(): " + button.selected());
                             //影片：desc("在6月 27, 2025 03:22拍攝的影片")  - desc("Video taken on Jun 27, 2025 15:25")
+
+                            if(buttonDesc.indexOf("Video taken on") !== -1 || buttonDesc.indexOf("影片") !== -1){
+                                containVideoCount++;
+                            }
+
+
                             if (buttonDesc.indexOf("Photo taken on") !== -1 || buttonDesc.indexOf("的相片") !== -1 || buttonDesc.indexOf("影片") !== -1 || buttonDesc.indexOf("Video taken on") !== -1) {
                                 if(button.selected() === false){
                                     let bounds = button.bounds();
