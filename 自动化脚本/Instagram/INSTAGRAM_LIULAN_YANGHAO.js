@@ -4,11 +4,9 @@ importClass(java.io.PrintWriter);
 importClass(java.io.FileWriter);
 
 //******************************************************************
-//***********************Tiktok首页浏览养号*************************
+//***********************Instagram首页浏览养号*************************
 //******************************************************************
 
-var ASIA_TikTokPackageName = 'com.ss.android.ugc.trill';
-var GLOBAL_TikTokPackageName = 'com.zhiliaoapp.musically';
 
 var INSTAGRAM_PACKAGE_NAME = 'com.instagram.android';
 
