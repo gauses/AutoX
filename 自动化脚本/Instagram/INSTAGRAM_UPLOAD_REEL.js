@@ -52,12 +52,12 @@ var handleErrorFlag = false //默认没有错误，如果出现异常，那么�
 
     if(handleErrorFlag){
         console.error("-----------------脚本执行出现异常---------------");
-        console.error("Tiktok根據關鍵字，搜尋影片瀏覽養號，評論，點讚---------------");
+        console.error("REEL頁-發佈圖片視屏以及描述到個人主頁---------------");
         console.error("脚本执行时间：" + new Date().toLocaleString());
     }else{
         forceStop_APP(targetPackageName)
         console.log("-----------------脚本功能执行结束：---------------");
-        console.log("Tiktok根據關鍵字，搜尋影片瀏覽養號，評論，點讚---------------");
+        console.log("REEL頁-發佈圖片視屏以及描述到個人主頁---------------");
         console.log("脚本执行时间：" + new Date().toLocaleString());
     }
     openLogActivity();
@@ -1111,6 +1111,7 @@ try {
 
     //选中Reels
     // className("android.widget.TextView") fullId("com.instagram.android:id/cam_dest_clips") clickable("true")
+    taskLog("开始选中底部点击Reels按钮")
     clickId(INSTAGRAM_PACKAGE_NAME + ":id/cam_dest_clips")
     sleep(random(2000,3000))
 
@@ -1127,20 +1128,37 @@ try {
 
 
     //右上角： Next fullId("com.instagram.android:id/slideout_iconview_icon")
-    clickId(INSTAGRAM_PACKAGE_NAME + ":id/slideout_iconview_icon")
-    sleep(random(2000,3000))
+    // fullId("com.instagram.android:id/slideout_iconview_icon") clickable("false")
+    var slideout_iconview_icon = id(INSTAGRAM_PACKAGE_NAME + ":id/slideout_iconview_icon").findOne();
+    if(slideout_iconview_icon){
+        taskLog("找到slideout_iconview_icon,点击Next,坐标 X = " + slideout_iconview_icon.bounds().centerX() + " Y = " + slideout_iconview_icon.bounds().centerY())
+        click(slideout_iconview_icon.bounds().centerX(), slideout_iconview_icon.bounds().centerY())
+        sleep(random(2000,3000))
+    }else{
+        taskLog("没有找到slideout_iconview_icon,本次任务终止.")
+        throw new Error("没有找到slideout_iconview_icon,本次任务终止.")
+    }
+
+    // clickId(INSTAGRAM_PACKAGE_NAME + ":id/slideout_iconview_icon")
+    // sleep(random(2000,3000))
 
 
 
     //选中第一个：
     //className("android.view.View") fullId("com.instagram.android:id/gallery_grid_item_bottom_container") clickable("false")
-    var reels_gallery_grid_item_list = id(INSTAGRAM_PACKAGE_NAME + ":id/gallery_grid_item_bottom_container").className("android.view.View").find();
-    taskLog("找到reels_gallery_grid_item_list: 全部 = "  + reels_gallery_grid_item_list.size());
+
+    //:每个图片的选择框：className("android.widget.ImageView") fullId("com.instagram.android:id/gallery_grid_item_selection_circle") clickable("true")
+    // var reels_gallery_grid_item_list = id(INSTAGRAM_PACKAGE_NAME + ":id/gallery_grid_item_bottom_container").className("android.view.View").find();
+    // taskLog("找到reels_gallery_grid_item_list: 全部 = "  + reels_gallery_grid_item_list.size());
+
+
+
+    var reels_gallery_grid_item_selection_circle = id(INSTAGRAM_PACKAGE_NAME + ":id/gallery_grid_item_selection_circle").className("android.widget.ImageView").find();
+    taskLog("找到reels_gallery_grid_item_selection_circle: 全部 = "  + reels_gallery_grid_item_selection_circle.size());    
     sleep(random(2000,3000))    
-    if (reels_gallery_grid_item_list.size() > 0) {
-        var reels_gallery_grid_item = reels_gallery_grid_item_list.get(0);
+    if (reels_gallery_grid_item_selection_circle.size() > 0) {
+        var reels_gallery_grid_item = reels_gallery_grid_item_selection_circle.get(0);
         click(reels_gallery_grid_item.bounds().centerX(), reels_gallery_grid_item.bounds().centerY())
-        // taskLog("点击reels_gallery_grid_item坐标 X = " + reels_gallery_grid_item.bounds().centerX() + " Y = " + reels_gallery_grid_item.bounds().centerY())
         sleep(random(2000,3000))   
 
 
@@ -1217,6 +1235,10 @@ try {
             // className("android.widget.FrameLayout") fullId("com.instagram.android:id/share_button")  clickable("true")
             clickId(INSTAGRAM_PACKAGE_NAME + ":id/share_button")
             sleep(random(2000,3000))
+
+            // fullId("com.instagram.android:id/share_footer_button")
+            clickId(INSTAGRAM_PACKAGE_NAME + ":id/share_footer_button")
+            sleep(random(2000,3000))
             
 
             //可能会出现一个提示，是否同步到Threads
@@ -1236,12 +1258,9 @@ try {
             
 
     }else{
-        taskLog("没有找到reels_gallery_grid_item，本次任务终止.")
-        throw new Error("没有找到reels页面的视频，本次任务终止.")
+        taskLog("没有找到任何图片或者视频，本次任务终止.")
+        throw new Error("没有找到任何图片或者视频，本次任务终止.")
     }
-
-    // sleep(200000000000)
-
 
 
 

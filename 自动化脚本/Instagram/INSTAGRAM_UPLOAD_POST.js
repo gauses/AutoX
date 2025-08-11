@@ -762,9 +762,9 @@ function find_textview_text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US)
          }
 
          // 查找控件
-        var button1 = className("android.widget.TextView").text(findText_ZH_CN).findOne(3000);
-        var button2 = className("android.widget.TextView").text(findText_ZH_TW).findOne(3000);
-        var button3 = className("android.widget.TextView").text(findText_EN_US).findOne(3000);
+        var button1 = className("android.widget.TextView").text(findText_ZH_CN).findOne(2000);
+        var button2 = className("android.widget.TextView").text(findText_ZH_TW).findOne(2000);
+        var button3 = className("android.widget.TextView").text(findText_EN_US).findOne(2000);
 
         if (button1) {
             taskLog("找到" + findText_ZH_CN);
@@ -972,7 +972,7 @@ function click_Video_desc(){
 
 //可能会出现权限弹窗，如果弹出，那么允许
 function click_permission_allow(){
-    toast("开始处理权限问题.....")
+    taskLog("开始处理权限问题....")
 
     var allListTextView = className("android.widget.TextView").find();
     taskLog("找到权限allListTextView: 全部 = "  + allListTextView.size());
@@ -1034,6 +1034,7 @@ function click_permission_allow(){
         }
     }
 
+    taskLog("结束处理权限问题....")
 
 
 }
@@ -1092,6 +1093,7 @@ try {
 
     //Button:
     //fullId("com.instagram.android:id/creation_tab")
+    // fullId("com.instagram.android:id/tab_icon")
     clickId(INSTAGRAM_PACKAGE_NAME + ":id/creation_tab")
     
     sleep(3000)
@@ -1108,35 +1110,68 @@ try {
 
 
 
-    //fullId("com.instagram.android:id/slideout_iconview_icon")
-    clickId(INSTAGRAM_PACKAGE_NAME + ":id/slideout_iconview_icon")
+
+    //fullId("com.instagram.android:id/cam_dest_feed")
+    taskLog("开始选中底部点击Post按钮")
+    clickId(INSTAGRAM_PACKAGE_NAME + ":id/cam_dest_feed")
     sleep(random(2000,3000))
 
 
-    //选中图片的右上角的圆圈
-    //fullId("com.instagram.android:id/gallery_grid_item_selection_circle")
-    var gallery_grid_item_list = id(INSTAGRAM_PACKAGE_NAME + ":id/gallery_grid_item_selection_circle").className("android.widget.ImageView").find();
-    taskLog("找到gallery_grid_item_list: 全部 = "  + gallery_grid_item_list.size());
-    sleep(random(2000,3000))
+    // //选中图片的右上角的圆圈
+    // //fullId("com.instagram.android:id/gallery_grid_item_selection_circle")
+    // var gallery_grid_item_list = id(INSTAGRAM_PACKAGE_NAME + ":id/gallery_grid_item_selection_circle").className("android.widget.ImageView").find();
+    // taskLog("找到gallery_grid_item_list: 全部 = "  + gallery_grid_item_list.size());
+    // sleep(random(2000,3000))
 
-    if (gallery_grid_item_list.size() > 0) {
+    // if (gallery_grid_item_list.size() > 0) {
        
 
-        //点击Next
-        // fullId("com.instagram.android:id/camera_settings_gear") - className("android.widget.Button")
-        var next = className("android.widget.Button").id(INSTAGRAM_PACKAGE_NAME + ":id/camera_settings_gear").find();
-        if(next){
-            taskLog("已经找到Next按钮，点击Next,next个数 = " + next.size())
-            let element = next.get(0);
-            let X = element.bounds().centerX();
-            let Y = element.bounds().centerY();
-            click(X, Y);
-            taskLog("点击Next坐标 X = " + X + " Y = " + Y)
+        // //点击Next
+        // // fullId("com.instagram.android:id/camera_settings_gear") - className("android.widget.Button")
+        // var next = className("android.widget.Button").id(INSTAGRAM_PACKAGE_NAME + ":id/camera_settings_gear").find();
+        // if(next){
+            // taskLog("已经找到Next按钮，点击Next,next个数 = " + next.size())
+            // let element = next.get(0);
+            // let X = element.bounds().centerX();
+            // let Y = element.bounds().centerY();
+            // click(X, Y);
+            // taskLog("点击Next坐标 X = " + X + " Y = " + Y)
+            // sleep(random(2000,3000)) 
 
+
+
+            //右上角Next
+            // fullId("com.instagram.android:id/next_button_textview")
+            //fullId("com.instagram.android:id/next_button_textview")
+            var next = className("android.widget.Button").id(INSTAGRAM_PACKAGE_NAME + ":id/next_button_textview").find();
+            if(next){
+                taskLog("已经找到Next按钮，点击Next,next个数 = " + next.size())
+                next.click();
+                sleep(random(2000,3000)) 
+            }   
+            
             sleep(random(2000,3000)) 
 
+
+
+
+            taskLog("开始第一次检查权限问题 .....")
+            click_permission_allow()    
+            sleep(random(2000,3000))
+            taskLog("开始第二次检查权限问题.....")
+            click_permission_allow()    
+            sleep(random(2000,3000))
+
+
+
             //点击右下角继续
-            //fullId("com.instagram.android:id/clips_right_action_button")
+            //fullId("com.instagram.android:id/creation_next_button")
+            clickId(INSTAGRAM_PACKAGE_NAME + ":id/creation_next_button")
+            sleep(random(2000,3000)) 
+
+
+            //点击右下角继续
+            //fullId("com.instagram.android:id/clips_right_action_button")  
             clickId(INSTAGRAM_PACKAGE_NAME + ":id/clips_right_action_button")
             sleep(random(2000,3000)) 
 
@@ -1181,6 +1216,14 @@ try {
             if(notNowBtn){
                 taskLog("存在提示，点击Not now")
             }
+
+
+            //可能会出现一个提示，是否同步到Facebook
+            //className("android.widget.TextView") text("Not now")
+            var notNowBtn = find_textview_text_base("Not now", "不要", "現在不要", "Not now")
+            if(notNowBtn){
+                taskLog("存在提示，点击Not now")
+            }
             
             
 
@@ -1189,12 +1232,21 @@ try {
             // className("android.widget.FrameLayout") fullId("com.instagram.android:id/share_button")  clickable("true")
             clickId(INSTAGRAM_PACKAGE_NAME + ":id/share_button")
             sleep(random(2000,3000))
-        }else{
-            taskLog("没有找到Next按钮，本次任务终止.")
-            throw new Error("没有找到Next按钮，本次任务终止.")
-        }
+
+            // fullId("com.instagram.android:id/share_footer_button")
+            clickId(INSTAGRAM_PACKAGE_NAME + ":id/share_footer_button")
+            sleep(random(2000,3000))
+
+      
+            taskLog("等待上传完成，大概15秒.....")
+            sleep(random(10000,15000))
+            
+        // }else{
+        //     taskLog("没有找到Next按钮，本次任务终止.")
+        //     throw new Error("没有找到Next按钮，本次任务终止.")
+        // }
         
-    }
+    // }
 
 
 
