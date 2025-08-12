@@ -299,8 +299,8 @@ function click_Comment_Btn(commentText){
         var textView = autoCompleteTextViews.get(autoCompleteTextViews.size() - 1);
         if(textView) {
             taskLog("找到TextView控件-Text："+ textView.text());
-            textView.click()
-            sleep(1000)
+            // textView.click()
+            sleep(3000)
             taskLog("评论控件，设置内容：" +commentText );
             textView.setText(commentText)
             sleep(5000)
@@ -311,8 +311,13 @@ function click_Comment_Btn(commentText){
             // fullId("com.zhiliaoapp.musically:id/czk")
             // fullId("com.ss.android.ugc.trill:id/czl")
 
+
+
+            //className("android.widget.ImageView") fullId("com.zhiliaoapp.musically:id/czl") clickable("true")
+            //className("android.widget.Button") fullId("com.ss.android.ugc.trill:id/czl") clickable("true")
+
             if(targetPackageName == GLOBAL_TikTokPackageName){  
-                clickId(GLOBAL_TikTokPackageName + ":id/czk")
+                clickId(GLOBAL_TikTokPackageName + ":id/czl")
             }else{
                 clickId(ASIA_TikTokPackageName + ":id/czl")
             }
@@ -322,13 +327,10 @@ function click_Comment_Btn(commentText){
             sleep(random(2000, 3000))
             
             if(targetPackageName == GLOBAL_TikTokPackageName){  
-                clickId(GLOBAL_TikTokPackageName + ":id/czk")
+                clickId(GLOBAL_TikTokPackageName + ":id/czl")
             }else{
                 clickId(ASIA_TikTokPackageName + ":id/czl")
             }
-    
-    
-            sleep(random(10000, 15000))
     
     
             var clickX = device.width  - 100 ; 
