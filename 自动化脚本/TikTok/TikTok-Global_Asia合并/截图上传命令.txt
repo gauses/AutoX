@@ -1,0 +1,7 @@
+
+ADB 可以直接截图，而且不需要依赖 Auto.js。
+
+方法 1：截图到电脑
+adb exec-out screencap -p > screen.png
+
+会直接把手机屏幕截图保存成 screen.png 到当前电脑目录。
