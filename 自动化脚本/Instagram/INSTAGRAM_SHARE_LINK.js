@@ -13,7 +13,6 @@ importClass(java.io.FileWriter);
 //保证Java层和JS代码两边的日志文件一致
 var taskLogFileName = "nest_task_log.txt"
 var taskLogImgName = "nest_task_log.png"
-var chromePackageName = 'com.kiwibrowser.browser';
 
 //名稱.使用者名稱.個人簡介
 const TT_VIDEO_URL = '$${T_指定视频链接/直播間鏈接}';
@@ -127,11 +126,6 @@ sleep(random(3000, 5000))
 forceStop_APP(targetPackageName)
 sleep(3000)
 
-sleep(random(3000, 5000))
-openAppSetting(chromePackageName)
-sleep(random(3000, 5000))
-forceStop_APP(chromePackageName)
-sleep(3000)
 
 
 // app.startActivity({
@@ -407,6 +401,42 @@ function stopCurrentTask(){
 
     console.hide()
 
+}
+
+
+function openInstagramLink_test(InstagramUrl){
+
+
+    //是否打开成功，如果打开失败，那么直接进行下一个任务
+    var openUrlFlag = false
+
+    taskLog("准备打开链接 = " + InstagramUrl)
+    var intent = new android.content.Intent(android.content.Intent.ACTION_VIEW);
+    // intent.setData(android.net.Uri.parse("https://www.facebook.com/watch/huacemedia/")); //不行
+    // intent.setData(android.net.Uri.parse("https://www.facebook.com/samsul.ujex"));  //加好友，异常
+    // intent.setData(android.net.Uri.parse("https://www.facebook.com/share/r/1CdK7F3fRp/"));  //Reels -OK
+    // intent.setData(android.net.Uri.parse("https://www.facebook.com/groups/850798899131453/"));  //Group -OK
+    // intent.setData(android.net.Uri.parse("https://www.facebook.com/share/v/16cLEnDJoT/"));   //Live - OK
+    // intent.setData(android.net.Uri.parse("https://www.facebook.com/profile.php?id=100079449592509"));  //Friend - OK
+    // intent.setData(android.net.Uri.parse("https://www.facebook.com/share/v/14Dj3UQ6q2b/"));  //watch - OK（https://www.facebook.com/watch/?v=689492360538949&rdid=PU3MOv69wqSgVeh5）
+    
+    intent.setData(android.net.Uri.parse(InstagramUrl));
+    intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+    intent.setPackage("com.instagram.android");
+    try {
+        app.startActivity(intent);
+        openUrlFlag = true
+    } catch (e) {
+
+        // 如果 Facebook App 无法处理，则用浏览器打开
+        taskLog("Instagram无法处理该链接，所以跳过 = " + InstagramUrl);
+        // var browserIntent = new android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(fbUrl));
+        // browserIntent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+        // app.startActivity(browserIntent);
+        // openUrlFlag = true
+    }
+
+    return openUrlFlag
 }
 
 
@@ -703,50 +733,8 @@ function find_textview_text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US)
      return findText_result
 }
 
-function firstOpenBrowser(){
-    app.startActivity({
-        action: "android.intent.action.VIEW",
-        packageName: chromePackageName,
-        className: "org.chromium.chrome.browser.ChromeTabbedActivity"
-      });
-
-      sleep(3000);
-
-    //   //可能部分设备弹出"NestBrowser不能运行在没有GMS的设备"的弹出框，需要点击确定
-    //   if (id('button1').exists()) {
-    //     id('button1').findOne(3000).click();
-    //   }
-      
-      //可能存在欢迎界面的"continue"按钮，点击
-      if(id("com.kiwibrowser.browser:id/signin_fre_continue_button").exists()){
-        toast("存在欢迎界面的continue按钮，点击")
-        id("com.kiwibrowser.browser:id/signin_fre_continue_button").findOne().click()
-      }else{
-        toast("不存在欢迎界面的continue按钮")
-      }
 
 
-}
-
-function openBrowser(url){
-
-    app.startActivity({
-        action: "android.intent.action.VIEW",
-        data: url,
-        packageName: chromePackageName,
-        className: "org.chromium.chrome.browser.ChromeTabbedActivity",
-        flags: [
-          "activity_new_task",
-          "activity_clear_top"
-          ],
-      extras: {
-          // 设置打开方式偏好
-          "browser.application_id": targetPackageName,  
-          "create_new_tab": true,
-          "open_in_external_app": true
-      }
-      });
-}
 
 
 //从视频列表数组中，顺序挑选一条
@@ -962,18 +950,8 @@ function click_reels_vide(){
 
 try {
 
-   
-    //用浏览器打开链接
-    taskLog("检测是否第一次打开浏览器...")
-    firstOpenBrowser()
-    sleep(5000)
-
-        
-    taskLog("打开浏览器成功...")
-    sleep(5000)
-
     var all_TT_VIDEO_LINK = get_all_video_link()
-    taskLog("所有需要分享的视频数量 = " + all_TT_VIDEO_LINK.length)
+    taskLog("Instagram视频链接数量 = " + all_TT_VIDEO_LINK.length)
     sleep(5000)
     
     if(all_TT_VIDEO_LINK.length == 0){
@@ -983,7 +961,7 @@ try {
 
          // 开始主循环
         var commentTextArrays = get_post_text()
-        toast("评论文案个数：" + commentTextArrays.length)
+        toast("Instagram评论文案总数：" + commentTextArrays.length)
 
         for(var i = 0; i < all_TT_VIDEO_LINK.length; i++){
             taskLog("当前Instagram帖子在第" + (i+1) + "个 = " + all_TT_VIDEO_LINK[i])      
@@ -992,83 +970,39 @@ try {
 
 
             taskLog("准备打开Instagram帖子链接：" + video_info_link)      
-            openBrowser(video_info_link)
-            sleep(random(5000,8000))
+            openInstagramLink_test(video_info_link)
 
-            //可能需要点击一下浏览器界面的"開啟 Instagram"
-            find_btn_Text_base("開啟 Instagram","Open Instagram","開啟應用程式")
-            toast("出现開啟 Instagram按钮，点击.")
+            if(openInstagramLink_test(video_info_link)){
+                taskLog("打开Instagram成功...")
+                sleep(random(10000,15000))
 
-            //可能会出现"Continue"按钮，点击：fullId("com.kiwibrowser.browser:id/message_primary_button")
-            if(id("com.kiwibrowser.browser:id/message_primary_button").exists()){
-                toast("出现Continue按钮，点击.")
-                id("com.kiwibrowser.browser:id/message_primary_button").findOne().click()
-            }
-            sleep(5000)
-
-
-            taskLog("打开Instagram成功...")
-            sleep(random(10000,15000))
-
-            //需要页面有没有like按钮
-            //className("android.widget.Button") fullId("com.instagram.android:id/row_feed_button_like") clickable("false")
-            var likeBtnList = className("android.widget.Button").id("com.instagram.android:id/row_feed_button_like").find()
-            // var likeBtnList = id("com.instagram.android:id/row_feed_button_like").className("android.widget.Button").find()
-            taskLog("当前页面的likeBtn数量 = " + likeBtnList.size() )
-            sleep(random(3000, 5000))
-
-
-            var commentBtnList = className("android.widget.Button").id("com.instagram.android:id/row_feed_button_comment").find()
-            taskLog("当前页面的commentBtn数量 = " + commentBtnList.size()  )
-            sleep(random(3000, 5000))
-
-
-            if(likeBtnList.size() > 0){
-
-                taskLog("当前点赞坐标是否对用户可见 = " + likeBtnList.get(0).visibleToUser() )
-                taskLog("当前页面有like按钮坐标 = " + likeBtnList.get(0).bounds().centerX() + " " + likeBtnList.get(0).bounds().centerY() )
-                taskLog("当前设备坐标 = " + device.width + " " + device.height )
-                sleep(random(3000, 5000))
-                click(likeBtnList.get(0).bounds().centerX(), likeBtnList.get(0).bounds().centerY())
-                
-
-                //直接连续双击屏幕中间位置，也可以作为点赞
-                // click(device.width / 2, device.height / 2)
-                // sleep(500)
-                // click(device.width / 2, device.height / 2)
-                // sleep(random(3000, 5000))
-
-                //如果评论文案不为空，则随机挑选一条，翻译，然后点击评论按钮
-                if(commentTextArrays.length > 0){
-
-                    var randIdx = random(0, commentTextArrays.length - 1)
-                    var messageText = commentTextArrays[randIdx];
-
-                    toast("评论文案：" + messageText)
-                    taskLog("准备点击评论按钮....");
-                    click_Comment_Btn(messageText)
-
-                    taskLog("等待5秒后，准备返回上一个页面")
-                    sleep(random(3000, 5000))
-                }else{
-                    toast("评论文案为空，所以不点击评论按钮");
-                }
-
-
-
-            }else{
-                taskLog("当前页面没有like按钮，往上滑动，继续寻找like按钮")
-                swipe_up()
-                sleep(random(3000, 5000))
-                var likeBtnList02 = className("android.widget.Button").id("com.instagram.android:id/row_feed_button_like").find()
+                //需要页面有没有like按钮
+                //className("android.widget.Button") fullId("com.instagram.android:id/row_feed_button_like") clickable("false")
+                var likeBtnList = className("android.widget.Button").id("com.instagram.android:id/row_feed_button_like").find()
+                // var likeBtnList = id("com.instagram.android:id/row_feed_button_like").className("android.widget.Button").find()
                 taskLog("当前页面的likeBtn数量 = " + likeBtnList.size() )
-
-                if(likeBtnList02.size() > 0){
-                    taskLog("当前页面有like按钮，开始点赞")
-                    taskLog("当前页面有like按钮坐标 = " + likeBtnList02.get(0).bounds().centerX() + " " + likeBtnList02.get(0).bounds().centerY() )
-                    clickId(likeBtnList02.get(0))
+                sleep(random(3000, 5000))
 
 
+                var commentBtnList = className("android.widget.Button").id("com.instagram.android:id/row_feed_button_comment").find()
+                taskLog("当前页面的commentBtn数量 = " + commentBtnList.size()  )
+                sleep(random(3000, 5000))
+
+
+                if(likeBtnList.size() > 0){
+
+                    taskLog("当前点赞坐标是否对用户可见 = " + likeBtnList.get(0).visibleToUser() )
+                    taskLog("当前页面有like按钮坐标 = " + likeBtnList.get(0).bounds().centerX() + " " + likeBtnList.get(0).bounds().centerY() )
+                    taskLog("当前设备坐标 = " + device.width + " " + device.height )
+                    sleep(random(3000, 5000))
+                    click(likeBtnList.get(0).bounds().centerX(), likeBtnList.get(0).bounds().centerY())
+                    
+
+                    //直接连续双击屏幕中间位置，也可以作为点赞
+                    // click(device.width / 2, device.height / 2)
+                    // sleep(500)
+                    // click(device.width / 2, device.height / 2)
+                    // sleep(random(3000, 5000))
 
                     //如果评论文案不为空，则随机挑选一条，翻译，然后点击评论按钮
                     if(commentTextArrays.length > 0){
@@ -1089,11 +1023,49 @@ try {
 
 
                 }else{
-                    taskLog("当前页面没有like按钮，不再处理")
+                    taskLog("当前页面没有like按钮，往上滑动，继续寻找like按钮")
+                    swipe_up()
+                    sleep(random(3000, 5000))
+                    var likeBtnList02 = className("android.widget.Button").id("com.instagram.android:id/row_feed_button_like").find()
+                    taskLog("当前页面的likeBtn数量 = " + likeBtnList.size() )
+
+                    if(likeBtnList02.size() > 0){
+                        taskLog("当前页面有like按钮，开始点赞")
+                        taskLog("当前页面有like按钮坐标 = " + likeBtnList02.get(0).bounds().centerX() + " " + likeBtnList02.get(0).bounds().centerY() )
+                        clickId(likeBtnList02.get(0))
+
+
+
+                        //如果评论文案不为空，则随机挑选一条，翻译，然后点击评论按钮
+                        if(commentTextArrays.length > 0){
+
+                            var randIdx = random(0, commentTextArrays.length - 1)
+                            var messageText = commentTextArrays[randIdx];
+
+                            toast("评论文案：" + messageText)
+                            taskLog("准备点击评论按钮....");
+                            click_Comment_Btn(messageText)
+
+                            taskLog("等待5秒后，准备返回上一个页面")
+                            sleep(random(3000, 5000))
+                        }else{
+                            toast("评论文案为空，所以不点击评论按钮");
+                        }
+
+
+
+                    }else{
+                        taskLog("当前页面没有like按钮，不再处理")
+                    }
                 }
-                }
-            
-            
+
+
+
+
+            }else{
+                taskLog("打开Instagram失败,开始执行下一个任务...")
+                continue
+            }
 
         }
 
