@@ -14,10 +14,12 @@ var GLOBAL_TikTokPackageName = 'com.zhiliaoapp.musically';
 
 
 //保证Java层和JS代码两边的日志文件一致
-// var taskLogFileName = "nest_task_log_" + getSystemDate("df").replace(/:/g, "-").replace(" ", "_") + ".txt"
-var taskLogFileName = "nest_task_log.txt"
-
+var taskLogFileName = "nest_task_log_" + getSystemDate("df").replace(/:/g, "-").replace(" ", "_") + ".txt"
 var RPAFilePath = "/sdcard/Download/log/";
+// 如果目录存在且有内容就删除
+if (files.exists(RPAFilePath)) {
+    files.removeDir(RPAFilePath);
+}
 //日志文件路径
 var logFilePath = RPAFilePath + taskLogFileName;
 //确保日志目录存在
@@ -231,7 +233,7 @@ function Nest_ScreenCapture(){
     // var dir = "/sdcard/Pictures";
     // files.ensureDir(dir);
     // var path = dir + "/nestshot_" + Date.now() + ".png";
-    var path = RPAFilePath + "/nestshot_rpa.png";
+    var path = RPAFilePath + "/nestshot_" + Date.now() + ".png";
     img.saveTo(path);                    // 保存
     img.recycle();                       // 回收内存
     taskLog("自动化任务-已保存："+ path);
