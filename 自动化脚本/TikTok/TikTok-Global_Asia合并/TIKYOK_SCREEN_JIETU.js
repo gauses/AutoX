@@ -2,6 +2,7 @@
 importClass(java.text.SimpleDateFormat);
 importClass(java.io.PrintWriter);
 importClass(java.io.FileWriter);
+importClass(java.io.File);
 
 //******************************************************************
 //***********************Tiktok截图*************************
@@ -13,8 +14,14 @@ var GLOBAL_TikTokPackageName = 'com.zhiliaoapp.musically';
 
 
 //保证Java层和JS代码两边的日志文件一致
+// var taskLogFileName = "nest_task_log_" + getSystemDate("df").replace(/:/g, "-").replace(" ", "_") + ".txt"
 var taskLogFileName = "nest_task_log.txt"
-var taskLogImgName = "nest_task_log.png"
+
+var RPAFilePath = "/sdcard/Download/log/";
+//日志文件路径
+var logFilePath = RPAFilePath + taskLogFileName;
+//确保日志目录存在
+files.ensureDir(RPAFilePath);
 
 
 //会在在无障碍服务启动后继续运行。
@@ -53,10 +60,21 @@ function handleError(e) {
 
 //打印日志
 function taskLog(_log){
-    toast(_log)
-    console.log(getSystemDate("df") +":" +_log)
 
-    //
+    toast(_log)
+    // console.log(getSystemDate("df") +":" +_log)
+    console.log(_log)
+    
+
+    //将日志文件写入本地txt
+    var logFile = new File(logFilePath);
+    var logFileWriter = new FileWriter(logFile, true);
+    var logFileWriter = new PrintWriter(logFileWriter);
+    // logFileWriter.println(_log);
+    logFileWriter.println(getSystemDate("df") +":" +_log);
+    logFileWriter.close();
+
+
 
 
 }
@@ -191,6 +209,8 @@ app.startActivity({
 
 sleep(random(3000, 5000))
 
+//截图到本地
+Nest_ScreenCapture()
 
 
 
@@ -208,9 +228,10 @@ function Nest_ScreenCapture(){
     }
 
     // 保存到相册/文件夹
-    var dir = "/sdcard/Pictures";
-    files.ensureDir(dir);
-    var path = dir + "/nestshot_" + Date.now() + ".png";
+    // var dir = "/sdcard/Pictures";
+    // files.ensureDir(dir);
+    // var path = dir + "/nestshot_" + Date.now() + ".png";
+    var path = RPAFilePath + "/nestshot_rpa.png";
     img.saveTo(path);                    // 保存
     img.recycle();                       // 回收内存
     taskLog("自动化任务-已保存："+ path);
@@ -219,7 +240,9 @@ function Nest_ScreenCapture(){
     //刷新媒体库
     sleep(3000)
     toast("开始刷新媒体库，用时5秒钟....");
-    refreshMedia(dir)
+    refreshMedia(RPAFilePath)
+
+    return path
 
 }
 
