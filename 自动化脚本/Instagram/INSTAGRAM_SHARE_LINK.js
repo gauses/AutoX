@@ -991,9 +991,10 @@ try {
 
                 if(likeBtnList.size() > 0){
 
-                    taskLog("当前点赞坐标是否对用户可见 = " + likeBtnList.get(0).visibleToUser() )
-                    taskLog("当前页面有like按钮坐标 = " + likeBtnList.get(0).bounds().centerX() + " " + likeBtnList.get(0).bounds().centerY() )
-                    taskLog("当前设备坐标 = " + device.width + " " + device.height )
+                    // taskLog("当前点赞坐标是否对用户可见 = " + likeBtnList.get(0).visibleToUser() )
+                    // taskLog("当前页面有like按钮坐标 = " + likeBtnList.get(0).bounds().centerX() + " " + likeBtnList.get(0).bounds().centerY() )
+                    // taskLog("当前设备坐标 = " + device.width + " " + device.height )
+                    taskLog("开始点赞...")
                     sleep(random(3000, 5000))
                     click(likeBtnList.get(0).bounds().centerX(), likeBtnList.get(0).bounds().centerY())
                     
@@ -1010,7 +1011,7 @@ try {
                         var randIdx = random(0, commentTextArrays.length - 1)
                         var messageText = commentTextArrays[randIdx];
 
-                        toast("评论文案：" + messageText)
+                        // toast("评论文案：" + messageText)
                         taskLog("准备点击评论按钮....");
                         click_Comment_Btn(messageText)
 
@@ -1031,7 +1032,7 @@ try {
 
                     if(likeBtnList02.size() > 0){
                         taskLog("当前页面有like按钮，开始点赞")
-                        taskLog("当前页面有like按钮坐标 = " + likeBtnList02.get(0).bounds().centerX() + " " + likeBtnList02.get(0).bounds().centerY() )
+                        // taskLog("当前页面有like按钮坐标 = " + likeBtnList02.get(0).bounds().centerX() + " " + likeBtnList02.get(0).bounds().centerY() )
                         clickId(likeBtnList02.get(0))
 
 
@@ -1042,14 +1043,14 @@ try {
                             var randIdx = random(0, commentTextArrays.length - 1)
                             var messageText = commentTextArrays[randIdx];
 
-                            toast("评论文案：" + messageText)
+                            // toast("评论文案：" + messageText)
                             taskLog("准备点击评论按钮....");
                             click_Comment_Btn(messageText)
 
                             taskLog("等待5秒后，准备返回上一个页面")
                             sleep(random(3000, 5000))
                         }else{
-                            toast("评论文案为空，所以不点击评论按钮");
+                            taskLog("评论文案为空，所以不点击评论按钮");
                         }
 
 
