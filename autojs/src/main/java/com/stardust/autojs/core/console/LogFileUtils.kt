@@ -5,16 +5,14 @@ import android.os.Environment
 import android.util.Log
 import com.stardust.app.GlobalAppContext
 import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody
+import okhttp3.logging.HttpLoggingInterceptor
 import org.json.JSONObject
 import java.io.File
 import java.io.FileWriter
 import java.io.IOException
-import okhttp3.logging.HttpLoggingInterceptor
-import okhttp3.logging.HttpLoggingInterceptor.Logger
 
 object LogFileUtils {
 
@@ -73,10 +71,14 @@ object LogFileUtils {
 
     //上传服务器，告诉服务器可以下拉日志
     fun uploadLogFileToServer(result: String) {
-        println("uploadLogFileToServer start.")
+        Log.d("ScriptExecutionGlobal", "uploadLogFileToServer start ======================= ")
 
 
         var net_script_json = readJsonFromFile(GlobalAppContext.get().applicationContext , "net_script_name")
+
+        //2025-08-15 17:49:18.315 11037-11121 ScriptExecutionGlobal   org.autojs.autoxjs                   D  uploadLogFileToServer net_script_json =  {"rpa_uuid":"8a79f866-f18f-4d51-8e10-69ab1a83b6ff","account_uuid":"192.168.1.108:12008","account_id":-1,"automation_id":"e4d799e1-80c6-4cc3-b0e7-3a3364679458","automation_name":"截图测试","success":"todo","rpa_type":"NEST_RPA_CM_SCRIPTS","msg":"NEST_RPA_CM_SCRIPTS","variables":"{}","token":"183ecd951d660ff0266ea2da785bea88"}
+        Log.d("ScriptExecutionGlobal", "uploadLogFileToServer net_script_json =  $net_script_json")
+
 
         if (net_script_json == null) return
 
