@@ -14,6 +14,9 @@ adb push FB_gerenfawen.js /sdcard/Download
 adb push TikToK_yanghao_liulan.js /sdcard/Download
 
 
+adb shell am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d file:/sdcard/Download/
+
+
 3、配置权限：
 adb shell settings put secure enabled_accessibility_services org.autojs.autoxjs/com.stardust.autojs.core.accessibility.AccessibilityService
 
@@ -33,6 +36,7 @@ adb shell am force-stop org.autojs.autoxjs
 adb shell am force-stop com.facebook.katana
 adb shell am force-stop com.zhiliaoapp.musically
 adb shell am start -W -n org.autojs.autoxjs/org.autojs.autojs.ui.main.MainActivity --es "net_script_name" "FB_gerenfawen"
+
 
 adb shell am start -W -n org.autojs.autoxjs/org.autojs.autojs.ui.main.MainActivity --es "net_script_name" "TikToK_yanghao_liulan"
 

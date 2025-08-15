@@ -72,7 +72,6 @@ function taskLog(_log){
     var logFile = new File(logFilePath);
     var logFileWriter = new FileWriter(logFile, true);
     var logFileWriter = new PrintWriter(logFileWriter);
-    // logFileWriter.println(_log);
     logFileWriter.println(getSystemDate("df") +":" +_log);
     logFileWriter.close();
 

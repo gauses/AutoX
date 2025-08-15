@@ -40,8 +40,17 @@ object NestUtils {
     //通过adb传输的script name，拼接路径
     fun appendNameToScript(context: Context,  scriptName: String): File? {
         var scriptFilePath: File? = null
+
+        var new_ScriptName = ""
+        new_ScriptName = if (scriptName.endsWith(".js")) {
+            scriptName
+        }else{
+            "$scriptName.js"
+        }
+
         getDownloadDirectory()?.let {
-            scriptFilePath = java.io.File("$it/$scriptName.js")
+//            scriptFilePath = java.io.File("$it/$scriptName.js")
+            scriptFilePath = java.io.File("$it/$new_ScriptName")
             return scriptFilePath
         } ?: {
             Log.e("sb", "external path=null")

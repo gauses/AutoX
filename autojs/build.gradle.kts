@@ -23,7 +23,10 @@ android {
         }
     }
     namespace = "com.stardust.autojs"
+
 }
+
+
 
 dependencies {
     api(projects.common)
@@ -54,7 +57,9 @@ dependencies {
     api(libs.okhttp)
 
     // RootShell
-    api(libs.rootshell)
+//    api(libs.rootshell)
+    api(fileTree("../app/libs") { include("RootShell-1.6.jar") })
+
     // Gson
     api(libs.google.gson)
     // log4j

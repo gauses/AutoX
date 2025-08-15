@@ -140,6 +140,16 @@ app.startActivity({
 sleep(random(3000, 5000))
 delete_temp_image("/storage/emulated/0/Download/" + A_NEST_FaceBook_MEDIA)
 
+sleep(random(3000, 5000))
+// 删除原文件夹
+try {
+    files.removeDir(FB_input_IMAGE);
+    taskLog("删除原文件夹成功: " + folderPath);
+} catch(e) {
+    console.error("删除原文件夹失败: " + e);
+    // 复制成功但删除失败，也算部分成功
+}
+
 toast("所有循环执行完毕，准备结束任务...");
 stopCurrentTask()
 
@@ -1055,14 +1065,14 @@ function transferHeadImageToNest(folderPath){
     }
     taskLog("复制文件夹成功: " + newFolder);
 
-    // 删除原文件夹
-    try {
-        files.removeDir(folderPath);
-        taskLog("删除原文件夹成功: " + folderPath);
-    } catch(e) {
-        console.error("删除原文件夹失败: " + e);
-        // 复制成功但删除失败，也算部分成功
-    }
+    // // 删除原文件夹
+    // try {
+    //     files.removeDir(folderPath);
+    //     taskLog("删除原文件夹成功: " + folderPath);
+    // } catch(e) {
+    //     console.error("删除原文件夹失败: " + e);
+    //     // 复制成功但删除失败，也算部分成功
+    // }
 
     // 刷新媒体库
     refreshMedia(newFolder);

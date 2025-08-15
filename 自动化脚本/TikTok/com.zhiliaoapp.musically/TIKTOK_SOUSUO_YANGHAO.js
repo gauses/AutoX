@@ -8,8 +8,8 @@ importClass(java.io.FileWriter);
 // mx-phone-2  - drewryapilado@gmail.com
 //******************************************************************
 
-// var TikTokPackageName = 'com.ss.android.ugc.trill';
-var TikTokPackageName = 'com.zhiliaoapp.musically';
+var ASIA_TikTokPackageName = 'com.ss.android.ugc.trill';
+var GLOBAL_TikTokPackageName = 'com.zhiliaoapp.musically';
 
 
 //保证Java层和JS代码两边的日志文件一致
@@ -72,6 +72,15 @@ function handleError(e) {
     exit()
 }
 
+// 替代 app.openAppSetting 的方式
+function openAppSettings(packageName) {
+    var intent = new Intent();
+    intent.setAction(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+    intent.setData(android.net.Uri.parse("package:" + packageName));
+    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    app.startActivity(intent);
+}
+
 
 //打开Autojs的Log activity
 function openLogActivity() {
@@ -104,17 +113,79 @@ if (runningEngines.length > 1) {
 }
 
 
-forceStop_APP(TikTokPackageName)
+sleep(3000)
+taskLog("准备检查TikTok是否已安装...")
 
 
-taskLog("准备启动TikTok...")
-sleep(5000)
+
+function isAppInstalled(packageName) {
+    var pm = context.getPackageManager();
+    try {
+        pm.getPackageInfo(packageName, 0);
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
+
+if (isAppInstalled(GLOBAL_TikTokPackageName)) {
+    targetPackageName = GLOBAL_TikTokPackageName;
+    targetClassName = "com.ss.android.ugc.aweme.main.MainActivity";
+    taskLog("检测到已安装全球版TikTok，准备启动...");
+
+
+    sleep(random(3000, 5000))
+    taskLog("准备启动全球版TikTok...");
+    app.startActivity({
+        action: "android.intent.action.VIEW",
+        packageName: GLOBAL_TikTokPackageName,
+        className: "com.ss.android.ugc.aweme.main.MainActivity"
+    });
+
+
+    sleep(random(5000, 8000))
+    openAppSettings(GLOBAL_TikTokPackageName)
+    sleep(random(3000, 5000))
+
+    forceStop_APP(GLOBAL_TikTokPackageName)
+    sleep(3000)
+
+} else if (isAppInstalled(ASIA_TikTokPackageName)) {
+    targetPackageName = ASIA_TikTokPackageName;
+    targetClassName = "com.ss.android.ugc.aweme.main.MainActivity";
+    taskLog("检测到已安装亚洲版TikTok，准备启动...");
+
+    sleep(random(3000, 5000))
+    taskLog("准备启动亚洲版TikTok...");
+    app.startActivity({
+        action: "android.intent.action.VIEW",
+        packageName: ASIA_TikTokPackageName,
+        className: "com.ss.android.ugc.aweme.main.MainActivity"
+    });
+
+
+    sleep(random(5000, 8000))
+    openAppSettings(ASIA_TikTokPackageName)
+    sleep(random(3000, 5000))
+
+    forceStop_APP(ASIA_TikTokPackageName)
+    sleep(3000)
+
+} else {
+    toast("未检测到TikTok已安装，请先安装TikTok！");
+    taskLog("未检测到TikTok已安装，脚本终止。");
+    exit();
+}
+
+
 app.startActivity({
     action: "android.intent.action.VIEW",
-    packageName: TikTokPackageName,
-    className: "com.ss.android.ugc.aweme.main.MainActivity"
+    packageName: targetPackageName,
+    className: targetClassName
 });
-;
+
+
+
 
 
 //强制停止TikTok 
@@ -203,7 +274,6 @@ function forceStop_APP(packageName){
     home()
 
 }
-
 
 
 

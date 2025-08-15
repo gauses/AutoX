@@ -527,8 +527,8 @@ function click_Comment_Btn(commentText){
         var textView = autoCompleteTextViews.get(autoCompleteTextViews.size() - 1);
         if(textView) {
             taskLog("找到TextView控件-Text："+ textView.text());
-            textView.click()
-            sleep(1000)
+            // textView.click()
+            sleep(3000)
             taskLog("评论控件，设置内容：" +commentText );
             textView.setText(commentText)
             sleep(5000)

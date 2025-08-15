@@ -12,6 +12,7 @@ import com.stardust.autojs.execution.ScriptExecutionListener;
 import org.apache.log4j.lf5.LogLevel;
 import org.autojs.autoxjs.R;
 
+
 /**
  * Created by Stardust on 2017/5/3.
  */
@@ -33,6 +34,12 @@ public class ScriptExecutionGlobalListener implements ScriptExecutionListener {
         Log.d("ScriptExecutionGlobal" , "onSuccess result ======================= " );
 
 //        AutoJs.getInstance().getScriptEngineService().getGlobalConsole().println(Log.VERBOSE, "onSuccess......");
+
+        //执行结果日志：
+//        2025-08-15 14:55:50.446 17154-17250 ScriptExecutionGlobal  D  onSuccess result =======================
+//        2025-08-15 14:55:50.446 17154-17250 ScriptExecutionGlobal  D  onSuccess result = /storage/emulated/0/Download/e4d799e1-80c6-4cc3-b0e7-3a3364679458.js
+//        2025-08-15 14:55:50.446 17154-17250 ScriptExecutionGlobal  D  onSuccess result = ExecutionConfig(workingDirectory=/storage/emulated/0/Download, path=[], intentFlags=0, delay=0, interval=0, loopTimes=1, scriptConfig=ScriptConfig(features=[], uiMode=false))
+//        2025-08-15 14:55:50.447 17154-17250 ScriptExecutionGlobal  D  onSuccess result =======================
 
 
         //上传文件

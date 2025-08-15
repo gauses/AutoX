@@ -29,8 +29,103 @@ PS D:\works\nestbrowserbuilder> node .\docs\scripts\quickMd5.js NEST_CM_SYNC_COO
 
 
 
+https://chromewebstore.google.com/detail/cookie-editor-cookie-mana/hocoakkpjckombahpgmbhpilegeicdeh
 
 
 
+
+https://creator.collable.com/register?medium=20696
+账户：17681120257
+密码：5201314Ting
+
+
+
+41698	
+Flixbus FI [P]
 	
 	
+	
+因此我们更加推荐在本地python环境中安装airtest和pocoui，然后用命令行运行脚本。
+
+
+
+
+
+如何嵌入PocoSDK(Integration Guide)
+主流引擎直接将我们的sdk嵌入到游戏中即可，sdk总仓库 poco-sdk repo
+https://poco.readthedocs.io/zh-cn/latest/source/doc/integration.html
+	
+	
+Airtest：
+https://github.com/AirtestProject/Airtest/blob/master/README_zh.md
+
+
+
+
+脚本可以直接使用命令行运行：
+https://airtest.doc.io.netease.com/IDEdocs/3.4run_script/1_useCommand_runScript/
+
+
+https://airtest.doc.io.netease.com/tutorial/9_Improved_compatibility/
+- 原生app：
+ - 建议直接使用Poco的UI脚本，在必要的界面判断时用Airtest的图像脚本。
+- 游戏：
+ - 已集成[poco-SDK](https://poco.readthedocs.io/zh_CN/latest/source/README.html#sdk-integration)，使用Poco的UI脚本，必要界面使用图像脚本   
+ - 暂时无法集成SDK，使用图像脚本。	
+ 
+ 
+ Airtest配置本地PY环境：
+ https://airtest.doc.io.netease.com/IDEdocs/airtest_framework/0_airtest_info/
+ 
+ 
+ 1.Poco不可用，只能用Airtest
+ 2.airtest可以直接命令行调用命令，但是airtest怎么接受外部参数 ？
+ 
+ 
+ 
+OK：
+TIKTOK_LIULAN_YANGHAO.js
+TIKTOK_SOUSUO_YANGHAO
+TIKTOK_GUANZHU
+TIKTOK_SHIXIN.js
+TIKTOK_SHARE_VIDEO
+
+
+
+异常：
+TIKTOK_UPDATE_PROFILE.js
+
+ 
+ 
+TIKTOK_GUANZHU：出错
+bellapoarch  
+addisonre  
+zachking  
+therock  
+willsmith  
+domelipa  
+cznburak  
+bts_official_bighit  
+billieeilish  
+williesalim  
+jasonderulo  
+kimberly.loaiza
+
+
+
+24437	
+Samsung-USCPS推广计划	
+高达4.20%
+Samsung-US	
+二只羊
+https://c.duomai.com/track.php?aid=24437&dm_fid=16052&euid=%7B%7BDATETIME%7D%7D&ref=1197194&t=https%3A%2F%2Fwww.samsung.com%2Fus%2F
+
+
+
+
+https://www.facebook.com/profile.php?id=100008451425779
+
+
+
+
+ 

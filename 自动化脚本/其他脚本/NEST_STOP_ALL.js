@@ -15,15 +15,18 @@ var taskLogFileName = "nest_task_log.txt"
 var taskLogImgName = "nest_task_log.png"
 
 
-var TikTokPackageName = 'com.ss.android.ugc.trill';
+var ASIA_TikTokPackageName = 'com.ss.android.ugc.trill';
+var GLOBAL_TikTokPackageName = 'com.zhiliaoapp.musically';
+
 var FaceBookPackageName = 'com.facebook.katana';
 var InstagramPackageName = 'com.instagram.android';
 var TwitterPackageName = 'com.twitter.android';
 var ThreadsPackageName = 'com.threads.android';
 
-var allAPP_PackageName = [TikTokPackageName,FaceBookPackageName,InstagramPackageName,TwitterPackageName,ThreadsPackageName]
+var allAPP_PackageName = [ASIA_TikTokPackageName,GLOBAL_TikTokPackageName,FaceBookPackageName,InstagramPackageName,TwitterPackageName,ThreadsPackageName]
 
-
+var targetPackageName = null;
+var targetClassName = null;
 
 //1.autox.js侧边栏的打开USB调试先打开
 //2.vscode ctrl+shift+p 输入start all server 确定
@@ -92,20 +95,45 @@ if (runningEngines.length > 1) {
 }
 
 
-toast("开始强杀执行任务的APP...")
-forceStopAll()
+// toast("开始强杀执行任务的APP...")
+// forceStopAll()
 sleep(3000)
+
+function isAppInstalled(packageName) {
+    var pm = context.getPackageManager();
+    try {
+        pm.getPackageInfo(packageName, 0);
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
 
 
 function forceStopAll(){
-  allAPP_PackageName.forEach(packageName => {
-    forceStop(packageName)
-  })
+
+    if (isAppInstalled(GLOBAL_TikTokPackageName)) {
+        targetPackageName = GLOBAL_TikTokPackageName;
+        targetClassName = "com.ss.android.ugc.aweme.main.MainActivity";
+        taskLog("检测到已安装全球版TikTok，准备启动...");
+    } else if (isAppInstalled(ASIA_TikTokPackageName)) {
+        targetPackageName = ASIA_TikTokPackageName;
+        targetClassName = "com.ss.android.ugc.aweme.main.MainActivity";
+        taskLog("检测到已安装亚洲版TikTok，准备启动...");
+    } else {
+        toast("未检测到TikTok已安装，请先安装TikTok！");
+        taskLog("未检测到TikTok已安装，脚本终止。");
+        exit();
+    }
+
+    forceStop_APP(targetPackageName)
+    sleep(3000)
 }
 
-//强制停止
-function forceStop(packageName){
-    taskLog("准备kill :" + packageName)
+//强制停止TikTok 
+function forceStop_APP(packageName){
+    taskLog("准备强杀:" + packageName + "...")
+    sleep(1000);
     app.openAppSetting(packageName)
     sleep(5000)
 
@@ -117,6 +145,7 @@ function forceStop(packageName){
             sleep(1000);
             // 确认操作
             if (text("確定").exists()) {
+                taskLog("已经找到可点击的'強制停止'按钮！！！！！！！！！！");
                 text("確定").findOne().click();
             }
         } else {
@@ -128,8 +157,8 @@ function forceStop(packageName){
     sleep(3000)
 
     //简体
-    if (text("强制停止").exists()) {
-        let forceStopBtn = text("强制停止").findOne();
+    if (text("强行停止").exists()) {
+        let forceStopBtn = text("强行停止").findOne();
         if (forceStopBtn && forceStopBtn.clickable()) {
             forceStopBtn.click();
             sleep(1000);
@@ -187,7 +216,6 @@ function forceStop(packageName){
     home()
 
 }
-
 //打印日志
 function taskLog(_log){
     console.log(getSystemDate("df") +":" +_log)

@@ -164,3 +164,8 @@
 
 再点击 Android Studio 菜单 "Build" -> "Generate Signed Bundle /APK..." -> 勾选"APK" -> "Next" -> 选择或新建证书 -> "Next" -> 选择"v6Release" -> "Finish"
 生成的APK文件，在 app/v6/release 下
+
+
+
+### 接口：
+https://help.nestbrowser.com/%E4%BA%91%E6%89%8B%E6%9C%BA/api.html
