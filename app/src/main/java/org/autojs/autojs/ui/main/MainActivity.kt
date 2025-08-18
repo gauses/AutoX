@@ -314,7 +314,7 @@ class MainActivity : FragmentActivity() {
             if (!TextUtils.isEmpty(it)) {
 
                 //初始化保存日志到本地的文件
-                LogFileUtils.initLogFileName()
+//                LogFileUtils.initLogFileName()
 
 
                 val json = JSONObject(URLDecoder.decode(it, "UTF-8"))

@@ -34,7 +34,7 @@ public class GlobalConsole extends ConsoleImpl {
         android.util.Log.d(LOG_tAG, log);
 
         //保存log到本地
-        LogFileUtils.INSTANCE.appendToLogFileWithTimestamp(log );
+//        LogFileUtils.INSTANCE.appendToLogFileWithTimestamp(log );
 
         super.println(level, log);
         return log;
