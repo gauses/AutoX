@@ -100,6 +100,11 @@ var targetPackageName = null;
 var targetClassName = null;
 
 
+function throw_error_storage_not_enough(){
+    throw new Error("当前设备的存储空间不可用，请关机重启一次设备，然后重新执行一次脚本")
+}
+
+
 function isAppInstalled(packageName) {
     var pm = context.getPackageManager();
     try {
@@ -961,7 +966,12 @@ try {
 
          // 开始主循环
         var commentTextArrays = get_post_text()
+        if(commentTextArrays.includes("$${T")){ 
+            throw_error_storage_not_enough()
+        }
         toast("Instagram评论文案总数：" + commentTextArrays.length)
+
+
 
         for(var i = 0; i < all_TT_VIDEO_LINK.length; i++){
             taskLog("当前Instagram帖子在第" + (i+1) + "个 = " + all_TT_VIDEO_LINK[i])      
@@ -1011,12 +1021,19 @@ try {
                         var randIdx = random(0, commentTextArrays.length - 1)
                         var messageText = commentTextArrays[randIdx];
 
-                        // toast("评论文案：" + messageText)
-                        taskLog("准备点击评论按钮....");
-                        click_Comment_Btn(messageText)
+                        if(!messageText.toLocaleString().equals("off")){
+                            // toast("评论文案：" + messageText)
+                            taskLog("准备点击评论按钮....");
+                            click_Comment_Btn(messageText)
 
-                        taskLog("等待5秒后，准备返回上一个页面")
-                        sleep(random(3000, 5000))
+                            taskLog("等待5秒后，准备返回上一个页面")
+                            sleep(random(3000, 5000))
+
+                        }else{
+                            taskLog("评论文案为off，所以不点击评论按钮");
+                        }
+
+
                     }else{
                         toast("评论文案为空，所以不点击评论按钮");
                     }
