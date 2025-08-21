@@ -1,0 +1,25 @@
+TikTok 在 Android 里内置了 自定义 Scheme，一般格式是：
+
+snssdk1233://
+
+
+其中 1233 是 TikTok 的包 ID。常见的几种调用：
+
+1.打开主页
+snssdk1233://user/profile/uid=123456789
+
+
+2.打开视频
+snssdk1233://aweme/detail/7538653734172118303
+
+
+3.打开话题
+snssdk1233://challenge/detail/1234567
+想通过深链打开话题页，就要找到对应话题的 challengeId，拼到 snssdk1233://challenge/detail/<challengeId>
+
+
+
+TikTok（或抖音）的数据结构：
+ - 每个用户有一个 UID（user id）
+ - 每个视频有一个 VID（aweme id / video id）
+ - 每个话题（hashtag）有一个 CID（challenge id / topic id）
