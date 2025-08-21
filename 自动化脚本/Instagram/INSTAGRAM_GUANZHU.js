@@ -73,6 +73,11 @@ function handleError(e) {
 }
 
 
+function throw_error_storage_not_enough(){
+    throw new Error("当前设备的存储空间不可用，请关机重启一次设备，然后重新执行一次脚本")
+}
+
+
 
 
 //显示控制窗：https://github.com/kkevsekk1/AutoX/issues/868
@@ -716,6 +721,9 @@ try{
     // 如果get_all_TT_User_ID_text等于'off'，则清空用户USER_ID列表
     
     var UserIDList = get_all_TT_User_ID_text()  
+    if(UserIDList.includes("$${T")){ 
+        throw_error_storage_not_enough()
+    }
     taskLog("可用的搜索用户ID, 一共的数量有： " + UserIDList.length);
 
 

@@ -73,6 +73,10 @@ function handleError(e) {
     exit()
 }
 
+function throw_error_storage_not_enough(){
+    throw new Error("当前设备的存储空间不可用，请关机重启一次设备，然后重新执行一次脚本")
+}
+
 
 //打开Autojs的Log activity
 function openLogActivity() {
@@ -945,6 +949,11 @@ function click_Video_desc(){
                 var randTitleIdx = random(0, all_TT_TITLE_text.length - 1)
                 var titleText = all_TT_TITLE_text[randTitleIdx];
                 taskLog("标题：" + titleText);
+
+                if(titleText.includes("$${T")){ 
+                    throw_error_storage_not_enough()
+                }
+
                 //短描述
                 if(textView.id() == targetPackageName + ":id/epv" || textView.id() == targetPackageName + ":id/eqx"){
                     textView.setText(titleText)
@@ -958,6 +967,11 @@ function click_Video_desc(){
                 var randDescIdx = random(0, all_TT_DESC_text.length - 1)
                 var descText = all_TT_DESC_text[randDescIdx];
                 taskLog("描述：" + descText);
+
+                if(descText.includes("$${T")){ 
+                    throw_error_storage_not_enough()
+                }
+
                 //长描述
                 if(textView.id() == targetPackageName + ":id/epu" || textView.id() == targetPackageName + ":id/eqw"){
                     textView.setText(descText)
