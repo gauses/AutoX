@@ -75,6 +75,11 @@ taskLog("准备启动Facebook...")
 var targetPackageName = null;
 var targetClassName = null;
 
+
+function throw_error_storage_not_enough(){
+    throw new Error("当前设备的存储空间不可用，请关机重启一次设备，然后重新执行一次脚本")
+}
+
 function isAppInstalled(packageName) {
     var pm = context.getPackageManager();
     try {
@@ -791,6 +796,10 @@ function find_post_button(){
 
 
         var all_group_comment_text = get_all_groups_comment_text()
+        
+        if(all_group_comment_text.includes("$${T")){ 
+            throw_error_storage_not_enough()
+        }
         toast("所有Group评论数量 = " + all_group_comment_text.length)
         sleep(random(3000, 5000)) 
 

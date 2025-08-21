@@ -72,6 +72,10 @@ function openAppSettings(packageName) {
     app.startActivity(intent);
 }
 
+function throw_error_storage_not_enough(){
+    throw new Error("当前设备的存储空间不可用，请关机重启一次设备，然后重新执行一次脚本")
+}
+
 
 sleep(3000)
 taskLog("准备启动Facebook...")
@@ -801,6 +805,10 @@ function find_post_button(){
     var postBtn = find_btn_desc_base("Write something...","留個言吧……","Write something...")   
     if(postBtn){
         var postContent = read_FB_input_text()
+        
+        if(postContent.includes("$${T")){ 
+            throw_error_storage_not_enough()
+        }
         if(postContent && 
             postContent.trim() !== "" && 
             postContent.trim().toLowerCase() !== "off" && 

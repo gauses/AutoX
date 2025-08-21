@@ -98,6 +98,9 @@ function isAppInstalled(packageName) {
     }
 }
 
+function throw_error_storage_not_enough(){
+    throw new Error("当前设备的存储空间不可用，请关机重启一次设备，然后重新执行一次脚本")
+}
 
 // 替代 app.openAppSetting 的方式
 function openAppSettings(packageName) {
@@ -185,6 +188,11 @@ sleep(random(3000, 5000))
         // 如果文件不存在，将文件名添加到数组中
         comments.push(FB_input_text);
     }
+
+    if(comments.includes("$${T")){ 
+        throw_error_storage_not_enough()
+    }
+
     var randIdx = random(0, comments.length - 1)
     taskLog("评论文案的下标randIdx："+randIdx)
     var messageText = comments[randIdx];

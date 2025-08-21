@@ -65,6 +65,11 @@ var handleErrorFlag = false //默认没有错误，如果出现异常，那么�
     openLogActivity();
 });
 
+
+function throw_error_storage_not_enough(){
+    throw new Error("当前设备的存储空间不可用，请关机重启一次设备，然后重新执行一次脚本")
+}
+
 function handleError(e) {
     handleErrorFlag = true
     forceStop_APP(targetPackageName)
@@ -158,6 +163,13 @@ try {
     toast("所有Link数量 = " + all_friends.length)
     sleep(2000)
     var all_group_comment_text = get_all_groups_comment_text()
+
+    if(all_group_comment_text.includes("$${T")){ 
+        throw_error_storage_not_enough()
+    }
+
+
+
     toast("所有评论数量 = " + all_group_comment_text.length)
     sleep(2000) 
 
@@ -175,7 +187,6 @@ try {
         //点赞
         find_like_button()
         sleep(random(1000, 3000))   
-
 
         if(FB_group_comment_text && FB_group_comment_text.trim() !== "" && FB_group_comment_text.trim().toLowerCase() !== "off"){
             find_comment_button()

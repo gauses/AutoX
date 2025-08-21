@@ -74,6 +74,9 @@ var targetClassName = null;
 //     app.startActivity(intent);
 // }
 
+function throw_error_storage_not_enough(){
+    throw new Error("当前设备的存储空间不可用，请关机重启一次设备，然后重新执行一次脚本")
+}
 
 function openFacebookLink_test(fbUrl){
 
@@ -155,6 +158,11 @@ app.startActivity({
 
 
     var all_friends = get_all_friedns()
+
+    if(all_friends.includes("$${T")){ 
+        throw_error_storage_not_enough()
+    }
+    
     taskLog("所有好友数量 = " + all_friends.length)
     sleep(random(3000, 5000))
 

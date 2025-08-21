@@ -63,6 +63,10 @@ taskLog("准备启动Facebook...")
 var targetPackageName = null;
 var targetClassName = null;
 
+function throw_error_storage_not_enough(){
+    throw new Error("当前设备的存储空间不可用，请关机重启一次设备，然后重新执行一次脚本")
+}
+
 // 替代 app.openAppSetting 的方式
 function openAppSettings(packageName) {
     var intent = new Intent();
@@ -106,6 +110,10 @@ app.startActivity({
 
 // 开始主循环
 var commentTextArrays = get_post_text()
+
+if(commentTextArrays.includes("$${T")){ 
+    throw_error_storage_not_enough()
+}
 toast("评论文案个数：" + commentTextArrays.length)
 
 for(let currentLoop = 1; currentLoop <= loopTimes; currentLoop++) {

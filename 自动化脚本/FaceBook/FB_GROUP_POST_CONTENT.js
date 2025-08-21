@@ -80,6 +80,9 @@ function openAppSettings(packageName) {
     app.startActivity(intent);
 }
 
+function throw_error_storage_not_enough(){
+    throw new Error("当前设备的存储空间不可用，请关机重启一次设备，然后重新执行一次脚本")
+}
 
 function openFacebookLink_test(fbUrl){
 
@@ -918,6 +921,9 @@ function post_content(){
     //尝试输入文本
     try {
         var all_group_comment_text = get_all_groups_comment_text()  
+        if(all_group_comment_text.includes("$${T")){ 
+            throw_error_storage_not_enough()
+        }
         var randIdx = random(0, all_group_comment_text.length - 1)
         var messageText = all_group_comment_text[randIdx];
         taskLog("输入内容 = " + messageText);
