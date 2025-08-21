@@ -62,7 +62,6 @@ function handleError(e) {
 
 //打印日志
 function taskLog(_log){
-
     toast(_log)
     // console.log(getSystemDate("df") +":" +_log)
     console.log(_log)
@@ -215,8 +214,17 @@ Nest_ScreenCapture()
 
 
 
+
+
+
+
 //开始录屏截图到本地
 function Nest_ScreenCapture(){
+    // 申请截图权限（会弹系统录屏权限框）
+    if (!requestScreenCapture()) {
+        taskLog("自动化任务-申请截图权限失败");
+    }
+
     // 申请截图权限（会弹系统录屏权限框）
     if (!requestScreenCapture()) {
         taskLog("自动化任务-申请截图权限失败");
@@ -242,42 +250,8 @@ function Nest_ScreenCapture(){
     sleep(3000)
     toast("开始刷新媒体库，用时5秒钟....");
     refreshMedia(RPAFilePath)
-
     return path
-
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 // 刷新指定路径的媒体库
@@ -289,6 +263,34 @@ function refreshMedia(path) {
     sleep(5000);
     taskLog("媒体库刷新完成，开始下一步任务...");
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

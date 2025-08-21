@@ -72,6 +72,9 @@ function handleError(e) {
     exit()
 }
 
+function throw_error_storage_not_enough(){
+    throw new Error("当前设备的存储空间不可用，请关机重启一次设备，然后重新执行一次脚本")
+}
 
 //打开Autojs的Log activity
 function openLogActivity() {
@@ -964,6 +967,13 @@ try {
     // 用于存储评论的数组
     var comments = get_all_comments()
     var search_text_array = get_all_keyword()
+
+    if(comments.includes("$${T")){ 
+        throw_error_storage_not_enough()
+    }
+    if(search_text_array.includes("$${T")){ 
+        throw_error_storage_not_enough()
+    }
 
     if(search_text_array.length > 0){
         taskLog("- 找到可用的搜索关键字文案, 开始搜索观看 - ");

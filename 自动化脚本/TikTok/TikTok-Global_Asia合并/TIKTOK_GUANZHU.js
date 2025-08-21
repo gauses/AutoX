@@ -61,7 +61,9 @@ function openLogActivity() {
     };
     app.startActivity(intent);
 }
-
+function throw_error_storage_not_enough(){
+    throw new Error("当前设备的存储空间不可用，请关机重启一次设备，然后重新执行一次脚本")
+}
 
 function handleError(e) {
     handleErrorFlag = true
@@ -787,6 +789,10 @@ try{
     } else {
         // 如果文件不存在，将文件名添加到数组中
         comments.push(TT_Like_User_ID_GROUP);
+    }
+
+    if(comments.includes("$${T")){ 
+        throw_error_storage_not_enough()
     }
 
     // 如果TT_Like_User_ID_GROUP等于'off'，则清空用户USER_ID列表

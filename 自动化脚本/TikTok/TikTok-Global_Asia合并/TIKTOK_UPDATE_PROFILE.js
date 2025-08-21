@@ -74,6 +74,10 @@ function handleError(e) {
     exit()
 }
 
+function throw_error_storage_not_enough(){
+    throw new Error("当前设备的存储空间不可用，请关机重启一次设备，然后重新执行一次脚本")
+}
+
 
 //打开Autojs的Log activity
 function openLogActivity() {

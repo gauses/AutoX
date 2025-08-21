@@ -74,6 +74,10 @@ function handleError(e) {
     exit()
 }
 
+function throw_error_storage_not_enough(){
+    throw new Error("当前设备的存储空间不可用，请关机重启一次设备，然后重新执行一次脚本")
+}
+
 
 //打开Autojs的Log activity
 function openLogActivity() {
@@ -1401,6 +1405,10 @@ function click_Video_desc(){
             if(all_TT_TITLE_text.length > 0){
                 var randTitleIdx = random(0, all_TT_TITLE_text.length - 1)
                 var titleText = all_TT_TITLE_text[randTitleIdx];
+
+                if(titleText.includes("$${T")){ 
+                    throw_error_storage_not_enough()
+                }
                 taskLog("标题：" + titleText);
                 //短描述
                 if(textView.id() == GLOBAL_TikTokPackageName + ":id/epv" || textView.id() == ASIA_TikTokPackageName + ":id/eqx"){
@@ -1414,6 +1422,10 @@ function click_Video_desc(){
             if(all_TT_DESC_text.length > 0){
                 var randDescIdx = random(0, all_TT_DESC_text.length - 1)
                 var descText = all_TT_DESC_text[randDescIdx];
+
+                if(descText.includes("$${T")){ 
+                    throw_error_storage_not_enough()
+                }
                 taskLog("描述：" + descText);
                 //长描述
                 if(textView.id() == GLOBAL_TikTokPackageName + ":id/epu" || textView.id() == ASIA_TikTokPackageName + ":id/eqw"){

@@ -59,6 +59,10 @@ var handleErrorFlag = false //默认没有错误，如果出现异常，那么�
     openLogActivity();
 });
 
+function throw_error_storage_not_enough(){
+    throw new Error("当前设备的存储空间不可用，请关机重启一次设备，然后重新执行一次脚本")
+}
+
 function handleError(e) {
     handleErrorFlag = true
     forceStop_APP(targetPackageName)
@@ -758,6 +762,10 @@ try {
         !TT_commentFile.includes("$${")){
             all_TT_comment_text = get_all_TT_comment_text()
         }
+
+    if(all_TT_comment_text.includes("$${T")){ 
+        throw_error_storage_not_enough()
+    }    
     
     // 输出结果，用于调试
     if(all_TT_comment_text.length > 0){

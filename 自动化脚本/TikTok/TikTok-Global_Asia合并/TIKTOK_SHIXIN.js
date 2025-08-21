@@ -78,6 +78,9 @@ function openLogActivity() {
     app.startActivity(intent);
 }
 
+function throw_error_storage_not_enough(){
+    throw new Error("当前设备的存储空间不可用，请关机重启一次设备，然后重新执行一次脚本")
+}
 
 taskLog("开始强制关闭同名的脚本...")
 let currentEngine = engines.myEngine()
@@ -874,10 +877,16 @@ try {
 
 
     var all_TT_Comment_TEXT = get_all_comments()
+    if(all_TT_Comment_TEXT.includes("$${T")){ 
+        throw_error_storage_not_enough()
+    }
     toast("所有需要私信的文本数量 = " + all_TT_Comment_TEXT.length)
     sleep(random(2000,3000))
 
     var all_TT_Users = get_all_TT_Users()
+    if(all_TT_Users.includes("$${T")){ 
+        throw_error_storage_not_enough()
+    }
     toast("所有需要私信的用户数量 = " + all_TT_Users.length)
     sleep(random(2000,3000))
 
