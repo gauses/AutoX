@@ -159,7 +159,7 @@ function openTikTokByUrl(tiktokUrl){
     // 3. 构造 Intent 打开 TikTok
     var intent = new android.content.Intent(android.content.Intent.ACTION_VIEW);
     intent.setData(android.net.Uri.parse(deepLink));
-    intent.setPackage("com.zhiliaoapp.musically"); // TikTok 国际版包名
+    intent.setPackage(targetPackageName); // TikTok 包名
     intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
 
     // 4. 直接启动
