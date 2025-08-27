@@ -373,26 +373,23 @@ function click_LinearLayout_GUANZHU(){
                 if (linearLayout.id() == (GLOBAL_TikTokPackageName +":id/iz8") || linearLayout.id() == (ASIA_TikTokPackageName +":id/iz9")) {
                     taskLog("找到第 " + (clickCount + 1) + " 个可点击的LinearLayout");
                     
-                    // 点击LinearLayout
+                    // 点击LinearLayout，进入用户页面
                     var linearLayout_click = clickId(linearLayout.id());
-                    taskLog("点击LinearLayout = " + linearLayout.id())
-                    if (linearLayout_click) {
-                        sleep(random(2000, 4000));
-                        
-                        // 等待页面加载并尝试点击Follow按钮
-                        sleep(random(3000, 5000)); // 先等待页面加载
-                        var findFollowTextResult = find_textview_text_base("關注", "Follow", "關注");
-                        if(!findFollowTextResult) {
-                            taskLog("没有找到Follow按钮，返回上一页");
-                            sleep(2000);
-                            back();
-                        } else {
-                            clickCount++;
-                            taskLog("成功点击第 " + clickCount + " 个Follow按钮");
-                            sleep(random(2000, 3000)); // 等待Follow操作完成
-                        }
-                        //sleep(random(2000, 3000));
-                        sleep(30000000)
+                    taskLog("点击LinearLayout，进入用户页面 = " + linearLayout.id())
+                    sleep(random(3000, 5000)); // 等待页面加载
+                    
+                    // 在用户页面寻找并点击Follow按钮
+                    var findFollowTextResult = find_textview_text_base("關注", "Follow", "關注");
+                    if(!findFollowTextResult) {
+                        taskLog("在用户页面没有找到Follow按钮，返回上一页");
+                        sleep(2000);
+                        back();
+                    } else {
+                        clickCount++;
+                        taskLog("在用户页面成功点击Follow按钮，这是第 " + clickCount + " 个");
+                        sleep(random(3000, 5000)); // 等待Follow操作完成
+                        back(); // 返回搜索结果页面
+                        sleep(random(2000, 3000)); // 等待返回动画完成
                     }
                 }
             }
