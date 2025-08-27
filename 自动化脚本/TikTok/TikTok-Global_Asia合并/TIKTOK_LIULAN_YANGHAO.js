@@ -798,7 +798,7 @@ try {
             click_Save_Btn()
             sleep(random(3000, 5000))
         }else{
-            taskLog("本次无法触发保存视频概率")
+            taskLog("本次不触发保存视频概率")
         }
         if (Math.random() * 100 < TT_Comment_Count)  {
             taskLog("开始触发评论视频概率")

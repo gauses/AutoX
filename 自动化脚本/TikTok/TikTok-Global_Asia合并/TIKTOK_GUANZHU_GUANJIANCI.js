@@ -4,7 +4,7 @@ importClass(java.io.PrintWriter);
 importClass(java.io.FileWriter);
 
 //******************************************************************
-//***********************Tiktok关注(根据关注列表UID的顺序，去关注用戶)*************************
+//***********************Tiktok关注（根据地区和关键词，然后去批量关注）*************************
 //******************************************************************
 
 
@@ -16,7 +16,10 @@ var taskLogImgName = "nest_task_log.png"
 
 
 //用户需要输入的关注用户ID列表
-const TT_Like_User_ID_GROUP = '$${T_用户ID列表}';
+const TT_Like_User_ID_KEYWORD = '$${T_需要关注指定的关键词}';
+const TT_Like_User_COUNT = '$${需要关注的用户数量}'; // 每个号关注多少人 ： 如果为0，则限制关注数量是1
+
+
 
 var ASIA_TikTokPackageName = 'com.ss.android.ugc.trill';
 var GLOBAL_TikTokPackageName = 'com.zhiliaoapp.musically';
@@ -772,8 +775,8 @@ try{
     // 用于存储评论的数组
     let comments = [];
     // 检查文件是否存在
-    toast("关注列表地址 =  " + TT_Like_User_ID_GROUP)
-    const file = new java.io.File(TT_Like_User_ID_GROUP);
+    toast("关注列表地址 =  " + TT_Like_User_ID_KEYWORD)
+    const file = new java.io.File(TT_Like_User_ID_KEYWORD);
     if (file.exists() && file.isFile()) {
         try {
             // 读取文件内容
@@ -788,19 +791,19 @@ try{
         }
     } else {
         // 如果文件不存在，将文件名添加到数组中
-        comments.push(TT_Like_User_ID_GROUP);
+        comments.push(TT_Like_User_ID_KEYWORD);
     }
 
     if(comments.includes("$${T")){ 
         throw_error_storage_not_enough()
     }
 
-    // 如果TT_Like_User_ID_GROUP等于'off'，则清空用户USER_ID列表
-    if (TT_Like_User_ID_GROUP.trim().toLowerCase() == 'off') {
+    // 如果TT_Like_User_ID_KEYWORD等于'off'
+    if (TT_Like_User_ID_KEYWORD.trim().toLowerCase() == 'off') {
         comments = [];
     }
 
-    taskLog("可用的搜索用户ID, 一共的数量有： " + comments.length);
+    taskLog("可用的关注关键词, 一共的数量有： " + comments.length);
 
 
     taskLog("开始点击首页搜索按钮")
@@ -808,12 +811,12 @@ try{
     sleep(random(2000, 4000))
 
     // 按照顺序开始执行搜索User-ID
-    toast("- 找到可用的搜索用户ID, 一共的数量有： " + comments.length);
+    toast("- 找到可用的搜索关键词, 一共的数量有： " + comments.length);
     if (comments.length > 0) {
-        taskLog("- 找到可用的搜索用户ID, 开始搜索观看 - ");
+        taskLog("- 找到可用的搜索关键词, 开始搜索观看 - ");
         for (var randIdx = 0; randIdx < comments.length; randIdx++) {
             var commentText = comments[randIdx];
-            taskLog("- 找到可用的搜索用户ID: "+commentText+", 开始搜索 - ");
+            taskLog("- 找到可用的搜索关键词: "+commentText+", 开始搜索 - ");
             taskLog("开始准备点击首页搜索按钮")
 
 
@@ -839,21 +842,38 @@ try{
 
                     sleep(random(3000, 5000))
 
-                    click_LinearLayout_GUANZHU()
+
+                    //按照要求的数量，开始准备关注用户
+                    if(TT_Like_User_COUNT > 0) {
+
+                        //开始关注用户
+                        for(var j = 0; j < TT_Like_User_COUNT; j++) {
+                            taskLog("开始准备关注用户，按照要求的数量，开始准备关注用户")
+                            click_LinearLayout_GUANZHU()
+                            sleep(random(2000, 4000))
+
+                            //text("關注")
+                            var findFollowTextResult = find_textview_text_base("關注", "Follow", "關注")
+                            if(!findFollowTextResult) {
+                                taskLog("没有找到Follow控件，终止本次操作，开始下一个用户的Follow行为！！！");
+                                sleep(3000)
+                                back()
+                                sleep(1000)
+                                back()
+                                sleep(3000)
+                                break
+                            }
+                            sleep(random(2000, 4000))
+
+                        }
 
 
-                    //text("關注")
-                    var findFollowTextResult = find_textview_text_base("關注", "Follow", "關注")
-                    if(!findFollowTextResult) {
-                        taskLog("没有找到Follow控件，终止本次操作，开始下一个用户的Follow行为！！！");
-                        sleep(3000)
-                        back()
-                        sleep(1000)
-                        back()
-                        sleep(3000)
-                        break
+
+                        
                     }
-                    sleep(random(2000, 4000))
+
+
+
                 }
             }
 
@@ -861,8 +881,8 @@ try{
         }
         
     }else{
-        toast("- 没有可用的搜索用户ID, 忽略 - ");
-        throw new error("没有可用的搜索用户ID，无法关注，所以报错")
+        toast("- 没有可用的搜索关键词, 忽略 - ");
+        throw new error("没有可用的搜索关键词，无法关注，所以报错")
     }
 
 }catch(e) {
