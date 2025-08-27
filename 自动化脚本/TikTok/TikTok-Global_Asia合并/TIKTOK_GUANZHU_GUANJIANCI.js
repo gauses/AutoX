@@ -849,21 +849,34 @@ try{
                         //开始关注用户
                         for(var j = 0; j < TT_Like_User_COUNT; j++) {
                             taskLog("开始准备关注用户，按照要求的数量，开始准备关注用户")
-                            click_LinearLayout_GUANZHU()
-                            sleep(random(2000, 4000))
+                            // click_LinearLayout_GUANZHU()
+                            // sleep(random(2000, 4000))
 
                             //text("關注")
-                            var findFollowTextResult = find_textview_text_base("關注", "Follow", "關注")
-                            if(!findFollowTextResult) {
-                                taskLog("没有找到Follow控件，终止本次操作，开始下一个用户的Follow行为！！！");
-                                sleep(3000)
-                                back()
-                                sleep(1000)
-                                back()
-                                sleep(3000)
-                                break
+                            // var findFollowTextResult = find_textview_text_base("關注", "Follow", "關注")
+                            // if(!findFollowTextResult) {
+                            //     taskLog("没有找到Follow控件，终止本次操作，开始下一个用户的Follow行为！！！");
+                            //     sleep(3000)
+                            //     back()
+                            //     sleep(1000)
+                            //     back()
+                            //     sleep(3000)
+                            //     break
+                            // }
+                            // sleep(random(2000, 4000))
+
+
+                            //直接在当前页面，找到Follow按钮，然后点击关注
+                            //Follow按钮：fullId("com.zhiliaoapp.musically:id/rgf") clickable("false")
+                            var findFollowBtn = className("android.widget.Button").id("rgf").findOne(1000);
+                            if(findFollowBtn) {
+                                taskLog("找到Follow按钮，点击关注");
+                                click(findFollowBtn.bounds().centerX(), findFollowBtn.bounds().centerY())
+                                sleep(random(2000, 4000))
+                            }else{
+                                taskLog("没有找到Follow按钮，终止本次操作，开始下一个用户的Follow行为！！！");
                             }
-                            sleep(random(2000, 4000))
+
 
                         }
 
