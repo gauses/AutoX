@@ -322,8 +322,8 @@ function swipe_to_up(){
 
     // 屏幕上滑操作
     swipe(startX, startY, endX, endY, 500);
-    taskLog("开始滑动位置，x = "+startX+"；y = " + startY)
-    taskLog("结束滑动位置，x = "+endX+"；y = " + endY)
+    // taskLog("开始滑动位置，x = "+startX+"；y = " + startY)
+    // taskLog("结束滑动位置，x = "+endX+"；y = " + endY)
 
 }
 
@@ -356,33 +356,59 @@ function click_Second_search_btn(){
 }
 
 
-//输入需要关注的用户ID之后，找到第一个User的LinearLayout
+//输入需要关注的用户ID之后，找到所有User的LinearLayout并执行Follow
 function click_LinearLayout_GUANZHU(){
-
     sleep(random(2000, 5000))
     var allLinearLayout = className("android.widget.LinearLayout").find();
+    var clickCount = 0; // 记录成功点击Follow的次数
+    
     if (allLinearLayout && allLinearLayout.size() > 0) {
+        taskLog("找到 " + allLinearLayout.size() + " 个LinearLayout控件");
+        
         for (var i = 0; i < allLinearLayout.size(); i++) {
             var linearLayout = allLinearLayout.get(i);
             if (linearLayout) {
-                taskLog("找到linearLayout控件-Text：" + linearLayout.text() + ";ID = " + linearLayout.id());
-                
-				//fullId("com.zhiliaoapp.musically:id/iz8")
+                //fullId("com.zhiliaoapp.musically:id/iz8")
                 //fullId("com.ss.android.ugc.trill:id/iz9")
-
                 if (linearLayout.id() == (GLOBAL_TikTokPackageName +":id/iz8") || linearLayout.id() == (ASIA_TikTokPackageName +":id/iz9")) {
-                    var linearLayout_click = clickId(linearLayout.id())
+                    taskLog("找到第 " + (clickCount + 1) + " 个可点击的LinearLayout");
+                    
+                    // 点击LinearLayout
+                    var linearLayout_click = clickId(linearLayout.id());
+                    taskLog("点击LinearLayout = " + linearLayout.id())
                     if (linearLayout_click) {
-                        taskLog("找到LinearLayout控件:开始点击第一个" );
-                        break;
+                        sleep(random(2000, 4000));
+                        
+                        // 等待页面加载并尝试点击Follow按钮
+                        sleep(random(3000, 5000)); // 先等待页面加载
+                        var findFollowTextResult = find_textview_text_base("關注", "Follow", "關注");
+                        if(!findFollowTextResult) {
+                            taskLog("没有找到Follow按钮，返回上一页");
+                            sleep(2000);
+                            back();
+                        } else {
+                            clickCount++;
+                            taskLog("成功点击第 " + clickCount + " 个Follow按钮");
+                            sleep(random(2000, 3000)); // 等待Follow操作完成
+                        }
+                        //sleep(random(2000, 3000));
+                        sleep(30000000)
+                    }
                 }
-                
+            }
+            
+            // 如果已经达到目标关注数，提前退出循环
+            if(clickCount >= TT_Like_User_COUNT) {
+                break;
             }
         }
     }
-    sleep(random(2000, 5000))
+    
+    taskLog("当前页面完成 " + clickCount + " 个Follow操作");
+    sleep(random(2000, 5000));
+    return clickCount;  // 返回成功点击Follow的次数
 }
-}
+
 
 
 
@@ -775,7 +801,7 @@ try{
     // 用于存储评论的数组
     let comments = [];
     // 检查文件是否存在
-    toast("关注列表地址 =  " + TT_Like_User_ID_KEYWORD)
+    toast("关注关键词 =  " + TT_Like_User_ID_KEYWORD)
     const file = new java.io.File(TT_Like_User_ID_KEYWORD);
     if (file.exists() && file.isFile()) {
         try {
@@ -866,15 +892,39 @@ try{
                             // sleep(random(2000, 4000))
 
 
-                            //直接在当前页面，找到Follow按钮，然后点击关注
-                            //Follow按钮：fullId("com.zhiliaoapp.musically:id/rgf") clickable("false")
-                            var findFollowBtn = className("android.widget.Button").id("rgf").findOne(1000);
-                            if(findFollowBtn) {
-                                taskLog("找到Follow按钮，点击关注");
-                                click(findFollowBtn.bounds().centerX(), findFollowBtn.bounds().centerY())
-                                sleep(random(2000, 4000))
-                            }else{
-                                taskLog("没有找到Follow按钮，终止本次操作，开始下一个用户的Follow行为！！！");
+                            //直接在当前页面，找到所有Follow按钮
+                            var followedCount = 0; // 已关注的数量
+                            var noNewButtonCount = 0; // 连续滑动没找到新按钮的次数
+                            
+                            while(followedCount < TT_Like_User_COUNT && noNewButtonCount < 3) {
+                                // 获取当前页面所有Follow按钮
+                                taskLog("开始查找当前页面的Follow按钮...");
+                                // 尝试点击当前页面的所有LinearLayout
+                                var clickCount = click_LinearLayout_GUANZHU();
+                                
+                                if(clickCount > 0) {
+                                    followedCount += clickCount;
+                                    noNewButtonCount = 0; // 重置计数器
+                                    taskLog("当前已关注 " + followedCount + "/" + TT_Like_User_COUNT + " 个用户");
+                                } else {
+                                    taskLog("当前页面没有找到可点击的Follow按钮");
+                                    noNewButtonCount++;
+                                }
+
+                                // // 如果还没达到目标数量且未超过最大尝试次数，就继续滑动
+                                // if(followedCount < TT_Like_User_COUNT && noNewButtonCount < 3) {
+                                //     taskLog("继续滑动寻找更多用户");
+                                //     swipe_to_up();
+                                //     sleep(random(2000, 3000));
+                                // }
+
+
+                            }
+                            
+                            if(followedCount < TT_Like_User_COUNT) {
+                                taskLog("已滑动多次仍未找到足够的Follow按钮，已关注" + followedCount + "个用户，继续下一个关键词");
+                            } else {
+                                taskLog("已完成目标关注数量：" + followedCount + "个用户");
                             }
 
 
