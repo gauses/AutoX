@@ -856,30 +856,79 @@ try{
 
                     //按照要求的数量，开始准备关注用户
                     if(TT_Like_User_COUNT > 0) {
+                        // 当前已关注的用户数量
+                        var currentFollowCount = 0;
+                        // 滑动次数计数
+                        var scrollCount = 0;
+                        // 最大滑动次数
+                        const MAX_SCROLL_COUNT = 5;
 
-                        //开始关注用户
-                        for(var j = 0; j < TT_Like_User_COUNT; j++) {
-                            taskLog("开始准备关注用户，按照要求的数量，开始准备关注用户")
-
+                        // 只要没达到目标关注数量且未超过最大滑动次数，就继续执行
+                        while(currentFollowCount < TT_Like_User_COUNT && scrollCount < MAX_SCROLL_COUNT) {
+                            taskLog("当前已关注数量：" + currentFollowCount + "，目标数量：" + TT_Like_User_COUNT);
+                            
                             //直接在当前页面，找到Follow按钮，然后点击关注
-                            //Follow按钮：fullId("com.zhiliaoapp.musically:id/rgf") clickable("false")
                             var allButtons = className("android.widget.Button").find();
                             taskLog("找到的按钮数量：" + allButtons.size());
+                            
+                            var foundFollowButtonInCurrentPage = false;
+                            
+                            // 遍历当前页面的所有按钮
                             for(var k = 0; k < allButtons.size(); k++) {
+                                if(currentFollowCount >= TT_Like_User_COUNT) {
+                                    taskLog("已达到目标关注数量，停止任务！");
+                                    break;
+                                }
+
                                 var button = allButtons.get(k);
                                 if(button) {
-
+                                    taskLog("当前Button Text: " + button.text() );
                                     if(button.text() == FOLLOW_TEXT.ZH_CN || button.text() == FOLLOW_TEXT.ZH_TW 
                                     || button.text() == FOLLOW_TEXT.EN_US) {
-                                        click(button.bounds().centerX(), button.bounds().centerY())
-                                        sleep(random(3000, 5000))
+                                        foundFollowButtonInCurrentPage = true;
                                         
+                                        // 获取按钮的边界
+                                        var bounds = button.bounds();
+                                        var centerX = bounds.centerX();
+                                        var centerY = bounds.centerY();
+                                        
+                                        // 检查坐标值是否有效
+                                        if(centerX > 0 && centerY > 0 && centerX < device.width && centerY < device.height) {
+                                            taskLog("准备点击按钮，坐标：(" + centerX + ", " + centerY + ")");
+                                            taskLog("按钮边界信息：left=" + bounds.left + ", top=" + bounds.top + 
+                                                  ", right=" + bounds.right + ", bottom=" + bounds.bottom);
+                                            
+                                            click(centerX, centerY);
+                                            currentFollowCount++;
+                                            taskLog("完成第 " + currentFollowCount + " 个关注");
+                                            sleep(random(3000, 5000));
+                                        } else {
+                                            taskLog("警告：按钮坐标无效！坐标：(" + centerX + ", " + centerY + ")，设备屏幕：(" + device.width + " x " + device.height + ")");
+                                        }
                                     }
-                            
                                 }
                             }
 
-                        }  
+                            // 如果当前页面没有找到可关注的按钮，或者还没达到目标数量，就往下滑动
+                            if(!foundFollowButtonInCurrentPage || currentFollowCount < TT_Like_User_COUNT) {
+                                scrollCount++;
+                                taskLog("往下滑动第 " + scrollCount + " 次");
+                                // 确保滑动的起点和终点都在屏幕范围内
+                                var startY = Math.floor(device.height * 0.7);  // 起点在屏幕70%位置
+                                var endY = Math.floor(device.height * 0.3);    // 终点在屏幕30%位置
+                                var centerX = Math.floor(device.width / 2);    // 水平中心点
+                                
+                                taskLog("开始滑动，起点坐标：(" + centerX + ", " + startY + ")，终点坐标：(" + centerX + ", " + endY + ")");
+                                swipe(centerX, startY, centerX, endY, 1000);
+                                sleep(random(2000, 3000));
+                            }
+
+                            // 如果达到最大滑动次数但还未完成目标，提示用户
+                            if(scrollCount >= MAX_SCROLL_COUNT && currentFollowCount < TT_Like_User_COUNT) {
+                                taskLog("已达到最大滑动次数（" + MAX_SCROLL_COUNT + "次），但只完成了 " + currentFollowCount + " 个关注，任务终止！");
+                                break;
+                            }
+                        }
                     }
 
 
