@@ -782,6 +782,8 @@ try{
                 taskLog("已保存完成后的截图：" + screenshotPath);
 
             }else{
+                Nest_ScreenCapture()
+                sleep(random(3000, 5000))
                 taskLog("设置的取消关注的用户数量为0，不进行取消关注")
                 throw new Error("设置的取消关注的用户数量为0，不进行取消关注，检查一下参数配置")
             }
@@ -789,6 +791,8 @@ try{
 
 
         }else{
+            Nest_ScreenCapture()
+            sleep(random(3000, 5000))
             taskLog("没有找到用户个人中心的Follow列表的TextView")
             throw new Error("没有找到用户个人中心的Follow列表的TextView")
         }
@@ -796,6 +800,8 @@ try{
 
         
     }else{
+        Nest_ScreenCapture()
+        sleep(random(3000, 5000))
         taskLog("没有找到首页最右侧Profile按钮")
         throw new Error("没有找到首页最右侧Profile按钮")
     }
