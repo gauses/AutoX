@@ -41,27 +41,27 @@ const FORCE_STOP_CONFIRM_TEXT = {
     EN_US: "OK"         // 英文
 };
 
-//用户Tab按钮在不同语言下的文本
-const USERS_TEXT = {
-    ZH_CN: "用户",    // 简体中文
-    ZH_TW: "使用者",    // 繁体中文
-    EN_US: "Users"   // 英文
-};
 
 //Tiktok最右侧的Profile的按钮文字
 const PROFILE_TEXT = {
-    ZH_CN: "用户",    // 简体中文
-    ZH_TW: "使用者",    // 繁体中文
+    ZH_CN: "主页",    // 简体中文
+    ZH_TW: "個人資料",    // 繁体中文
     EN_US: "Profile"   // 英文
 };
 
-//定义Following按钮在不同语言下的文本
+//定义Following按钮在不同语言下的文本（Profile页面）
 const FOLLOWING_TEXT = {
-    ZH_CN: "正在关注",    // 简体中文
-    ZH_TW: "正在關注",    // 繁体中文
+    ZH_CN: "关注",    // 简体中文
+    ZH_TW: "關注中",    // 繁体中文
     EN_US: "Following"   // 英文
 };
 
+//定义Following列表的TextView在不同语言下的文本
+const FOLLOWING_LIST_TEXT = {
+    ZH_CN: "已关注",    // 简体中文
+    ZH_TW: "關注中",    // 繁体中文
+    EN_US: "Following"   // 英文
+};
 
 // 通过语言对象查找文本
 function findTextByLanguages(languageObject) {
@@ -626,11 +626,9 @@ try{
     taskLog("开始点击首页最右侧Profile按钮")
     var profile_btn = findTextByLanguages(PROFILE_TEXT)
     if(profile_btn){
-        taskLog("找到首页搜索按钮并且点击")
         sleep(random(2000, 4000))
 
         //开始寻找用户所有的关注用户列表的TextView
-        //className("android.widget.TextView") fullId("com.ss.android.ugc.trill:id/n8p")
         var Follow_text_button = findTextByLanguages(FOLLOWING_TEXT)
         if(Follow_text_button){
             taskLog("需要取消关注的用户, 一共有： " + TT_Cancel_Follow_Count + "个");
@@ -646,7 +644,7 @@ try{
                     var foundButton = false;
                     
                     while (!foundButton && scrollAttempt < maxScrollAttempts) {
-                        var Follow_text_button = findTextByLanguages(FOLLOWING_TEXT);
+                        var Follow_text_button = findTextByLanguages(FOLLOWING_LIST_TEXT);
                         if (Follow_text_button) {
                             taskLog("找到用户个人中心的Follow列表的TextView");
                             foundButton = true;
@@ -672,21 +670,21 @@ try{
 
             }else{
                 taskLog("设置的取消关注的用户数量为0，不进行取消关注")
-                throw new error("设置的取消关注的用户数量为0，不进行取消关注，检查一下参数配置")
+                throw new Error("设置的取消关注的用户数量为0，不进行取消关注，检查一下参数配置")
             }
 
 
 
         }else{
             taskLog("没有找到用户个人中心的Follow列表的TextView")
-            throw new error("没有找到用户个人中心的Follow列表的TextView")
+            throw new Error("没有找到用户个人中心的Follow列表的TextView")
         }
 
 
         
     }else{
         taskLog("没有找到首页最右侧Profile按钮")
-        throw new error("没有找到首页最右侧Profile按钮")
+        throw new Error("没有找到首页最右侧Profile按钮")
     }
 
 

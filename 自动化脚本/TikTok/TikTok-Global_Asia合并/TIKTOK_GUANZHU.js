@@ -259,7 +259,7 @@ function click_home_search_btn(){
     var find_search_btn_count = 0
     if(find_search_btn_count > 5){
         console.error("首页寻找'搜索'按钮超过5次，抛出异常")
-        throw new error("首页寻找'搜索'按钮超过5次，抛出异常")
+        throw new Error("首页寻找'搜索'按钮超过5次，抛出异常")
     }
     sleep(random(2000, 5000))
 
@@ -835,7 +835,7 @@ try{
         
     }else{
         toast("- 没有可用的搜索用户ID, 忽略 - ");
-        throw new error("没有可用的搜索用户ID，无法关注，所以报错")
+        throw new Error("没有可用的搜索用户ID，无法关注，所以报错")
     }
 
 }catch(e) {
