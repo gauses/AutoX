@@ -27,7 +27,11 @@ const FOLLOW_TEXT = {
     EN_US: "Follow"   // 英文
 };
 
-
+const FORCE_STOP_TEXT = {
+    ZH_CN: "强行停止",    // 简体中文
+    ZH_TW: "強制停止",    // 繁体中文
+    EN_US: "Force stop"   // 英文
+};
 
 
 
@@ -60,7 +64,7 @@ var handleErrorFlag = false //默认没有错误，如果出现异常，那么�
         console.error("脚本执行时间：" + new Date().toLocaleString());
     }else{
         console.log("-----------------脚本功能执行结束：---------------");
-        console.error("Tiktok关注：根據關注列表UID的順序，去關注用戶---------------");
+        console.log("Tiktok关注：根據關注列表UID的順序，去關注用戶---------------");
         console.log("脚本执行时间：" + new Date().toLocaleString());
     }
     openLogActivity();
@@ -882,9 +886,8 @@ try{
 
                                 var button = allButtons.get(k);
                                 if(button) {
-                                    taskLog("当前Button Text: " + button.text() );
-                                    if(button.text() == FOLLOW_TEXT.ZH_CN || button.text() == FOLLOW_TEXT.ZH_TW 
-                                    || button.text() == FOLLOW_TEXT.EN_US) {
+                                    // taskLog("当前Button Text: " + button.text() );
+                                    if(Object.values(FOLLOW_TEXT).includes(button.text())) {
                                         foundFollowButtonInCurrentPage = true;
                                         
                                         // 获取按钮的边界
