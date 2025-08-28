@@ -107,7 +107,7 @@ var handleErrorFlag = false //默认没有错误，如果出现异常，那么�
         console.error("脚本执行时间：" + new Date().toLocaleString());
     }else{
         console.log("-----------------脚本功能执行结束：---------------");
-        console.error("Tiktok关注：根據關注列表UID的順序，去關注用戶---------------");
+        console.log("Tiktok关注：根據關注列表UID的順序，去關注用戶---------------");
         console.log("脚本执行时间：" + new Date().toLocaleString());
     }
     openLogActivity();
@@ -811,13 +811,22 @@ try{
                     click_LinearLayout_GUANZHU()
 
 
-                    //text("關注")
+                    //text("關注，Follow")
                     var findFollowTextResult = findTextByLanguages(FOLLOW_TEXT)
-                    sleep(3000)
+
+                    //增加一个判断，如果此时randIdx等于comments.length-1，则进行一次截图操作
+                    if(randIdx == comments.length-1){
+                        Nest_ScreenCapture()
+                    }
+
+
+                    
+                    sleep(random(3000, 5000))
                     back()
-                    sleep(3000)
+                    sleep(random(3000, 5000))
                     back()
-                    sleep(random(2000, 4000))
+                    sleep(random(2000, 4000))  
+
                 }
             }
 
