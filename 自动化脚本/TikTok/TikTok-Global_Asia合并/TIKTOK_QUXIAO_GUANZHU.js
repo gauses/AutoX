@@ -118,11 +118,11 @@ var handleErrorFlag = false //默认没有错误，如果出现异常，那么�
 
     if(handleErrorFlag){
         console.error("-----------------脚本执行出现异常---------------");
-        console.error("Tiktok关注：根據關注列表UID的順序，去關注用戶---------------");
+        console.error("Tiktok取消关注(根据取消关注的数量，去取消关注)---------------");
         console.error("脚本执行时间：" + new Date().toLocaleString());
     }else{
         console.log("-----------------脚本功能执行结束：---------------");
-        console.log("Tiktok关注：根據關注列表UID的順序，去關注用戶---------------");
+        console.log("Tiktok取消关注(根据取消关注的数量，去取消关注)---------------");
         console.log("脚本执行时间：" + new Date().toLocaleString());
     }
     openLogActivity();
@@ -636,22 +636,43 @@ try{
             taskLog("需要取消关注的用户, 一共有： " + TT_Cancel_Follow_Count + "个");
             sleep(random(30000, 40000))
             if (TT_Cancel_Follow_Count.length > 0) {
+                var successCount = 0; // 成功取消关注的计数
                 for (var i = 0; i < TT_Cancel_Follow_Count; i++) {
                     taskLog("开始取消关注用户: " + i)
                     sleep(random(2000, 4000))
-                    //开始寻找用户所有的关注用户列表的TextView
-                    //className("android.widget.TextView") fullId("com.ss.android.ugc.trill:id/n8p")
-                    var Follow_text_button = findTextByLanguages(FOLLOWING_TEXT)
-                    if(Follow_text_button){
-                        taskLog("找到用户个人中心的Follow列表的TextView")
-                    }else{
-                        taskLog("没有找到用户个人中心的Follow列表的TextView")
+                    // 尝试查找并点击Following按钮，如果找不到则滑动屏幕
+                    var maxScrollAttempts = 5; // 最大滑动尝试次数
+                    var scrollAttempt = 0;
+                    var foundButton = false;
+                    
+                    while (!foundButton && scrollAttempt < maxScrollAttempts) {
+                        var Follow_text_button = findTextByLanguages(FOLLOWING_TEXT);
+                        if (Follow_text_button) {
+                            taskLog("找到用户个人中心的Follow列表的TextView");
+                            foundButton = true;
+                            successCount++; // 成功找到并点击按钮，计数加1
+                        } else {
+                            taskLog("当前屏幕未找到Following按钮，尝试滑动屏幕");
+                            swipe_to_up();
+                            sleep(random(3000, 5000)); // 等待滑动动画完成
+                            scrollAttempt++;
+                        }
                     }
                     
+                    if (!foundButton) {
+                        taskLog("多次滑动后仍未找到更多Following按钮，可能已经到达列表底部");
+                        break; // 退出主循环
+                    }
                 }
 
-            }else{
+                // 完成所有取消关注操作后进行截图
+                taskLog("完成取消关注操作，成功取消关注 " + successCount + " 个用户");
+                var screenshotPath = Nest_ScreenCapture();
+                taskLog("已保存完成后的截图：" + screenshotPath);
 
+            }else{
+                taskLog("设置的取消关注的用户数量为0，不进行取消关注")
+                throw new error("设置的取消关注的用户数量为0，不进行取消关注，检查一下参数配置")
             }
 
 
