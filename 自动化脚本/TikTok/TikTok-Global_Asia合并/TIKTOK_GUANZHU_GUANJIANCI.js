@@ -40,13 +40,35 @@ const FORCE_STOP_CONFIRM_TEXT = {
     EN_US: "OK"         // 英文
 };
 
-toast("开始点击用户Tab按钮")
+//用户Tab按钮在不同语言下的文本
 const USERS_TEXT = {
     ZH_CN: "用户",    // 简体中文
     ZH_TW: "使用者",    // 繁体中文
     EN_US: "Users"   // 英文
 };
 
+
+// 通过语言对象查找文本
+function findTextByLanguages(languageObject) {
+    for (let lang in languageObject) {
+        let targetText = languageObject[lang];
+        if (text(targetText).exists()) {
+            taskLog("找到文本：" + targetText);
+            let element = text(targetText).findOne();
+            if (element && element.clickable()) {
+                element.click();
+                return true;
+            } else if (element) {
+                // 如果元素存在但不可点击，尝试点击其坐标
+                let bounds = element.bounds();
+                click(bounds.centerX(), bounds.centerY());
+                return true;
+            }
+        }
+    }
+    taskLog("未找到任何匹配的文本");
+    return false;
+}
 
 
 
@@ -740,7 +762,8 @@ try{
                     //开始观看视频
                     sleep(random(5000, 8000))
                     toast("开始点击用户Tab按钮")
-                    find_textview_text_base("用户","使用者","Users")
+                    findTextByLanguages(USERS_TEXT)
+
 
                     sleep(random(3000, 5000))
 

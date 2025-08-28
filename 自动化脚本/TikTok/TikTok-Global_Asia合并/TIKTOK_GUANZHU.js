@@ -41,6 +41,35 @@ const FORCE_STOP_CONFIRM_TEXT = {
     EN_US: "OK"         // 英文
 };
 
+//用户Tab按钮在不同语言下的文本
+const USERS_TEXT = {
+    ZH_CN: "用户",    // 简体中文
+    ZH_TW: "使用者",    // 繁体中文
+    EN_US: "Users"   // 英文
+};
+
+// 通过语言对象查找文本
+function findTextByLanguages(languageObject) {
+    for (let lang in languageObject) {
+        let targetText = languageObject[lang];
+        if (text(targetText).exists()) {
+            taskLog("找到文本：" + targetText);
+            let element = text(targetText).findOne();
+            if (element && element.clickable()) {
+                element.click();
+                return true;
+            } else if (element) {
+                // 如果元素存在但不可点击，尝试点击其坐标
+                let bounds = element.bounds();
+                click(bounds.centerX(), bounds.centerY());
+                return true;
+            }
+        }
+    }
+    taskLog("未找到任何匹配的文本");
+    return false;
+}
+
 //保证Java层和JS代码两边的日志文件一致
 var taskLogFileName = "nest_task_log_" + getSystemDate("df").replace(/:/g, "-").replace(" ", "_") + ".txt"
 var RPAFilePath = "/sdcard/Download/log/";
@@ -616,80 +645,6 @@ function stopCurrentTask(){
 }
 
 
-//通过Button的Text
-function find_btn_Text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
-
-
-    var loopCount  = 0
-
-     while (true) {
-         taskLog(findText_ZH_CN + " - 循环寻找执行：" + (++loopCount));
-         // 检查计数器是否达到3
-         if (loopCount >= 3) {
-             // 打印一条消息并退出循环
-             taskLog("循环已执行3次，即将退出循环。");
-
-             //不能抛出异常，因为可能Facebook记忆功能，自动跳转到输入页面
-//                 throw new Error(findText_ZH_CN +"按钮没有找到");
-            break;
-         }
-
-         // 查找控件
-         var button1 = className("android.widget.Button").text(findText_ZH_CN).findOne(1000);
-         var button2 = className("android.widget.Button").text(findText_ZH_TW).findOne(1000);
-         var button3 = className("android.widget.Button").text(findText_EN_US).findOne(1000);
-
-         if (button1) {
-             taskLog("找到" + findText_ZH_CN);
-             taskLog("找到button1 = " + button1.clickable() );
-            //  clickText(findText_ZH_CN)
-            //  click(button1.bounds().centerX(), button1.bounds().centerY())
-
-             var X1 = button1.bounds().centerX();
-             var Y1 = button1.bounds().centerY();
-             
-             // 验证 X 和 Y 是否为正数
-             if (X1 >= 0 && Y1 >= 0) {
-                click(X1, Y1)
-             }else{
-                taskLog("坐标无效，中心点X或Y为负值: X=" + X1 + ", Y=" + Y1);
-             }
-             break; // 跳出循环
-         }else if(button2){
-             taskLog("找到" + findText_ZH_TW);
-             taskLog("找到button2 = " + button2.clickable() );
-
-            //  clickText(findText_ZH_TW)
-            var X2 = button2.bounds().centerX();
-            var Y2 = button2.bounds().centerY();
-            
-            // 验证 X 和 Y 是否为正数
-            if (X2 >= 0 && Y2 >= 0) {
-               click(X2, Y2)
-            }else{
-               taskLog("坐标无效，中心点X或Y为负值: X=" + X2 + ", Y=" + Y2);
-            }
-             break; // 跳出循环
-         }else if(button3){
-             taskLog("找到" + findText_EN_US);
-            //  clickText(findText_EN_US)
-            var X3 = button3.bounds().centerX();
-            var Y3 = button3.bounds().centerY();
-            taskLog("找到button3 X= " + X3);
-            taskLog("找到button3 Y= " + Y3);
-
-            // 验证 X 和 Y 是否为正数
-            if (X3 >= 0 && Y3 >= 0) {
-               click(X3, Y3)
-            }else{
-               taskLog("坐标无效，中心点X或Y为负值: X=" + X3 + ", Y=" + Y3);
-            }
-             break; // 跳出循环
-         }
-         sleep(4000)
-
-     }
-}
 
 
 
@@ -849,7 +804,7 @@ try{
                     //开始观看视频
                     sleep(random(5000, 8000))
                     toast("开始点击用户Tab按钮")
-                    find_textview_text_base("用户","使用者","Users")
+                    findTextByLanguages(USERS_TEXT)
 
                     sleep(random(3000, 5000))
 
@@ -857,18 +812,11 @@ try{
 
 
                     //text("關注")
-                    var findFollowTextResult = find_textview_text_base("關注", "Follow", "關注")
-                    if(!findFollowTextResult) {
-                        taskLog("没有找到Follow控件，终止本次操作，开始下一个用户的Follow行为！！！");
-                        sleep(3000)
-                        back()
-                        sleep(1000)
-                        back()
-                        sleep(3000)
-                        break
-                    }else{
-                        Nest_ScreenCapture()
-                    }
+                    var findFollowTextResult = findTextByLanguages(FOLLOW_TEXT)
+                    sleep(3000)
+                    back()
+                    sleep(3000)
+                    back()
                     sleep(random(2000, 4000))
                 }
             }
