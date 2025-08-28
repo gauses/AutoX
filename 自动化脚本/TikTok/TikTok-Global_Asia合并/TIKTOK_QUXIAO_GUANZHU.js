@@ -17,6 +17,9 @@ var taskLogImgName = "nest_task_log.png"
 
 //用户需要输入的取消关注的数量
 const TT_Cancel_Follow_Count = '$${取消关注的数量}';
+const TT_Cancel_Follow_Sleep_Time_Start = '$${每次取消关注后等待的时间-开始}'; //单位：毫秒
+const TT_Cancel_Follow_Sleep_Time_End = '$${每次取消关注后等待的时间-结束}';//单位：毫秒
+
 
 var ASIA_TikTokPackageName = 'com.ss.android.ugc.trill';
 var GLOBAL_TikTokPackageName = 'com.zhiliaoapp.musically';
@@ -632,14 +635,19 @@ try{
         var Follow_text_button = findTextByLanguages(FOLLOWING_TEXT)
         if(Follow_text_button){
             taskLog("需要取消关注的用户, 一共有： " + TT_Cancel_Follow_Count + "个");
+            taskLog("每次取消关注后等待的时间: " + TT_Cancel_Follow_Sleep_Time_Start + "毫秒 - " + TT_Cancel_Follow_Sleep_Time_End + "毫秒");
             sleep(random(30000, 40000))
             if (TT_Cancel_Follow_Count.length > 0) {
                 var successCount = 0; // 成功取消关注的计数
                 for (var i = 0; i < TT_Cancel_Follow_Count; i++) {
                     taskLog("开始取消关注用户: " + i)
-                    sleep(random(2000, 4000))
+                    if(TT_Cancel_Follow_Sleep_Time_Start.length > 0 && TT_Cancel_Follow_Sleep_Time_End.length > 0){
+                        sleep(random(TT_Cancel_Follow_Sleep_Time_Start, TT_Cancel_Follow_Sleep_Time_End))
+                    }else{
+                        sleep(random(6000, 8000))
+                    }
                     // 尝试查找并点击Following按钮，如果找不到则滑动屏幕
-                    var maxScrollAttempts = 5; // 最大滑动尝试次数
+                    var maxScrollAttempts = 10; // 最大滑动尝试次数
                     var scrollAttempt = 0;
                     var foundButton = false;
                     
