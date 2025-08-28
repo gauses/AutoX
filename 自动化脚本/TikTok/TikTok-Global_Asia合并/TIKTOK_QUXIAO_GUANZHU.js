@@ -632,11 +632,26 @@ try{
         sleep(random(2000, 4000))
 
         //开始寻找用户所有的关注用户列表的TextView
-        var Follow_text_button = findTextByLanguages(FOLLOWING_TEXT)
-        if(Follow_text_button){
+        // 循环等待直到找到FOLLOWING_TEXT按钮
+        var maxWaitAttempts = 10; // 最大等待尝试次数
+        var waitAttempt = 0;
+        var Follow_text_button = null;
+        
+        while (waitAttempt < maxWaitAttempts) {
+            Follow_text_button = findTextByLanguages(FOLLOWING_TEXT);
+            if (Follow_text_button) {
+                taskLog("找到Following按钮，继续执行");
+                break;
+            } else {
+                waitAttempt++;
+                taskLog("第" + waitAttempt + "次尝试：未找到Following按钮，等待后重试...");
+                sleep(random(3000, 5000)); // 每次等待3-5秒
+            }
+        }
+        
+        if (Follow_text_button) {
             taskLog("需要取消关注的用户, 一共有： " + TT_Cancel_Follow_Count + "个");
             taskLog("每次取消关注后等待的时间: " + TT_Cancel_Follow_Sleep_Time_Start + "毫秒 - " + TT_Cancel_Follow_Sleep_Time_End + "毫秒");
-            sleep(random(30000, 40000))
             if (TT_Cancel_Follow_Count.length > 0) {
                 var successCount = 0; // 成功取消关注的计数
                 for (var i = 0; i < TT_Cancel_Follow_Count; i++) {
@@ -644,21 +659,37 @@ try{
                     if(TT_Cancel_Follow_Sleep_Time_Start.length > 0 && TT_Cancel_Follow_Sleep_Time_End.length > 0){
                         sleep(random(TT_Cancel_Follow_Sleep_Time_Start, TT_Cancel_Follow_Sleep_Time_End))
                     }else{
-                        sleep(random(6000, 8000))
+                        sleep(random(3000, 5000))
                     }
+
                     // 尝试查找并点击Following按钮，如果找不到则滑动屏幕
                     var maxScrollAttempts = 10; // 最大滑动尝试次数
                     var scrollAttempt = 0;
                     var foundButton = false;
                     
                     while (!foundButton && scrollAttempt < maxScrollAttempts) {
-                        var Follow_text_button = findTextByLanguages(FOLLOWING_LIST_TEXT);
-                        if (Follow_text_button) {
-                            taskLog("找到用户个人中心的Follow列表的TextView");
-                            foundButton = true;
-                            successCount++; // 成功找到并点击按钮，计数加1
-                        } else {
-                            taskLog("当前屏幕未找到Following按钮，尝试滑动屏幕");
+                        // 循环等待直到找到FOLLOWING_LIST_TEXT或超时
+                        var maxWaitAttempts = 10; // 最大等待尝试次数
+                        var waitAttempt = 0;
+                        var Follow_text_button = null;
+                        
+                        while (waitAttempt < maxWaitAttempts) {
+                            Follow_text_button = findTextByLanguages(FOLLOWING_LIST_TEXT);
+                            if (Follow_text_button) {
+                                taskLog("找到用户个人中心的Follow列表的TextView");
+                                foundButton = true;
+                                successCount++; // 成功找到并点击按钮，计数加1
+                                break;
+                            } else {
+                                waitAttempt++;
+                                taskLog("第" + waitAttempt + "次尝试：未找到Following列表，等待后重试...");
+                                sleep(random(3000, 5000)); // 每次等待3-5秒
+                            }
+                        }
+                        
+                        // 如果等待超时仍未找到按钮，尝试滑动屏幕
+                        if (!foundButton) {
+                            taskLog("多次等待后仍未找到Following列表，尝试滑动屏幕");
                             swipe_to_up();
                             sleep(random(3000, 5000)); // 等待滑动动画完成
                             scrollAttempt++;
