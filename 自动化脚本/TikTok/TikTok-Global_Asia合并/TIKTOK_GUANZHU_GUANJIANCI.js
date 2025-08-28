@@ -30,7 +30,14 @@ const FOLLOW_TEXT = {
 const FORCE_STOP_TEXT = {
     ZH_CN: "强行停止",    // 简体中文
     ZH_TW: "強制停止",    // 繁体中文
-    EN_US: "Force stop"   // 英文
+    EN_US: "FORCE STOP"   // 英文
+};
+
+// 定义确认按钮文本
+const FORCE_STOP_CONFIRM_TEXT = {
+    ZH_CN: "确定",      // 简体中文
+    ZH_TW: "確定",      // 繁体中文
+    EN_US: "OK"         // 英文
 };
 
 
@@ -165,87 +172,38 @@ function forceStop_APP(packageName){
     app.openAppSetting(packageName)
     sleep(5000)
 
-    //繁体
-    if (text("強制停止").exists()) {
-        let forceStopBtn = text("強制停止").findOne();
-        if (forceStopBtn && forceStopBtn.clickable()) {
-            forceStopBtn.click();
-            sleep(1000);
-            // 确认操作
-            if (text("確定").exists()) {
-                taskLog("已经找到可点击的'強制停止'按钮！！！！！！！！！！");
-                text("確定").findOne().click();
+    // 遍历所有可能的强制停止按钮文本
+    for (let lang in FORCE_STOP_TEXT) {
+        let stopText = FORCE_STOP_TEXT[lang];
+        if (text(stopText).exists()) {
+            let forceStopBtn = text(stopText).findOne();
+            if (forceStopBtn && forceStopBtn.clickable()) {
+                forceStopBtn.click();
+                sleep(1000);
+                
+                // 遍历所有可能的确认按钮文本
+                for (let confirmLang in FORCE_STOP_CONFIRM_TEXT) {
+                    let confirmText = FORCE_STOP_CONFIRM_TEXT[confirmLang];
+                    if (text(confirmText).exists()) {
+                        text(confirmText).findOne().click();
+                        taskLog("成功点击'" + stopText + "'按钮并确认");
+                        sleep(3000);
+                        home();
+                        return;
+                    }
+                }
+            } else {
+                taskLog("未找到可点击的'" + stopText + "'按钮");
             }
         } else {
-            taskLog("未找到可点击的'強制停止'按钮");
+            taskLog("未找到'" + stopText + "'按钮");
         }
-    } else {
-        taskLog("未找到'強制停止'按钮");
-    }
-    sleep(3000)
-
-    //简体
-    if (text("强行停止").exists()) {
-        let forceStopBtn = text("强行停止").findOne();
-        if (forceStopBtn && forceStopBtn.clickable()) {
-            forceStopBtn.click();
-            sleep(1000);
-            // 确认操作
-            if (text("确定").exists()) {
-                text("确定").findOne().click();
-            }
-        } else {
-            taskLog("未找到可点击的'强行停止'按钮");
-        }
-    } else {
-        taskLog("未找到'强行停止'按钮");
+        sleep(1000);
     }
 
-    sleep(3000)
-
-
-    //英语
-    if (text("Force stop").exists()) {
-        let forceStopBtn = text("Force stop").findOne();
-        if (forceStopBtn && forceStopBtn.clickable()) {
-            forceStopBtn.click();
-            sleep(1000);
-            // 确认操作
-            if (text("OK").exists()) {
-                text("OK").findOne().click();
-            }
-        } else {
-            taskLog("未找到可点击的'Force stop'按钮");
-        }
-    } else {
-        taskLog("未找到'Force stop'按钮");
-    }
-    sleep(3000)
-
-    //英语
-    if (text("FORCE STOP").exists()) {
-        let forceStopBtn = text("FORCE STOP").findOne();
-        if (forceStopBtn && forceStopBtn.clickable()) {
-            forceStopBtn.click();
-            sleep(1000);
-            // 确认操作
-            if (text("OK").exists()) {
-                text("OK").findOne().click();
-            }
-        } else {
-            taskLog("未找到可点击的'FORCE STOP'按钮");
-        }
-    } else {
-        taskLog("未找到'FORCE STOP'按钮");
-    }
-    sleep(3000)
-
-
-    home()
-
+    // 如果所有语言都尝试失败，返回主页
+    home();
 }
-
-
 
 
 
