@@ -40,6 +40,16 @@ const FORCE_STOP_CONFIRM_TEXT = {
     EN_US: "OK"         // 英文
 };
 
+toast("开始点击用户Tab按钮")
+const USERS_TEXT = {
+    ZH_CN: "用户",    // 简体中文
+    ZH_TW: "使用者",    // 繁体中文
+    EN_US: "Users"   // 英文
+};
+
+
+
+
 //保证Java层和JS代码两边的日志文件一致
 var taskLogFileName = "nest_task_log_" + getSystemDate("df").replace(/:/g, "-").replace(" ", "_") + ".txt"
 var RPAFilePath = "/sdcard/Download/log/";
@@ -105,12 +115,21 @@ function throw_error_storage_not_enough(){
 
 function handleError(e) {
     handleErrorFlag = true
-    forceStop_APP(GLOBAL_TikTokPackageName)
+    forceStop_APP(targetPackageName)
     console.error("===错误报告开始===");
     console.error("错误信息：" + e);
     console.error("错误堆栈：" + e.stack);
     console.error("===错误报告结束===");
     exit()
+}
+
+// 替代 app.openAppSetting 的方式
+function openAppSettings(packageName) {
+    var intent = new Intent();
+    intent.setAction(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+    intent.setData(android.net.Uri.parse("package:" + packageName));
+    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    app.startActivity(intent);
 }
 
 
@@ -182,7 +201,7 @@ sleep(random(3000, 5000))
 function forceStop_APP(packageName){
     taskLog("准备强杀:" + packageName + "...")
     sleep(1000);
-    app.openAppSetting(packageName)
+    openAppSettings(packageName)
     sleep(5000)
 
     // 遍历所有可能的强制停止按钮文本
@@ -474,7 +493,6 @@ function clickDesc(a) {
 
 //结束当前任务
 function stopCurrentTask(){
-    saveImg()
 
     sleep(3000)
 //    //将task的截图上报
