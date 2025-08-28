@@ -40,6 +40,19 @@ const FORCE_STOP_CONFIRM_TEXT = {
     EN_US: "OK"         // 英文
 };
 
+//保证Java层和JS代码两边的日志文件一致
+var taskLogFileName = "nest_task_log_" + getSystemDate("df").replace(/:/g, "-").replace(" ", "_") + ".txt"
+var RPAFilePath = "/sdcard/Download/log/";
+// 如果目录存在且有内容就删除
+if (files.exists(RPAFilePath)) {
+    files.removeDir(RPAFilePath);
+}
+//日志文件路径
+var logFilePath = RPAFilePath + taskLogFileName;
+//确保日志目录存在
+files.ensureDir(RPAFilePath);
+
+
 
 
 
@@ -329,88 +342,6 @@ function click_Second_search_btn(){
 }
 
 
-//输入需要关注的用户ID之后，找到第一个User的LinearLayout
-function click_LinearLayout_GUANZHU(){
-
-    sleep(random(2000, 5000))
-    var allLinearLayout = className("android.widget.LinearLayout").find();
-    if (allLinearLayout && allLinearLayout.size() > 0) {
-        for (var i = 0; i < allLinearLayout.size(); i++) {
-            var linearLayout = allLinearLayout.get(i);
-            if (linearLayout) {
-                taskLog("找到linearLayout控件-Text：" + linearLayout.text() + ";ID = " + linearLayout.id());
-                
-				//fullId("com.zhiliaoapp.musically:id/iz8")
-                //fullId("com.ss.android.ugc.trill:id/iz9")
-
-                if (linearLayout.id() == (GLOBAL_TikTokPackageName +":id/iz8") || linearLayout.id() == (ASIA_TikTokPackageName +":id/iz9")) {
-                    var linearLayout_click = clickId(linearLayout.id())
-                    if (linearLayout_click) {
-                        taskLog("找到LinearLayout控件:开始点击第一个" );
-                        break;
-                }
-                
-            }
-        }
-    }
-    sleep(random(2000, 5000))
-}
-}
-
-
-
-
-function click_back_btn(){
-    // 获取所有相同id的控件（
-    let targets = id("arv").find();
-    // 通过索引获取指定的那个，比如第二个就是[1]
-    let target = targets[0];
-    if (target) {
-        taskLog("已经找到返回按钮 " )
-        // 获取控件的坐标信息
-        let bounds = target.bounds();
-        
-        // 计算控件中心点坐标
-        let centerX = bounds.centerX();
-        let centerY = bounds.centerY();
-        
-        // 使用click函数模拟点击中心点位置
-        taskLog("已经找到返回按钮 centerX = " +centerX)
-        taskLog("已经找到返回按钮 centerY = " +centerY)
-        click(centerX, centerY);
-        
-        // 或者使用press函数来模拟按压
-        // press(centerX, centerY, 100); // 100是按压时长(毫秒)
-    }else{
-        taskLog("没有找到首页搜索确认按钮,所以直接back " )
-        back()
-    }
-
-}
-
-//点击屏幕左上方
-function click_left_top_screen(){
-    // 获取屏幕宽度和高度
-    var width = device.width;
-    var height = device.height;
-
-    // 定义左上角区域的边界
-    var left = 200;
-    var top = 200;
-    var right = width / 2; // 左上区域的右边界
-    var bottom = height / 2; // 左上区域的下边界
-
-    // 生成随机坐标
-    var randomX = Math.random() * (right - left) + left; // 随机 x 坐标
-    var randomY = Math.random() * (bottom - top) + top; // 随机 y 坐标
-
-    // 点击随机坐标
-    click(randomX, randomY);
-
-
-}
-
-
 
 
 function clickId(a) {
@@ -453,46 +384,6 @@ function clickId(a) {
 }
 
 
-//点击个人主页
-function click_Author_Page_Btn(){
-    taskLog("开始准备查看个人主页")
-    clickId("qza")
-    sleep(random(5000,8000))
-
-    // 获取屏幕宽高
-    var width = device.width;
-    var height = device.height;
-    
-     // 生成随机起始点
-     var startX = random(width / 3 , width * 2 / 3);
-     var startY = random(height * 2 / 3, height * 3 / 4);
-
-     // 生成随机结束点
-     var endX = random(width / 3 , width * 2 / 3);
-     var endY = random(height * 1 / 3, height * 1 / 4);
-
-    // 随机选择滑动方向：上滑或下滑
-    for (var i = 0; i < 2; i++) {
-        var direction = random(0, 1) === 0 ? 'up' : 'down';
-
-        if (direction === 'up') {
-            // 从下往上滑动
-            swipe(startX, startY, endX, endY, 500);
-        } else {
-            // 从上往下滑动
-            swipe(startX, startY, endX, endY, 500);
-        }
-        
-        // 暂停一段时间，避免滑动过快
-        sleep(random(3000,5000));
-    }
-
-    taskLog("从视频作者主页返回")
-    sleep(random(3000,5000));
-    back();
-}
-
-
 
 //打印日志
 function taskLog(_log){
@@ -505,28 +396,48 @@ function taskLog(_log){
 
 
 
-//无论成功或者失败，最后截图一张
-function saveImg(){
-    taskLog("开始截图...");
-
-    var toPath = "/sdcard/Download/" + taskLogImgName ;
-    if (files.exists(toPath) ){
-        taskLog("旧图片文件存在，删除");
-        files.remove(toPath);
-    } else {
-        taskLog("旧图片文件存在");
+//开始录屏截图到本地
+function Nest_ScreenCapture(){
+    // 申请截图权限（会弹系统录屏权限框）
+    if (!requestScreenCapture()) {
+        taskLog("自动化任务-申请截图权限失败");
     }
 
-
-    if(!requestScreenCapture()){
-        taskLog("请求截图失败...");
-        toast("请求截图失败");
-    }else{
-        toast("请求截图");
+    // 申请截图权限（会弹系统录屏权限框）
+    if (!requestScreenCapture()) {
+        taskLog("自动化任务-申请截图权限失败");
     }
-    //截图并保存
-    taskLog("请求截图开始保存...");
-    images.saveImage(captureScreen(), toPath);
+
+    // 截一张整屏
+    var img = captureScreen();           // 返回 Image 对象
+    if (!img) {
+        taskLog("自动化任务-截图失败");
+    }
+
+    // 保存到相册/文件夹
+    // var dir = "/sdcard/Pictures";
+    // files.ensureDir(dir);
+    // var path = dir + "/nestshot_" + Date.now() + ".png";
+    var path = RPAFilePath + "/nestshot_" + Date.now() + ".png";
+    img.saveTo(path);                    // 保存
+    img.recycle();                       // 回收内存
+    taskLog("自动化任务-已保存："+ path);
+
+
+    //刷新媒体库
+    sleep(3000)
+    toast("开始刷新媒体库，用时5秒钟....");
+    refreshMedia(RPAFilePath)
+    return path
+}
+// 刷新指定路径的媒体库
+function refreshMedia(path) {
+    taskLog("开始刷新媒体库，用时5秒钟....");
+    // 发送媒体扫描广播
+    media.scanFile(path);
+    // 等待扫描完成
+    sleep(5000);
+    taskLog("媒体库刷新完成，开始下一步任务...");
 }
 
 
@@ -838,6 +749,7 @@ try{
                             // 遍历当前页面的所有按钮
                             for(var k = 0; k < allButtons.size(); k++) {
                                 if(currentFollowCount >= TT_Like_User_COUNT) {
+                                    Nest_ScreenCapture()
                                     taskLog("已达到目标关注数量，停止任务！");
                                     break;
                                 }
