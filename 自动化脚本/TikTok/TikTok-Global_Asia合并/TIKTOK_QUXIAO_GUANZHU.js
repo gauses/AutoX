@@ -66,6 +66,13 @@ const FOLLOWING_LIST_TEXT = {
     EN_US: "Following"   // 英文
 };
 
+//定义Following按钮一共有多少个用户
+const FOLLOWING_USER_COUNT_TEXT = {
+    ZH_CN: "关注 0",    // 简体中文
+    ZH_TW: "關注中 0",    // 繁体中文
+    EN_US: "Following 0"   // 英文
+};
+
 // 通过语言对象查找文本
 function findTextByLanguages(languageObject) {
     for (let lang in languageObject) {
@@ -650,6 +657,22 @@ try{
         }
         
         if (Follow_text_button) {
+
+            //先检查当前用户有多少个关注用户,通过检查text("Following 0")，如果存在，则说明没有关注用户，直接返回
+            //text("Following 0")
+            var Following_text_button = findTextByLanguages(FOLLOWING_USER_COUNT_TEXT)
+            if(Following_text_button){
+                taskLog("当前用户没有关注用户，直接返回")
+                sleep(random(3000, 5000))
+                var screenshotPath = Nest_ScreenCapture();
+                taskLog("已保存完成后的截图：" + screenshotPath);
+                // 抛出一个特殊的错误来结束脚本
+                throw new Error("当前用户没有关注任何用户，任务完成");
+            }
+
+
+
+
             taskLog("需要取消关注的用户, 一共有： " + TT_Cancel_Follow_Count + "个");
             taskLog("每次取消关注后等待的时间: " + TT_Cancel_Follow_Sleep_Time_Start + "毫秒 - " + TT_Cancel_Follow_Sleep_Time_End + "毫秒");
             if (TT_Cancel_Follow_Count.length > 0) {
@@ -669,16 +692,34 @@ try{
                     
                     while (!foundButton && scrollAttempt < maxScrollAttempts) {
                         // 循环等待直到找到FOLLOWING_LIST_TEXT或超时
-                        var maxWaitAttempts = 10; // 最大等待尝试次数
+                        var maxWaitAttempts = 5; // 最大等待尝试次数
                         var waitAttempt = 0;
                         var Follow_text_button = null;
                         
                         while (waitAttempt < maxWaitAttempts) {
                             Follow_text_button = findTextByLanguages(FOLLOWING_LIST_TEXT);
                             if (Follow_text_button) {
-                                taskLog("找到用户个人中心的Follow列表的TextView");
+                                taskLog("找到用户个人中心的Follow列表的TextView，准备点击取消关注");
                                 foundButton = true;
-                                successCount++; // 成功找到并点击按钮，计数加1
+                                // 执行点击操作
+                                if (Follow_text_button.click()) {
+                                    taskLog("成功点击取消关注按钮");
+                                    successCount++; // 只有在成功点击后才增加计数
+                                    taskLog("当前已成功取消关注：" + successCount + "/" + TT_Cancel_Follow_Count + "个用户");
+                                    
+                                    // 检查是否达到目标数量
+                                    if (successCount >= TT_Cancel_Follow_Count) {
+                                        taskLog("已达到目标取消关注数量！");
+                                        var screenshotPath = Nest_ScreenCapture();
+                                        taskLog("已保存完成后的截图：" + screenshotPath);
+                                        foundButton = true;
+                                        scrollAttempt = maxScrollAttempts; // 强制退出外层循环
+                                        break; // 退出当前循环
+                                    }
+                                } else {
+                                    taskLog("点击取消关注按钮失败");
+                                    foundButton = false; // 如果点击失败，继续寻找下一个按钮
+                                }
                                 break;
                             } else {
                                 waitAttempt++;
@@ -687,9 +728,42 @@ try{
                             }
                         }
                         
-                        // 如果等待超时仍未找到按钮，尝试滑动屏幕
+                        // 如果等待超时仍未找到按钮
                         if (!foundButton) {
-                            taskLog("多次等待后仍未找到Following列表，尝试滑动屏幕");
+                            if (waitAttempt >= maxWaitAttempts) {
+                                taskLog("等待超时，尝试返回上一页并重新进入");
+                                back();
+                                sleep(random(2000, 3000));
+                                
+                                // 重新点击Following按钮
+                                var retryAttempts = 5; // 重试次数限制
+                                var retryCount = 0;
+                                var followingButton = null;
+                                
+                                while (retryCount < retryAttempts) {
+                                    followingButton = findTextByLanguages(FOLLOWING_TEXT);
+                                    if (followingButton) {
+                                        taskLog("重新找到Following按钮并点击");
+                                        sleep(random(2000, 3000));
+                                        break;
+                                    } else {
+                                        retryCount++;
+                                        taskLog("第" + retryCount + "次重试：未找到Following按钮");
+                                        sleep(random(2000, 3000));
+                                    }
+                                }
+                                
+                                if (!followingButton) {
+                                    taskLog("多次重试后仍未找到Following按钮，退出循环");
+                                    break;
+                                }
+                                
+                                // 重置滑动计数，给予新的尝试机会
+                                scrollAttempt = 0;
+                                continue;
+                            }
+                            
+                            taskLog("尝试滑动屏幕寻找更多Following列表");
                             swipe_to_up();
                             sleep(random(3000, 5000)); // 等待滑动动画完成
                             scrollAttempt++;

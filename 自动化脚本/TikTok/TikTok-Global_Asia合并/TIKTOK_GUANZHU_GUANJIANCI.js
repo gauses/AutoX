@@ -775,7 +775,7 @@ try{
                         // 滑动次数计数
                         var scrollCount = 0;
                         // 最大滑动次数
-                        const MAX_SCROLL_COUNT = 5;
+                        const MAX_SCROLL_COUNT = 15;
 
                         // 只要没达到目标关注数量且未超过最大滑动次数，就继续执行
                         while(currentFollowCount < TT_Like_User_COUNT && scrollCount < MAX_SCROLL_COUNT) {
@@ -790,8 +790,9 @@ try{
                             // 遍历当前页面的所有按钮
                             for(var k = 0; k < allButtons.size(); k++) {
                                 if(currentFollowCount >= TT_Like_User_COUNT) {
-                                    Nest_ScreenCapture()
                                     taskLog("已达到目标关注数量，停止任务！");
+                                    Nest_ScreenCapture()
+                                    sleep(random(3000, 5000))
                                     break;
                                 }
 
@@ -816,6 +817,8 @@ try{
                                             currentFollowCount++;
                                             taskLog("完成第 " + currentFollowCount + " 个关注");
                                             sleep(random(3000, 5000));
+                                            
+
                                         } else {
                                             taskLog("警告：按钮坐标无效！坐标：(" + centerX + ", " + centerY + ")，设备屏幕：(" + device.width + " x " + device.height + ")");
                                         }
@@ -854,6 +857,8 @@ try{
         }
         
     }else{
+        Nest_ScreenCapture()
+        sleep(random(3000, 5000))
         toast("- 没有可用的搜索关键词, 忽略 - ");
         throw new Error("没有可用的搜索关键词，无法关注，所以报错")
     }

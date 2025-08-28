@@ -834,6 +834,8 @@ try{
         }
         
     }else{
+        Nest_ScreenCapture()
+        sleep(random(3000, 5000))
         toast("- 没有可用的搜索用户ID, 忽略 - ");
         throw new Error("没有可用的搜索用户ID，无法关注，所以报错")
     }
