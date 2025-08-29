@@ -1031,7 +1031,7 @@ try {
                         var foundButton = false;
                         
                         while (!foundButton && scrollAttempt < maxScrollAttempts) {
-                            // 循环等待直到找到FOLLOWING_LIST_TEXT或超时
+                            // 循环等待直到找到FOLLOWERS_LIST_TEXT或超时
                             var maxWaitAttempts = 5; // 最大等待尝试次数
                             var waitAttempt = 0;
                             var Follow_text_button = null;
@@ -1093,84 +1093,8 @@ try {
 
                                 }
 
-
-
-
-
-
-
-
-                                // Follow_text_button = findTextByLanguages(FOLLOWING_LIST_TEXT);
-                                // if (Follow_text_button) {
-                                //     taskLog("找到用户个人中心的Follow列表的TextView，准备点击取消关注");
-                                //     foundButton = true;
-                                //     // 执行点击操作
-                                //     if (Follow_text_button.click()) {
-                                //         taskLog("成功点击取消关注按钮");
-                                //         successCount++; // 只有在成功点击后才增加计数
-                                //         taskLog("当前已成功取消关注：" + successCount + "/" + TT_Cancel_Follow_Count + "个用户");
-                                        
-                                //         // 检查是否达到目标数量
-                                //         if (successCount >= TT_Cancel_Follow_Count) {
-                                //             taskLog("已达到目标取消关注数量！");
-                                //             var screenshotPath = Nest_ScreenCapture();
-                                //             taskLog("已保存完成后的截图：" + screenshotPath);
-                                //             foundButton = true;
-                                //             scrollAttempt = maxScrollAttempts; // 强制退出外层循环
-                                //             break; // 退出当前循环
-                                //         }
-                                //     } else {
-                                //         taskLog("点击取消关注按钮失败");
-                                //         foundButton = false; // 如果点击失败，继续寻找下一个按钮
-                                //     }
-                                //     break;
-                                // } else {
-                                //     waitAttempt++;
-                                //     taskLog("第" + waitAttempt + "次尝试：未找到Following列表，等待后重试...");
-                                //     sleep(random(3000, 5000)); // 每次等待3-5秒
-                                // }
                             }
                             
-                            // // 如果等待超时仍未找到按钮
-                            // if (!foundButton) {
-                            //     if (waitAttempt >= maxWaitAttempts) {
-                            //         taskLog("等待超时，尝试返回上一页并重新进入");
-                            //         back();
-                            //         sleep(random(2000, 3000));
-                                    
-                            //         // 重新点击Following按钮
-                            //         var retryAttempts = 5; // 重试次数限制
-                            //         var retryCount = 0;
-                            //         var followingButton = null;
-                                    
-                            //         while (retryCount < retryAttempts) {
-                            //             followingButton = findTextByLanguages(PROFILE_FANS_TEXT);
-                            //             if (followingButton) {
-                            //                 taskLog("重新找到Following按钮并点击");
-                            //                 sleep(random(2000, 3000));
-                            //                 break;
-                            //             } else {
-                            //                 retryCount++;
-                            //                 taskLog("第" + retryCount + "次重试：未找到Following按钮");
-                            //                 sleep(random(2000, 3000));
-                            //             }
-                            //         }
-                                    
-                            //         if (!followingButton) {
-                            //             taskLog("多次重试后仍未找到Following按钮，退出循环");
-                            //             break;
-                            //         }
-                                    
-                            //         // 重置滑动计数，给予新的尝试机会
-                            //         scrollAttempt = 0;
-                            //         continue;
-                            //     }
-                                
-                            //     taskLog("尝试滑动屏幕寻找更多Following列表");
-                            //     swipe_to_up();
-                            //     sleep(random(3000, 5000)); // 等待滑动动画完成
-                            //     scrollAttempt++;
-                            // }
                         }
                         
                         if (!foundButton) {
