@@ -646,34 +646,6 @@ function click_Second_search_btn(){
     sleep(random(2000, 5000))
 }
 
-//输入需要关注的用户ID之后，找到第一个User的LinearLayout
-function click_LinearLayout_GUANZHU(){
-
-    sleep(random(2000, 5000))
-    var allLinearLayout = className("android.widget.LinearLayout").find();
-    if (allLinearLayout && allLinearLayout.size() > 0) {
-        for (var i = 0; i < allLinearLayout.size(); i++) {
-            var linearLayout = allLinearLayout.get(i);
-            if (linearLayout) {
-                taskLog("找到linearLayout控件-Text：" + linearLayout.text() + ";ID = " + linearLayout.id());
-                
-				//fullId("com.zhiliaoapp.musically:id/iz8")
-                //fullId("com.ss.android.ugc.trill:id/iz9")
-
-                if (linearLayout.id() == (GLOBAL_TikTokPackageName +":id/iz8") || linearLayout.id() == (ASIA_TikTokPackageName +":id/iz9")) {
-                    var linearLayout_click = clickId(linearLayout.id())
-                    if (linearLayout_click) {
-                        taskLog("找到LinearLayout控件:开始点击第一个" );
-                        break;
-                }
-                
-            }
-        }
-    }
-    sleep(random(2000, 5000))
-}
-}
-
 
 
     // function click_back_btn(){
@@ -917,31 +889,43 @@ function get_all_comments(){
 
 //进进入粉丝页，点击每一个粉丝：className("android.widget.FrameLayout") fullId("com.zhiliaoapp.musically:id/i7w")
 function click_FrameLayout_FENSI_SIXIN(){
+    // 使用静态变量记录当前处理到第几个粉丝
+    if (typeof click_FrameLayout_FENSI_SIXIN.currentIndex === 'undefined') {
+        click_FrameLayout_FENSI_SIXIN.currentIndex = 0;
+    }
 
-    sleep(random(2000, 5000))
-    var allLinearLayout = className("android.widget.FrameLayout").find();
-    if (allLinearLayout && allLinearLayout.size() > 0) {
-        for (var i = 0; i < allLinearLayout.size(); i++) {
-            var linearLayout = allLinearLayout.get(i);
-            if (linearLayout) {
-                taskLog("找到linearLayout控件-Text：" + linearLayout.text() + ";ID = " + linearLayout.id());
-                
-				//fullId("com.zhiliaoapp.musically:id/i7w")
-                //fullId("com.ss.android.ugc.trill:id/iz9")
-
-                if (linearLayout.id() == (GLOBAL_TikTokPackageName +":id/i7w") || linearLayout.id() == (ASIA_TikTokPackageName +":id/iz9")) {
-                    var linearLayout_click = clickId(linearLayout.id())
-                    if (linearLayout_click) {
-                        taskLog("找到FrameLayout控件:开始点击第一个" );
-                        break;
-                }
-                
-            }
+    sleep(random(2000, 5000));
+    
+    // 获取所有符合条件的粉丝项
+    var targetFrames = id(GLOBAL_TikTokPackageName +":id/i7w").find();
+    if (!targetFrames.nonEmpty()) {
+        targetFrames = id(ASIA_TikTokPackageName +":id/iz9").find();
+    }
+    
+    if (targetFrames.nonEmpty()) {
+        // 如果当前索引超出了找到的元素数量，重置索引
+        if (click_FrameLayout_FENSI_SIXIN.currentIndex >= targetFrames.size()) {
+            click_FrameLayout_FENSI_SIXIN.currentIndex = 0;
+            return false; // 需要滑动加载更多
+        }
+        
+        // 获取当前需要点击的元素
+        var targetFrame = targetFrames.get(click_FrameLayout_FENSI_SIXIN.currentIndex);
+        if (targetFrame) {
+            taskLog("准备点击第 " + (click_FrameLayout_FENSI_SIXIN.currentIndex + 1) + " 个粉丝");
+            var bounds = targetFrame.bounds();
+            click(bounds.centerX(), bounds.centerY());
+            click_FrameLayout_FENSI_SIXIN.currentIndex++;
+            sleep(random(2000, 3000));
+            return true;
         }
     }
-    sleep(random(2000, 5000))
+    
+    // 如果没有找到任何符合条件的元素
+    click_FrameLayout_FENSI_SIXIN.currentIndex = 0;
+    return false;
 }
-}
+
 
 
 
@@ -970,21 +954,6 @@ try {
         var profile_btn = findTextByLanguages(PROFILE_TEXT)
         if(profile_btn){
             sleep(random(2000, 4000))
-
-
-            // //先检查当前用户有多少个关注用户,通过检查text("Following 0")，如果存在，则说明没有关注用户，直接返回
-            // //text("Following 0")
-            // var Following_text_button = findTextByLanguages(PROFILE_FANS_COUNT_TEXT)
-            // if(Following_text_button){
-            //     taskLog("当前用户没有可以私信的用户，直接返回")
-            //     sleep(random(3000, 5000))
-            //     var screenshotPath = Nest_ScreenCapture();
-            //     taskLog("已保存完成后的截图：" + screenshotPath);
-            //     // 抛出一个特殊的错误来结束脚本
-            //     throw new Error("当前用户没有可以私信的用户，任务完成");
-            // }
-
-
     
             //开始寻找用户所有的关注用户列表的TextView
             // 循环等待直到找到FOLLOWING_TEXT按钮
@@ -1037,60 +1006,99 @@ try {
                             var Follow_text_button = null;
                             
                             while (waitAttempt < maxWaitAttempts) {
-                                click_FrameLayout_FENSI_SIXIN()
-                                sleep(random(3000, 5000))
-
-                                var Fans_sixin_message_text = findTextByLanguages(FANS_SIXIN_MESSAGE_TEXT)
-                                if(Fans_sixin_message_text){
-                                    taskLog("找到粉丝页面需要私信的按钮，准备私信")
-                                    sleep(random(3000, 5000))
-
-
-                                    var autoCompleteTextViews = className("android.widget.EditText").find();
-                                    if(autoCompleteTextViews.size() == 0){//这种场景对应的用户：mrbeast
-                                        taskLog("没有找到訊息控件，终止本次操作，开始下一个用户的私信行为！！！");               
-                                        back()
-                                        sleep(random(2000, 4000))
-                                        back()
-                                        sleep(random(2000, 4000))
-                                        break
-                                    }else{
-                                        for(var i = 0; i < autoCompleteTextViews.size(); i++) {
-                                            var textView = autoCompleteTextViews.get(i);
-                                            if(textView) {
-                                                sleep(random(2000, 4000))
-                                                var randIdx = random(0, all_TT_Comment_TEXT.length - 1)
-                                                var messageText = all_TT_Comment_TEXT[randIdx];
-                                                taskLog("评论控件，设置内容：" +messageText );
-                                                textView.setText(messageText)
-                                                sleep(random(2000, 4000))
-                
-                                                var allImages = className("android.widget.ImageView").find();
-                                                if (allImages && allImages.size() > 0) {
-                                                    var lastIndex = allImages.size() - 1;
-                                                    var lastImg = allImages.get(lastIndex);
-                                                    if (lastImg) {
-                                                        var bounds = lastImg.bounds();
+                                var foundFanToMessage = false;
+                                var currentPageFansProcessed = 0;
+                                
+                                while (successCount < TT_Like_User_FANS_ID_COUNT) {
+                                    // 尝试点击当前页面的粉丝
+                                    var clickResult = click_FrameLayout_FENSI_SIXIN();
+                                    if (!clickResult) {
+                                        taskLog("当前页面的粉丝都已处理完，需要滑动加载更多");
+                                        swipe_to_up();
+                                        sleep(random(3000, 5000));
+                                        continue; // 跳过后续处理，直接进入下一次循环
+                                    }
+                                    sleep(random(3000, 5000));
+                                    
+                                    // 进入粉丝个人页面后，尝试查找私信按钮
+                                    var maxRetry = 3;
+                                    var retryCount = 0;
+                                    var Fans_sixin_message_text = null;
+                                    
+                                    while (retryCount < maxRetry) {
+                                        Fans_sixin_message_text = findTextByLanguages(FANS_SIXIN_MESSAGE_TEXT);
+                                        if (Fans_sixin_message_text) {
+                                            break;
+                                        }
+                                        retryCount++;
+                                        sleep(1000);
+                                    }
+                                    
+                                    if (Fans_sixin_message_text) {
+                                        taskLog("找到粉丝页面需要私信的按钮，准备私信");
+                                        sleep(random(3000, 5000));
+                                        
+                                        var autoCompleteTextViews = className("android.widget.EditText").find();
+                                        if (autoCompleteTextViews.size() == 0) {
+                                            taskLog("没有找到訊息控件，跳过当前用户");
+                                            back();
+                                            sleep(random(2000, 4000));
+                                            back();
+                                            sleep(random(2000, 4000));
+                                            currentPageFansProcessed++;
+                                        } else {
+                                            // 发送私信
+                                            for (var i = 0; i < autoCompleteTextViews.size(); i++) {
+                                                var textView = autoCompleteTextViews.get(i);
+                                                if (textView) {
+                                                    sleep(random(2000, 4000));
+                                                    var randIdx = random(0, all_TT_Comment_TEXT.length - 1);
+                                                    var messageText = all_TT_Comment_TEXT[randIdx];
+                                                    taskLog("评论控件，设置内容：" + messageText);
+                                                    textView.setText(messageText);
+                                                    sleep(random(2000, 4000));
+                                                    
+                                                    var allImages = className("android.widget.ImageView").find();
+                                                    if (allImages && allImages.size() > 0) {
+                                                        var lastIndex = allImages.size() - 1;
+                                                        var lastImg = allImages.get(lastIndex);
+                                                        if (lastImg) {
+                                                            var bounds = lastImg.bounds();
                                                             if (lastImg.clickable()) {
                                                                 lastImg.click();
                                                             } else {
                                                                 click(bounds.centerX(), bounds.centerY());
                                                             }
                                                         }
+                                                    }
+                                                    
+                                                    successCount++; // 增加成功私信计数
+                                                    foundFanToMessage = true;
+                                                    taskLog("成功私信第 " + successCount + " 个粉丝");
+                                                    
+                                                    sleep(3000);
+                                                    back();
+                                                    sleep(1000);
+                                                    back();
+                                                    sleep(5000);
                                                 }
-                
-                
-                                                sleep(3000)
-                                                back()      
-                                                sleep(1000)
-                                                back()
-                                                sleep(5000)
+                                            }
+                                            currentPageFansProcessed++;
                                         }
+                                    } else {
+                                        taskLog("当前粉丝无法私信，尝试下一个");
+                                        back();
+                                        sleep(random(2000, 4000));
+                                        currentPageFansProcessed++;
                                     }
-                
+                                    
+                                    // 已经在点击函数中处理了滑动加载更多的逻辑
+                                    
+                                    // 如果达到目标数量，退出循环
+                                    if (successCount >= TT_Like_User_FANS_ID_COUNT) {
+                                        taskLog("已达到目标私信数量：" + TT_Like_User_FANS_ID_COUNT);
+                                        break;
                                     }
-
-
                                 }
 
                             }
@@ -1169,148 +1177,148 @@ try {
 
 
 
-        // 按照顺序开始执行搜索User-ID
-        taskLog("- 找到可用的搜索用户, 开始搜索 - ");
-        for (var index_user = 0; index_user < all_TT_Users.length; index_user++) {
-            var userId = all_TT_Users[index_user];
-            taskLog("开始准备获取all_TT_Users的ID = " + userId)
-            sleep(random(2000, 4000))
+        // // 按照顺序开始执行搜索User-ID
+        // taskLog("- 找到可用的搜索用户, 开始搜索 - ");
+        // for (var index_user = 0; index_user < all_TT_Users.length; index_user++) {
+        //     var userId = all_TT_Users[index_user];
+        //     taskLog("开始准备获取all_TT_Users的ID = " + userId)
+        //     sleep(random(2000, 4000))
 
-            taskLog("开始准备点击首页搜索按钮")
-            var search_edits = className("android.widget.EditText").find();
-            for(var i = 0; i < search_edits.size(); i++) {
-                var search_edit = search_edits.get(i);
-                if(search_edit) {
-                    sleep(1000)
-                    taskLog("搜索控件，设置用户NAME：" +userId );
-                    search_edit.setText(userId)    
-                    sleep(random(5000, 8000))
+        //     taskLog("开始准备点击首页搜索按钮")
+        //     var search_edits = className("android.widget.EditText").find();
+        //     for(var i = 0; i < search_edits.size(); i++) {
+        //         var search_edit = search_edits.get(i);
+        //         if(search_edit) {
+        //             sleep(1000)
+        //             taskLog("搜索控件，设置用户NAME：" +userId );
+        //             search_edit.setText(userId)    
+        //             sleep(random(5000, 8000))
                     
-                    taskLog("开始点击Search按钮")
-                    click_Second_search_btn()
+        //             taskLog("开始点击Search按钮")
+        //             click_Second_search_btn()
 
-                    sleep(random(5000, 8000))
-                    taskLog("开始点击视频Tab按钮")
-                    var findMSGTextResult = find_textview_text_base("用户","使用者","Users")
-                    if(!findMSGTextResult) {
-                        taskLog("没有找到用户Tab控件，终止本次操作，开始下一个用户的私信行为！！！");
-                        back()    
-                        break
-                    }
+        //             sleep(random(5000, 8000))
+        //             taskLog("开始点击视频Tab按钮")
+        //             var findMSGTextResult = find_textview_text_base("用户","使用者","Users")
+        //             if(!findMSGTextResult) {
+        //                 taskLog("没有找到用户Tab控件，终止本次操作，开始下一个用户的私信行为！！！");
+        //                 back()    
+        //                 break
+        //             }
 
-                    sleep(random(5000, 8000))
-                    //直接点击第一个关注按钮
-                    click_LinearLayout_GUANZHU()
-                    sleep(random(2000, 4000))
+        //             sleep(random(5000, 8000))
+        //             //直接点击第一个关注按钮
+        //             click_LinearLayout_GUANZHU()
+        //             sleep(random(2000, 4000))
 
         
-                    //text("消息")：点击User的主页的"消息"按钮，准备发信息
-                    var findMSGTextResult = find_textview_text_base("訊息", "Message", "消息")
-                    if(!findMSGTextResult) {
-                        taskLog("没有找到消息控件，终止本次操作，开始下一个用户的私信行为！！！");
-                        sleep(3000)
-                        back()
-                        sleep(1000)
-                        back()
-                        sleep(3000)
-                        break
-                    }
-                    sleep(random(2000, 4000))
+        //             //text("消息")：点击User的主页的"消息"按钮，准备发信息
+        //             var findMSGTextResult = find_textview_text_base("訊息", "Message", "消息")
+        //             if(!findMSGTextResult) {
+        //                 taskLog("没有找到消息控件，终止本次操作，开始下一个用户的私信行为！！！");
+        //                 sleep(3000)
+        //                 back()
+        //                 sleep(1000)
+        //                 back()
+        //                 sleep(3000)
+        //                 break
+        //             }
+        //             sleep(random(2000, 4000))
 
-                    var autoCompleteTextViews = className("android.widget.EditText").find();
-                    if(autoCompleteTextViews.size() == 0){//这种场景对应的用户：mrbeast
-                        taskLog("没有找到訊息控件，终止本次操作，开始下一个用户的私信行为！！！");               
-                        back()
-                        sleep(random(2000, 4000))
-                        back()
-                        sleep(random(2000, 4000))
-                        back()
-                        sleep(1000)
-                        break
-                    }else{
-                        for(var i = 0; i < autoCompleteTextViews.size(); i++) {
-                            var textView = autoCompleteTextViews.get(i);
-                            if(textView) {
-                                taskLog("找到TextView控件-Text："+ textView.text());
-                                sleep(1000)
+        //             var autoCompleteTextViews = className("android.widget.EditText").find();
+        //             if(autoCompleteTextViews.size() == 0){//这种场景对应的用户：mrbeast
+        //                 taskLog("没有找到訊息控件，终止本次操作，开始下一个用户的私信行为！！！");               
+        //                 back()
+        //                 sleep(random(2000, 4000))
+        //                 back()
+        //                 sleep(random(2000, 4000))
+        //                 back()
+        //                 sleep(1000)
+        //                 break
+        //             }else{
+        //                 for(var i = 0; i < autoCompleteTextViews.size(); i++) {
+        //                     var textView = autoCompleteTextViews.get(i);
+        //                     if(textView) {
+        //                         taskLog("找到TextView控件-Text："+ textView.text());
+        //                         sleep(1000)
 
-                                var randIdx = random(0, all_TT_Comment_TEXT.length - 1)
-                                taskLog("评论文案的下标randIdx："+randIdx)
-                                var messageText = all_TT_Comment_TEXT[randIdx];
+        //                         var randIdx = random(0, all_TT_Comment_TEXT.length - 1)
+        //                         taskLog("评论文案的下标randIdx："+randIdx)
+        //                         var messageText = all_TT_Comment_TEXT[randIdx];
 
-                                taskLog("评论控件，设置内容：" +messageText );
+        //                         taskLog("评论控件，设置内容：" +messageText );
 
-                                textView.setText(messageText)
-                                sleep(random(2000, 4000))
+        //                         textView.setText(messageText)
+        //                         sleep(random(2000, 4000))
                 
                     
 
-                                //点击发送按钮
-                                // className("android.widget.ImageView").find().forEach((iv, idx) => {
-                                //     taskLog("ImageView " + idx + ": " + iv.bounds());
-                                // });
+        //                         //点击发送按钮
+        //                         // className("android.widget.ImageView").find().forEach((iv, idx) => {
+        //                         //     taskLog("ImageView " + idx + ": " + iv.bounds());
+        //                         // });
 
-                                // taskLog("开始寻找发送按钮.....")
-                                // taskLog("开始寻找发送按钮,device.width * 0.9 = " + device.width * 0.9)
-                                // taskLog("开始寻找发送按钮,device.height * 0.9 = " + device.height * 0.9)
-
-
-                                // let sendButton = className("android.widget.ImageView")
-                                // .filter(function(w) {
-                                //     let b = w.bounds();
-                                //     // 检查是否在右下角区域
-                                //     return b.centerX() > device.width * 0.8 && b.centerY() > device.height * 0.8;
-                                // }).findOne(5000);
+        //                         // taskLog("开始寻找发送按钮.....")
+        //                         // taskLog("开始寻找发送按钮,device.width * 0.9 = " + device.width * 0.9)
+        //                         // taskLog("开始寻找发送按钮,device.height * 0.9 = " + device.height * 0.9)
 
 
-                                var allImages = className("android.widget.ImageView").find();
-                                if (allImages && allImages.size() > 0) {
-                                    var lastIndex = allImages.size() - 1;
-                                    var lastImg = allImages.get(lastIndex);
-                                    if (lastImg) {
-                                        var bounds = lastImg.bounds();
-                                        if (lastImg.clickable()) {
-                                            lastImg.click();
-                                        } else {
-                                            click(bounds.centerX(), bounds.centerY());
-                                        }
-
-                                        }
-                                }
+        //                         // let sendButton = className("android.widget.ImageView")
+        //                         // .filter(function(w) {
+        //                         //     let b = w.bounds();
+        //                         //     // 检查是否在右下角区域
+        //                         //     return b.centerX() > device.width * 0.8 && b.centerY() > device.height * 0.8;
+        //                         // }).findOne(5000);
 
 
+        //                         var allImages = className("android.widget.ImageView").find();
+        //                         if (allImages && allImages.size() > 0) {
+        //                             var lastIndex = allImages.size() - 1;
+        //                             var lastImg = allImages.get(lastIndex);
+        //                             if (lastImg) {
+        //                                 var bounds = lastImg.bounds();
+        //                                 if (lastImg.clickable()) {
+        //                                     lastImg.click();
+        //                                 } else {
+        //                                     click(bounds.centerX(), bounds.centerY());
+        //                                 }
 
-                                // // 点击按钮
-                                // if(sendButton) {
-                                //     taskLog("找到发送按钮，开始点击")
-                                //     let bounds = sendButton.bounds();
-                                //     sleep(1000);  // 点击前等待
-                                //     click(bounds.centerX(), bounds.centerY());
-                                //     sleep(1000);  // 点击后等待
+        //                                 }
+        //                         }
+
+
+
+        //                         // // 点击按钮
+        //                         // if(sendButton) {
+        //                         //     taskLog("找到发送按钮，开始点击")
+        //                         //     let bounds = sendButton.bounds();
+        //                         //     sleep(1000);  // 点击前等待
+        //                         //     click(bounds.centerX(), bounds.centerY());
+        //                         //     sleep(1000);  // 点击后等待
                                     
-                                // }else{
-                                //     taskLog("没有找到私信发送按钮！！！！")
-                                //     // throw new Error("没有找到私信发送按钮，所以报错"); 
-                                // } 
+        //                         // }else{
+        //                         //     taskLog("没有找到私信发送按钮！！！！")
+        //                         //     // throw new Error("没有找到私信发送按钮，所以报错"); 
+        //                         // } 
 
-                                sleep(3000)
-                                back()      
-                                sleep(1000)
-                                back()
-                                sleep(1000)
-                                back()
-                                sleep(5000)
-                        }
-                    }
-
-
-                    }
-
-                }
-            }
+        //                         sleep(3000)
+        //                         back()      
+        //                         sleep(1000)
+        //                         back()
+        //                         sleep(1000)
+        //                         back()
+        //                         sleep(5000)
+        //                 }
+        //             }
 
 
-        }
+        //             }
+
+        //         }
+        //     }
+
+
+        // }
 
     }
 
