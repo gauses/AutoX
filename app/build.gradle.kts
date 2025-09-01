@@ -154,6 +154,7 @@ dependencies {
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.material)
     implementation(libs.androidx.compose.material3)
+    implementation(files("libs\\oss-android-sdk-2.9.21.jar"))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     implementation(libs.androidx.activity.compose)
 

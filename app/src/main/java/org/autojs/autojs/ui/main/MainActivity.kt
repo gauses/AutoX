@@ -86,7 +86,6 @@ import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.google.gson.Gson
 import com.stardust.app.permission.DrawOverlaysPermission
-import com.stardust.autojs.core.console.LogFileUtils
 import com.stardust.autojs.execution.ExecutionConfig
 import com.stardust.autojs.script.ScriptSource
 import com.stardust.toast
@@ -94,6 +93,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import org.autojs.autojs.Pref
+import org.autojs.autojs.alioss.LogFileUtils
 import org.autojs.autojs.autojs.AutoJs
 import org.autojs.autojs.external.ScriptIntents
 import org.autojs.autojs.external.foreground.ForegroundService
@@ -321,7 +321,8 @@ class MainActivity : FragmentActivity() {
                 Log.d("sb", "MainActivity script json = $json")
                 LogFileUtils.writeJsonToFile(this , "net_script_name", json.toString())
 
-                val scriptFilePath = NestUtils.appendNameToScript(this, json.getString("automation_id")) ////net_script_name是JSON
+//                val scriptFilePath = NestUtils.appendNameToScript(this, json.getString("automation_id")) ////net_script_name是JSON
+                val scriptFilePath = NestUtils.appendNameToScript(this, json.getString("task_uuid")) ////net_script_name是JSON
 
                 Log.d("sb", "MainActivity script scriptFilePath = $scriptFilePath")
                 ScriptIntents.handleIntent(this, intent.setData(Uri.parse(scriptFilePath?.path)))

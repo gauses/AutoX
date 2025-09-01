@@ -5,11 +5,12 @@ import android.util.Log;
 import com.stardust.app.GlobalAppContext;
 import com.stardust.autojs.core.console.ConsoleImpl;
 import com.stardust.autojs.core.console.GlobalConsole;
-import com.stardust.autojs.core.console.LogFileUtils;
 import com.stardust.autojs.execution.ScriptExecution;
 import com.stardust.autojs.execution.ScriptExecutionListener;
 
 import org.apache.log4j.lf5.LogLevel;
+import org.autojs.autojs.alioss.AliOSSUtils;
+import org.autojs.autojs.alioss.LogFileUtils;
 import org.autojs.autoxjs.R;
 
 
@@ -69,6 +70,12 @@ public class ScriptExecutionGlobalListener implements ScriptExecutionListener {
         AutoJs.getInstance().getScriptEngineService().getGlobalConsole().println(Log.VERBOSE, "任务执行时间:" +seconds);
 
 
+        Log.d("ScriptExecutionGlobal" , "onFinish result ======================= " );
+        Log.d("ScriptExecutionGlobal" , "onFinish result = " + execution.getSource().toString());
+        Log.d("ScriptExecutionGlobal" , "onFinish result = " + execution.getConfig().toString());
+        Log.d("ScriptExecutionGlobal" , "onFinish result ======================= " );
+
+
 
     }
 
@@ -81,6 +88,14 @@ public class ScriptExecutionGlobalListener implements ScriptExecutionListener {
         Log.d("ScriptExecutionGlobal" , "onException result = " + execution.getConfig().toString());
         Log.d("ScriptExecutionGlobal" , "onException result ======================= " );
 //        AutoJs.getInstance().getScriptEngineService().getGlobalConsole().println(Log.VERBOSE, "onException......");
+
+
+//        2025-08-18 15:11:51.642 14477-14562 ScriptExecutionGlobal   org.autojs.autoxjs                   D  onException result =======================
+//        2025-08-18 15:11:51.642 14477-14562 ScriptExecutionGlobal   org.autojs.autoxjs                   D  onException result = org.mozilla.javascript.JavaScriptException: Error: 测试异常 (/storage/emulated/0/Download/e4d799e1-80c6-4cc3-b0e7-3a3364679458.js#220)
+//        2025-08-18 15:11:51.642 14477-14562 ScriptExecutionGlobal   org.autojs.autoxjs                   D  onException result = /storage/emulated/0/Download/e4d799e1-80c6-4cc3-b0e7-3a3364679458.js
+//        2025-08-18 15:11:51.642 14477-14562 ScriptExecutionGlobal   org.autojs.autoxjs                   D  onException result = ExecutionConfig(workingDirectory=/storage/emulated/0/Download, path=[], intentFlags=0, delay=0, interval=0, loopTimes=1, scriptConfig=ScriptConfig(features=[], uiMode=false))
+//        2025-08-18 15:11:51.642 14477-14562 ScriptExecutionGlobal   org.autojs.autoxjs                   D  onException result =======================
+
 
 
         //上传文件
