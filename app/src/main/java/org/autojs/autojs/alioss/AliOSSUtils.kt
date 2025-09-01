@@ -23,8 +23,16 @@ import okhttp3.Request
 object AliOSSUtils {
 
 
-    fun getOSSSTSKey(XToken: String){
+    data class STSCredentials(
+        val accessKeyId: String,
+        val accessKeySecret: String,
+        val securityToken: String
+    )
+
+    fun getOSSSTSKey(XToken: String): STSCredentials? {
         val client = OkHttpClient()
+        val maxRetries = 3 // 最大重试次数
+        var retryCount = 0
 
         val request = Request.Builder()
             .url("https://cloud.nestbrowser.com/cm/v1/sts")
@@ -32,9 +40,59 @@ object AliOSSUtils {
             .addHeader("X-Token", XToken)
             .build()
 
-        client.newCall(request).execute().use { response ->
-            println(response.body?.string())
+        while (retryCount < maxRetries) {
+            try {
+                client.newCall(request).execute().use { response ->
+                    val responseBody = response.body?.string()
+                    if (responseBody != null) {
+                        try {
+                            val json = JSONObject(responseBody)
+                            val data = json.optJSONObject("data")
+                            val credentials = data?.optJSONObject("credentials")
+                            
+                            if (credentials != null &&
+                                credentials.has("accessKeyId") &&
+                                credentials.has("accessKeySecret") &&
+                                credentials.has("securityToken")
+                            ) {
+                                return STSCredentials(
+                                    accessKeyId = credentials.getString("accessKeyId"),
+                                    accessKeySecret = credentials.getString("accessKeySecret"),
+                                    securityToken = credentials.getString("securityToken")
+                                )
+                            } else {
+                                Log.w("AliOSSUtils", "第${retryCount + 1}次请求未获取到完整参数，准备重试")
+                                retryCount++
+                                if (retryCount < maxRetries) {
+                                    Thread.sleep(1000) // 等待1秒后重试
+                                }
+                            }
+                        } catch (e: Exception) {
+                            Log.e("AliOSSUtils", "第${retryCount + 1}次解析响应失败", e)
+                            retryCount++
+                            if (retryCount < maxRetries) {
+                                Thread.sleep(1000) // 等待1秒后重试
+                            }
+                        }
+                    } else {
+                        Log.w("AliOSSUtils", "第${retryCount + 1}次请求响应为空，准备重试")
+                        retryCount++
+                        if (retryCount < maxRetries) {
+                            Thread.sleep(1000) // 等待1秒后重试
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("AliOSSUtils", "第${retryCount + 1}次请求失败", e)
+                retryCount++
+                if (retryCount < maxRetries) {
+                    Thread.sleep(1000) // 等待1秒后重试
+                }
+            }
         }
+
+        Log.e("AliOSSUtils", "在${maxRetries}次尝试后仍未获取到STS凭证")
+        return null
     }
 
 
