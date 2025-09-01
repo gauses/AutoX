@@ -73,7 +73,7 @@ function findTextByLanguages(languageObject) {
 
 
 //保证Java层和JS代码两边的日志文件一致
-var taskLogFileName = "nest_task_log_" + getSystemDate("df").replace(/:/g, "-").replace(" ", "_") + ".txt"
+var taskLogFileName = "/nest_task_log_" + getSystemDate("df").replace(/:/g, "-").replace(" ", "_") + ".txt"
 var RPAFilePath = "/sdcard/Download/log/";
 // 如果目录存在且有内容就删除
 if (files.exists(RPAFilePath)) {
@@ -178,6 +178,8 @@ if (runningEngines.length > 1) {
 
 sleep(3000)
 taskLog("准备启动TikTok...")
+sleep(30000000)
+
 
 var targetPackageName = null;
 var targetClassName = null;
@@ -428,16 +430,32 @@ function clickId(a) {
 
 //打印日志
 function taskLog(_log){
-    toast(_log)
+    toast("nest:" +_log)
     console.log(getSystemDate("df") +":" +_log)
 
-    //将日志文件写入本地txt
-    var logFile = new File(logFilePath);
-    var logFileWriter = new FileWriter(logFile, true);
-    var logFileWriter = new PrintWriter(logFileWriter);
-    // logFileWriter.println(getSystemDate("df") +":" +_log);
-    logFileWriter.println(_log);
-    logFileWriter.close();
+    try {
+        //确保目录存在
+        var logDir = new File(RPAFilePath);
+        if (!logDir.exists()) {
+            logDir.mkdirs();
+        }
+
+        //确保文件存在
+        var logFile = new File(logFilePath);
+        if (!logFile.exists()) {
+            logFile.createNewFile();
+        }
+
+        //将日志文件写入本地txt
+        var fileWriter = new FileWriter(logFile, true);
+        var printWriter = new PrintWriter(fileWriter);
+        printWriter.println(_log);
+        printWriter.flush(); //确保内容被写入
+        printWriter.close();
+        fileWriter.close();
+    } catch(e) {
+        console.error("写入日志文件失败：" + e);
+    }
 
 }
 

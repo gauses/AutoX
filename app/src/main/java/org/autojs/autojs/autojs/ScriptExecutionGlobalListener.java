@@ -34,7 +34,6 @@ public class ScriptExecutionGlobalListener implements ScriptExecutionListener {
         Log.d("ScriptExecutionGlobal" , "onSuccess result = " + execution.getConfig().toString());
         Log.d("ScriptExecutionGlobal" , "onSuccess result ======================= " );
 
-//        AutoJs.getInstance().getScriptEngineService().getGlobalConsole().println(Log.VERBOSE, "onSuccess......");
 
         //执行结果日志：
 //        2025-08-15 14:55:50.446 17154-17250 ScriptExecutionGlobal  D  onSuccess result =======================
@@ -45,6 +44,7 @@ public class ScriptExecutionGlobalListener implements ScriptExecutionListener {
 
         //上传文件
         LogFileUtils.INSTANCE.uploadLogFileToServer("success");
+
         try {
             Thread.sleep(3000);
         } catch (InterruptedException ex) {
@@ -98,7 +98,7 @@ public class ScriptExecutionGlobalListener implements ScriptExecutionListener {
 
 
 
-        //上传文件
+        //上传失败文件
         LogFileUtils.INSTANCE.uploadLogFileToServer("fail");
         try {
             Thread.sleep(3000);

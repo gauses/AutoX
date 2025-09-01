@@ -322,9 +322,10 @@ class MainActivity : FragmentActivity() {
                 LogFileUtils.writeJsonToFile(this , "net_script_name", json.toString())
 
 //                val scriptFilePath = NestUtils.appendNameToScript(this, json.getString("automation_id")) ////net_script_name是JSON
-                val scriptFilePath = NestUtils.appendNameToScript(this, json.getString("task_uuid")) ////net_script_name是JSON
+                val scriptFilePath = NestUtils.appendNameToScript(this, json.getString("rpa_uuid")) ////net_script_name是JSON
 
                 Log.d("sb", "MainActivity script scriptFilePath = $scriptFilePath")
+                Log.d("sb", "MainActivity script scriptFilePath.path = ${scriptFilePath?.path}")
                 ScriptIntents.handleIntent(this, intent.setData(Uri.parse(scriptFilePath?.path)))
                 LogActivityKt.start(this)
             }

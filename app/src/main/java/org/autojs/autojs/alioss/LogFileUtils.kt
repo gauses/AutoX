@@ -98,28 +98,23 @@ object LogFileUtils {
         var nestScriptJson= JSONObject(nestScript)
         // 获取所有日志文件
         val logFiles = getAllLogFiles()
-        val fileList = JSONObject()
         logFiles.forEach { file ->
             try {
-                val fileInfo = JSONObject()
                 val mimeType = getMimeType(file)
+
+                var task_uuid = nestScriptJson.getString("task_uuid")
+                var xToken = nestScriptJson.getString("xToken")
+
 
 
                 // 根据文件类型处理
                 if (mimeType.startsWith("text/")) {
                     // 文本文件直接读取内容
-                    fileInfo.put("content", file.readText())
+                    AliOSSUtils.upload(xToken, "template-store/rpa-report/$task_uuid.txt", file.path)
+
                 } else {
-                    // 图片等二进制文件转为Base64
-                    fileInfo.put("content", fileToBase64(file))
-                    AliOSSUtils.upload("task_uuid", file.path)
+                    AliOSSUtils.upload(xToken, "template-store/rpa-report/$task_uuid.png", file.path)
                 }
-                
-                fileInfo.put("mime_type", mimeType)
-                fileInfo.put("size", file.length())
-                fileInfo.put("last_modified", file.lastModified())
-                
-                fileList.put(file.name, fileInfo)
             } catch (e: Exception) {
                 Log.e("ScriptExecutionGlobal", "处理文件失败: ${file.name}", e)
             }

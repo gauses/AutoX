@@ -16,6 +16,8 @@ import com.alibaba.sdk.android.oss.model.PutObjectResult
 import com.stardust.autojs.runtime.ScriptRuntime.getApplicationContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import org.json.JSONObject
+import java.io.File
 
 
 //说明文档：https://github.com/aliyun/aliyun-oss-android-sdk/blob/master/README-CN.md
@@ -98,69 +100,118 @@ object AliOSSUtils {
 
 
     //初始化
-    fun initOSS(): OSS{
-        val endpoint = "http://oss-cn-hangzhou.aliyuncs.com"
+    fun initOSS(XToken: String): OSS? {
+        val endpoint = "http://oss-accelerate.aliyuncs.com"
+        
+        // 获取STS凭证
+        val credentials = getOSSSTSKey(XToken)
+        if (credentials == null) {
+            Log.e("AliOSSUtils", "初始化OSS失败：无法获取STS凭证")
+            return null
+        }
+
+        // 使用获取到的凭证创建Provider
         val credentialProvider = OSSStsTokenCredentialProvider(
-            "STS.NXnBDELYopSAZxxCJUz6LVVWA",
-            "H6D9r2VWBFnqUWD5iLSWCMtkdNqvwGVGhGvsSkandwGR",
-            "CAISmAN1q6Ft5B2yfSjIr5vbCf7xoYZOx5GqWF7Jp0oAdrlguZP8ozz2IHhMenJhA+kYsfQzlWlY7Pgalqp6U4cdreZimzMrvPpt6gqET9frdKXXhOV2QfTHdEGXDxnkpoCwB8zyUNLafNq0dlnAjVUd6LDmdDKkLTvHVJqSksxfc8gwVAu1ZiY8A7UwHAZ5r9IAPnb8LOukNgWQ4lDdF011oAFx+1gdqa202Z+b8QGMzg+4mOgOvMH3L4O4KtJje4tyVs+x1fB7M7Hd1zRdrFoou659l/5D4iyV/IPfUV5K+FCAPvHIt8ZgaxN0Y7A+ErJJ6ePgkud1/c6rztymlkkWYLEECHmCGtD4m/GpQr35aowLEp/gIGnI39y1MZ34jhgpe3pzNnkRI4J/cS4qUEJzGm2Lc//9pgjQBx2qTq+ey6c7yoZv11z4Vk4t6r510txzuAZv2f9UBytAX3Z+Vmzx4K6gHwcF9d8zsjxx4VHviLx66MKO80SbHUZ7pXo05MbFXOjt0diwTWzWv3+l+Gq0jeUu2wx5VQqfI9oagAEZFA3Uij62rTGNmD2pYH3H2YVPlGdlK8/pqr38huw77VOjq2+gplxPWMVOX264H4S/FkiASVCgHCtBhMT2QTR5jYryQ2KUBFPJDhewhm+emIisc/JLPPFcr2Y9mBveHBcWyAU3R5jhDt81rrHdW3Ws2o5WNFO7sfIaSg63kYBUhSAA"
+            credentials.accessKeyId,
+            credentials.accessKeySecret,
+            credentials.securityToken
         )
 
-        //该配置类如果不设置，会有默认配置，具体可看该类
-        val conf = ClientConfiguration()
-        conf.connectionTimeout = 15 * 1000 // 连接超时，默认15秒
-        conf.socketTimeout = 15 * 1000 // socket超时，默认15秒
-        conf.maxConcurrentRequest = 5 // 最大并发请求数，默认5个
-        conf.maxErrorRetry = 2 // 失败后最大重试次数，默认2次
+        // 配置OSS客户端
+        val conf = ClientConfiguration().apply {
+            connectionTimeout = 15 * 1000 // 连接超时，默认15秒
+            socketTimeout = 15 * 1000 // socket超时，默认15秒
+            maxConcurrentRequest = 5 // 最大并发请求数，默认5个
+            maxErrorRetry = 2 // 失败后最大重试次数，默认2次
+        }
+        
+        // 开启日志
         OSSLog.enableLog() //这个开启会支持写入手机sd卡中的一份日志文件位置在SDCard_path\OSSLog\logs.csv
 
-        val oss: OSS = OSSClient(getApplicationContext(), endpoint, credentialProvider, conf)
-
-        return oss
-
+        return try {
+            OSSClient(getApplicationContext(), endpoint, credentialProvider, conf).also {
+                Log.d("AliOSSUtils", "OSS客户端初始化成功")
+            }
+        } catch (e: Exception) {
+            Log.e("AliOSSUtils", "OSS客户端初始化失败", e)
+            null
+        }
     }
 
 
-    fun upload(fileName: String, filePath: String){
+    fun upload(XToken: String, ossFilePath: String, filePath: String): Boolean {
+        Log.d("AliOSSUtils", "开始上传文件:")
+        Log.d("AliOSSUtils", "XToken: $XToken")
+        Log.d("AliOSSUtils", "OSS路径: $ossFilePath")
+        Log.d("AliOSSUtils", "本地文件: $filePath")
 
-        // 构造上传请求
-        val put = PutObjectRequest("oss-nest-sg", fileName, filePath)
-        // 异步上传时可以设置进度回调
-        put.progressCallback =
-            OSSProgressCallback { request, currentSize, totalSize ->
-                Log.d(
-                    "PutObject",
-                    "currentSize: $currentSize totalSize: $totalSize"
-                )
+        // 检查文件是否存在
+        val file = File(filePath)
+        if (!file.exists() || !file.isFile) {
+            Log.e("AliOSSUtils", "上传失败：文件不存在 - $filePath")
+            return false
+        }
+
+        // 初始化OSS客户端
+        val oss = initOSS(XToken) ?: run {
+            Log.e("AliOSSUtils", "上传失败：OSS客户端初始化失败")
+            return false
+        }
+
+        try {
+            // 构造上传请求
+            val put = PutObjectRequest("oss-nest-sg", ossFilePath, filePath).apply {
+                // 设置进度回调
+                progressCallback = OSSProgressCallback { _, currentSize, totalSize ->
+                    val progress = (currentSize * 100.0 / totalSize).toInt()
+                    Log.d("AliOSSUtils", "文件 $filePath 上传进度: $progress%")
+                }
             }
 
-        val oss = initOSS()
-        val task: OSSAsyncTask<*> = oss.asyncPutObject(
-            put,
-            object : OSSCompletedCallback<PutObjectRequest?, PutObjectResult?> {
-                override fun onSuccess(request: PutObjectRequest?, result: PutObjectResult?) {
-                    Log.d("PutObject", "UploadSuccess")
-                }
+            var uploadSuccess = false
+            var uploadError: String? = null
 
-                override fun onFailure(
-                    request: PutObjectRequest?,
-                    clientExcepion: ClientException,
-                    serviceException: ServiceException
-                ) {
-                    // 请求异常
-                    if (clientExcepion != null) {
-                        // 本地异常如网络异常等
-                        clientExcepion.printStackTrace()
+            // 执行上传
+            val task = oss.asyncPutObject(put,
+                object : OSSCompletedCallback<PutObjectRequest?, PutObjectResult?> {
+                    override fun onSuccess(request: PutObjectRequest?, result: PutObjectResult?) {
+                        Log.i("AliOSSUtils", "文件 $filePath 上传成功")
+                        uploadSuccess = true
                     }
-                    if (serviceException != null) {
-                        // 服务异常
-                        Log.e("ErrorCode", serviceException.errorCode)
-                        Log.e("RequestId", serviceException.requestId)
-                        Log.e("HostId", serviceException.hostId)
-                        Log.e("RawMessage", serviceException.rawMessage)
+
+                    override fun onFailure(
+                        request: PutObjectRequest?,
+                        clientExcepion: ClientException?,
+                        serviceException: ServiceException?
+                    ) {
+                        uploadError = when {
+                            clientExcepion != null -> {
+                                Log.e("AliOSSUtils", "客户端异常", clientExcepion)
+                                "客户端异常：${clientExcepion.message}"
+                            }
+                            serviceException != null -> {
+                                Log.e("AliOSSUtils", "服务端异常：${serviceException.rawMessage}")
+                                "服务端异常：[${serviceException.errorCode}] ${serviceException.rawMessage}"
+                            }
+                            else -> "未知错误"
+                        }
                     }
-                }
-            })
+                })
+
+            // 等待上传完成
+            task.waitUntilFinished()
+
+            return if (uploadSuccess) {
+                true
+            } else {
+                Log.e("AliOSSUtils", "文件上传失败：${uploadError ?: "未知错误"}")
+                false
+            }
+
+        } catch (e: Exception) {
+            Log.e("AliOSSUtils", "文件上传过程发生异常", e)
+            return false
+        }
 
 
     }
