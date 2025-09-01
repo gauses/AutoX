@@ -431,7 +431,13 @@ function taskLog(_log){
     toast(_log)
     console.log(getSystemDate("df") +":" +_log)
 
-    //通过日志判断任务有没有结束：
+    //将日志文件写入本地txt
+    var logFile = new File(logFilePath);
+    var logFileWriter = new FileWriter(logFile, true);
+    var logFileWriter = new PrintWriter(logFileWriter);
+    // logFileWriter.println(getSystemDate("df") +":" +_log);
+    logFileWriter.println(_log);
+    logFileWriter.close();
 
 }
 
