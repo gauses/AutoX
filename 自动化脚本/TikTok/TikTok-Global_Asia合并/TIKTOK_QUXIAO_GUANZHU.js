@@ -66,6 +66,15 @@ const FOLLOWING_LIST_TEXT = {
     EN_US: "Following"   // 英文
 };
 
+
+//定义Following列表的TextView在不同语言下的文本
+const FRIENDS_LIST_TEXT = {
+    ZH_CN: "好友",    // 简体中文
+    ZH_TW: "好友",    // 繁体中文
+    EN_US: "Friends"   // 英文
+};
+
+
 //定义Following按钮一共有多少个用户
 const FOLLOWING_USER_COUNT_TEXT = {
     ZH_CN: "关注 0",    // 简体中文
@@ -281,22 +290,34 @@ function forceStop_APP(packageName){
 
 //屏幕上滑
 function swipe_to_up(){
+    taskLog("准备执行屏幕上滑操作...");
     // 获取设备屏幕的宽高
     var width = device.width;
     var height = device.height;
+    taskLog("当前设备屏幕尺寸：" + width + "x" + height);
 
     // 生成随机起始点
     var startX = random(width / 3 , width * 2 / 3);
     var startY = random(height * 2 / 3, height * 3 / 4);
+    taskLog("计算滑动起始点 - X范围：" + (width/3).toFixed(0) + "~" + (width*2/3).toFixed(0));
+    taskLog("计算滑动起始点 - Y范围：" + (height*2/3).toFixed(0) + "~" + (height*3/4).toFixed(0));
 
     // 生成随机结束点
     var endX = random(width / 3 , width * 2 / 3);
     var endY = random(height * 1 / 3, height * 1 / 4);
+    taskLog("计算滑动终点 - X范围：" + (width/3).toFixed(0) + "~" + (width*2/3).toFixed(0));
+    taskLog("计算滑动终点 - Y范围：" + (height/3).toFixed(0) + "~" + (height/4).toFixed(0));
+
+    // 计算滑动距离和方向
+    var distance = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
+    var direction = Math.atan2(endY - startY, endX - startX) * 180 / Math.PI;
+    taskLog("滑动详情 - 距离：" + distance.toFixed(0) + "像素, 角度：" + direction.toFixed(1) + "度");
 
     // 屏幕上滑操作
+    taskLog("开始执行滑动 - 起点：(" + startX + ", " + startY + ")");
+    taskLog("开始执行滑动 - 终点：(" + endX + ", " + endY + ")");
     swipe(startX, startY, endX, endY, 500);
-    taskLog("开始滑动位置，x = "+startX+"；y = " + startY)
-    taskLog("结束滑动位置，x = "+endX+"；y = " + endY)
+    taskLog("滑动操作执行完成");
 
 }
 
@@ -442,8 +463,17 @@ function taskLog(_log){
     toast(_log)
     console.log(getSystemDate("df") +":" +_log)
 
-    //通过日志判断任务有没有结束：
-
+    try {
+        //确保目录存在
+        files.ensureDir(RPAFilePath);
+        
+        //将日志写入文件
+        var logContent = getSystemDate("df") + ":" + _log + "\n";
+        files.append(logFilePath, logContent);
+        
+    } catch(e) {
+        console.error("写入日志文件失败：" + e);
+    }
 }
 
 
@@ -473,24 +503,25 @@ function Nest_ScreenCapture(){
     var path = RPAFilePath + "/nestshot_" + Date.now() + ".png";
     img.saveTo(path);                    // 保存
     img.recycle();                       // 回收内存
-    taskLog("自动化任务-已保存："+ path);
+    taskLog("自动化任务已经完成-已保存截图："+ path);
 
 
     //刷新媒体库
     sleep(3000)
-    toast("开始刷新媒体库，用时5秒钟....");
+    toast("开始刷新媒体库....");
     refreshMedia(RPAFilePath)
     return path
 }
 // 刷新指定路径的媒体库
 function refreshMedia(path) {
-    taskLog("开始刷新媒体库，用时5秒钟....");
+    taskLog("开始刷新媒体库....");
     // 发送媒体扫描广播
     media.scanFile(path);
     // 等待扫描完成
     sleep(5000);
-    taskLog("媒体库刷新完成，开始下一步任务...");
+    taskLog("媒体库刷新完成.");
 }
+
 
 
 
@@ -692,20 +723,22 @@ try{
                     
                     while (!foundButton && scrollAttempt < maxScrollAttempts) {
                         // 循环等待直到找到FOLLOWING_LIST_TEXT或超时
-                        var maxWaitAttempts = 5; // 最大等待尝试次数
+                        var maxWaitAttempts = 3; // 最大等待尝试次数
                         var waitAttempt = 0;
                         var Follow_text_button = null;
                         
                         while (waitAttempt < maxWaitAttempts) {
+                            taskLog("开始第" + (waitAttempt + 1) + "次尝试查找Following列表按钮");
                             Follow_text_button = findTextByLanguages(FOLLOWING_LIST_TEXT);
                             if (Follow_text_button) {
-                                taskLog("找到用户个人中心的Follow列表的TextView，准备点击取消关注");
+                                taskLog("找到用户个人中心的Follow列表的TextView，位置信息：" + JSON.stringify(Follow_text_button.bounds()));
+                                taskLog("按钮状态：可点击=" + Follow_text_button.clickable() + ", 可见=" + Follow_text_button.visibleToUser());
                                 foundButton = true;
                                 // 执行点击操作
                                 if (Follow_text_button.click()) {
                                     taskLog("成功点击取消关注按钮");
                                     successCount++; // 只有在成功点击后才增加计数
-                                    taskLog("当前已成功取消关注：" + successCount + "/" + TT_Cancel_Follow_Count + "个用户");
+                                    taskLog("当前进度：" + successCount + "/" + TT_Cancel_Follow_Count + " (" + (successCount/TT_Cancel_Follow_Count*100).toFixed(1) + "%)");
                                     
                                     // 检查是否达到目标数量
                                     if (successCount >= TT_Cancel_Follow_Count) {
@@ -741,14 +774,18 @@ try{
                                 var followingButton = null;
                                 
                                 while (retryCount < retryAttempts) {
+                                    taskLog("开始第" + (retryCount + 1) + "/" + retryAttempts + "次重试查找Following按钮");
                                     followingButton = findTextByLanguages(FOLLOWING_TEXT);
                                     if (followingButton) {
-                                        taskLog("重新找到Following按钮并点击");
+                                        taskLog("重新找到Following按钮，按钮信息：" + JSON.stringify(followingButton.bounds()));
+                                        taskLog("按钮状态：可点击=" + followingButton.clickable() + ", 可见=" + followingButton.visibleToUser());
                                         sleep(random(2000, 3000));
+                                        taskLog("准备点击Following按钮...");
                                         break;
                                     } else {
                                         retryCount++;
-                                        taskLog("第" + retryCount + "次重试：未找到Following按钮");
+                                        taskLog("第" + retryCount + "次重试失败，重试进度：" + (retryCount/retryAttempts*100).toFixed(1) + "%");
+                                        taskLog("等待" + (random(2000, 3000)/1000).toFixed(1) + "秒后进行下一次重试");
                                         sleep(random(2000, 3000));
                                     }
                                 }
@@ -763,10 +800,13 @@ try{
                                 continue;
                             }
                             
-                            taskLog("尝试滑动屏幕寻找更多Following列表");
+                            taskLog("开始第" + (scrollAttempt + 1) + "/" + maxScrollAttempts + "次滑动尝试");
+                            taskLog("当前滑动进度：已完成" + (scrollAttempt/maxScrollAttempts*100).toFixed(1) + "%的屏幕滑动");
                             swipe_to_up();
+                            taskLog("完成一次滑动操作，等待动画完成...");
                             sleep(random(3000, 5000)); // 等待滑动动画完成
                             scrollAttempt++;
+                            taskLog("本轮滑动完成，即将开始下一轮搜索");
                         }
                     }
                     

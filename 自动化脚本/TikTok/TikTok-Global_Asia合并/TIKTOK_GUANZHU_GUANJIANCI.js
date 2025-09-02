@@ -178,7 +178,7 @@ if (runningEngines.length > 1) {
 
 sleep(3000)
 taskLog("准备启动TikTok...")
-sleep(30000000)
+sleep(random(8000, 10000))
 
 
 var targetPackageName = null;
