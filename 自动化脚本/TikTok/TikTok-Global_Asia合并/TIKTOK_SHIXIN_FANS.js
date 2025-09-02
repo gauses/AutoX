@@ -152,24 +152,25 @@ function Nest_ScreenCapture(){
     var path = RPAFilePath + "/nestshot_" + Date.now() + ".png";
     img.saveTo(path);                    // 保存
     img.recycle();                       // 回收内存
-    taskLog("自动化任务-已保存："+ path);
+    taskLog("自动化任务已经完成-已保存截图："+ path);
 
 
     //刷新媒体库
     sleep(3000)
-    toast("开始刷新媒体库，用时5秒钟....");
+    toast("开始刷新媒体库....");
     refreshMedia(RPAFilePath)
     return path
 }
 // 刷新指定路径的媒体库
 function refreshMedia(path) {
-    taskLog("开始刷新媒体库，用时5秒钟....");
+    taskLog("开始刷新媒体库....");
     // 发送媒体扫描广播
     media.scanFile(path);
     // 等待扫描完成
     sleep(5000);
-    taskLog("媒体库刷新完成，开始下一步任务...");
+    taskLog("媒体库刷新完成.");
 }
+
 
 
 
@@ -310,6 +311,18 @@ function getSystemDate(a) {
 function taskLog(_log){
     toast(_log)
     console.log(getSystemDate("df") +":" +_log)
+
+    try {
+        //确保目录存在
+        files.ensureDir(RPAFilePath);
+        
+        //将日志写入文件
+        var logContent = getSystemDate("df") + ":" + _log + "\n";
+        files.append(logFilePath, logContent);
+        
+    } catch(e) {
+        console.error("写入日志文件失败：" + e);
+    }
 }
 
 
@@ -889,22 +902,32 @@ function get_all_comments(){
 
 //进进入粉丝页，点击每一个粉丝：className("android.widget.FrameLayout") fullId("com.zhiliaoapp.musically:id/i7w")
 function click_FrameLayout_FENSI_SIXIN(){
+    taskLog("=== 开始执行粉丝点击函数 ===");
     // 使用静态变量记录当前处理到第几个粉丝
     if (typeof click_FrameLayout_FENSI_SIXIN.currentIndex === 'undefined') {
         click_FrameLayout_FENSI_SIXIN.currentIndex = 0;
+        taskLog("初始化粉丝索引为0");
+    } else {
+        taskLog("当前正在处理第 " + (click_FrameLayout_FENSI_SIXIN.currentIndex + 1) + " 个粉丝");
     }
 
+    taskLog("等待2-5秒后开始查找粉丝列表...");
     sleep(random(2000, 5000));
     
     // 获取所有符合条件的粉丝项
+    taskLog("尝试查找全球版TikTok粉丝列表...");
     var targetFrames = id(GLOBAL_TikTokPackageName +":id/i7w").find();
     if (!targetFrames.nonEmpty()) {
+        taskLog("未找到全球版粉丝列表，尝试查找亚洲版...");
         targetFrames = id(ASIA_TikTokPackageName +":id/iz9").find();
     }
     
     if (targetFrames.nonEmpty()) {
+        taskLog("找到粉丝列表，共有 " + targetFrames.size() + " 个粉丝项");
+        
         // 如果当前索引超出了找到的元素数量，重置索引
         if (click_FrameLayout_FENSI_SIXIN.currentIndex >= targetFrames.size()) {
+            taskLog("当前索引 " + click_FrameLayout_FENSI_SIXIN.currentIndex + " 超出列表大小 " + targetFrames.size() + "，重置索引");
             click_FrameLayout_FENSI_SIXIN.currentIndex = 0;
             return false; // 需要滑动加载更多
         }
@@ -912,16 +935,29 @@ function click_FrameLayout_FENSI_SIXIN(){
         // 获取当前需要点击的元素
         var targetFrame = targetFrames.get(click_FrameLayout_FENSI_SIXIN.currentIndex);
         if (targetFrame) {
-            taskLog("准备点击第 " + (click_FrameLayout_FENSI_SIXIN.currentIndex + 1) + " 个粉丝");
+            taskLog("=== 粉丝项详细信息 ===");
+            taskLog("索引位置：" + click_FrameLayout_FENSI_SIXIN.currentIndex);
             var bounds = targetFrame.bounds();
+            taskLog("元素位置：left=" + bounds.left + ", top=" + bounds.top + ", right=" + bounds.right + ", bottom=" + bounds.bottom);
+            taskLog("点击坐标：X=" + bounds.centerX() + ", Y=" + bounds.centerY());
+            taskLog("元素属性：可点击=" + targetFrame.clickable() + ", 可见=" + targetFrame.visibleToUser());
+            
+            taskLog("准备点击第 " + (click_FrameLayout_FENSI_SIXIN.currentIndex + 1) + " 个粉丝");
             click(bounds.centerX(), bounds.centerY());
             click_FrameLayout_FENSI_SIXIN.currentIndex++;
-            sleep(random(2000, 3000));
+            
+            var waitTime = random(2000, 3000);
+            taskLog("等待 " + (waitTime/1000).toFixed(1) + " 秒后继续...");
+            sleep(waitTime);
             return true;
+        } else {
+            taskLog("警告：虽然找到了粉丝列表，但无法获取当前索引的粉丝项");
         }
+    } else {
+        taskLog("未找到任何粉丝列表项");
     }
     
-    // 如果没有找到任何符合条件的元素
+    taskLog("重置粉丝索引为0");
     click_FrameLayout_FENSI_SIXIN.currentIndex = 0;
     return false;
 }
@@ -1021,65 +1057,110 @@ try {
                                     sleep(random(3000, 5000));
                                     
                                     // 进入粉丝个人页面后，尝试查找私信按钮
+                                    taskLog("=== 开始查找私信按钮 ===");
                                     var maxRetry = 3;
                                     var retryCount = 0;
                                     var Fans_sixin_message_text = null;
                                     
                                     while (retryCount < maxRetry) {
+                                        taskLog("第 " + (retryCount + 1) + "/" + maxRetry + " 次尝试查找私信按钮");
                                         Fans_sixin_message_text = findTextByLanguages(FANS_SIXIN_MESSAGE_TEXT);
                                         if (Fans_sixin_message_text) {
+                                            taskLog("成功找到私信按钮！");
                                             break;
                                         }
                                         retryCount++;
+                                        taskLog("未找到私信按钮，等待1秒后重试...");
                                         sleep(1000);
                                     }
                                     
                                     if (Fans_sixin_message_text) {
-                                        taskLog("找到粉丝页面需要私信的按钮，准备私信");
-                                        sleep(random(3000, 5000));
+                                        taskLog("=== 准备发送私信 ===");
+                                        var waitTime = random(3000, 5000);
+                                        taskLog("等待 " + (waitTime/1000).toFixed(1) + " 秒后继续...")
+                                        sleep(waitTime);
                                         
+                                        taskLog("查找私信输入框...");
                                         var autoCompleteTextViews = className("android.widget.EditText").find();
+                                        taskLog("找到 " + autoCompleteTextViews.size() + " 个输入框控件");
+                                        
                                         if (autoCompleteTextViews.size() == 0) {
-                                            taskLog("没有找到訊息控件，跳过当前用户");
+                                            taskLog("警告：没有找到私信输入框，跳过当前用户");
+                                            taskLog("执行返回操作...");
                                             back();
-                                            sleep(random(2000, 4000));
+                                            var waitTime1 = random(2000, 4000);
+                                            taskLog("等待 " + (waitTime1/1000).toFixed(1) + " 秒...");
+                                            sleep(waitTime1);
                                             back();
-                                            sleep(random(2000, 4000));
+                                            var waitTime2 = random(2000, 4000);
+                                            taskLog("等待 " + (waitTime2/1000).toFixed(1) + " 秒...");
+                                            sleep(waitTime2);
                                             currentPageFansProcessed++;
+                                            taskLog("当前页面已处理粉丝数：" + currentPageFansProcessed);
                                         } else {
                                             // 发送私信
+                                            taskLog("=== 开始发送私信 ===");
                                             for (var i = 0; i < autoCompleteTextViews.size(); i++) {
+                                                taskLog("处理第 " + (i + 1) + "/" + autoCompleteTextViews.size() + " 个输入框");
                                                 var textView = autoCompleteTextViews.get(i);
                                                 if (textView) {
-                                                    sleep(random(2000, 4000));
+                                                    var waitTime1 = random(2000, 4000);
+                                                    taskLog("等待 " + (waitTime1/1000).toFixed(1) + " 秒后输入文本...");
+                                                    sleep(waitTime1);
+                                                    
                                                     var randIdx = random(0, all_TT_Comment_TEXT.length - 1);
                                                     var messageText = all_TT_Comment_TEXT[randIdx];
-                                                    taskLog("评论控件，设置内容：" + messageText);
+                                                    taskLog("从 " + all_TT_Comment_TEXT.length + " 条文案中随机选择第 " + (randIdx + 1) + " 条");
+                                                    taskLog("准备发送文本：" + messageText);
                                                     textView.setText(messageText);
-                                                    sleep(random(2000, 4000));
                                                     
+                                                    var waitTime2 = random(2000, 4000);
+                                                    taskLog("等待 " + (waitTime2/1000).toFixed(1) + " 秒后点击发送...");
+                                                    sleep(waitTime2);
+                                                    
+                                                    taskLog("查找发送按钮(ImageView)...");
                                                     var allImages = className("android.widget.ImageView").find();
+                                                    taskLog("找到 " + allImages.size() + " 个图片控件");
+                                                    
                                                     if (allImages && allImages.size() > 0) {
                                                         var lastIndex = allImages.size() - 1;
+                                                        taskLog("准备点击最后一个图片控件(索引: " + lastIndex + ")");
                                                         var lastImg = allImages.get(lastIndex);
                                                         if (lastImg) {
                                                             var bounds = lastImg.bounds();
+                                                            taskLog("发送按钮位置：left=" + bounds.left + ", top=" + bounds.top + ", right=" + bounds.right + ", bottom=" + bounds.bottom);
+                                                            taskLog("点击坐标：X=" + bounds.centerX() + ", Y=" + bounds.centerY());
+                                                            taskLog("按钮属性：可点击=" + lastImg.clickable() + ", 可见=" + lastImg.visibleToUser());
+                                                            
                                                             if (lastImg.clickable()) {
+                                                                taskLog("使用控件点击方法");
                                                                 lastImg.click();
                                                             } else {
+                                                                taskLog("使用坐标点击方法");
                                                                 click(bounds.centerX(), bounds.centerY());
                                                             }
+                                                            taskLog("发送按钮点击完成");
+                                                        } else {
+                                                            taskLog("警告：无法获取最后一个图片控件");
                                                         }
+                                                    } else {
+                                                        taskLog("警告：未找到任何图片控件");
                                                     }
                                                     
                                                     successCount++; // 增加成功私信计数
                                                     foundFanToMessage = true;
-                                                    taskLog("成功私信第 " + successCount + " 个粉丝");
+                                                    taskLog("=== 私信发送完成 ===");
+                                                    taskLog("当前进度：" + successCount + "/" + TT_Like_User_FANS_ID_COUNT + " (" + (successCount/TT_Like_User_FANS_ID_COUNT*100).toFixed(1) + "%)");
                                                     
+                                                    taskLog("等待3秒后返回...");
                                                     sleep(3000);
+                                                    taskLog("第一次返回");
                                                     back();
+                                                    taskLog("等待1秒...");
                                                     sleep(1000);
+                                                    taskLog("第二次返回");
                                                     back();
+                                                    taskLog("等待5秒后继续下一个粉丝...");
                                                     sleep(5000);
                                                 }
                                             }
@@ -1096,7 +1177,11 @@ try {
                                     
                                     // 如果达到目标数量，退出循环
                                     if (successCount >= TT_Like_User_FANS_ID_COUNT) {
+                                        taskLog("=== 任务完成 ===");
                                         taskLog("已达到目标私信数量：" + TT_Like_User_FANS_ID_COUNT);
+                                        taskLog("准备进行完成截图...");
+                                        var screenshotPath = Nest_ScreenCapture();
+                                        taskLog("已保存完成后的截图：" + screenshotPath);
                                         break;
                                     }
                                 }
@@ -1111,13 +1196,17 @@ try {
                         }
                     }
     
-                    // 完成所有取消关注操作后进行截图
-                    taskLog("完成取消关注操作，成功取消关注 " + successCount + " 个用户");
+                    // 完成所有私信操作后进行截图
+                    taskLog("=== 任务最终完成 ===");
+                    taskLog("成功完成私信，共发送给 " + successCount + " 个粉丝");
+                    taskLog("准备进行最终截图...");
                     var screenshotPath = Nest_ScreenCapture();
                     taskLog("已保存完成后的截图：" + screenshotPath);
     
                 }else{
-                    Nest_ScreenCapture()
+                    taskLog("准备进行错误截图...");
+                    var screenshotPath = Nest_ScreenCapture();
+                    taskLog("已保存错误截图：" + screenshotPath);
                     sleep(random(3000, 5000))
                     taskLog("设置的取消关注的用户数量为0，不进行取消关注")
                     throw new Error("设置的取消关注的用户数量为0，不进行取消关注，检查一下参数配置")
@@ -1126,7 +1215,9 @@ try {
     
     
             }else{
-                Nest_ScreenCapture()
+                taskLog("准备进行错误截图...");
+                var screenshotPath = Nest_ScreenCapture();
+                taskLog("已保存错误截图：" + screenshotPath);
                 sleep(random(3000, 5000))
                 taskLog("没有找到用户个人中心的Follow列表的TextView")
                 throw new Error("没有找到用户个人中心的Follow列表的TextView")
@@ -1135,7 +1226,9 @@ try {
     
             
         }else{
-            Nest_ScreenCapture()
+            taskLog("准备进行错误截图...");
+            var screenshotPath = Nest_ScreenCapture();
+            taskLog("已保存错误截图：" + screenshotPath);
             sleep(random(3000, 5000))
             taskLog("没有找到首页最右侧Profile按钮")
             throw new Error("没有找到首页最右侧Profile按钮")
