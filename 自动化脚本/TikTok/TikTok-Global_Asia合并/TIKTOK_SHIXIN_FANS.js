@@ -209,13 +209,15 @@ var handleErrorFlag = false //默认没有错误，如果出现异常，那么�
 });
 
 function handleError(e) {
-    handleErrorFlag = true
+    // handleErrorFlag = true
+    forceStop_APP(targetPackageName)
     console.error("===错误报告开始===");
     console.error("错误信息：" + e);
     console.error("错误堆栈：" + e.stack);
     console.error("===错误报告结束===");
     exit()
 }
+
 
 
 //打开Autojs的Log activity
@@ -1175,14 +1177,16 @@ try {
                                     
                                     // 已经在点击函数中处理了滑动加载更多的逻辑
                                     
-                                    // 如果达到目标数量，退出循环
+                                    // 如果达到目标数量，退出整个脚本
                                     if (successCount >= TT_Like_User_FANS_ID_COUNT) {
                                         taskLog("=== 任务完成 ===");
                                         taskLog("已达到目标私信数量：" + TT_Like_User_FANS_ID_COUNT);
                                         taskLog("准备进行完成截图...");
                                         var screenshotPath = Nest_ScreenCapture();
                                         taskLog("已保存完成后的截图：" + screenshotPath);
-                                        break;
+                                        taskLog("任务已完成，准备退出脚本...");
+                                        forceStop_APP(targetPackageName);
+                                        exit();  // 直接退出整个脚本
                                     }
                                 }
 
@@ -1421,6 +1425,10 @@ try {
  
 } catch(e) {
     handleError(e);
+} finally {
+    // 确保在脚本结束时调用exit()
+    taskLog("脚本执行完成，准备退出...");
+    exit();
 }
 
 
