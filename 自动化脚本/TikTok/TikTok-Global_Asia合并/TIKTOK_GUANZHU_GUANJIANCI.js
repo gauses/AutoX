@@ -430,34 +430,22 @@ function clickId(a) {
 
 //打印日志
 function taskLog(_log){
-    toast("nest:" +_log)
+    toast(_log)
     console.log(getSystemDate("df") +":" +_log)
 
     try {
         //确保目录存在
-        var logDir = new File(RPAFilePath);
-        if (!logDir.exists()) {
-            logDir.mkdirs();
-        }
-
-        //确保文件存在
-        var logFile = new File(logFilePath);
-        if (!logFile.exists()) {
-            logFile.createNewFile();
-        }
-
-        //将日志文件写入本地txt
-        var fileWriter = new FileWriter(logFile, true);
-        var printWriter = new PrintWriter(fileWriter);
-        printWriter.println(_log);
-        printWriter.flush(); //确保内容被写入
-        printWriter.close();
-        fileWriter.close();
+        files.ensureDir(RPAFilePath);
+        
+        //将日志写入文件
+        var logContent = getSystemDate("df") + ":" + _log + "\n";
+        files.append(logFilePath, logContent);
+        
     } catch(e) {
         console.error("写入日志文件失败：" + e);
     }
-
 }
+
 
 
 
@@ -486,23 +474,23 @@ function Nest_ScreenCapture(){
     var path = RPAFilePath + "/nestshot_" + Date.now() + ".png";
     img.saveTo(path);                    // 保存
     img.recycle();                       // 回收内存
-    taskLog("自动化任务-已保存："+ path);
+    taskLog("自动化任务已经完成-已保存截图："+ path);
 
 
     //刷新媒体库
     sleep(3000)
-    toast("开始刷新媒体库，用时5秒钟....");
+    toast("开始刷新媒体库....");
     refreshMedia(RPAFilePath)
     return path
 }
 // 刷新指定路径的媒体库
 function refreshMedia(path) {
-    taskLog("开始刷新媒体库，用时5秒钟....");
+    taskLog("开始刷新媒体库....");
     // 发送媒体扫描广播
     media.scanFile(path);
     // 等待扫描完成
     sleep(5000);
-    taskLog("媒体库刷新完成，开始下一步任务...");
+    taskLog("媒体库刷新完成.");
 }
 
 
