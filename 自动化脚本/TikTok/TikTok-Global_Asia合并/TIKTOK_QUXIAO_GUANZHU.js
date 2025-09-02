@@ -83,12 +83,18 @@ const FOLLOWING_USER_COUNT_TEXT = {
 };
 
 // 通过语言对象查找文本
-function findTextByLanguages(languageObject) {
+function findTextByLanguages(languageObject, needClick) {
+    // 如果needClick参数未定义，则默认为true
+    needClick = typeof needClick === 'undefined' ? true : needClick;
     for (let lang in languageObject) {
         let targetText = languageObject[lang];
         if (text(targetText).exists()) {
             taskLog("找到文本：" + targetText);
             let element = text(targetText).findOne();
+            if (!needClick) {
+                // 如果不需要点击，直接返回元素
+                return element;
+            }
             if (element && element.clickable()) {
                 element.click();
                 return true;
@@ -710,11 +716,11 @@ try{
                 var successCount = 0; // 成功取消关注的计数
                 for (var i = 0; i < TT_Cancel_Follow_Count; i++) {
                     taskLog("开始取消关注用户: " + i)
-                    if(TT_Cancel_Follow_Sleep_Time_Start.length > 0 && TT_Cancel_Follow_Sleep_Time_End.length > 0){
-                        sleep(random(TT_Cancel_Follow_Sleep_Time_Start, TT_Cancel_Follow_Sleep_Time_End))
-                    }else{
+                    // if(TT_Cancel_Follow_Sleep_Time_Start.length > 0 && TT_Cancel_Follow_Sleep_Time_End.length > 0){
+                    //     sleep(random(TT_Cancel_Follow_Sleep_Time_Start, TT_Cancel_Follow_Sleep_Time_End))
+                    // }else{
                         sleep(random(3000, 5000))
-                    }
+                    // }
 
                     // 尝试查找并点击Following按钮，如果找不到则滑动屏幕
                     var maxScrollAttempts = 10; // 最大滑动尝试次数
@@ -728,14 +734,34 @@ try{
                         var Follow_text_button = null;
                         
                         while (waitAttempt < maxWaitAttempts) {
-                            taskLog("开始第" + (waitAttempt + 1) + "次尝试查找Following列表按钮");
-                            Follow_text_button = findTextByLanguages(FOLLOWING_LIST_TEXT);
+                            taskLog("开始第" + (waitAttempt + 1) + "次尝试查找Following/Friends列表按钮");
+                            
+                            // // 先检查是否是Friends列表（不点击，只检查）
+                            // var Friends_text_button = findTextByLanguages(FRIENDS_LIST_TEXT, false);
+                            // if (Friends_text_button) {
+                            //     taskLog("发现这是好友列表(Friends)，位置信息：" + JSON.stringify(Friends_text_button.bounds()));
+                            //     taskLog("跳过当前用户，继续处理下一个");
+                            //     foundButton = true; // 设置为true以跳出当前循环
+                            //     waitAttempt = maxWaitAttempts; // 强制退出等待循环
+                            //     break; // 退出当前循环
+                            // }
+                            
+                            // 如果不是Friends列表，则查找Following列表（先只查找不点击）
+                            Follow_text_button = findTextByLanguages(FOLLOWING_LIST_TEXT, false);
                             if (Follow_text_button) {
                                 taskLog("找到用户个人中心的Follow列表的TextView，位置信息：" + JSON.stringify(Follow_text_button.bounds()));
                                 taskLog("按钮状态：可点击=" + Follow_text_button.clickable() + ", 可见=" + Follow_text_button.visibleToUser());
                                 foundButton = true;
                                 // 执行点击操作
-                                if (Follow_text_button.click()) {
+                                if (Follow_text_button.clickable()) {
+                                    Follow_text_button.click();
+                                } else {
+                                    // 如果元素存在但不可点击，尝试点击其坐标
+                                    let bounds = Follow_text_button.bounds();
+                                    click(bounds.centerX(), bounds.centerY());
+                                }
+                                // 检查点击是否成功
+                                if (true) { // 这里可以添加点击成功的验证逻辑
                                     taskLog("成功点击取消关注按钮");
                                     successCount++; // 只有在成功点击后才增加计数
                                     taskLog("当前进度：" + successCount + "/" + TT_Cancel_Follow_Count + " (" + (successCount/TT_Cancel_Follow_Count*100).toFixed(1) + "%)");
@@ -813,7 +839,12 @@ try{
                     if (!foundButton) {
                         taskLog("多次滑动后仍未找到更多Following按钮，可能已经到达列表底部");
                         break; // 退出主循环
-                    }
+                    } 
+                    
+                    // else if (Friends_text_button) {
+                    //     taskLog("当前是Friends列表，继续处理下一个用户");
+                    //     continue; // 继续下一次循环
+                    // }
                 }
 
                 // 完成所有取消关注操作后进行截图
