@@ -96,35 +96,119 @@ object LogFileUtils {
 //        "report":"","screenshot":"","remark":"","xToken":"THAQJHAWTEYNLCWFDWIGQIMFLPPBSDMKAMXLLHMUWOEFWIZPFUIXNBUQRBFDHSYC"}
 
         var nestScriptJson= JSONObject(nestScript)
+        val task_uuid = nestScriptJson.getString("task_uuid")
+        val xToken = nestScriptJson.getString("xToken")
+
+        var txtUploadSuccess = false
+        var pngUploadSuccess = false
+
         // 获取所有日志文件
         val logFiles = getAllLogFiles()
+        
+        // 先检查是否有所需的文件类型
+        var hasTxtFile = false
+        var hasPngFile = false
         logFiles.forEach { file ->
-            try {
-                val mimeType = getMimeType(file)
-
-                var task_uuid = nestScriptJson.getString("task_uuid")
-                var xToken = nestScriptJson.getString("xToken")
-
-
-
-                // 根据文件类型处理
-                if (mimeType.startsWith("text/")) {
-                    // 文本文件直接读取内容
-                    AliOSSUtils.upload(xToken, "template-store/rpa-report/$task_uuid.txt", file.path)
-
-                } else {
-                    AliOSSUtils.upload(xToken, "template-store/rpa-report/$task_uuid.png", file.path)
-                }
-            } catch (e: Exception) {
-                Log.e("ScriptExecutionGlobal", "处理文件失败: ${file.name}", e)
+            when (getMimeType(file)) {
+                "text/plain" -> hasTxtFile = true
+                "image/png" -> hasPngFile = true
             }
         }
 
+        // 记录文件验证状态
+        var fileValidationError = false
+        var uploadInProgress = false
+        var uploadError = false
+        var errorMsg = ""
+
+        // 如果缺少任何一种文件类型，记录错误
+        if (!hasTxtFile || !hasPngFile) {
+            fileValidationError = true
+            errorMsg = "缺少必需的文件类型: ${if (!hasTxtFile) "文本文件" else ""} ${if (!hasPngFile) "PNG文件" else ""}"
+            Log.e("LogFileUtils", errorMsg)
+        }
+
+        // 如果文件验证通过，尝试上传
+        if (!fileValidationError) {
+            uploadInProgress = true
+            Log.d("LogFileUtils", "开始上传文件，将等待上传完成后再执行上报...")
+            
+            // 开始上传文件
+            logFiles.forEach { file ->
+                try {
+                    when (getMimeType(file)) {
+                        "text/plain" -> {
+                            // 等待文本文件上传完成
+                            for (attempt in 1..3) { // 最多尝试3次
+                                Log.d("LogFileUtils", "正在上传文本文件，第${attempt}次尝试")
+                                if (AliOSSUtils.upload(xToken, "template-store/rpa-report/$task_uuid.txt", file.path)) {
+                                    txtUploadSuccess = true
+                                    Log.d("LogFileUtils", "文本文件 ${file.name} 上传成功")
+                                    break
+                                } else {
+                                    if (attempt < 3) {
+                                        Log.e("LogFileUtils", "文本文件 ${file.name} 上传失败，3秒后重试...")
+                                        Thread.sleep(3000)
+                                    } else {
+                                        Log.e("LogFileUtils", "文本文件 ${file.name} 上传失败，已达到最大重试次数")
+                                        uploadError = true
+                                        errorMsg = "文本文件上传失败，已重试3次"
+                                    }
+                                }
+                            }
+                        }
+                        "image/png" -> {
+                            // 等待图片文件上传完成
+                            for (attempt in 1..3) { // 最多尝试3次
+                                Log.d("LogFileUtils", "正在上传图片文件，第${attempt}次尝试")
+                                if (AliOSSUtils.upload(xToken, "template-store/rpa-report/$task_uuid.png", file.path)) {
+                                    pngUploadSuccess = true
+                                    Log.d("LogFileUtils", "图片文件 ${file.name} 上传成功")
+                                    break
+                                } else {
+                                    if (attempt < 3) {
+                                        Log.e("LogFileUtils", "图片文件 ${file.name} 上传失败，3秒后重试...")
+                                        Thread.sleep(3000)
+                                    } else {
+                                        Log.e("LogFileUtils", "图片文件 ${file.name} 上传失败，已达到最大重试次数")
+                                        uploadError = true
+                                        errorMsg = "图片文件上传失败，已重试3次"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e("ScriptExecutionGlobal", "处理文件失败: ${file.name}", e)
+                    uploadError = true
+                    errorMsg = "文件处理异常：${e.message}"
+                }
+            }
+            uploadInProgress = false
+            Log.d("LogFileUtils", "文件上传流程已完成，准备执行上报...")
+        }
+
+        // 更新result状态
+        var updatedResult = result
+        
+        if (fileValidationError || uploadError) {
+            updatedResult = "fail"
+        }
+
+        // 确保上传流程完全结束后再继续
+        if (uploadInProgress) {
+            Log.d("LogFileUtils", "等待上传完成...")
+            while (uploadInProgress) {
+                Thread.sleep(1000)
+            }
+        }
+
+        Log.d("LogFileUtils", "开始执行上报任务...")
 
         var reportJson = JSONObject()
         reportJson.put("task_uuid", nestScriptJson.get("task_uuid").toString())
-        reportJson.put("success", result)
-        reportJson.put("msg", "")
+        reportJson.put("success", updatedResult)
+        reportJson.put("msg", errorMsg)
 
         val request: Request = Request.Builder()
             .url("https://cloud.nestbrowser.com/cm/v1/rpa-report")
