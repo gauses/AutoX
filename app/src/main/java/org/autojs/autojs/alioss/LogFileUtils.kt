@@ -123,8 +123,8 @@ object LogFileUtils {
 
         var reportJson = JSONObject()
         reportJson.put("task_uuid", nestScriptJson.get("task_uuid").toString())
-        reportJson.put("success", "ok")
-        reportJson.put("msg", "执行成功")
+        reportJson.put("success", result)
+        reportJson.put("msg", "")
 
         val request: Request = Request.Builder()
             .url("https://cloud.nestbrowser.com/cm/v1/rpa-report")
