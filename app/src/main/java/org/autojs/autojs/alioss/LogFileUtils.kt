@@ -59,6 +59,12 @@ object LogFileUtils {
             if (dir.exists() && dir.isDirectory) {
                 dir.listFiles()?.forEach { file ->
                     if (file.isFile) {
+                        // 跳过 total_target_rpa.json 文件
+                        if (file.name == "total_target_rpa.json") {
+                            Log.d("ScriptExecutionGlobal", "跳过文件: ${file.name}")
+                            return@forEach
+                        }
+
                         val fileSizeInBytes = file.length()
                         // 检查文件大小，限制在10MB以内
                         if (fileSizeInBytes <= 10 * 1024 * 1024) { // 10MB in bytes
@@ -208,7 +214,29 @@ object LogFileUtils {
         var reportJson = JSONObject()
         reportJson.put("task_uuid", nestScriptJson.get("task_uuid").toString())
         reportJson.put("success", updatedResult)
-        reportJson.put("msg", errorMsg)
+        
+        // 读取 total_target_rpa.txt 的内容
+        try {
+            val logDir = getScreenCaptureDirectory()
+            if (logDir != null) {
+                val targetJsonFile = File(logDir, "total_target_rpa.txt")
+                Log.d("LogFileUtils", "targetJsonFile路径: ${targetJsonFile.path}")
+                if (targetJsonFile.exists() && targetJsonFile.isFile) {
+                    val jsonContent = targetJsonFile.readText()
+                    Log.d("LogFileUtils", "读取到total_target_rpa.txt内容: $jsonContent")
+                    reportJson.put("msg", jsonContent)
+                } else {
+                    Log.w("LogFileUtils", "total_target_rpa.txt文件不存在，使用空消息")
+                    reportJson.put("msg", "")
+                }
+            } else {
+                Log.w("LogFileUtils", "日志目录不存在，使用空消息")
+                reportJson.put("msg", "")
+            }
+        } catch (e: Exception) {
+            Log.e("LogFileUtils", "读取total_target_rpa.json失败", e)
+            reportJson.put("msg", "")
+        }
 
         val request: Request = Request.Builder()
             .url("https://cloud.nestbrowser.com/cm/v1/rpa-report")
