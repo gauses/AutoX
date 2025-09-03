@@ -90,6 +90,14 @@ var logFilePath = RPAFilePath + taskLogFileName;
 files.ensureDir(RPAFilePath);
 
 
+//日志文件路径
+var taskLogFileName = "nest_result_rpa.txt";
+var resultPath = RPAFilePath + taskLogFileName;
+//确保日志目录存在
+files.ensureDir(resultPath);
+
+
+
 //1.autox.js侧边栏的打开USB调试先打开
 //2.vscode ctrl+shift+p 输入start all server 确定
 //3.远程连接成功
@@ -108,24 +116,20 @@ var handleErrorFlag = false //默认没有错误，如果出现异常，那么�
     console.hide()
 
 
-    taskLog("保存统计结果到备用路径..." );
-    try {
-        //日志文件路径
-        var resultPath = RPAFilePath + "total_target_rpa.txt";
-        //确保日志目录存在
-        files.ensureDir(resultPath);
-        var result = {
-            total_target: total_target,
-            total_success: total_success
-        };
-        // 使用JSON.stringify将对象转换为JSON字符串，第三个参数2是为了美化输出格式
-        files.write(resultPath, JSON.stringify(result, null, 2));
-        taskLog("已保存统计结果到：" + resultPath);
-    } catch(e) {
-        console.error("保存统计结果失败：" + e.message);
-    }
-    // 刷新媒体库
-    refreshMedia(RPAFilePath);
+    // taskLog("保存统计结果到备用路径..." );
+    // try {
+    //     var result = {
+    //         total_target: total_target,
+    //         total_success: total_success
+    //     };
+    //     // 使用JSON.stringify将对象转换为JSON字符串，第三个参数2是为了美化输出格式
+    //     files.write(resultPath, JSON.stringify(result, null, 2));
+    //     taskLog("已保存统计结果到：" + resultPath);
+    // } catch(e) {
+    //     console.error("保存统计结果失败：" + e.message);
+    // }
+    // // 刷新媒体库
+    // refreshMedia(RPAFilePath);
 
 
     sleep(3000)
@@ -887,4 +891,22 @@ try{
 
 }catch(e) {
     handleError(e);
+}
+finally{
+
+    taskLog("保存统计结果到备用路径..." );
+    try {
+        var result = {
+            total_target: total_target,
+            total_success: total_success
+        };
+        // 使用JSON.stringify将对象转换为JSON字符串，第三个参数2是为了美化输出格式
+        files.write(resultPath, JSON.stringify(result, null, 2));
+        taskLog("已保存统计结果到：" + resultPath);
+    } catch(e) {
+        console.error("保存统计结果失败：" + e.message);
+    }
+    // 刷新媒体库
+    refreshMedia(RPAFilePath);
+    sleep(random(3000, 5000))
 }

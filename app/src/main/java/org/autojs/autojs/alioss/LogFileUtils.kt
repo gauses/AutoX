@@ -59,12 +59,6 @@ object LogFileUtils {
             if (dir.exists() && dir.isDirectory) {
                 dir.listFiles()?.forEach { file ->
                     if (file.isFile) {
-                        // 跳过 total_target_rpa.json 文件
-                        if (file.name == "total_target_rpa.json") {
-                            Log.d("ScriptExecutionGlobal", "跳过文件: ${file.name}")
-                            return@forEach
-                        }
-
                         val fileSizeInBytes = file.length()
                         // 检查文件大小，限制在10MB以内
                         if (fileSizeInBytes <= 10 * 1024 * 1024) { // 10MB in bytes
@@ -145,6 +139,13 @@ object LogFileUtils {
                     when (getMimeType(file)) {
                         "text/plain" -> {
                             // 等待文本文件上传完成
+
+                            // 跳过 nest_result_rpa.txt 文件
+                            if (file.name == "nest_result_rpa.txt") {
+                                Log.d("ScriptExecutionGlobal", "跳过文件: ${file.name}")
+                                return@forEach
+                            }
+
                             for (attempt in 1..3) { // 最多尝试3次
                                 Log.d("LogFileUtils", "正在上传文本文件，第${attempt}次尝试")
                                 if (AliOSSUtils.upload(xToken, "template-store/rpa-report/$task_uuid.txt", file.path)) {
@@ -215,18 +216,45 @@ object LogFileUtils {
         reportJson.put("task_uuid", nestScriptJson.get("task_uuid").toString())
         reportJson.put("success", updatedResult)
         
-        // 读取 total_target_rpa.txt 的内容
+        // 读取 nest_result_rpa.txt 的内容
         try {
             val logDir = getScreenCaptureDirectory()
             if (logDir != null) {
-                val targetJsonFile = File(logDir, "total_target_rpa.txt")
-                Log.d("LogFileUtils", "targetJsonFile路径: ${targetJsonFile.path}")
+                // 先列出目录下所有文件
+                Log.d("LogFileUtils", "=== 目录内容检查 ===")
+                Log.d("LogFileUtils", "检查目录: ${logDir.absolutePath}")
+                logDir.listFiles()?.forEach { file ->
+                    Log.d("LogFileUtils", "发现文件: ${file.name} (${file.length()} bytes)")
+                }
+                Log.d("LogFileUtils", "==================")
+
+                val targetJsonFile = File(logDir, "nest_result_rpa.txt")
+                Log.d("LogFileUtils", "=== 目标文件状态检查 ===")
+                Log.d("LogFileUtils", "文件完整路径: ${targetJsonFile.absolutePath}")
+                Log.d("LogFileUtils", "文件是否存在: ${targetJsonFile.exists()}")
+                Log.d("LogFileUtils", "是否是文件: ${targetJsonFile.isFile}")
+                Log.d("LogFileUtils", "父目录是否存在: ${targetJsonFile.parentFile?.exists()}")
+                Log.d("LogFileUtils", "父目录是否可读: ${targetJsonFile.parentFile?.canRead()}")
+                Log.d("LogFileUtils", "文件是否可读: ${targetJsonFile.canRead()}")
+                Log.d("LogFileUtils", "文件大小: ${if (targetJsonFile.exists()) targetJsonFile.length() else 0} bytes")
+                Log.d("LogFileUtils", "==================")
+
                 if (targetJsonFile.exists() && targetJsonFile.isFile) {
                     val jsonContent = targetJsonFile.readText()
-                    Log.d("LogFileUtils", "读取到total_target_rpa.txt内容: $jsonContent")
-                    reportJson.put("msg", jsonContent)
+                    Log.d("LogFileUtils", "nest_result_rpa.txt内容: $jsonContent")
+                    
+                    // 解析JSON内容并添加fail_msg字段
+                    try {
+                        val contentJson = JSONObject(jsonContent)
+                        contentJson.put("fail_msg", errorMsg)
+                        Log.d("LogFileUtils", "添加fail_msg后的内容: $contentJson")
+                        reportJson.put("msg", contentJson)
+                    } catch (e: Exception) {
+                        Log.e("LogFileUtils", "JSON解析失败，使用原始内容", e)
+                        reportJson.put("msg", jsonContent)
+                    }
                 } else {
-                    Log.w("LogFileUtils", "total_target_rpa.txt文件不存在，使用空消息")
+                    Log.w("LogFileUtils", "nest_result_rpa.txt文件不存在，使用空消息")
                     reportJson.put("msg", "")
                 }
             } else {
@@ -234,35 +262,58 @@ object LogFileUtils {
                 reportJson.put("msg", "")
             }
         } catch (e: Exception) {
-            Log.e("LogFileUtils", "读取total_target_rpa.json失败", e)
+            Log.e("LogFileUtils", "nest_result_rpa.txt失败", e)
             reportJson.put("msg", "")
         }
 
+        // 构建请求体
+        val requestBody = RequestBody.create("application/json; charset=utf-8".toMediaType(), reportJson.toString())
         val request: Request = Request.Builder()
             .url("https://cloud.nestbrowser.com/cm/v1/rpa-report")
-            .method("POST", RequestBody.create("application/json; charset=utf-8".toMediaType(), reportJson.toString()))
+            .method("POST", requestBody)
             .addHeader("X-Token", nestScriptJson.get("xToken").toString())
             .addHeader("Content-Type", "application/json")
             .build()
 
-        // 打印请求 Headers
-        println("Request Headers:")
+        // 打印完整的请求信息
+        Log.d("LogFileUtils", "\n=== 请求信息 ===")
+        Log.d("LogFileUtils", "URL: ${request.url}")
+        Log.d("LogFileUtils", "Method: ${request.method}")
+        Log.d("LogFileUtils", "Headers:")
         request.headers.forEach { header ->
-            println("${header.first}: ${header.second}")
+            Log.d("LogFileUtils", "  ${header.first}: ${header.second}")
         }
+        Log.d("LogFileUtils", "Request Body:")
+        Log.d("LogFileUtils", reportJson.toString(2)) // 使用缩进格式化JSON
+        Log.d("LogFileUtils", "==================\n")
 
         val client = OkHttpClient.Builder()
             .build()
         client.newCall(request).execute().use { response ->
-            // 打印响应 Headers
-            println("\nuploadLogFileToServer Response Headers:")
+            // 打印完整的响应信息
+            Log.d("LogFileUtils", "\n=== 响应信息 ===")
+            Log.d("LogFileUtils", "Status Code: ${response.code}")
+            Log.d("LogFileUtils", "Headers:")
             response.headers.forEach { header ->
-                println("${header.first}: ${header.second}")
+                Log.d("LogFileUtils", "  ${header.first}: ${header.second}")
             }
-
-            // 打印响应体
-            println("\nuploadLogFileToServer Response Body:")
-            println(response.body?.string())
+            
+            // 读取响应体
+            val responseBody = response.body?.string()
+            Log.d("LogFileUtils", "Response Body:")
+            if (responseBody != null) {
+                try {
+                    // 尝试格式化JSON响应
+                    val responseJson = JSONObject(responseBody)
+                    Log.d("LogFileUtils", responseJson.toString(2))
+                } catch (e: Exception) {
+                    // 如果不是JSON，直接打印原始内容
+                    Log.d("LogFileUtils", responseBody)
+                }
+            } else {
+                Log.d("LogFileUtils", "  <empty response>")
+            }
+            Log.d("LogFileUtils", "==================\n")
         }
 
     }
