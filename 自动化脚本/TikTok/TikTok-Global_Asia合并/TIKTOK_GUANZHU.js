@@ -7,7 +7,9 @@ importClass(java.io.FileWriter);
 //***********************Tiktok关注(根据关注列表UID的顺序，去关注用戶)*************************
 //******************************************************************
 
-
+// 上传字段：
+// total_target 需要关注的总数
+// total_success 成功关注的数量
 
 
 //保证Java层和JS代码两边的日志文件一致
@@ -17,6 +19,11 @@ var taskLogImgName = "nest_task_log.png"
 
 //用户需要输入的关注用户ID列表
 const TT_Like_User_ID_GROUP = '$${T_用户ID列表}';
+
+// 需要关注的总数
+var total_target = 0;
+// 成功关注的数量
+var total_success = 0;
 
 var ASIA_TikTokPackageName = 'com.ss.android.ugc.trill';
 var GLOBAL_TikTokPackageName = 'com.zhiliaoapp.musically';
@@ -99,7 +106,29 @@ var handleErrorFlag = false //默认没有错误，如果出现异常，那么�
 // 注册退出事件监听器
  events.on('exit', function(){
     console.hide()
-    sleep(1000)
+
+
+    taskLog("保存统计结果到备用路径..." );
+    try {
+        //日志文件路径
+        var resultPath = RPAFilePath + "total_target_rpa.txt";
+        //确保日志目录存在
+        files.ensureDir(resultPath);
+        var result = {
+            total_target: total_target,
+            total_success: total_success
+        };
+        // 使用JSON.stringify将对象转换为JSON字符串，第三个参数2是为了美化输出格式
+        files.write(resultPath, JSON.stringify(result, null, 2));
+        taskLog("已保存统计结果到：" + resultPath);
+    } catch(e) {
+        console.error("保存统计结果失败：" + e.message);
+    }
+    // 刷新媒体库
+    refreshMedia(RPAFilePath);
+
+
+    sleep(3000)
 
     if(handleErrorFlag){
         console.error("-----------------脚本执行出现异常---------------");
@@ -779,7 +808,8 @@ try{
     }
 
     taskLog("可用的搜索用户ID, 一共的数量有： " + comments.length);
-
+    // 设置需要关注的总数
+    total_target = comments.length;
 
     taskLog("开始点击首页搜索按钮")
     click_home_search_btn()
@@ -822,6 +852,12 @@ try{
 
                     //text("關注，Follow")
                     var findFollowTextResult = findTextByLanguages(FOLLOW_TEXT)
+                    
+                    // 如果找到并点击了关注按钮，增加成功计数
+                    if (findFollowTextResult) {
+                        total_success++;
+                        taskLog("成功关注数量更新为：" + total_success);
+                    }
 
                     //增加一个判断，如果此时randIdx等于comments.length-1，则进行一次截图操作
                     if(randIdx == comments.length-1){
