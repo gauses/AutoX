@@ -87,7 +87,6 @@ files.ensureDir(RPAFilePath);
 
 //日志文件路径
 // 需要关注的总数
-var total_target = 0;
 // 成功关注的数量
 var total_success = 0;
 var taskLogFileName = "nest_result_rpa.txt";
@@ -748,6 +747,7 @@ try{
     }
 
     taskLog("可用的关注关键词, 一共的数量有： " + comments.length);
+    var total_target = comments.length;
 
 
     taskLog("开始点击首页搜索按钮")
@@ -835,7 +835,8 @@ try{
                                             
                                             click(centerX, centerY);
                                             currentFollowCount++;
-                                            taskLog("完成第 " + currentFollowCount + " 个关注");
+                                            total_success++;
+                                            taskLog("完成第 " + currentFollowCount + " 个关注，总共成功关注：" + total_success + " 个");
                                             sleep(random(3000, 5000));
                                             
 
