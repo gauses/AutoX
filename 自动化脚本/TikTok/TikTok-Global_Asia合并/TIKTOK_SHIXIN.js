@@ -24,6 +24,10 @@ var GLOBAL_TikTokPackageName = 'com.zhiliaoapp.musically';
 
 
 
+// 需要取消关注的总数
+var total_target = 0;
+// 成功取消关注的数量
+var total_success = 0;
 
 
 //1.autox.js侧边栏的打开USB调试先打开
@@ -1056,6 +1060,24 @@ try {
  
 } catch(e) {
     handleError(e);
+}
+finally{
+
+    taskLog("保存统计结果到备用路径..." );
+    try {
+        var result = {
+            total_target: total_target,
+            total_success: total_success
+        };
+        // 使用JSON.stringify将对象转换为JSON字符串，第三个参数2是为了美化输出格式
+        files.write(resultPath, JSON.stringify(result, null, 2));
+        taskLog("已保存统计结果到：" + resultPath);
+    } catch(e) {
+        console.error("保存统计结果失败：" + e.message);
+    }
+    // 刷新媒体库
+    refreshMedia(RPAFilePath);
+    sleep(random(3000, 5000))
 }
 
 

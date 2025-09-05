@@ -18,6 +18,12 @@ const TT_Like_User_FANS_ID_COUNT = '$${私信用户粉丝数量}';
 const TT_Message_GROUP = '$${T_私信用户文案列表}';
 
 
+// 需要私信的粉丝总数
+var total_target = 0;
+// 成功私信的粉丝数量
+var total_success = 0;
+
+
 
 var ASIA_TikTokPackageName = 'com.ss.android.ugc.trill';
 var GLOBAL_TikTokPackageName = 'com.zhiliaoapp.musically';
@@ -114,6 +120,13 @@ if (files.exists(RPAFilePath)) {
 var logFilePath = RPAFilePath + taskLogFileName;
 //确保日志目录存在
 files.ensureDir(RPAFilePath);
+
+
+//日志文件路径
+var resultPath = RPAFilePath + "nest_result_rpa.txt";
+//确保日志目录存在
+files.ensureDir(resultPath);
+
 
 // 替代 app.openAppSetting 的方式
 function openAppSettings(packageName) {
@@ -903,6 +916,7 @@ function get_all_comments(){
 
 
 //进进入粉丝页，点击每一个粉丝：className("android.widget.FrameLayout") fullId("com.zhiliaoapp.musically:id/i7w")
+//进入粉丝页，点击每一个粉丝：className("android.widget.FrameLayout") fullId("com.ss.android.ugc.trill:id/i7x")
 function click_FrameLayout_FENSI_SIXIN(){
     taskLog("=== 开始执行粉丝点击函数 ===");
     // 使用静态变量记录当前处理到第几个粉丝
@@ -921,7 +935,7 @@ function click_FrameLayout_FENSI_SIXIN(){
     var targetFrames = id(GLOBAL_TikTokPackageName +":id/i7w").find();
     if (!targetFrames.nonEmpty()) {
         taskLog("未找到全球版粉丝列表，尝试查找亚洲版...");
-        targetFrames = id(ASIA_TikTokPackageName +":id/iz9").find();
+        targetFrames = id(ASIA_TikTokPackageName +":id/i7x").find();
     }
     
     if (targetFrames.nonEmpty()) {
@@ -969,8 +983,6 @@ function click_FrameLayout_FENSI_SIXIN(){
 
 try {
     
-    
-
     var all_TT_Comment_TEXT = get_all_comments()
     if(all_TT_Comment_TEXT.includes("$${T")){ 
         throw_error_storage_not_enough()
@@ -1027,9 +1039,9 @@ try {
 
 
                 taskLog("需要私信的用户, 一共有： " + TT_Like_User_FANS_ID_COUNT + "个");
-                sleep(random(30000, 40000))
+                total_target = TT_Like_User_FANS_ID_COUNT;
+                sleep(random(8000, 10000))
                 if (TT_Like_User_FANS_ID_COUNT.length > 0) {
-                    var successCount = 0; // 成功私信的计数
                     for (var i = 0; i < TT_Like_User_FANS_ID_COUNT; i++) {
                         
                         // 尝试查找并点击Following按钮，如果找不到则滑动屏幕
@@ -1047,7 +1059,7 @@ try {
                                 var foundFanToMessage = false;
                                 var currentPageFansProcessed = 0;
                                 
-                                while (successCount < TT_Like_User_FANS_ID_COUNT) {
+                                while (total_success < TT_Like_User_FANS_ID_COUNT) {
                                     // 尝试点击当前页面的粉丝
                                     var clickResult = click_FrameLayout_FENSI_SIXIN();
                                     if (!clickResult) {
@@ -1135,24 +1147,26 @@ try {
                                                             taskLog("按钮属性：可点击=" + lastImg.clickable() + ", 可见=" + lastImg.visibleToUser());
                                                             
                                                             if (lastImg.clickable()) {
-                                                                taskLog("使用控件点击方法");
-                                                                lastImg.click();
-                                                            } else {
-                                                                taskLog("使用坐标点击方法");
-                                                                click(bounds.centerX(), bounds.centerY());
-                                                            }
+                                                                    taskLog("使用控件点击方法");
+                                                                    lastImg.click();
+                                                                    total_success++; // 只有在成功点击后才增加计数
+                                                                } else {
+                                                                    taskLog("使用坐标点击方法");
+                                                                    click(bounds.centerX(), bounds.centerY());
+                                                                    total_success++; // 只有在成功点击后才增加计数
+                                                                }
                                                             taskLog("发送按钮点击完成");
                                                         } else {
                                                             taskLog("警告：无法获取最后一个图片控件");
                                                         }
-                                                    } else {
+                                                    } else {        
                                                         taskLog("警告：未找到任何图片控件");
                                                     }
                                                     
-                                                    successCount++; // 增加成功私信计数
+                                                    total_success++; // 增加成功私信计数
                                                     foundFanToMessage = true;
                                                     taskLog("=== 私信发送完成 ===");
-                                                    taskLog("当前进度：" + successCount + "/" + TT_Like_User_FANS_ID_COUNT + " (" + (successCount/TT_Like_User_FANS_ID_COUNT*100).toFixed(1) + "%)");
+                                                    taskLog("当前进度：" + total_success + "/" + TT_Like_User_FANS_ID_COUNT + " (" + (total_success/TT_Like_User_FANS_ID_COUNT*100).toFixed(1) + "%)");
                                                     
                                                     taskLog("等待3秒后返回...");
                                                     sleep(3000);
@@ -1178,7 +1192,7 @@ try {
                                     // 已经在点击函数中处理了滑动加载更多的逻辑
                                     
                                     // 如果达到目标数量，退出整个脚本
-                                    if (successCount >= TT_Like_User_FANS_ID_COUNT) {
+                                    if (total_success >= TT_Like_User_FANS_ID_COUNT) {
                                         taskLog("=== 任务完成 ===");
                                         taskLog("已达到目标私信数量：" + TT_Like_User_FANS_ID_COUNT);
                                         taskLog("准备进行完成截图...");
@@ -1202,7 +1216,7 @@ try {
     
                     // 完成所有私信操作后进行截图
                     taskLog("=== 任务最终完成 ===");
-                    taskLog("成功完成私信，共发送给 " + successCount + " 个粉丝");
+                    taskLog("成功完成私信，共发送给 " + total_success + " 个粉丝");
                     taskLog("准备进行最终截图...");
                     var screenshotPath = Nest_ScreenCapture();
                     taskLog("已保存完成后的截图：" + screenshotPath);
@@ -1425,10 +1439,22 @@ try {
  
 } catch(e) {
     handleError(e);
-} finally {
-    // 确保在脚本结束时调用exit()
-    taskLog("脚本执行完成，准备退出...");
-    exit();
-}
+}finally{
 
+    taskLog("保存统计结果到备用路径..." );
+    try {
+        var result = {
+            total_target: total_target,
+            total_success: total_success
+        };
+        // 使用JSON.stringify将对象转换为JSON字符串，第三个参数2是为了美化输出格式
+        files.write(resultPath, JSON.stringify(result, null, 2));
+        taskLog("已保存统计结果到：" + resultPath);
+    } catch(e) {
+        console.error("保存统计结果失败：" + e.message);
+    }
+    // 刷新媒体库
+    refreshMedia(RPAFilePath);
+    sleep(random(3000, 5000))
+}
 
