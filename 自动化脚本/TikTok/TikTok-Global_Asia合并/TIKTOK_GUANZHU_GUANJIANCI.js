@@ -89,8 +89,7 @@ files.ensureDir(RPAFilePath);
 // 需要关注的总数
 // 成功关注的数量
 var total_success = 0;
-var taskLogFileName = "nest_result_rpa.txt";
-var resultPath = RPAFilePath + taskLogFileName;
+var resultPath = RPAFilePath + "nest_result_rpa.txt";
 //确保日志目录存在
 files.ensureDir(resultPath);
 

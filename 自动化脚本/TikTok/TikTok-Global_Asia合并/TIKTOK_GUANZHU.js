@@ -91,8 +91,7 @@ files.ensureDir(RPAFilePath);
 
 
 //日志文件路径
-var taskLogFileName = "nest_result_rpa.txt";
-var resultPath = RPAFilePath + taskLogFileName;
+var resultPath = RPAFilePath + "nest_result_rpa.txt";
 //确保日志目录存在
 files.ensureDir(resultPath);
 

@@ -8,11 +8,18 @@ importClass(java.io.FileWriter);
 //******************************************************************
 
 
+// 需要取消关注的总数
+var total_target = 0;
+// 成功取消关注的数量
+var total_success = 0;
+
+
 
 
 //保证Java层和JS代码两边的日志文件一致
 var taskLogFileName = "nest_task_log.txt"
 var taskLogImgName = "nest_task_log.png"
+
 
 
 //用户需要输入的取消关注的数量
@@ -121,6 +128,12 @@ if (files.exists(RPAFilePath)) {
 var logFilePath = RPAFilePath + taskLogFileName;
 //确保日志目录存在
 files.ensureDir(RPAFilePath);
+
+
+//日志文件路径
+var resultPath = RPAFilePath + "nest_result_rpa.txt";
+//确保日志目录存在
+files.ensureDir(resultPath);
 
 
 //1.autox.js侧边栏的打开USB调试先打开
@@ -711,6 +724,7 @@ try{
 
 
             taskLog("需要取消关注的用户, 一共有： " + TT_Cancel_Follow_Count + "个");
+            total_target = TT_Cancel_Follow_Count;
             taskLog("每次取消关注后等待的时间: " + TT_Cancel_Follow_Sleep_Time_Start + "毫秒 - " + TT_Cancel_Follow_Sleep_Time_End + "毫秒");
             if (TT_Cancel_Follow_Count.length > 0) {
                 var successCount = 0; // 成功取消关注的计数
@@ -761,16 +775,15 @@ try{
                                     click(bounds.centerX(), bounds.centerY());
                                 }
                                 // 检查点击是否成功
-                                if (true) { // 这里可以添加点击成功的验证逻辑
+                                if (true) { // 这里可以添加点击成功的验证逻辑   
                                     taskLog("成功点击取消关注按钮");
+                                    total_success++; // 只有在成功点击后才增加计数
                                     successCount++; // 只有在成功点击后才增加计数
                                     taskLog("当前进度：" + successCount + "/" + TT_Cancel_Follow_Count + " (" + (successCount/TT_Cancel_Follow_Count*100).toFixed(1) + "%)");
                                     
                                     // 检查是否达到目标数量
                                     if (successCount >= TT_Cancel_Follow_Count) {
                                         taskLog("已达到目标取消关注数量！");
-                                        var screenshotPath = Nest_ScreenCapture();
-                                        taskLog("已保存完成后的截图：" + screenshotPath);
                                         foundButton = true;
                                         scrollAttempt = maxScrollAttempts; // 强制退出外层循环
                                         break; // 退出当前循环
@@ -881,4 +894,22 @@ try{
 
 }catch(e) {
     handleError(e);
+}
+finally{
+
+    taskLog("保存统计结果到备用路径..." );
+    try {
+        var result = {
+            total_target: total_target,
+            total_success: total_success
+        };
+        // 使用JSON.stringify将对象转换为JSON字符串，第三个参数2是为了美化输出格式
+        files.write(resultPath, JSON.stringify(result, null, 2));
+        taskLog("已保存统计结果到：" + resultPath);
+    } catch(e) {
+        console.error("保存统计结果失败：" + e.message);
+    }
+    // 刷新媒体库
+    refreshMedia(RPAFilePath);
+    sleep(random(3000, 5000))
 }
