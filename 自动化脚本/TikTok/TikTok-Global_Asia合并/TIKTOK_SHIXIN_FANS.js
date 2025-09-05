@@ -70,7 +70,7 @@ const FOLLOWING_LIST_TEXT = {
 const PROFILE_FANS_TEXT = {
     ZH_CN: "粉丝",    // 简体中文
     ZH_TW: "粉絲",    // 繁体中文 text("粉絲")
-    EN_US: "Followers"   // 英文text("Followers")
+    EN_US: ["Followers", "Follower"]   // 英文可能出现的两种形式
 };
 
 //定义粉丝按钮一共有多少个用户
@@ -91,17 +91,37 @@ const FANS_SIXIN_MESSAGE_TEXT = {
 function findTextByLanguages(languageObject) {
     for (let lang in languageObject) {
         let targetText = languageObject[lang];
-        if (text(targetText).exists()) {
-            taskLog("找到文本：" + targetText);
-            let element = text(targetText).findOne();
-            if (element && element.clickable()) {
-                element.click();
-                return true;
-            } else if (element) {
-                // 如果元素存在但不可点击，尝试点击其坐标
-                let bounds = element.bounds();
-                click(bounds.centerX(), bounds.centerY());
-                return true;
+        // 如果targetText是数组，遍历数组中的每个文本
+        if (Array.isArray(targetText)) {
+            for (let text_item of targetText) {
+                if (text(text_item).exists()) {
+                    taskLog("找到文本：" + text_item);
+                    let element = text(text_item).findOne();
+                    if (element && element.clickable()) {
+                        element.click();
+                        return true;
+                    } else if (element) {
+                        // 如果元素存在但不可点击，尝试点击其坐标
+                        let bounds = element.bounds();
+                        click(bounds.centerX(), bounds.centerY());
+                        return true;
+                    }
+                }
+            }
+        } else {
+            // 原来的单个文本处理逻辑
+            if (text(targetText).exists()) {
+                taskLog("找到文本：" + targetText);
+                let element = text(targetText).findOne();
+                if (element && element.clickable()) {
+                    element.click();
+                    return true;
+                } else if (element) {
+                    // 如果元素存在但不可点击，尝试点击其坐标
+                    let bounds = element.bounds();
+                    click(bounds.centerX(), bounds.centerY());
+                    return true;
+                }
             }
         }
     }
@@ -1163,7 +1183,6 @@ try {
                                                         taskLog("警告：未找到任何图片控件");
                                                     }
                                                     
-                                                    total_success++; // 增加成功私信计数
                                                     foundFanToMessage = true;
                                                     taskLog("=== 私信发送完成 ===");
                                                     taskLog("当前进度：" + total_success + "/" + TT_Like_User_FANS_ID_COUNT + " (" + (total_success/TT_Like_User_FANS_ID_COUNT*100).toFixed(1) + "%)");
@@ -1447,6 +1466,8 @@ try {
             total_target: total_target,
             total_success: total_success
         };
+        // 打印统计结果
+        taskLog("统计结果：" + JSON.stringify(result, null, 2));
         // 使用JSON.stringify将对象转换为JSON字符串，第三个参数2是为了美化输出格式
         files.write(resultPath, JSON.stringify(result, null, 2));
         taskLog("已保存统计结果到：" + resultPath);
