@@ -184,7 +184,7 @@ function Nest_ScreenCapture(){
     // var dir = "/sdcard/Pictures";
     // files.ensureDir(dir);
     // var path = dir + "/nestshot_" + Date.now() + ".png";
-    var path = RPAFilePath + "/nestshot_" + Date.now() + ".png";
+    var path = RPAFilePath + "/nestshot_rpa.png" ;
     img.saveTo(path);                    // 保存
     img.recycle();                       // 回收内存
     taskLog("自动化任务已经完成-已保存截图："+ path);
@@ -231,15 +231,15 @@ var handleErrorFlag = false //默认没有错误，如果出现异常，那么�
     console.hide()
     sleep(1000)
 
-    if(handleErrorFlag){
-        taskLogError("-----------------脚本执行出现异常---------------");
-        taskLogError("Tiktok私信：根據私訊列表UID的順序，去私訊​​用戶---------------");
-        taskLogError("脚本执行时间：" + new Date().toLocaleString());
-    }else{
-        taskLogError("-----------------脚本功能执行结束：---------------");
-        taskLogError("Tiktok私信：根據私訊列表UID的順序，去私訊​​用戶---------------");
-        taskLogError("脚本执行时间：" + new Date().toLocaleString());
-    }
+    // if(handleErrorFlag){
+    //     taskLogError("-----------------脚本执行出现异常---------------");
+    //     taskLogError("Tiktok私信：根據私訊列表UID的順序，去私訊​​用戶---------------");
+    //     taskLogError("脚本执行时间：" + new Date().toLocaleString());
+    // }else{
+        taskLog("-----------------脚本功能执行结束：---------------");
+        taskLog("Tiktok私信：根據私訊列表UID的順序，去私訊​​用戶---------------");
+        taskLog("脚本执行时间：" + new Date().toLocaleString());
+    // }
     openLogActivity();
 });
 
@@ -254,7 +254,7 @@ function handleError(e) {
     total_error_msg += "===错误报告结束===" + "\n";
     taskLogError("===错误报告结束===");
     total_error_msg += "===错误报告结束===" + "\n";
-    exit()
+    taskLog("脚本执行Error时间：" + new Date().toLocaleString());
 }
 
 
@@ -318,7 +318,7 @@ if (isAppInstalled(GLOBAL_TikTokPackageName)) {
     exit();
 }
 
-
+sleep(random(3000, 5000))
 forceStop_APP(targetPackageName)
 sleep(3000)
 
@@ -328,18 +328,7 @@ app.startActivity({
     className: targetClassName
 });
 
-
 sleep(random(3000, 5000))
-
-
-
-//推荐好友的弹窗，直接关闭
-function close_friend_suggest(){
-    if(id("c67").exists()){
-        sleep(3000)
-        id("c67").click()
-    }
-}
 
 
 
@@ -351,7 +340,7 @@ function getSystemDate(a) {
 //打印日志
 function taskLog(_log){
     toast(_log)
-    // console.log(getSystemDate("df") +":" +_log)
+    console.log(getSystemDate("df") +":" +_log)
     console.log(_log)
 
 
@@ -360,8 +349,8 @@ function taskLog(_log){
         files.ensureDir(RPAFilePath);
         
         //将日志写入文件
-        // var logContent = getSystemDate("df") + ":" + _log + "\n";
-        var logContent = _log + "\n";
+        var logContent = getSystemDate("df") + ":" + _log + "\n";
+        // var logContent = _log + "\n";
         files.append(logFilePath, logContent);
         
     } catch(e) {
@@ -373,8 +362,8 @@ function taskLog(_log){
 function taskLogError(_log){
     toast(_log);
     
-    // console.error(getSystemDate("df") +":" +_log)
-    console.error(_log)
+    console.error(getSystemDate("df") +":" +_log)
+    // console.error(_log)
 
     try {
         //确保目录存在
@@ -382,7 +371,7 @@ function taskLogError(_log){
         
         //将日志写入文件
         var logContent = getSystemDate("df") + ":" + "【!!!ERROR!!!】" + _log + "\n";
-        var logContent = "【!!!ERROR!!!】" + _log + "\n";
+        // var logContent = "【!!!ERROR!!!】" + _log + "\n";
         files.append(logFilePath, logContent);
         
     } catch(e) {
@@ -566,7 +555,7 @@ function taskLogError(_log){
 //强制停止TikTok 
 function forceStop_APP(packageName){
     taskLog("准备强杀:" + packageName + "...")
-    sleep(1000);
+    sleep(3000);
     openAppSettings(packageName)
     sleep(5000)
 
@@ -1206,6 +1195,9 @@ try {
                                                                     total_success++; // 只有在成功点击后才增加计数
                                                                 }
                                                             taskLog("发送按钮点击完成");
+                                                            taskLog("准备进行截图...");
+                                                            var screenshotPath = Nest_ScreenCapture();
+                                                            taskLog("已保存完成后的截图：" + screenshotPath);
                                                         } else {
                                                             taskLog("警告：无法获取最后一个图片控件");
                                                         }
@@ -1244,9 +1236,6 @@ try {
                                     if (total_success >= TT_Like_User_FANS_ID_COUNT) {
                                         taskLog("=== 任务完成 ===");
                                         taskLog("已达到目标私信数量：" + TT_Like_User_FANS_ID_COUNT);
-                                        taskLog("准备进行完成截图...");
-                                        var screenshotPath = Nest_ScreenCapture();
-                                        taskLog("已保存完成后的截图：" + screenshotPath);
                                         taskLog("任务已完成，准备退出脚本...");
                                         forceStop_APP(targetPackageName);
                                         exit();  // 直接退出整个脚本
@@ -1275,8 +1264,8 @@ try {
                     var screenshotPath = Nest_ScreenCapture();
                     taskLog("已保存错误截图：" + screenshotPath);
                     sleep(random(3000, 5000))
-                    taskLog("设置的取消关注的用户数量为0，不进行取消关注")
-                    throw new Error("设置的取消关注的用户数量为0，不进行取消关注，检查一下参数配置")
+                    taskLog("设置的私信用户数量是0")
+                    throw new Error("设置的私信用户数量是0，不进行粉丝私信，检查一下参数配置")
                 }
     
     
@@ -1307,7 +1296,6 @@ try {
 } catch(e) {
     handleError(e);
 }finally{
-
     taskLog("保存统计结果到备用路径..." );
     try {
         var result = {
