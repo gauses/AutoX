@@ -22,12 +22,22 @@ const TT_Message_GROUP = '$${T_私信用户文案列表}';
 var ASIA_TikTokPackageName = 'com.ss.android.ugc.trill';
 var GLOBAL_TikTokPackageName = 'com.zhiliaoapp.musically';
 
+const FORCE_STOP_TEXT = {
+    ZH_CN: "强行停止",    // 简体中文
+    ZH_TW: "強制停止",    // 繁体中文
+    EN_US: "FORCE STOP"   // 英文
+};
 
 
-// 需要取消关注的总数
+
+
+// 需要私信的粉丝总数
 var total_target = 0;
-// 成功取消关注的数量
+// 成功私信的粉丝数量
 var total_success = 0;
+// 错误信息
+var fail_msg = "";
+
 
 
 //1.autox.js侧边栏的打开USB调试先打开
@@ -46,30 +56,36 @@ auto.waitFor();
 var handleErrorFlag = false //默认没有错误，如果出现异常，那么该值是true
 
 // 注册退出事件监听器
- events.on('exit', function(){
+events.on('exit', function(){
     console.hide()
     sleep(1000)
 
     if(handleErrorFlag){
-        console.error("-----------------脚本执行出现异常---------------");
-        console.error("Tiktok私信：根據私訊列表UID的順序，去私訊​​用戶---------------");
-        console.error("脚本执行时间：" + new Date().toLocaleString());
+        taskLogError("-----------------脚本执行出现异常---------------");
+        taskLogError("Tiktok私信：根據私訊列表UID的順序，去私訊​​用戶---------------");
+        taskLogError("脚本执行时间：" + new Date().toLocaleString());
     }else{
-        console.log("-----------------脚本功能执行结束：---------------");
-        console.log("Tiktok私信：根據私訊列表UID的順序，去私訊​​用戶---------------");
-        console.log("脚本执行时间：" + new Date().toLocaleString());
+        taskLog("-----------------脚本功能执行结束：---------------");
+        taskLog("Tiktok私信：根據私訊列表UID的順序，去私訊​​用戶---------------");
+        taskLog("脚本执行时间：" + new Date().toLocaleString());
     }
     openLogActivity();
 });
 
 function handleError(e) {
     handleErrorFlag = true
-    console.error("===错误报告开始===");
-    console.error("错误信息：" + e);
-    console.error("错误堆栈：" + e.stack);
-    console.error("===错误报告结束===");
-    exit()
+    forceStop_APP(targetPackageName)
+    taskLogError("===错误报告开始===");
+    fail_msg += "错误信息：" + e + "\n"; 
+    taskLogError("错误信息：" + e);
+    fail_msg += "错误堆栈：" + e.stack + "\n";
+    taskLogError("错误堆栈：" + e.stack);
+    fail_msg += "===错误报告结束===" + "\n";
+    taskLogError("===错误报告结束===");
+    fail_msg += "===错误报告结束===" + "\n";
+    taskLog("脚本执行Error时间：" + new Date().toLocaleString());
 }
+
 
 
 //打开Autojs的Log activity
@@ -146,15 +162,6 @@ sleep(random(3000, 5000))
 
 
 
-//推荐好友的弹窗，直接关闭
-function close_friend_suggest(){
-    if(id("c67").exists()){
-        sleep(3000)
-        id("c67").click()
-    }
-}
-
-
 
 function getSystemDate(a) {
     var b = new SimpleDateFormat("HH:mm:ss"), c = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
@@ -165,15 +172,50 @@ function getSystemDate(a) {
 function taskLog(_log){
     toast(_log)
     console.log(getSystemDate("df") +":" +_log)
+    console.log(_log)
+
+
+    try {
+        //确保目录存在
+        files.ensureDir(RPAFilePath);
+        
+        //将日志写入文件
+        var logContent = getSystemDate("df") + ":" + _log + "\n";
+        // var logContent = _log + "\n";
+        files.append(logFilePath, logContent);
+        
+    } catch(e) {
+        console.error("写入日志文件失败：" + e);
+    }
 }
 
+
+function taskLogError(_log){
+    toast(_log);
+    
+    console.error(getSystemDate("df") +":" +_log)
+    // console.error(_log)
+
+    try {
+        //确保目录存在
+        files.ensureDir(RPAFilePath);
+        
+        //将日志写入文件
+        var logContent = getSystemDate("df") + ":" + "【!!!ERROR!!!】" + _log + "\n";
+        // var logContent = "【!!!ERROR!!!】" + _log + "\n";
+        files.append(logFilePath, logContent);
+        
+    } catch(e) {
+        console.error("写入日志文件失败：" + e);
+    }
+}
 
     //========================================================================================================================
 
 
     //结束当前任务
     function stopCurrentTask(){
-        saveImg()
+        // saveImg()
 
         sleep(3000)
     //    //将task的截图上报
@@ -341,91 +383,45 @@ function taskLog(_log){
     }
 
 
+
 //强制停止TikTok 
 function forceStop_APP(packageName){
     taskLog("准备强杀:" + packageName + "...")
-    sleep(1000);
-    app.openAppSetting(packageName)
+    sleep(3000);
+    openAppSettings(packageName)
     sleep(5000)
 
-    //繁体
-    if (text("強制停止").exists()) {
-        let forceStopBtn = text("強制停止").findOne();
-        if (forceStopBtn && forceStopBtn.clickable()) {
-            forceStopBtn.click();
-            sleep(1000);
-            // 确认操作
-            if (text("確定").exists()) {
-                taskLog("已经找到可点击的'強制停止'按钮！！！！！！！！！！");
-                text("確定").findOne().click();
+    // 遍历所有可能的强制停止按钮文本
+    for (let lang in FORCE_STOP_TEXT) {
+        let stopText = FORCE_STOP_TEXT[lang];
+        if (text(stopText).exists()) {
+            let forceStopBtn = text(stopText).findOne();
+            if (forceStopBtn && forceStopBtn.clickable()) {
+                forceStopBtn.click();
+                sleep(1000);
+                
+                // 遍历所有可能的确认按钮文本
+                for (let confirmLang in FORCE_STOP_CONFIRM_TEXT) {
+                    let confirmText = FORCE_STOP_CONFIRM_TEXT[confirmLang];
+                    if (text(confirmText).exists()) {
+                        text(confirmText).findOne().click();
+                        taskLog("成功点击'" + stopText + "'按钮并确认");
+                        sleep(3000);
+                        home();
+                        return;
+                    }
+                }
+            } else {
+                taskLog("未找到可点击的'" + stopText + "'按钮");
             }
         } else {
-            taskLog("未找到可点击的'強制停止'按钮");
+            taskLog("未找到'" + stopText + "'按钮");
         }
-    } else {
-        taskLog("未找到'強制停止'按钮");
-    }
-    sleep(3000)
-
-    //简体
-    if (text("强行停止").exists()) {
-        let forceStopBtn = text("强行停止").findOne();
-        if (forceStopBtn && forceStopBtn.clickable()) {
-            forceStopBtn.click();
-            sleep(1000);
-            // 确认操作
-            if (text("确定").exists()) {
-                text("确定").findOne().click();
-            }
-        } else {
-            taskLog("未找到可点击的'强行停止'按钮");
-        }
-    } else {
-        taskLog("未找到'强行停止'按钮");
+        sleep(1000);
     }
 
-    sleep(3000)
-
-
-    //英语
-    if (text("Force stop").exists()) {
-        let forceStopBtn = text("Force stop").findOne();
-        if (forceStopBtn && forceStopBtn.clickable()) {
-            forceStopBtn.click();
-            sleep(1000);
-            // 确认操作
-            if (text("OK").exists()) {
-                text("OK").findOne().click();
-            }
-        } else {
-            taskLog("未找到可点击的'Force stop'按钮");
-        }
-    } else {
-        taskLog("未找到'Force stop'按钮");
-    }
-    sleep(3000)
-
-    //英语
-    if (text("FORCE STOP").exists()) {
-        let forceStopBtn = text("FORCE STOP").findOne();
-        if (forceStopBtn && forceStopBtn.clickable()) {
-            forceStopBtn.click();
-            sleep(1000);
-            // 确认操作
-            if (text("OK").exists()) {
-                text("OK").findOne().click();
-            }
-        } else {
-            taskLog("未找到可点击的'FORCE STOP'按钮");
-        }
-    } else {
-        taskLog("未找到'FORCE STOP'按钮");
-    }
-    sleep(3000)
-
-
-    home()
-
+    // 如果所有语言都尝试失败，返回主页
+    home();
 }
 
 
@@ -577,38 +573,6 @@ function click_LinearLayout_GUANZHU(){
 }
 }
 
-
-
-    // function click_back_btn(){
-    //     // 获取所有相同id的控件（
-    //     //fullId("com.zhiliaoapp.musically:id/ay9")
-    //     let targets = id(GLOBAL_TikTokPackageName+":id/ay9").find();
-    //     // 通过索引获取指定的那个，比如第二个就是[1]
-    //     let target = targets[0];
-    //     if (target) {
-    //         taskLog("已经找到返回按钮 " )
-    //         // 获取控件的坐标信息
-    //         let bounds = target.bounds();
-            
-    //         // 计算控件中心点坐标
-    //         let centerX = bounds.centerX();
-    //         let centerY = bounds.centerY();
-            
-    //         // 使用click函数模拟点击中心点位置
-    //         taskLog("已经找到返回按钮 centerX = " +centerX)
-    //         taskLog("已经找到返回按钮 centerY = " +centerY)
-    //         sleep(1000);  // 点击前等待
-    //         click(centerX, centerY);
-    //         sleep(1000);  // 点击后等待
-            
-    //         // 或者使用press函数来模拟按压
-    //         // press(centerX, centerY, 100); // 100是按压时长(毫秒)
-    //     }else{
-    //         taskLog("没有找到首页搜索确认按钮,所以直接back " )
-    //         back()
-    //     }
-
-    // }
 
     //点击屏幕左上方
     function click_left_top_screen(){
@@ -768,29 +732,50 @@ function click_LinearLayout_GUANZHU(){
 
     }
 
-    //无论成功或者失败，最后截图一张
-    function saveImg(){
-        taskLog("开始截图...");
-
-        var toPath = "/sdcard/Download/" + taskLogImgName ;
-        if (files.exists(toPath) ){
-            taskLog("旧图片文件存在，删除");
-            files.remove(toPath);
-        } else {
-            taskLog("旧图片文件存在");
-        }
-
-
-        if(!requestScreenCapture()){
-            taskLog("请求截图失败...");
-            toast("请求截图失败");
-        }else{
-            toast("请求截图");
-        }
-        //截图并保存
-        taskLog("请求截图开始保存...");
-        images.saveImage(captureScreen(), toPath);
+    //开始录屏截图到本地
+function Nest_ScreenCapture(){
+    // 申请截图权限（会弹系统录屏权限框）
+    if (!requestScreenCapture()) {
+        taskLog("自动化任务-申请截图权限失败");
     }
+
+    // 申请截图权限（会弹系统录屏权限框）
+    if (!requestScreenCapture()) {
+        taskLog("自动化任务-申请截图权限失败");
+    }
+
+    // 截一张整屏
+    var img = captureScreen();           // 返回 Image 对象
+    if (!img) {
+        taskLog("自动化任务-截图失败");
+    }
+
+    // 保存到相册/文件夹
+    // var dir = "/sdcard/Pictures";
+    // files.ensureDir(dir);
+    // var path = dir + "/nestshot_" + Date.now() + ".png";
+    var path = RPAFilePath + "/nestshot_rpa.png" ;
+    img.saveTo(path);                    // 保存
+    img.recycle();                       // 回收内存
+    taskLog("自动化任务已经完成-已保存截图："+ path);
+
+
+    //刷新媒体库
+    sleep(3000)
+    toast("开始刷新媒体库....");
+    refreshMedia(RPAFilePath)
+    return path
+}
+// 刷新指定路径的媒体库
+function refreshMedia(path) {
+    taskLog("开始刷新媒体库....");
+    // 发送媒体扫描广播
+    media.scanFile(path);
+    // 等待扫描完成
+    sleep(5000);
+    taskLog("媒体库刷新完成.");
+}
+
 
 
     function writeLog(a) {
@@ -877,8 +862,6 @@ function get_all_comments(){
 try {
     
     
-    close_friend_suggest()
-
 
     var all_TT_Comment_TEXT = get_all_comments()
     if(all_TT_Comment_TEXT.includes("$${T")){ 
@@ -1018,21 +1001,6 @@ try {
                                         }
                                 }
 
-
-
-                                // // 点击按钮
-                                // if(sendButton) {
-                                //     taskLog("找到发送按钮，开始点击")
-                                //     let bounds = sendButton.bounds();
-                                //     sleep(1000);  // 点击前等待
-                                //     click(bounds.centerX(), bounds.centerY());
-                                //     sleep(1000);  // 点击后等待
-                                    
-                                // }else{
-                                //     taskLog("没有找到私信发送按钮！！！！")
-                                //     // throw new Error("没有找到私信发送按钮，所以报错"); 
-                                // } 
-
                                 sleep(3000)
                                 back()      
                                 sleep(1000)
@@ -1059,16 +1027,21 @@ try {
 
  
 } catch(e) {
-    handleError(e);
-}
-finally{
-
+    if (e.message === "TASK_COMPLETED") {
+        taskLog("任务正常完成");
+    } else {
+        handleError(e);
+    }
+}finally{
     taskLog("保存统计结果到备用路径..." );
     try {
         var result = {
             total_target: total_target,
-            total_success: total_success
+            total_success: total_success,
+            fail_msg: fail_msg
         };
+        // 打印统计结果
+        taskLog("统计结果：" + JSON.stringify(result, null, 2));
         // 使用JSON.stringify将对象转换为JSON字符串，第三个参数2是为了美化输出格式
         files.write(resultPath, JSON.stringify(result, null, 2));
         taskLog("已保存统计结果到：" + resultPath);
@@ -1079,5 +1052,6 @@ finally{
     refreshMedia(RPAFilePath);
     sleep(random(3000, 5000))
 }
+
 
 

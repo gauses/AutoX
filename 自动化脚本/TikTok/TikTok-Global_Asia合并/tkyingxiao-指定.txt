@@ -1,17 +1,15 @@
 关注：
  - 分组用户关注：TIKTOK_GUANZHU_GUANJIANCI
- - 指定关注：TIKTOK_GUANZHU
+ - 指定关注：TIKTOK_GUANZHU-----OK 
  
  
 取消关注：TIKTOK_QUXIAO_GUANZHU
 
 
-私信：（针对粉丝）TIKTOK_SHIXIN_FANS
+私信：（针对粉丝）TIKTOK_SHIXIN_FANS -----OK
  - 好友/粉丝数：必须大于1
  - 私信起始位置：？
  
-
-
 
 
 
@@ -19,7 +17,7 @@
  
  
  
- 
+
  
  
  

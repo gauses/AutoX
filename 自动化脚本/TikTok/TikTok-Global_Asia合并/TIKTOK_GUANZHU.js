@@ -24,6 +24,9 @@ const TT_Like_User_ID_GROUP = '$${T_用户ID列表}';
 var total_target = 0;
 // 成功关注的数量
 var total_success = 0;
+// 错误信息
+var fail_msg = "";
+
 
 var ASIA_TikTokPackageName = 'com.ss.android.ugc.trill';
 var GLOBAL_TikTokPackageName = 'com.zhiliaoapp.musically';
@@ -53,6 +56,13 @@ const USERS_TEXT = {
     ZH_CN: "用户",    // 简体中文
     ZH_TW: "使用者",    // 繁体中文
     EN_US: "Users"   // 英文
+};
+
+//定义Following列表的TextView在不同语言下的文本
+const FOLLOWING_LIST_TEXT = {
+    ZH_CN: "已关注",    // 简体中文
+    ZH_TW: "關注中",    // 繁体中文
+    EN_US: "Following"   // 英文
 };
 
 // 通过语言对象查找文本
@@ -111,36 +121,19 @@ auto.waitFor();
 var handleErrorFlag = false //默认没有错误，如果出现异常，那么该值是true
 
 // 注册退出事件监听器
- events.on('exit', function(){
+// 注册退出事件监听器
+events.on('exit', function(){
     console.hide()
-
-
-    // taskLog("保存统计结果到备用路径..." );
-    // try {
-    //     var result = {
-    //         total_target: total_target,
-    //         total_success: total_success
-    //     };
-    //     // 使用JSON.stringify将对象转换为JSON字符串，第三个参数2是为了美化输出格式
-    //     files.write(resultPath, JSON.stringify(result, null, 2));
-    //     taskLog("已保存统计结果到：" + resultPath);
-    // } catch(e) {
-    //     console.error("保存统计结果失败：" + e.message);
-    // }
-    // // 刷新媒体库
-    // refreshMedia(RPAFilePath);
-
-
-    sleep(3000)
+    sleep(1000)
 
     if(handleErrorFlag){
-        console.error("-----------------脚本执行出现异常---------------");
-        console.error("Tiktok关注：根據關注列表UID的順序，去關注用戶---------------");
-        console.error("脚本执行时间：" + new Date().toLocaleString());
+        taskLogError("-----------------脚本执行出现异常---------------");
+        taskLogError("Tiktok私信：根據私訊列表UID的順序，去私訊​​用戶---------------");
+        taskLogError("脚本执行时间：" + new Date().toLocaleString());
     }else{
-        console.log("-----------------脚本功能执行结束：---------------");
-        console.log("Tiktok关注：根據關注列表UID的順序，去關注用戶---------------");
-        console.log("脚本执行时间：" + new Date().toLocaleString());
+        taskLog("-----------------脚本功能执行结束：---------------");
+        taskLog("Tiktok私信：根據私訊列表UID的順序，去私訊​​用戶---------------");
+        taskLog("脚本执行时间：" + new Date().toLocaleString());
     }
     openLogActivity();
 });
@@ -158,15 +151,21 @@ function throw_error_storage_not_enough(){
     throw new Error("当前设备的存储空间不可用，请关机重启一次设备，然后重新执行一次脚本")
 }
 
+
 function handleError(e) {
     handleErrorFlag = true
     forceStop_APP(targetPackageName)
-    console.error("===错误报告开始===");
-    console.error("错误信息：" + e);
-    console.error("错误堆栈：" + e.stack);
-    console.error("===错误报告结束===");
-    exit()
+    taskLogError("===错误报告开始===");
+    fail_msg += "错误信息：" + e + "\n"; 
+    taskLogError("错误信息：" + e);
+    fail_msg += "错误堆栈：" + e.stack + "\n";
+    taskLogError("错误堆栈：" + e.stack);
+    fail_msg += "===错误报告结束===" + "\n";
+    taskLogError("===错误报告结束===");
+    fail_msg += "===错误报告结束===" + "\n";
+    taskLog("脚本执行Error时间：" + new Date().toLocaleString());
 }
+
 
 
 
@@ -217,7 +216,7 @@ if (isAppInstalled(GLOBAL_TikTokPackageName)) {
 } else {
     toast("未检测到TikTok已安装，请先安装TikTok！");
     taskLog("未检测到TikTok已安装，脚本终止。");
-    exit();
+    throw new Error("未检测到TikTok未安装，请先安装TikTok！");
 }
 
 forceStop_APP(targetPackageName)
@@ -437,6 +436,58 @@ function click_LinearLayout_GUANZHU(){
 }
 
 
+//进入个人主页之后，查看是否已经是关注状态了
+function click_LinearLayout_GUANZHU_IN_Author_Page(commentText){
+
+    sleep(random(2000, 5000))
+    //className("android.widget.TextView")
+    var allTextView = className("android.widget.TextView").find();
+    if (allTextView && allTextView.size() > 0) {
+        for (var i = 0; i < allTextView.size(); i++) {
+            var textView = allTextView.get(i);
+            if (textView) {
+                // taskLog("找到textView控件-Text：" + textView.text() + ";ID = " + textView.id());
+                
+				//fullId("com.zhiliaoapp.musically:id/dmt")
+                //fullId("com.ss.android.ugc.trill:id/dmu")
+
+                if (textView.id() == (GLOBAL_TikTokPackageName +":id/dmt") || textView.id() == (ASIA_TikTokPackageName +":id/dmu")) {
+                    taskLog("找到TextView控件:开始点击第一个， textView = " + commentText + "， textView.text() = " + textView.text() );
+
+                        if(Object.values(FOLLOW_TEXT).includes(textView.text())) {
+                            taskLog("找到关注按钮，开始点击：" +  commentText + "， textView.text() = " + textView.text())
+                            var textView_click = clickId(textView.id())
+
+                            total_success++;
+                            taskLog("成功关注数量更新为：" + total_success);   
+
+                            Nest_ScreenCapture()
+                            sleep(random(3000, 5000))
+
+                            break;
+
+                        }
+                        // else if(Object.values(FOLLOWING_LIST_TEXT).includes(textView.text())) {
+                        //     fail_msg += commentText + "已经关注了，直接跳过" + "\n";
+                        //     taskLog(commentText + "已经关注了，直接跳过")
+                        //     break;
+                            
+                        // }
+                        
+                        else{
+                            fail_msg += commentText + "已经关注了，直接跳过" + "\n";
+                            taskLog(commentText + "已经关注了，直接跳过")
+                            break;
+                        }
+
+                    }
+            }
+        }
+    }
+    sleep(random(2000, 5000))
+}
+
+
 
 
 function click_back_btn(){
@@ -573,10 +624,13 @@ function click_Author_Page_Btn(){
 
 
 
+
 //打印日志
 function taskLog(_log){
     toast(_log)
     console.log(getSystemDate("df") +":" +_log)
+    console.log(_log)
+
 
     try {
         //确保目录存在
@@ -584,6 +638,28 @@ function taskLog(_log){
         
         //将日志写入文件
         var logContent = getSystemDate("df") + ":" + _log + "\n";
+        // var logContent = _log + "\n";
+        files.append(logFilePath, logContent);
+        
+    } catch(e) {
+        console.error("写入日志文件失败：" + e);
+    }
+}
+
+
+function taskLogError(_log){
+    toast(_log);
+    
+    console.error(getSystemDate("df") +":" +_log)
+    // console.error(_log)
+
+    try {
+        //确保目录存在
+        files.ensureDir(RPAFilePath);
+        
+        //将日志写入文件
+        var logContent = getSystemDate("df") + ":" + "【!!!ERROR!!!】" + _log + "\n";
+        // var logContent = "【!!!ERROR!!!】" + _log + "\n";
         files.append(logFilePath, logContent);
         
     } catch(e) {
@@ -852,21 +928,32 @@ try{
 
                     click_LinearLayout_GUANZHU()
 
+                    sleep(random(3000, 5000))
 
-                    //text("關注，Follow")
-                    var findFollowTextResult = findTextByLanguages(FOLLOW_TEXT)
-                    
-                    // 如果找到并点击了关注按钮，增加成功计数
-                    if (findFollowTextResult) {
-                        total_success++;
-                        taskLog("成功关注数量更新为：" + total_success);
-                    }
+                    click_LinearLayout_GUANZHU_IN_Author_Page(commentText)
+                    sleep(random(3000, 5000))
 
-                    //增加一个判断，如果此时randIdx等于comments.length-1，则进行一次截图操作
-                    if(randIdx == comments.length-1){
-                        Nest_ScreenCapture()
-                    }
 
+                    // //先判断这时候是不是已经是关注状态了
+                    // var findFollowingTextResult = findTextByLanguages(FOLLOWING_LIST_TEXT)
+                    // if(findFollowingTextResult){
+                    //     fail_msg += commentText + "已经关注了，直接跳过" + "\n";
+                    //     taskLog(commentText + "已经关注了，直接跳过")
+                    // }else{
+                    //     //text("關注，Follow")
+                    //     var findFollowTextResult = findTextByLanguages(FOLLOW_TEXT)
+                        
+                    //     // 如果找到并点击了关注按钮，增加成功计数
+                    //     if (findFollowTextResult) {
+                    //         total_success++;
+                    //         taskLog("成功关注数量更新为：" + total_success);    
+                    //     }
+
+                    //     //增加一个判断，如果此时randIdx等于comments.length-1，则进行一次截图操作
+                    //     if(randIdx == comments.length-1){
+                    //         Nest_ScreenCapture()
+                    //     }
+                    // }
 
                     
                     sleep(random(3000, 5000))
@@ -888,17 +975,22 @@ try{
         throw new Error("没有可用的搜索用户ID，无法关注，所以报错")
     }
 
-}catch(e) {
-    handleError(e);
-}
-finally{
-
+} catch(e) {
+    if (e.message === "TASK_COMPLETED") {
+        taskLog("任务正常完成");
+    } else {
+        handleError(e);
+    }
+}finally{
     taskLog("保存统计结果到备用路径..." );
     try {
         var result = {
             total_target: total_target,
-            total_success: total_success
+            total_success: total_success,
+            fail_msg: fail_msg
         };
+        // 打印统计结果
+        taskLog("统计结果：" + JSON.stringify(result, null, 2));
         // 使用JSON.stringify将对象转换为JSON字符串，第三个参数2是为了美化输出格式
         files.write(resultPath, JSON.stringify(result, null, 2));
         taskLog("已保存统计结果到：" + resultPath);
