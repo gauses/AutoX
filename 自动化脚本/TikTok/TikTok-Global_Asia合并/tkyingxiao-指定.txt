@@ -6,7 +6,13 @@
 取消关注：TIKTOK_QUXIAO_GUANZHU
 
 
-私信：（针对粉丝）
+私信：（针对粉丝）TIKTOK_SHIXIN_FANS
+ - 好友/粉丝数：必须大于1
+ - 私信起始位置：？
+ 
+
+
+
 
 
 强私：TIKTOK_SHIXIN

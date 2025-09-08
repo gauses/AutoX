@@ -230,13 +230,13 @@ var handleErrorFlag = false //默认没有错误，如果出现异常，那么�
     sleep(1000)
 
     if(handleErrorFlag){
-        console.error("-----------------脚本执行出现异常---------------");
-        console.error("Tiktok私信：根據私訊列表UID的順序，去私訊​​用戶---------------");
-        console.error("脚本执行时间：" + new Date().toLocaleString());
+        taskLogError("-----------------脚本执行出现异常---------------");
+        taskLogError("Tiktok私信：根據私訊列表UID的順序，去私訊​​用戶---------------");
+        taskLogError("脚本执行时间：" + new Date().toLocaleString());
     }else{
-        console.log("-----------------脚本功能执行结束：---------------");
-        console.log("Tiktok私信：根據私訊列表UID的順序，去私訊​​用戶---------------");
-        console.log("脚本执行时间：" + new Date().toLocaleString());
+        taskLogError("-----------------脚本功能执行结束：---------------");
+        taskLogError("Tiktok私信：根據私訊列表UID的順序，去私訊​​用戶---------------");
+        taskLogError("脚本执行时间：" + new Date().toLocaleString());
     }
     openLogActivity();
 });
@@ -244,10 +244,10 @@ var handleErrorFlag = false //默认没有错误，如果出现异常，那么�
 function handleError(e) {
     // handleErrorFlag = true
     forceStop_APP(targetPackageName)
-    console.error("===错误报告开始===");
-    console.error("错误信息：" + e);
-    console.error("错误堆栈：" + e.stack);
-    console.error("===错误报告结束===");
+    taskLogError("===错误报告开始===");
+    taskLogError("错误信息：" + e);
+    taskLogError("错误堆栈：" + e.stack);
+    taskLogError("===错误报告结束===");
     exit()
 }
 
@@ -353,6 +353,25 @@ function taskLog(_log){
         
         //将日志写入文件
         var logContent = getSystemDate("df") + ":" + _log + "\n";
+        files.append(logFilePath, logContent);
+        
+    } catch(e) {
+        console.error("写入日志文件失败：" + e);
+    }
+}
+
+
+function taskLogError(_log){
+    toast(_log);
+    
+    console.error(getSystemDate("df") +":" +_log)
+
+    try {
+        //确保目录存在
+        files.ensureDir(RPAFilePath);
+        
+        //将日志写入文件
+        var logContent = getSystemDate("df") + ":" + "[ERROR] " + _log + "\n";
         files.append(logFilePath, logContent);
         
     } catch(e) {
@@ -1061,7 +1080,7 @@ try {
                 taskLog("需要私信的用户, 一共有： " + TT_Like_User_FANS_ID_COUNT + "个");
                 total_target = TT_Like_User_FANS_ID_COUNT;
                 sleep(random(8000, 10000))
-                if (TT_Like_User_FANS_ID_COUNT.length > 0) {
+                if (TT_Like_User_FANS_ID_COUNT> 0) {
                     for (var i = 0; i < TT_Like_User_FANS_ID_COUNT; i++) {
                         
                         // 尝试查找并点击Following按钮，如果找不到则滑动屏幕
