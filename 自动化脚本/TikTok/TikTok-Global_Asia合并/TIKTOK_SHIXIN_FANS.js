@@ -22,6 +22,8 @@ const TT_Message_GROUP = '$${T_私信用户文案列表}';
 var total_target = 0;
 // 成功私信的粉丝数量
 var total_success = 0;
+// 错误信息
+var total_error_msg = "";
 
 
 
@@ -245,9 +247,13 @@ function handleError(e) {
     // handleErrorFlag = true
     forceStop_APP(targetPackageName)
     taskLogError("===错误报告开始===");
+    total_error_msg += "错误信息：" + e + "\n"; 
     taskLogError("错误信息：" + e);
+    total_error_msg += "错误堆栈：" + e.stack + "\n";
     taskLogError("错误堆栈：" + e.stack);
+    total_error_msg += "===错误报告结束===" + "\n";
     taskLogError("===错误报告结束===");
+    total_error_msg += "===错误报告结束===" + "\n";
     exit()
 }
 
@@ -345,14 +351,17 @@ function getSystemDate(a) {
 //打印日志
 function taskLog(_log){
     toast(_log)
-    console.log(getSystemDate("df") +":" +_log)
+    // console.log(getSystemDate("df") +":" +_log)
+    console.log(_log)
+
 
     try {
         //确保目录存在
         files.ensureDir(RPAFilePath);
         
         //将日志写入文件
-        var logContent = getSystemDate("df") + ":" + _log + "\n";
+        // var logContent = getSystemDate("df") + ":" + _log + "\n";
+        var logContent = _log + "\n";
         files.append(logFilePath, logContent);
         
     } catch(e) {
@@ -364,14 +373,16 @@ function taskLog(_log){
 function taskLogError(_log){
     toast(_log);
     
-    console.error(getSystemDate("df") +":" +_log)
+    // console.error(getSystemDate("df") +":" +_log)
+    console.error(_log)
 
     try {
         //确保目录存在
         files.ensureDir(RPAFilePath);
         
         //将日志写入文件
-        var logContent = getSystemDate("df") + ":" + "[ERROR] " + _log + "\n";
+        var logContent = getSystemDate("df") + ":" + "【!!!ERROR!!!】" + _log + "\n";
+        var logContent = "【!!!ERROR!!!】" + _log + "\n";
         files.append(logFilePath, logContent);
         
     } catch(e) {
@@ -1290,189 +1301,7 @@ try {
             throw new Error("没有找到首页最右侧Profile按钮")
         }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-
-
-
-        // // 按照顺序开始执行搜索User-ID
-        // taskLog("- 找到可用的搜索用户, 开始搜索 - ");
-        // for (var index_user = 0; index_user < all_TT_Users.length; index_user++) {
-        //     var userId = all_TT_Users[index_user];
-        //     taskLog("开始准备获取all_TT_Users的ID = " + userId)
-        //     sleep(random(2000, 4000))
-
-        //     taskLog("开始准备点击首页搜索按钮")
-        //     var search_edits = className("android.widget.EditText").find();
-        //     for(var i = 0; i < search_edits.size(); i++) {
-        //         var search_edit = search_edits.get(i);
-        //         if(search_edit) {
-        //             sleep(1000)
-        //             taskLog("搜索控件，设置用户NAME：" +userId );
-        //             search_edit.setText(userId)    
-        //             sleep(random(5000, 8000))
-                    
-        //             taskLog("开始点击Search按钮")
-        //             click_Second_search_btn()
-
-        //             sleep(random(5000, 8000))
-        //             taskLog("开始点击视频Tab按钮")
-        //             var findMSGTextResult = find_textview_text_base("用户","使用者","Users")
-        //             if(!findMSGTextResult) {
-        //                 taskLog("没有找到用户Tab控件，终止本次操作，开始下一个用户的私信行为！！！");
-        //                 back()    
-        //                 break
-        //             }
-
-        //             sleep(random(5000, 8000))
-        //             //直接点击第一个关注按钮
-        //             click_LinearLayout_GUANZHU()
-        //             sleep(random(2000, 4000))
-
-        
-        //             //text("消息")：点击User的主页的"消息"按钮，准备发信息
-        //             var findMSGTextResult = find_textview_text_base("訊息", "Message", "消息")
-        //             if(!findMSGTextResult) {
-        //                 taskLog("没有找到消息控件，终止本次操作，开始下一个用户的私信行为！！！");
-        //                 sleep(3000)
-        //                 back()
-        //                 sleep(1000)
-        //                 back()
-        //                 sleep(3000)
-        //                 break
-        //             }
-        //             sleep(random(2000, 4000))
-
-        //             var autoCompleteTextViews = className("android.widget.EditText").find();
-        //             if(autoCompleteTextViews.size() == 0){//这种场景对应的用户：mrbeast
-        //                 taskLog("没有找到訊息控件，终止本次操作，开始下一个用户的私信行为！！！");               
-        //                 back()
-        //                 sleep(random(2000, 4000))
-        //                 back()
-        //                 sleep(random(2000, 4000))
-        //                 back()
-        //                 sleep(1000)
-        //                 break
-        //             }else{
-        //                 for(var i = 0; i < autoCompleteTextViews.size(); i++) {
-        //                     var textView = autoCompleteTextViews.get(i);
-        //                     if(textView) {
-        //                         taskLog("找到TextView控件-Text："+ textView.text());
-        //                         sleep(1000)
-
-        //                         var randIdx = random(0, all_TT_Comment_TEXT.length - 1)
-        //                         taskLog("评论文案的下标randIdx："+randIdx)
-        //                         var messageText = all_TT_Comment_TEXT[randIdx];
-
-        //                         taskLog("评论控件，设置内容：" +messageText );
-
-        //                         textView.setText(messageText)
-        //                         sleep(random(2000, 4000))
-                
-                    
-
-        //                         //点击发送按钮
-        //                         // className("android.widget.ImageView").find().forEach((iv, idx) => {
-        //                         //     taskLog("ImageView " + idx + ": " + iv.bounds());
-        //                         // });
-
-        //                         // taskLog("开始寻找发送按钮.....")
-        //                         // taskLog("开始寻找发送按钮,device.width * 0.9 = " + device.width * 0.9)
-        //                         // taskLog("开始寻找发送按钮,device.height * 0.9 = " + device.height * 0.9)
-
-
-        //                         // let sendButton = className("android.widget.ImageView")
-        //                         // .filter(function(w) {
-        //                         //     let b = w.bounds();
-        //                         //     // 检查是否在右下角区域
-        //                         //     return b.centerX() > device.width * 0.8 && b.centerY() > device.height * 0.8;
-        //                         // }).findOne(5000);
-
-
-        //                         var allImages = className("android.widget.ImageView").find();
-        //                         if (allImages && allImages.size() > 0) {
-        //                             var lastIndex = allImages.size() - 1;
-        //                             var lastImg = allImages.get(lastIndex);
-        //                             if (lastImg) {
-        //                                 var bounds = lastImg.bounds();
-        //                                 if (lastImg.clickable()) {
-        //                                     lastImg.click();
-        //                                 } else {
-        //                                     click(bounds.centerX(), bounds.centerY());
-        //                                 }
-
-        //                                 }
-        //                         }
-
-
-
-        //                         // // 点击按钮
-        //                         // if(sendButton) {
-        //                         //     taskLog("找到发送按钮，开始点击")
-        //                         //     let bounds = sendButton.bounds();
-        //                         //     sleep(1000);  // 点击前等待
-        //                         //     click(bounds.centerX(), bounds.centerY());
-        //                         //     sleep(1000);  // 点击后等待
-                                    
-        //                         // }else{
-        //                         //     taskLog("没有找到私信发送按钮！！！！")
-        //                         //     // throw new Error("没有找到私信发送按钮，所以报错"); 
-        //                         // } 
-
-        //                         sleep(3000)
-        //                         back()      
-        //                         sleep(1000)
-        //                         back()
-        //                         sleep(1000)
-        //                         back()
-        //                         sleep(5000)
-        //                 }
-        //             }
-
-
-        //             }
-
-        //         }
-        //     }
-
-
-        // }
-
     }
-
-
-
 
  
 } catch(e) {
@@ -1483,7 +1312,8 @@ try {
     try {
         var result = {
             total_target: total_target,
-            total_success: total_success
+            total_success: total_success,
+            total_error_msg: total_error_msg
         };
         // 打印统计结果
         taskLog("统计结果：" + JSON.stringify(result, null, 2));
