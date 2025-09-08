@@ -23,7 +23,7 @@ var total_target = 0;
 // 成功私信的粉丝数量
 var total_success = 0;
 // 错误信息
-var total_error_msg = "";
+var fail_msg = "";
 
 
 
@@ -231,29 +231,29 @@ var handleErrorFlag = false //默认没有错误，如果出现异常，那么�
     console.hide()
     sleep(1000)
 
-    // if(handleErrorFlag){
-    //     taskLogError("-----------------脚本执行出现异常---------------");
-    //     taskLogError("Tiktok私信：根據私訊列表UID的順序，去私訊​​用戶---------------");
-    //     taskLogError("脚本执行时间：" + new Date().toLocaleString());
-    // }else{
+    if(handleErrorFlag){
+        taskLogError("-----------------脚本执行出现异常---------------");
+        taskLogError("Tiktok私信：根據私訊列表UID的順序，去私訊​​用戶---------------");
+        taskLogError("脚本执行时间：" + new Date().toLocaleString());
+    }else{
         taskLog("-----------------脚本功能执行结束：---------------");
         taskLog("Tiktok私信：根據私訊列表UID的順序，去私訊​​用戶---------------");
         taskLog("脚本执行时间：" + new Date().toLocaleString());
-    // }
+    }
     openLogActivity();
 });
 
 function handleError(e) {
-    // handleErrorFlag = true
+    handleErrorFlag = true
     forceStop_APP(targetPackageName)
     taskLogError("===错误报告开始===");
-    total_error_msg += "错误信息：" + e + "\n"; 
+    fail_msg += "错误信息：" + e + "\n"; 
     taskLogError("错误信息：" + e);
-    total_error_msg += "错误堆栈：" + e.stack + "\n";
+    fail_msg += "错误堆栈：" + e.stack + "\n";
     taskLogError("错误堆栈：" + e.stack);
-    total_error_msg += "===错误报告结束===" + "\n";
+    fail_msg += "===错误报告结束===" + "\n";
     taskLogError("===错误报告结束===");
-    total_error_msg += "===错误报告结束===" + "\n";
+    fail_msg += "===错误报告结束===" + "\n";
     taskLog("脚本执行Error时间：" + new Date().toLocaleString());
 }
 
@@ -315,7 +315,7 @@ if (isAppInstalled(GLOBAL_TikTokPackageName)) {
 } else {
     toast("未检测到TikTok已安装，请先安装TikTok！");
     taskLog("未检测到TikTok已安装，脚本终止。");
-    exit();
+    throw new Error("未检测到TikTok安装，请先安装TikTok！"); 
 }
 
 sleep(random(3000, 5000))
@@ -1238,7 +1238,9 @@ try {
                                         taskLog("已达到目标私信数量：" + TT_Like_User_FANS_ID_COUNT);
                                         taskLog("任务已完成，准备退出脚本...");
                                         forceStop_APP(targetPackageName);
-                                        exit();  // 直接退出整个脚本
+                                        // exit();  // 直接退出整个脚本
+                                        // 不要使用exit()，而是抛出一个特殊的错误
+                                        throw new Error("TASK_COMPLETED");  // 这样会触发catch和finally块
                                     }
                                 }
 
@@ -1294,14 +1296,18 @@ try {
 
  
 } catch(e) {
-    handleError(e);
+    if (e.message === "TASK_COMPLETED") {
+        taskLog("任务正常完成");
+    } else {
+        handleError(e);
+    }
 }finally{
     taskLog("保存统计结果到备用路径..." );
     try {
         var result = {
             total_target: total_target,
             total_success: total_success,
-            total_error_msg: total_error_msg
+            fail_msg: fail_msg
         };
         // 打印统计结果
         taskLog("统计结果：" + JSON.stringify(result, null, 2));
