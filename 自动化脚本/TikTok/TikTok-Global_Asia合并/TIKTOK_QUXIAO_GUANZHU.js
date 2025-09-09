@@ -12,7 +12,8 @@ importClass(java.io.FileWriter);
 var total_target = 0;
 // 成功取消关注的数量
 var total_success = 0;
-
+// 错误信息
+var fail_msg = "";
 
 
 
@@ -149,19 +150,36 @@ auto.waitFor();
 //出现异常错误时，打印的日志错误信息
 var handleErrorFlag = false //默认没有错误，如果出现异常，那么该值是true
 
+
 // 注册退出事件监听器
- events.on('exit', function(){
+events.on('exit', function(){
     console.hide()
     sleep(1000)
 
     if(handleErrorFlag){
-        console.error("-----------------脚本执行出现异常---------------");
-        console.error("Tiktok取消关注(根据取消关注的数量，去取消关注)---------------");
-        console.error("脚本执行时间：" + new Date().toLocaleString());
+        taskLogError("-----------------脚本执行出现异常---------------");
+        taskLogError("Tiktok私信：根據私訊列表UID的順序，去私訊​​用戶---------------");
+        taskLogError("脚本执行时间：" + new Date().toLocaleString());
     }else{
-        console.log("-----------------脚本功能执行结束：---------------");
-        console.log("Tiktok取消关注(根据取消关注的数量，去取消关注)---------------");
-        console.log("脚本执行时间：" + new Date().toLocaleString());
+        taskLog("-----------------脚本功能执行结束：---------------");
+        taskLog("Tiktok私信：根據私訊列表UID的順序，去私訊​​用戶---------------");
+        taskLog("脚本执行时间：" + new Date().toLocaleString());
+    }
+    openLogActivity();
+});
+// 注册退出事件监听器
+events.on('exit', function(){
+    console.hide()
+    sleep(1000)
+
+    if(handleErrorFlag){
+        taskLogError("-----------------脚本执行出现异常---------------");
+        taskLogError("Tiktok私信：根據私訊列表UID的順序，去私訊​​用戶---------------");
+        taskLogError("脚本执行时间：" + new Date().toLocaleString());
+    }else{
+        taskLog("-----------------脚本功能执行结束：---------------");
+        taskLog("Tiktok私信：根據私訊列表UID的順序，去私訊​​用戶---------------");
+        taskLog("脚本执行时间：" + new Date().toLocaleString());
     }
     openLogActivity();
 });
@@ -182,11 +200,15 @@ function throw_error_storage_not_enough(){
 function handleError(e) {
     handleErrorFlag = true
     forceStop_APP(targetPackageName)
-    console.error("===错误报告开始===");
-    console.error("错误信息：" + e);
-    console.error("错误堆栈：" + e.stack);
-    console.error("===错误报告结束===");
-    exit()
+    taskLogError("===错误报告开始===");
+    fail_msg += "错误信息：" + e + "\n"; 
+    taskLogError("错误信息：" + e);
+    fail_msg += "错误堆栈：" + e.stack + "\n";
+    taskLogError("错误堆栈：" + e.stack);
+    fail_msg += "===错误报告结束===" + "\n";
+    taskLogError("===错误报告结束===");
+    fail_msg += "===错误报告结束===" + "\n";
+    taskLog("脚本执行Error时间：" + new Date().toLocaleString());
 }
 
 
@@ -238,7 +260,7 @@ if (isAppInstalled(GLOBAL_TikTokPackageName)) {
 } else {
     toast("未检测到TikTok已安装，请先安装TikTok！");
     taskLog("未检测到TikTok已安装，脚本终止。");
-    exit();
+    throw new Error("未检测到TikTok安装，脚本终止。");
 }
 
 forceStop_APP(targetPackageName)
@@ -476,11 +498,12 @@ function click_Author_Page_Btn(){
 }
 
 
-
 //打印日志
 function taskLog(_log){
     toast(_log)
     console.log(getSystemDate("df") +":" +_log)
+    console.log(_log)
+
 
     try {
         //确保目录存在
@@ -488,6 +511,28 @@ function taskLog(_log){
         
         //将日志写入文件
         var logContent = getSystemDate("df") + ":" + _log + "\n";
+        // var logContent = _log + "\n";
+        files.append(logFilePath, logContent);
+        
+    } catch(e) {
+        console.error("写入日志文件失败：" + e);
+    }
+}
+
+
+function taskLogError(_log){
+    toast(_log);
+    
+    console.error(getSystemDate("df") +":" +_log)
+    // console.error(_log)
+
+    try {
+        //确保目录存在
+        files.ensureDir(RPAFilePath);
+        
+        //将日志写入文件
+        var logContent = getSystemDate("df") + ":" + "【!!!ERROR!!!】" + _log + "\n";
+        // var logContent = "【!!!ERROR!!!】" + _log + "\n";
         files.append(logFilePath, logContent);
         
     } catch(e) {
@@ -816,7 +861,6 @@ try{
                                     taskLog("开始第" + (retryCount + 1) + "/" + retryAttempts + "次重试查找Following按钮");
                                     followingButton = findTextByLanguages(FOLLOWING_TEXT);
                                     if (followingButton) {
-                                        taskLog("重新找到Following按钮，按钮信息：" + JSON.stringify(followingButton.bounds()));
                                         taskLog("按钮状态：可点击=" + followingButton.clickable() + ", 可见=" + followingButton.visibleToUser());
                                         sleep(random(2000, 3000));
                                         taskLog("准备点击Following按钮...");
@@ -892,17 +936,22 @@ try{
 
 
 
-}catch(e) {
-    handleError(e);
-}
-finally{
-
+} catch(e) {
+    if (e.message === "TASK_COMPLETED") {
+        taskLog("任务正常完成");
+    } else {
+        handleError(e);
+    }
+}finally{
     taskLog("保存统计结果到备用路径..." );
     try {
         var result = {
             total_target: total_target,
-            total_success: total_success
+            total_success: total_success,
+            fail_msg: fail_msg
         };
+        // 打印统计结果
+        taskLog("统计结果：" + JSON.stringify(result, null, 2));
         // 使用JSON.stringify将对象转换为JSON字符串，第三个参数2是为了美化输出格式
         files.write(resultPath, JSON.stringify(result, null, 2));
         taskLog("已保存统计结果到：" + resultPath);

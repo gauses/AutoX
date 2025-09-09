@@ -89,6 +89,9 @@ files.ensureDir(RPAFilePath);
 // 需要关注的总数
 // 成功关注的数量
 var total_success = 0;
+// 错误信息
+var fail_msg = "";
+
 var resultPath = RPAFilePath + "nest_result_rpa.txt";
 //确保日志目录存在
 files.ensureDir(resultPath);
@@ -112,21 +115,22 @@ auto.waitFor();
 var handleErrorFlag = false //默认没有错误，如果出现异常，那么该值是true
 
 // 注册退出事件监听器
- events.on('exit', function(){
+events.on('exit', function(){
     console.hide()
     sleep(1000)
 
     if(handleErrorFlag){
-        console.error("-----------------脚本执行出现异常---------------");
-        console.error("Tiktok关注：根據關注列表UID的順序，去關注用戶---------------");
-        console.error("脚本执行时间：" + new Date().toLocaleString());
+        taskLogError("-----------------脚本执行出现异常---------------");
+        taskLogError("Tiktok私信：根據私訊列表UID的順序，去私訊​​用戶---------------");
+        taskLogError("脚本执行时间：" + new Date().toLocaleString());
     }else{
-        console.log("-----------------脚本功能执行结束：---------------");
-        console.log("Tiktok关注：根據關注列表UID的順序，去關注用戶---------------");
-        console.log("脚本执行时间：" + new Date().toLocaleString());
+        taskLog("-----------------脚本功能执行结束：---------------");
+        taskLog("Tiktok私信：根據私訊列表UID的順序，去私訊​​用戶---------------");
+        taskLog("脚本执行时间：" + new Date().toLocaleString());
     }
     openLogActivity();
 });
+
 
 //打开Autojs的Log activity
 function openLogActivity() {
@@ -144,12 +148,17 @@ function throw_error_storage_not_enough(){
 function handleError(e) {
     handleErrorFlag = true
     forceStop_APP(targetPackageName)
-    console.error("===错误报告开始===");
-    console.error("错误信息：" + e);
-    console.error("错误堆栈：" + e.stack);
-    console.error("===错误报告结束===");
-    exit()
+    taskLogError("===错误报告开始===");
+    fail_msg += "错误信息：" + e + "\n"; 
+    taskLogError("错误信息：" + e);
+    fail_msg += "错误堆栈：" + e.stack + "\n";
+    taskLogError("错误堆栈：" + e.stack);
+    fail_msg += "===错误报告结束===" + "\n";
+    taskLogError("===错误报告结束===");
+    fail_msg += "===错误报告结束===" + "\n";
+    taskLog("脚本执行Error时间：" + new Date().toLocaleString());
 }
+
 
 // 替代 app.openAppSetting 的方式
 function openAppSettings(packageName) {
@@ -211,7 +220,7 @@ if (isAppInstalled(GLOBAL_TikTokPackageName)) {
 } else {
     toast("未检测到TikTok已安装，请先安装TikTok！");
     taskLog("未检测到TikTok已安装，脚本终止。");
-    exit();
+    throw new Error("未检测到TikTok安装，脚本终止。");
 }
 
 forceStop_APP(targetPackageName)
@@ -438,6 +447,8 @@ function clickId(a) {
 function taskLog(_log){
     toast(_log)
     console.log(getSystemDate("df") +":" +_log)
+    console.log(_log)
+
 
     try {
         //确保目录存在
@@ -445,6 +456,7 @@ function taskLog(_log){
         
         //将日志写入文件
         var logContent = getSystemDate("df") + ":" + _log + "\n";
+        // var logContent = _log + "\n";
         files.append(logFilePath, logContent);
         
     } catch(e) {
@@ -452,6 +464,26 @@ function taskLog(_log){
     }
 }
 
+
+function taskLogError(_log){
+    toast(_log);
+    
+    console.error(getSystemDate("df") +":" +_log)
+    // console.error(_log)
+
+    try {
+        //确保目录存在
+        files.ensureDir(RPAFilePath);
+        
+        //将日志写入文件
+        var logContent = getSystemDate("df") + ":" + "【!!!ERROR!!!】" + _log + "\n";
+        // var logContent = "【!!!ERROR!!!】" + _log + "\n";
+        files.append(logFilePath, logContent);
+        
+    } catch(e) {
+        console.error("写入日志文件失败：" + e);
+    }
+}
 
 
 
@@ -498,6 +530,7 @@ function refreshMedia(path) {
     sleep(5000);
     taskLog("媒体库刷新完成.");
 }
+
 
 
 function getSystemDate(a) {
@@ -879,21 +912,26 @@ try{
     }else{
         Nest_ScreenCapture()
         sleep(random(3000, 5000))
-        toast("- 没有可用的搜索关键词, 忽略 - ");
+        taskLog("- 没有可用的搜索关键词, 忽略 - ");
         throw new Error("没有可用的搜索关键词，无法关注，所以报错")
     }
 
-}catch(e) {
-    handleError(e);
-}
-finally{
-
+} catch(e) {
+    if (e.message === "TASK_COMPLETED") {
+        taskLog("任务正常完成");
+    } else {
+        handleError(e);
+    }
+}finally{
     taskLog("保存统计结果到备用路径..." );
     try {
         var result = {
             total_target: total_target,
-            total_success: total_success
+            total_success: total_success,
+            fail_msg: fail_msg
         };
+        // 打印统计结果
+        taskLog("统计结果：" + JSON.stringify(result, null, 2));
         // 使用JSON.stringify将对象转换为JSON字符串，第三个参数2是为了美化输出格式
         files.write(resultPath, JSON.stringify(result, null, 2));
         taskLog("已保存统计结果到：" + resultPath);
