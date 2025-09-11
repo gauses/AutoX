@@ -149,13 +149,15 @@ app.startActivity({
 function jump_to_watch_page(){
     openFacebookLink_test("fb://watch")
 
-    for(let i = 0; i < random(8, 15); i++){
-        sleep(random(5000, 8000))
-        swipe_up
+    var swipeCount = random(5, 8)
+    for(let i = 0; i < swipeCount; i++){
+        taskLog("watch页面滑动观看次数：" + (i + 1) + "/" + swipeCount)
+        swipe_up()
         sleep(random(5000, 8000))
     } 
 
 }
+
 
 //打开好友列表
 function jump_to_friends_page(){
@@ -244,12 +246,26 @@ if(commentTextArrays.includes("$${T")){
 toast("评论文案个数：" + commentTextArrays.length)
 
 //随机跳转页面的功能封装
-function random_jump_pages() {
-    var jumpCount = random(3, 5)
-    var keyword = "lolita"
+function random_jump_pages(options) {
+    // 如果没有传入options，使用空对象
+    options = options || {};
+    
+    // 默认配置
+    var minJumps = options.minJumps || 3;           // 最少跳转页面数
+    var maxJumps = options.maxJumps || 5;           // 最多跳转页面数
+    var keywords = options.keywords || ["lolita", "fashion", "style", "beauty"]; // 搜索关键词池
+    var sleepTimeMin = (options.sleepTime && options.sleepTime.min) || 3000;    // 最小等待时间
+    var sleepTimeMax = (options.sleepTime && options.sleepTime.max) || 5000;    // 最大等待时间
+    var swipeCountMin = (options.swipeOptions && options.swipeOptions.count && options.swipeOptions.count.min) || 1;  // 最少滑动次数
+    var swipeCountMax = (options.swipeOptions && options.swipeOptions.count && options.swipeOptions.count.max) || 3;  // 最多滑动次数
+    
+    // 随机确定本次跳转的页面数量
+    var jumpCount = random(minJumps, maxJumps);
+    
+    // 随机选择一个搜索关键词
+    var keyword = keywords[Math.floor(Math.random() * keywords.length)];
 
-
-    taskLog("开始随机跳转到各个页面")
+    taskLog("开始随机跳转到各个页面，计划跳转" + jumpCount + "个页面")
 
     // 定义所有可能的跳转操作
     const jumpOperations = [
@@ -314,7 +330,10 @@ function random_jump_pages() {
 // 执行随机跳转（默认跳转3个页面）
 // random_jump_pages()
 
-
+jump_to_home_page()
+sleep(random(3000, 5000))
+swipe_up()
+sleep(random(5000, 8000))
 random_jump_pages()
 sleep(random(5000, 8000))
 jump_to_home_page()
@@ -646,42 +665,67 @@ function get_post_text(){
 
 
 
-function swipe_up(){
-    //使用多段swipe实现曲线滑动
-    let screenHeight = device.height;
-    let startY = Math.floor(screenHeight * 0.9);  // 起点
-    let endY = Math.floor(screenHeight * 0.1);    // 终点
-    let distance = startY - endY;                 // 总距离
+function swipe_up(options){
+    //如果没有传入options，使用空对象
+    options = options || {};
     
-    // 第一段：向右倾斜
-    swipe(
-        device.width / 2,    // 起点X
-        startY,             // 起点Y
-        device.width * 0.7,  // 终点X
-        startY - distance/3, // 终点Y
-        700                 // 持续时间
-    );
-    sleep(200);
+    //默认配置
+    var startYPercent = options.startYPercent || 0.9;    // 起点Y位置（屏幕高度的百分比）
+    var endYPercent = options.endYPercent || 0.1;      // 终点Y位置（屏幕高度的百分比）
+    var maxOffsetX = options.maxOffsetX || 0.2;       // 最大X轴偏移量（屏幕宽度的百分比）
+    var durationFirst = (options.duration && options.duration.first) || 700;  // 第一段滑动持续时间
+    var durationSecond = (options.duration && options.duration.second) || 700; // 第二段滑动持续时间
+    var durationThird = (options.duration && options.duration.third) || 600;  // 第三段滑动持续时间
+    var interval = options.interval || 200;         // 段与段之间的间隔时间
+    var endDelay = options.endDelay || random(2000, 3000);  // 滑动完成后的等待时间
     
-    // 第二段：向左倾斜
-    swipe(
-        device.width * 0.7,  // 起点X
-        startY - distance/3, // 起点Y
-        device.width * 0.3,  // 终点X
-        startY - distance*2/3, // 终点Y
-        700                 // 持续时间
-    );
-    sleep(200);
+    var screenHeight = device.height;
+    var screenWidth = device.width;
+    var startY = Math.floor(screenHeight * startYPercent);
+    var endY = Math.floor(screenHeight * endYPercent);
+    var distance = startY - endY;
     
-    // 第三段：回到中间
-    swipe(
-        device.width * 0.3,  // 起点X
-        startY - distance*2/3, // 起点Y
-        device.width / 2,    // 终点X
-        endY,               // 终点Y
-        600                 // 持续时间
-    );
-    sleep(3000); //等待滚动完成
+    // 随机生成X轴偏移量，使滑动轨迹更自然
+    var offsetX = screenWidth * maxOffsetX * (Math.random() > 0.5 ? 1 : -1);
+    var centerX = screenWidth / 2;
+    
+    try {
+        // 第一段：偏向一侧
+        swipe(
+            centerX,
+            startY,
+            centerX + offsetX,
+            startY - distance/3,
+            durationFirst
+        );
+        sleep(interval);
+        
+        // 第二段：偏向另一侧
+        swipe(
+            centerX + offsetX,
+            startY - distance/3,
+            centerX - offsetX,
+            startY - distance*2/3,
+            durationSecond
+        );
+        sleep(interval);
+        
+        // 第三段：回到中间
+        swipe(
+            centerX - offsetX,
+            startY - distance*2/3,
+            centerX,
+            endY,
+            durationThird
+        );
+        
+        // 等待滑动完成
+        sleep(endDelay);
+        return true;
+    } catch(e) {
+        taskLog("滑动失败：" + e.message);
+        return false;
+    }
 }
 
 
