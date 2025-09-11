@@ -86,6 +86,44 @@ function isAppInstalled(packageName) {
     }
 }
 
+
+function openFacebookLink_test(fbUrl){
+
+
+    //是否打开成功，如果打开失败，那么直接进行下一个任务
+    var openUrlFlag = false
+
+    taskLog("准备打开链接 = " + fbUrl)
+    var intent = new android.content.Intent(android.content.Intent.ACTION_VIEW);
+    // intent.setData(android.net.Uri.parse("https://www.facebook.com/watch/huacemedia/")); //不行
+    // intent.setData(android.net.Uri.parse("https://www.facebook.com/samsul.ujex"));  //加好友，异常
+    // intent.setData(android.net.Uri.parse("https://www.facebook.com/share/r/1CdK7F3fRp/"));  //Reels -OK
+    // intent.setData(android.net.Uri.parse("https://www.facebook.com/groups/850798899131453/"));  //Group -OK
+    // intent.setData(android.net.Uri.parse("https://www.facebook.com/share/v/16cLEnDJoT/"));   //Live - OK
+    // intent.setData(android.net.Uri.parse("https://www.facebook.com/profile.php?id=100079449592509"));  //Friend - OK
+    // intent.setData(android.net.Uri.parse("https://www.facebook.com/share/v/14Dj3UQ6q2b/"));  //watch - OK（https://www.facebook.com/watch/?v=689492360538949&rdid=PU3MOv69wqSgVeh5）
+    
+    intent.setData(android.net.Uri.parse(fbUrl));
+    intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+    intent.setPackage("com.facebook.katana");
+    try {
+        app.startActivity(intent);
+        openUrlFlag = true
+    } catch (e) {
+
+        // 如果 Facebook App 无法处理，则用浏览器打开
+        taskLog("Facebook无法处理该链接，所以跳过 = " + fbUrl);
+        // var browserIntent = new android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(fbUrl));
+        // browserIntent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+        // app.startActivity(browserIntent);
+        // openUrlFlag = true
+    }
+
+    return openUrlFlag
+}
+
+
+
 if (isAppInstalled(FacebookPackageName)) {
     targetPackageName = FacebookPackageName;
     targetClassName = "com.facebook.katana.activity.FbMainTabActivity";
@@ -107,6 +145,95 @@ app.startActivity({
 });
 
 
+//跳转到Watch页面
+function jump_to_watch_page(){
+    openFacebookLink_test("fb://watch")
+
+    for(let i = 0; i < random(8, 15); i++){
+        sleep(random(5000, 8000))
+        swipe_up
+        sleep(random(5000, 8000))
+    } 
+
+}
+
+//打开好友列表
+function jump_to_friends_page(){
+    openFacebookLink_test("fb://friends")
+    sleep(random(3000, 5000))
+    swipe_up()
+    sleep(random(5000, 8000))
+}
+
+//打开通知列表
+function jump_to_notifications_page(){
+    openFacebookLink_test("fb://notifications")
+    sleep(random(3000, 5000))
+    swipe_up()
+    sleep(random(5000, 8000))
+}
+
+//搜索关键词
+function search_keyword(keyword){
+    openFacebookLink_test("fb://search?q=" + keyword)
+    sleep(random(3000, 5000))
+    swipe_up()
+    sleep(random(5000, 8000))
+}
+
+//打开动态首页
+function jump_to_home_page(){
+    openFacebookLink_test("fb://feed")
+    sleep(random(3000, 5000))
+    swipe_up()
+    sleep(random(5000, 8000))
+}
+
+//打开群组列表
+function jump_to_groups_page(){
+    openFacebookLink_test("fb://groups")
+    sleep(random(3000, 5000))
+    swipe_up()
+    sleep(random(5000, 8000))
+}
+
+//打开好友请求列表
+function jump_to_friends_requests_page(){
+    openFacebookLink_test("fb://friends/requests")
+    sleep(random(3000, 5000))
+    swipe_up()
+    sleep(random(5000, 8000))
+}
+
+
+//打开活动列表
+function jump_to_events_page(){
+    openFacebookLink_test("fb://events")
+    sleep(random(3000, 5000))
+    swipe_up()
+    sleep(random(5000, 8000))
+}
+
+
+//打开消息列表
+function jump_to_messages_page(){
+    openFacebookLink_test("fb://messages")
+    sleep(random(3000, 5000))
+    swipe_up()
+    sleep(random(5000, 8000))
+}
+
+
+//打开页面列表
+function jump_to_pages_page(){
+    openFacebookLink_test("fb://pages")
+    sleep(random(3000, 5000))
+    swipe_up()
+    sleep(random(5000, 8000))
+}
+
+
+
 
 // 开始主循环
 var commentTextArrays = get_post_text()
@@ -116,11 +243,92 @@ if(commentTextArrays.includes("$${T")){
 }
 toast("评论文案个数：" + commentTextArrays.length)
 
+//随机跳转页面的功能封装
+function random_jump_pages() {
+    var jumpCount = random(3, 5)
+    var keyword = "lolita"
+
+
+    taskLog("开始随机跳转到各个页面")
+
+    // 定义所有可能的跳转操作
+    const jumpOperations = [
+        {
+            name: "Watch页面",
+            func: jump_to_watch_page
+        },
+        {
+            name: "好友列表页面",
+            func: jump_to_friends_page
+        },
+        {
+            name: "通知列表页面",
+            func: () => {
+                jump_to_notifications_page();
+                search_keyword(keyword);
+            }
+        },
+        {
+            name: "群组页面",
+            func: jump_to_groups_page
+        },
+        {
+            name: "好友请求页面",
+            func: jump_to_friends_requests_page
+        },
+        {
+            name: "活动页面",
+            func: jump_to_events_page
+        },
+        {
+            name: "消息页面",
+            func: jump_to_messages_page
+        },
+        {
+            name: "页面列表页面",
+            func: jump_to_pages_page
+        }
+    ];
+
+    // 参数验证
+    if (jumpCount > jumpOperations.length) {
+        jumpCount = jumpOperations.length;
+        taskLog("警告：请求的跳转页面数量超过可用页面数量，已自动调整为" + jumpCount);
+    }
+
+    // 随机打乱数组
+    let shuffledOperations = jumpOperations.slice();
+    for (let i = shuffledOperations.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffledOperations[i], shuffledOperations[j]] = [shuffledOperations[j], shuffledOperations[i]];
+    }
+
+    // 选择指定数量的操作执行
+    for (let i = 0; i < jumpCount; i++) {
+        const operation = shuffledOperations[i];
+        taskLog("跳转到" + operation.name);
+        operation.func();
+    }
+}
+
+// 执行随机跳转（默认跳转3个页面）
+// random_jump_pages()
+
+
+random_jump_pages()
+sleep(random(5000, 8000))
+jump_to_home_page()
+sleep(random(3000, 5000))
 for(let currentLoop = 1; currentLoop <= loopTimes; currentLoop++) {
     toast("开始第 " + currentLoop + "/" + loopTimes + " 次执行");    
+    sleep(random(3000, 5000))
+
     
-    
-    sleep(5000)
+    if(currentLoop % 5 == 0){
+        random_jump_pages()
+    }
+    jump_to_home_page()
+
 
     toast("开始模拟滑动")
     swipe_up()
