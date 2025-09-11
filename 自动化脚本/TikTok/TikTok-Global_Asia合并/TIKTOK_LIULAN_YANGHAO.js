@@ -10,11 +10,34 @@ importClass(java.io.FileWriter);
 var ASIA_TikTokPackageName = 'com.ss.android.ugc.trill';
 var GLOBAL_TikTokPackageName = 'com.zhiliaoapp.musically';
 
+// 需要取养号的视频总数
+var total_target = 0;
+// 成功取养号的视频数量
+var total_success = 0;
+// 错误信息
+var fail_msg = "";
+
 
 
 //保证Java层和JS代码两边的日志文件一致
-var taskLogFileName = "nest_task_log.txt"
-var taskLogImgName = "nest_task_log.png"
+var taskLogFileName = "nest_task_log_" + getSystemDate("df").replace(/:/g, "-").replace(" ", "_") + ".txt"
+var RPAFilePath = "/sdcard/Download/log/";
+// 如果目录存在且有内容就删除
+if (files.exists(RPAFilePath)) {
+    files.removeDir(RPAFilePath);
+}
+//日志文件路径
+var logFilePath = RPAFilePath + taskLogFileName;
+//确保日志目录存在
+files.ensureDir(RPAFilePath);
+
+
+//日志文件路径
+var resultPath = RPAFilePath + "nest_result_rpa.txt";
+//确保日志目录存在
+files.ensureDir(resultPath);
+
+
 
 
 //用户需要输入的评论内容
@@ -42,36 +65,127 @@ var targetClassName = null;
 var handleErrorFlag = false //默认没有错误，如果出现异常，那么该值是true
 
 // 注册退出事件监听器
- events.on('exit', function(){
+events.on('exit', function(){
     console.hide()
     sleep(1000)
 
     if(handleErrorFlag){
-        console.error("-----------------脚本执行出现异常---------------");
-        console.error("Tiktok根據推薦影片，自動瀏覽養號.評論.點讚---------------");
-        console.error("脚本执行时间：" + new Date().toLocaleString());
+        taskLogError("-----------------脚本执行出现异常---------------");
+        taskLogError("Tiktok私信：根據私訊列表UID的順序，去私訊​​用戶---------------");
+        taskLogError("脚本执行时间：" + new Date().toLocaleString());
     }else{
-        forceStop_APP(targetPackageName)
-        console.log("-----------------脚本功能执行结束：---------------");
-        console.log("Tiktok根據推薦影片，自動瀏覽養號.評論.點讚---------------");
-        console.log("脚本执行时间：" + new Date().toLocaleString());
+        taskLog("-----------------脚本功能执行结束：---------------");
+        taskLog("Tiktok私信：根據私訊列表UID的順序，去私訊​​用戶---------------");
+        taskLog("脚本执行时间：" + new Date().toLocaleString());
     }
     openLogActivity();
 });
+
 
 function throw_error_storage_not_enough(){
     throw new Error("当前设备的存储空间不可用，请关机重启一次设备，然后重新执行一次脚本")
 }
 
+//打印日志
+function taskLog(_log){
+    toast(_log)
+    console.log(getSystemDate("df") +":" +_log)
+    console.log(_log)
+
+
+    try {
+        //确保目录存在
+        files.ensureDir(RPAFilePath);
+        
+        //将日志写入文件
+        var logContent = getSystemDate("df") + ":" + _log + "\n";
+        // var logContent = _log + "\n";
+        files.append(logFilePath, logContent);
+        
+    } catch(e) {
+        console.error("写入日志文件失败：" + e);
+    }
+}
+
+
+function taskLogError(_log){
+    toast(_log);
+    
+    console.error(getSystemDate("df") +":" +_log)
+    // console.error(_log)
+
+    try {
+        //确保目录存在
+        files.ensureDir(RPAFilePath);
+        
+        //将日志写入文件
+        var logContent = getSystemDate("df") + ":" + "【!!!ERROR!!!】" + _log + "\n";
+        // var logContent = "【!!!ERROR!!!】" + _log + "\n";
+        files.append(logFilePath, logContent);
+        
+    } catch(e) {
+        console.error("写入日志文件失败：" + e);
+    }
+}
+
 function handleError(e) {
     handleErrorFlag = true
     forceStop_APP(targetPackageName)
-    console.error("===错误报告开始===");
-    console.error("错误信息：" + e);
-    console.error("错误堆栈：" + e.stack);
-    console.error("===错误报告结束===");
-    exit()
+    taskLogError("===错误报告开始===");
+    fail_msg += "错误信息：" + e + "\n"; 
+    taskLogError("错误信息：" + e);
+    fail_msg += "错误堆栈：" + e.stack + "\n";
+    taskLogError("错误堆栈：" + e.stack);
+    fail_msg += "===错误报告结束===" + "\n";
+    taskLogError("===错误报告结束===");
+    fail_msg += "===错误报告结束===" + "\n";
+    taskLog("脚本执行Error时间：" + new Date().toLocaleString());
 }
+
+//开始录屏截图到本地
+function Nest_ScreenCapture(){
+    // 申请截图权限（会弹系统录屏权限框）
+    if (!requestScreenCapture()) {
+        taskLog("自动化任务-申请截图权限失败");
+    }
+
+    // 申请截图权限（会弹系统录屏权限框）
+    if (!requestScreenCapture()) {
+        taskLog("自动化任务-申请截图权限失败");
+    }
+
+    // 截一张整屏
+    var img = captureScreen();           // 返回 Image 对象
+    if (!img) {
+        taskLog("自动化任务-截图失败");
+    }
+
+    // 保存到相册/文件夹
+    // var dir = "/sdcard/Pictures";
+    // files.ensureDir(dir);
+    // var path = dir + "/nestshot_" + Date.now() + ".png";
+    var path = RPAFilePath + "/nestshot_rpa.png";
+    img.saveTo(path);                    // 保存
+    img.recycle();                       // 回收内存
+    taskLog("自动化任务已经完成-已保存截图："+ path);
+
+
+    //刷新媒体库
+    sleep(3000)
+    toast("开始刷新媒体库....");
+    refreshMedia(RPAFilePath)
+    return path
+}
+// 刷新指定路径的媒体库
+function refreshMedia(path) {
+    taskLog("开始刷新媒体库....");
+    // 发送媒体扫描广播
+    media.scanFile(path);
+    // 等待扫描完成
+    sleep(5000);
+    taskLog("媒体库刷新完成.");
+}
+
 
 // 替代 app.openAppSetting 的方式
 function openAppSettings(packageName) {
@@ -175,7 +289,8 @@ if (isAppInstalled(GLOBAL_TikTokPackageName)) {
 } else {
     toast("未检测到TikTok已安装，请先安装TikTok！");
     taskLog("未检测到TikTok已安装，脚本终止。");
-    exit();
+    throw new Error("未检测到TikTok安装，脚本终止。");
+    
 }
 
 
@@ -335,6 +450,11 @@ function click_Comment_Btn(commentText){
             }else{
                 clickId(ASIA_TikTokPackageName + ":id/czl")
             }
+
+            sleep(random(2000, 3000))
+            total_success++
+            Nest_ScreenCapture()
+            sleep(random(2000, 3000))
     
     
             var clickX = device.width  - 100 ; 
@@ -387,40 +507,6 @@ function find_send_btn() {
 
 
 
-//打印日志
-function taskLog(_log){
-    toast(_log)
-    console.log(getSystemDate("df") +":" +_log)
-
-    //通过日志判断任务有没有结束：
-
-}
-
-
-
-//无论成功或者失败，最后截图一张
-function saveImg(){
-    taskLog("开始截图...");
-
-    var toPath = "/sdcard/Download/" + taskLogImgName ;
-    if (files.exists(toPath) ){
-        taskLog("旧图片文件存在，删除");
-        files.remove(toPath);
-    } else {
-        taskLog("旧图片文件存在");
-    }
-
-
-    if(!requestScreenCapture()){
-        taskLog("请求截图失败...");
-        toast("请求截图失败");
-    }else{
-        toast("请求截图");
-    }
-    //截图并保存
-    taskLog("请求截图开始保存...");
-    images.saveImage(captureScreen(), toPath);
-}
 
 
 function getSystemDate(a) {
@@ -713,15 +799,6 @@ function forceStop_APP(packageName){
 
 
 
-//推荐好友的弹窗，直接关闭 - id("c9n")
-function close_friend_suggest(){
-    if(id("c9n").exists()){
-        sleep(3000)
-        id("c9n").click()
-    }
-}
-
-
 //从评论数组中，顺序挑选一条内容
 function get_all_TT_comment_text(){
     let comments = [];
@@ -751,9 +828,9 @@ function get_all_TT_comment_text(){
 
 
 try {
-    
-    close_friend_suggest()
 
+
+    
     var all_TT_comment_text = []
 
     if(TT_commentFile && 
@@ -775,6 +852,13 @@ try {
     }
 
 
+    if(TT_Watch_Count <=0){
+        throw new Error("TT_Watch_Count 不能小于等于0");
+    }else{
+        taskLog("需要观看的视频总数： = " + TT_Watch_Count);
+        total_target = TT_Watch_Count;
+    }
+
 
 
     //开始观看
@@ -783,8 +867,6 @@ try {
         // 将 count 加 1
         taskLog("开始观看第"+count+"个TikTok视频")
         count++;
-
-        close_friend_suggest()
 
         sleep(random(10000, 15000))
 
@@ -846,6 +928,29 @@ try {
     } while (count < TT_Watch_Count); // 当 count 小于 TT_Watch_Count 时继续循环
 
 
-} catch (e) {
-    handleError(e);
+} catch(e) {
+    if (e.message === "TASK_COMPLETED") {
+        taskLog("任务正常完成");
+    } else {
+        handleError(e);
+    }
+}finally{
+    taskLog("保存统计结果到备用路径..." );
+    try {
+        var result = {
+            total_target: total_target,
+            total_success: total_success,
+            fail_msg: fail_msg
+        };
+        // 打印统计结果
+        taskLog("统计结果：" + JSON.stringify(result, null, 2));
+        // 使用JSON.stringify将对象转换为JSON字符串，第三个参数2是为了美化输出格式
+        files.write(resultPath, JSON.stringify(result, null, 2));
+        taskLog("已保存统计结果到：" + resultPath);
+    } catch(e) {
+        console.error("保存统计结果失败：" + e.message);
+    }
+    // 刷新媒体库
+    refreshMedia(RPAFilePath);
+    sleep(random(3000, 5000))
 }

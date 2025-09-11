@@ -398,11 +398,12 @@ function selectImageByButton(fileName) {
         
         // 查找并点击指定按钮（其实只需要点击第一个图片的按钮就行了，因为肯定就是第一张图片）
 
-        // 使用fullId("com.zhiliaoapp.musically:id/hj2")来查找按钮
-        //fullId("com.ss.android.ugc.trill:id/hkm")
         var autoSelectButton = null;
+        //右上角最小的圆形按钮
+        //fullId("com.ss.android.ugc.trill:id/hkm")
+        //fullId("com.zhiliaoapp.musically:id/hkl")
         if(targetPackageName == GLOBAL_TikTokPackageName){
-            autoSelectButton = id(GLOBAL_TikTokPackageName + ":id/hj2").find();
+            autoSelectButton = id(GLOBAL_TikTokPackageName + ":id/hkl").find();
         }else{
             autoSelectButton = id(ASIA_TikTokPackageName + ":id/hkm").find();
         }
@@ -417,10 +418,10 @@ function selectImageByButton(fileName) {
 
                 sleep(5000)
                 //点击下一步
-                // fullId("com.zhiliaoapp.musically:id/qxd")
+                // fullId("com.zhiliaoapp.musically:id/r1q")
                 // fullId("com.ss.android.ugc.trill:id/r1r")
                 if(targetPackageName == GLOBAL_TikTokPackageName){
-                    clickId(GLOBAL_TikTokPackageName + ":id/qxd")
+                    clickId(GLOBAL_TikTokPackageName + ":id/r1q")
                 }else{
                     clickId(ASIA_TikTokPackageName + ":id/r1r")
                 }
@@ -428,10 +429,10 @@ function selectImageByButton(fileName) {
                 //发布视频时才会有这个按钮，修改头像时没有这个按钮
                 sleep(5000)
                 //点击下一步
-                // fullId("com.zhiliaoapp.musically:id/l4w")
+                // fullId("com.zhiliaoapp.musically:id/l7a")
                 // fullId("com.ss.android.ugc.trill:id/l7b")
                 if(targetPackageName == GLOBAL_TikTokPackageName){
-                    clickId(GLOBAL_TikTokPackageName + ":id/l4w")
+                    clickId(GLOBAL_TikTokPackageName + ":id/l7a")
                 }else{
                     clickId(ASIA_TikTokPackageName + ":id/l7b")
                 }
@@ -493,7 +494,7 @@ function selectImageWithRetry(fileName) {
         sleep(2000);
     }
     
-    console.error("在" + maxRetries + "次尝试后仍未能选择图片");
+    // console.error("在" + maxRetries + "次尝试后仍未能选择图片");
     return false;
 }
 

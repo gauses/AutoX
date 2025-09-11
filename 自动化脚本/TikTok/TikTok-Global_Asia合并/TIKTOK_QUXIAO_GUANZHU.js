@@ -167,22 +167,8 @@ events.on('exit', function(){
     }
     openLogActivity();
 });
-// 注册退出事件监听器
-events.on('exit', function(){
-    console.hide()
-    sleep(1000)
 
-    if(handleErrorFlag){
-        taskLogError("-----------------脚本执行出现异常---------------");
-        taskLogError("Tiktok私信：根據私訊列表UID的順序，去私訊​​用戶---------------");
-        taskLogError("脚本执行时间：" + new Date().toLocaleString());
-    }else{
-        taskLog("-----------------脚本功能执行结束：---------------");
-        taskLog("Tiktok私信：根據私訊列表UID的順序，去私訊​​用戶---------------");
-        taskLog("脚本执行时间：" + new Date().toLocaleString());
-    }
-    openLogActivity();
-});
+
 
 //打开Autojs的Log activity
 function openLogActivity() {
