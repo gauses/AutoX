@@ -10,41 +10,77 @@ importClass(java.io.FileWriter);
 
 
 
-//保证Java层和JS代码两边的日志文件一致
-var taskLogFileName = "nest_task_log.txt"
-var taskLogImgName = "nest_task_log.png"
-
-
-//名稱.使用者名稱.個人簡介
-const TT_UPLOAD_VIDEO_URL = '$${T_需要上傳影片的本地地址}';
-const TT_UPLOAD_VIDEO_TITLE = '$${T_上傳影片的标题}';
-const TT_UPLOAD_VIDEO_DESC = '$${T_上傳影片的說明}';
-
-
-
-var ASIA_TikTokPackageName = 'com.ss.android.ugc.trill';
-var GLOBAL_TikTokPackageName = 'com.zhiliaoapp.musically';
-
-
-const FORCE_STOP_TEXT = {
-    ZH_CN: "强行停止",    // 简体中文
-    ZH_TW: "強制停止",    // 繁体中文
-    EN_US: "FORCE STOP"   // 英文
+// 配置对象
+var CONFIG = {
+    // 应用配置
+    APP: {
+        ASIA_PACKAGE: 'com.ss.android.ugc.trill',
+        GLOBAL_PACKAGE: 'com.zhiliaoapp.musically',
+        MAIN_ACTIVITY: 'com.ss.android.ugc.aweme.main.MainActivity'
+    },
+    
+    // 路径配置
+    PATHS: {
+        DOWNLOAD: "/storage/emulated/0/Download/",
+        TEMP_MEDIA: "A_NEST_TikTok_MEDIA",
+        LOG_DIR: "/sdcard/Download/log/"
+    },
+    
+    // 超时配置
+    TIMEOUTS: {
+        SHORT: 3000,
+        MEDIUM: 5000,
+        LONG: 10000,
+        UPLOAD: 120000
+    },
+    
+    // 重试配置
+    RETRY: {
+        MAX_ATTEMPTS: 3,
+        DELAY: 1000
+    },
+    
+    // UI文本配置
+    UI_TEXT: {
+        FORCE_STOP: {
+            ZH_CN: "强行停止",
+            ZH_TW: "強制停止", 
+            EN_US: "FORCE STOP"
+        },
+        FORCE_STOP_CONFIRM: {
+            ZH_CN: "确定",
+            ZH_TW: "確定",
+            EN_US: "OK"
+        },
+        CONFIRM: {
+            ZH_CN: "确定",
+            ZH_TW: "確定",
+            EN_US: "OK"
+        },
+        ADD_TO_HOME_SCREEN: {
+            ZH_CN: "添加到主屏幕",
+            ZH_TW: "新增到主螢幕",
+            EN_US: "ADD TO HOME SCREEN"
+        }
+    },
+    
+    // 日志配置
+    LOG: {
+        FILENAME: "nest_task_log.txt",
+        IMG_NAME: "nest_task_log.png"
+    }
 };
 
-// 定义确认按钮文本
-const FORCE_STOP_CONFIRM_TEXT = {
-    ZH_CN: "确定",      // 简体中文
-    ZH_TW: "確定",      // 繁体中文
-    EN_US: "OK"         // 英文
-};
+// 视频上传配置
+var TT_UPLOAD_VIDEO_URL = '$${T_需要上傳影片的本地地址}';
+var TT_UPLOAD_VIDEO_TITLE = '$${T_上傳影片的标题}';
+var TT_UPLOAD_VIDEO_DESC = '$${T_上傳影片的說明}';
 
-
+// 全局变量
 var targetPackageName = null;
 var targetClassName = null;
-
-//将需要处理的多媒体图片，单独copy一份放到这个文件夹里面，后面处理完成之后，再删除这个文件夹
-var A_NEST_TikTok_MEDIA = 'A_NEST_TikTok_MEDIA';    
+var elementCache = new Map();
+var handleErrorFlag = false;    
 
 
 //1.autox.js侧边栏的打开USB调试先打开
@@ -56,37 +92,158 @@ var A_NEST_TikTok_MEDIA = 'A_NEST_TikTok_MEDIA';
 //会在在无障碍服务启动后继续运行。
 auto.waitFor();
 
+// 工具函数库
+var Utils = {
+    // 重试装饰器
+    withRetry: function(fn, maxRetries, delay) {
+        maxRetries = maxRetries || CONFIG.RETRY.MAX_ATTEMPTS;
+        delay = delay || CONFIG.RETRY.DELAY;
+        
+        return function() {
+            var args = Array.prototype.slice.call(arguments);
+            for (var i = 0; i < maxRetries; i++) {
+                try {
+                    return fn.apply(this, args);
+                } catch (error) {
+                    if (i === maxRetries - 1) throw error;
+                    taskLog("重试第" + (i + 1) + "次: " + error.message);
+                    sleep(delay * (i + 1));
+                }
+            }
+        };
+    },
 
+    // 智能等待元素
+    waitForElement: function(selector, timeout, interval) {
+        timeout = timeout || CONFIG.TIMEOUTS.LONG;
+        interval = interval || 500;
+        
+        var startTime = Date.now();
+        while (Date.now() - startTime < timeout) {
+            var element = selector.findOne(interval);
+            if (element) return element;
+        }
+        throw new Error("元素未找到，超时" + timeout + "ms");
+    },
+
+    // 统一的多语言点击函数
+    clickByText: function(texts, elementType) {
+        elementType = elementType || "Button";
+        // 使用新的findTextByLanguages函数
+        return findTextByLanguages(texts);
+    },
+
+    // 安全的坐标点击
+    safeClick: function(x, y, deviation) {
+        deviation = deviation || 2;
+        var finalX = Math.max(0, x + random(-deviation, deviation));
+        var finalY = Math.max(0, y + random(-deviation, deviation));
+        
+        try {
+            device.sdkInt < 24 ? ra.tap(finalX, finalY) : click(finalX, finalY);
+            return true;
+        } catch (e) {
+            taskLog("点击操作失败：" + e.message);
+            return false;
+        }
+    },
+
+    // 清理资源
+    cleanup: function() {
+        // 清理临时文件
+        var tempFolder = CONFIG.PATHS.DOWNLOAD + CONFIG.PATHS.TEMP_MEDIA;
+        if (files.exists(tempFolder)) {
+            files.removeDir(tempFolder);
+            taskLog("清理临时文件夹完成");
+        }
+        
+        // 清理缓存
+        elementCache.clear();
+        
+        // 强制垃圾回收
+        if (typeof gc === 'function') {
+            gc();
+        }
+    }
+};
+
+// 日志系统
+var Logger = {
+    levels: { ERROR: 0, WARN: 1, INFO: 2, DEBUG: 3 },
+    currentLevel: 2,
+    
+    log: function(level, message, data) {
+        data = data || null;
+        if (this.levels[level] <= this.currentLevel) {
+            var timestamp = getSystemDate("df");
+            var logMessage = "[" + timestamp + "] [" + level + "] " + message;
+            
+            console.log(logMessage);
+            if (data) console.log(JSON.stringify(data, null, 2));
+            
+            // 写入文件
+            this.writeToFile(logMessage);
+        }
+    },
+    
+    error: function(msg, data) { 
+        var timestamp = getSystemDate("df");
+        var logMessage = "[" + timestamp + "] [ERROR] " + msg;
+        console.error(logMessage);
+        if (data) console.error(JSON.stringify(data, null, 2));
+        this.writeToFile(logMessage);
+    },
+    warn: function(msg, data) { this.log('WARN', msg, data); },
+    info: function(msg, data) { this.log('INFO', msg, data); },
+    debug: function(msg, data) { this.log('DEBUG', msg, data); },
+    
+    writeToFile: function(message) {
+        try {
+            var logFile = CONFIG.PATHS.LOG_DIR + CONFIG.LOG.FILENAME;
+            files.ensureDir(CONFIG.PATHS.LOG_DIR);
+            files.append(logFile, message + "\n");
+        } catch (e) {
+            console.error("写入日志文件失败: " + e.message);
+        }
+    }
+};
 
 //出现异常错误时，打印的日志错误信息
 var handleErrorFlag = false //默认没有错误，如果出现异常，那么该值是true
 
 // 注册退出事件监听器
- events.on('exit', function(){
-    console.hide()
-    sleep(1000)
+events.on('exit', function(){
+    console.hide();
+    sleep(1000);
 
     if(handleErrorFlag){
-        console.error("-----------------脚本执行出现异常---------------");
-        console.error("Tiktok根據關鍵字，搜尋影片瀏覽養號，評論，點讚---------------");
-        console.error("脚本执行时间：" + new Date().toLocaleString());
-    }else{
-        forceStop_APP(GLOBAL_TikTokPackageName)
-        console.log("-----------------脚本功能执行结束：---------------");
-        console.log("Tiktok根據關鍵字，搜尋影片瀏覽養號，評論，點讚---------------");
-        console.log("脚本执行时间：" + new Date().toLocaleString());
+        Logger.error("脚本执行出现异常");
+        Logger.error("TikTok视频上传任务执行失败");
+        Logger.error("脚本执行时间：" + new Date().toLocaleString());
+    } else {
+        forceStop_APP(targetPackageName);
+        Logger.info("脚本功能执行结束");
+        Logger.info("TikTok视频上传任务执行完成");
+        Logger.info("脚本执行时间：" + new Date().toLocaleString());
     }
+    
+    // 清理资源
+    Utils.cleanup();
     openLogActivity();
 });
 
 function handleError(e) {
-    handleErrorFlag = true
-    forceStop_APP(GLOBAL_TikTokPackageName)
-    console.error("===错误报告开始===");
-    console.error("错误信息：" + e);
-    console.error("错误堆栈：" + e.stack);
-    console.error("===错误报告结束===");
-    exit()
+    handleErrorFlag = true;
+    forceStop_APP(targetPackageName);
+    
+    Logger.error("===错误报告开始===");
+    Logger.error("错误信息：" + e.message);
+    Logger.error("错误堆栈：" + e.stack);
+    Logger.error("===错误报告结束===");
+    
+    // 清理资源
+    Utils.cleanup();
+    exit();
 }
 
 function throw_error_storage_not_enough(){
@@ -114,17 +271,18 @@ function openLogActivity() {
 
 
 taskLog("开始强制关闭同名的脚本...")
-let currentEngine = engines.myEngine()
-let runningEngines = engines.all()
-let currentSource = currentEngine.getSource() + ''
+var currentEngine = engines.myEngine()
+var runningEngines = engines.all()
+var currentSource = currentEngine.getSource() + ''
 if (runningEngines.length > 1) {
-  runningEngines.forEach(compareEngine => {
-    let compareSource = compareEngine.getSource() + ''
+  for (var i = 0; i < runningEngines.length; i++) {
+    var compareEngine = runningEngines[i];
+    var compareSource = compareEngine.getSource() + ''
     if (currentEngine.id !== compareEngine.id && compareSource === currentSource) {
       // 强制关闭同名的脚本
       compareEngine.forceStop()
     }
-  })
+  }
 }
 
 sleep(3000)
@@ -142,33 +300,38 @@ function isAppInstalled(packageName) {
     }
 }
 
-if (isAppInstalled(GLOBAL_TikTokPackageName)) {
-    targetPackageName = GLOBAL_TikTokPackageName;
-    targetClassName = "com.ss.android.ugc.aweme.main.MainActivity";
-    taskLog("检测到已安装全球版TikTok，准备启动...");
-} else if (isAppInstalled(ASIA_TikTokPackageName)) {
-    targetPackageName = ASIA_TikTokPackageName;
-    targetClassName = "com.ss.android.ugc.aweme.main.MainActivity";
-    taskLog("检测到已安装亚洲版TikTok，准备启动...");
-} else {
-    toast("未检测到TikTok已安装，请先安装TikTok！");
-    taskLog("未检测到TikTok已安装，脚本终止。");
-    exit();
+// 检测并启动TikTok应用
+function detectAndStartTikTok() {
+    if (isAppInstalled(CONFIG.APP.GLOBAL_PACKAGE)) {
+        targetPackageName = CONFIG.APP.GLOBAL_PACKAGE;
+        targetClassName = CONFIG.APP.MAIN_ACTIVITY;
+        taskLog("检测到已安装全球版TikTok，准备启动...");
+    } else if (isAppInstalled(CONFIG.APP.ASIA_PACKAGE)) {
+        targetPackageName = CONFIG.APP.ASIA_PACKAGE;
+        targetClassName = CONFIG.APP.MAIN_ACTIVITY;
+        taskLog("检测到已安装亚洲版TikTok，准备启动...");
+    } else {
+        toast("未检测到TikTok已安装，请先安装TikTok！");
+        taskLog("未检测到TikTok已安装，脚本终止。");
+        throw new Error("未检测到TikTok安装，请先安装TikTok！"); 
+    }
+
+    forceStop_APP(targetPackageName);
+    sleep(CONFIG.TIMEOUTS.SHORT);
+
+    app.startActivity({
+        action: "android.intent.action.VIEW",
+        packageName: targetPackageName,
+        className: targetClassName
+    });
+
+    taskLog("等待TikTok启动完成, 等待时间：" + (CONFIG.TIMEOUTS.MEDIUM + 2000) + "s");
+    sleep(random(CONFIG.TIMEOUTS.MEDIUM + 2000, CONFIG.TIMEOUTS.LONG));
+    toast("本地视频地址：" + TT_UPLOAD_VIDEO_URL);
 }
 
-forceStop_APP(targetPackageName)
-sleep(3000)
-
-app.startActivity({
-    action: "android.intent.action.VIEW",
-    packageName: targetPackageName,
-    className: targetClassName
-});
-
-
-taskLog("等待TikTok启动完成, 等待时间：" + 13 - 15 + "s")
-sleep(random(13000, 15000))
-toast("本地视频地址：" + TT_UPLOAD_VIDEO_URL)
+// 执行应用检测和启动
+detectAndStartTikTok();
 
 
 
@@ -181,15 +344,15 @@ toast("本地视频地址：" + TT_UPLOAD_VIDEO_URL)
 
 //从评论数组中，顺序挑选一条标题
 function get_TITLE_comment_text(){
-    let comments = [];
+    var comments = [];
     // 户是否存在
     taskLog("TT_UPLOAD_VIDEO_TITLE评论数组 =  " + TT_UPLOAD_VIDEO_TITLE)
-    const file = new java.io.File(TT_UPLOAD_VIDEO_TITLE);
+    var file = new java.io.File(TT_UPLOAD_VIDEO_TITLE);
     if (file.exists() && file.isFile()) {
         try {
             // 读取文件内容
-            const reader = new java.io.BufferedReader(new java.io.FileReader(file));
-            let line;
+            var reader = new java.io.BufferedReader(new java.io.FileReader(file));
+            var line;
             while ((line = reader.readLine()) !== null) {
                 comments.push(line);
             }
@@ -208,15 +371,15 @@ function get_TITLE_comment_text(){
 
 //从评论数组中，顺序挑选一条描述
 function get_DESC_comment_text(){
-    let comments = [];
+    var comments = [];
     // 户是否存在
     taskLog("TT_UPLOAD_VIDEO_DESC评论数组 =  " + TT_UPLOAD_VIDEO_DESC)
-    const file = new java.io.File(TT_UPLOAD_VIDEO_DESC);
+    var file = new java.io.File(TT_UPLOAD_VIDEO_DESC);
     if (file.exists() && file.isFile()) {
         try {
             // 读取文件内容
-            const reader = new java.io.BufferedReader(new java.io.FileReader(file));
-            let line;
+            var reader = new java.io.BufferedReader(new java.io.FileReader(file));
+            var line;
             while ((line = reader.readLine()) !== null) {
                 comments.push(line);
             }
@@ -234,121 +397,92 @@ function get_DESC_comment_text(){
 
 
 //转移视频到Nest临时文件夹
-function transferVideoToNest(fileName){
-    let videoPath = null;
-    if (files.exists(fileName)) {
-        videoPath = fileName;
+function transferVideoToNest(fileName) {
+    // 验证视频文件存在
+    if (!files.exists(fileName)) {
+        var errorMsg = "未找到指定视频：" + fileName;
+        Logger.error(errorMsg);
+        toast(errorMsg);
+        throw new Error("没有找到需要上传的视频，所以异常直接退出");
     }
+
+    // 创建临时文件夹
+    var tempFolder = CONFIG.PATHS.DOWNLOAD + CONFIG.PATHS.TEMP_MEDIA;
+    if (!files.exists(tempFolder)) {
+        files.ensureDir(tempFolder);
+        Logger.info("创建临时文件夹: " + tempFolder);
+    }
+
+    // 生成目标路径
+    var targetFileName = files.getName(fileName);
+    var targetPath = tempFolder + "/" + targetFileName;
     
-    if (!videoPath) {
-        console.error("未找到指定视频：" + fileName);
-        toast("未找到指定视频：" + fileName);
-        throw new Error("没有找到需要上传的视频，所以异常直接退出")
-        // return;
-    }
+    Logger.info("开始转移视频文件");
+    Logger.info("源路径: " + fileName);
+    Logger.info("目标路径: " + targetPath);
 
-
-    //开始拷贝一份，到本地自己的文件夹来单独处理，不处理原来的图片，
-    // 创建文件夹(如果不存在)
-    const newFolder = "/storage/emulated/0/Download/" + A_NEST_TikTok_MEDIA;  // 替换成你想要的文件夹路径
-    if(!files.exists(newFolder)){
-        files.ensureDir(newFolder);
-        console.log("创建文件夹: " + newFolder);
-    }
-
-    // 目标视频路径(在新文件夹中)
-    const targetFileName = files.getName(videoPath);
-    const targetPath = newFolder + "/" + targetFileName;
-    console.log("新视频文件的绝对路径: " + targetPath);
-    // 复制图片文件
+    // 移动视频文件（复制后删除原文件）
     try {
-        files.copy(videoPath, targetPath);
-        console.log("复制成功!");
-        console.log("新视频路径: " + targetPath);
-    } catch(e) {
-        console.error("复制失败: " + e);
+        // 先复制文件
+        files.copy(fileName, targetPath);
+        Logger.info("视频文件复制成功");
+        
+        // 验证目标文件存在且大小正确
+        if (files.exists(targetPath)) {
+            // 使用Java File类获取文件大小
+            var originalFile = new java.io.File(fileName);
+            var targetFile = new java.io.File(targetPath);
+            var originalSize = originalFile.length();
+            var targetSize = targetFile.length();
+            
+            if (originalSize === targetSize) {
+                Logger.info("文件大小验证通过，开始删除原文件");
+                
+                // 删除原文件
+                try {
+                    files.remove(fileName);
+                    Logger.info("原文件删除成功: " + fileName);
+                } catch (deleteError) {
+                    Logger.warn("删除原文件失败，但转移已完成: " + deleteError.message);
+                }
+            } else {
+                Logger.error("文件大小不匹配，保留原文件");
+                Logger.error("原文件大小: " + originalSize + ", 目标文件大小: " + targetSize);
+                throw new Error("文件复制后大小不匹配");
+            }
+        } else {
+            throw new Error("目标文件不存在");
+        }
+        
+    } catch (e) {
+        Logger.error("视频文件转移失败: " + e.message);
+        throw e;
     }
 
-    sleep(3000);
-
-    refreshMedia(newFolder)
-
-
-
-    return targetPath
-
-
+    sleep(CONFIG.TIMEOUTS.SHORT);
+    
+    // 刷新媒体库
+    refreshMedia(tempFolder);
+    
+    return targetPath;
 }
 
 
 //删除本地临时文件夹
-function deleteNestMediaFile(tempFloder){
-    if(files.exists(tempFloder)) {
-        files.removeDir(tempFloder);
-        console.log("文件夹删除成功");
+function deleteNestMediaFile(tempFolder) {
+    if (files.exists(tempFolder)) {
+        try {
+            files.removeDir(tempFolder);
+            Logger.info("临时文件夹删除成功: " + tempFolder);
+        } catch (e) {
+            Logger.error("删除临时文件夹失败: " + e.message);
+        }
     } else {
-        console.log("文件夹不存在");
+        Logger.debug("临时文件夹不存在: " + tempFolder);
     }
 }
 
 
-//点击个人头像
-function click_update_profile_head_image(){
-
-    sleep(random(2000, 5000))
-    var allImages = className("android.widget.ImageView").find();
-    if (allImages && allImages.size() > 0) {
-        for (var i = 0; i < allImages.size(); i++) {
-            var img = allImages.get(i);
-            if (img) {
-                console.log("准备找Image控件: img ID = " + img.id() );
-
-                if (img.id() == (GLOBAL_TikTokPackageName +":id/fzc")) {
-                    // 正确调用bounds()方法并点击
-                    taskLog("找到Image控件: 个人头像修改按钮" );
-
-                    var bounds = img.bounds();
-                    click(bounds.centerX(), bounds.centerY());
-                    // 找到并点击后可以跳出循环
-                    break;
-                }
-            }
-        }
-    }
-    sleep(random(2000, 5000))
-}
-
-
-
-//点击个人头像的第二个选项 - 从图片库中选择
-function click_update_profile_head_image_from_photos(){
-
-    sleep(random(2000, 5000))
-    var allImages = className("android.widget.TextView").find();
-    if (allImages && allImages.size() > 0) {
-        for (var i = 0; i < allImages.size(); i++) {
-            var img = allImages.get(i);
-            if (img) {
-                
-                // 检查ID是否为"u3"
-                if (img.id() == (GLOBAL_TikTokPackageName +":id/u3")) {
-                    // 正确调用bounds()方法并点击
-                    if(i == 1){
-                        taskLog("找到Image控件: 从图片库中选择" );
-                    
-                        var bounds = img.bounds();
-                        click(bounds.centerX(), bounds.centerY());
-                        // 找到并点击后可以跳出循环
-                        break;
-
-                    }
-                    
-                }
-            }
-        }
-    }
-    sleep(random(2000, 5000))
-}
 
 /**
  * 通过指定按钮选择图片
@@ -370,7 +504,7 @@ function selectImageByButton(fileName) {
                     //点击顶部按钮：全部
                     //TextView全部：fullId("com.zhiliaoapp.musically:id/tqg")
                     //fullId("com.ss.android.ugc.trill:id/tqj")
-                    if (textView.id() == (GLOBAL_TikTokPackageName +":id/tqg") || textView.id() == (ASIA_TikTokPackageName +":id/tqj")) {
+                    if (textView.id() == (CONFIG.APP.GLOBAL_PACKAGE +":id/tqg") || textView.id() == (CONFIG.APP.ASIA_PACKAGE +":id/tqj")) {
                         // 正确调用bounds()方法并点击
                         taskLog("找到顶部控件: 全部" );
                         var bounds = textView.bounds();
@@ -394,7 +528,7 @@ function selectImageByButton(fileName) {
                     // taskLog("找到listTextView控件-Text：" + listTextView.text());
                     
                     // 检查text是否为"A_NEST_TikTok_MEDIA"
-                    if (listTextView.text() == "A_NEST_TikTok_MEDIA") {
+                    if (listTextView.text() == CONFIG.PATHS.TEMP_MEDIA) {
                         // 正确调用bounds()方法并点击
                         taskLog("找到对应目录" );
                         var bounds = listTextView.bounds();
@@ -417,10 +551,10 @@ function selectImageByButton(fileName) {
         //右上角最小的圆形按钮
         //fullId("com.ss.android.ugc.trill:id/hkm")
         //fullId("com.zhiliaoapp.musically:id/hkl")
-        if(targetPackageName == GLOBAL_TikTokPackageName){
-            autoSelectButton = id(GLOBAL_TikTokPackageName + ":id/hkl").find();
+        if(targetPackageName == CONFIG.APP.GLOBAL_PACKAGE){
+            autoSelectButton = id(CONFIG.APP.GLOBAL_PACKAGE + ":id/hkl").find();
         }else{
-            autoSelectButton = id(ASIA_TikTokPackageName + ":id/hkm").find();
+            autoSelectButton = id(CONFIG.APP.ASIA_PACKAGE + ":id/hkm").find();
         }
         
         for(var i = 0; i < autoSelectButton.size(); i++) {
@@ -435,10 +569,10 @@ function selectImageByButton(fileName) {
                 //点击下一步
                 // fullId("com.zhiliaoapp.musically:id/r1q")
                 // fullId("com.ss.android.ugc.trill:id/r1r")
-                if(targetPackageName == GLOBAL_TikTokPackageName){
-                    clickId(GLOBAL_TikTokPackageName + ":id/r1q")
+                if(targetPackageName == CONFIG.APP.GLOBAL_PACKAGE){
+                    clickId(CONFIG.APP.GLOBAL_PACKAGE + ":id/r1q")
                 }else{
-                    clickId(ASIA_TikTokPackageName + ":id/r1r")
+                    clickId(CONFIG.APP.ASIA_PACKAGE + ":id/r1r")
                 }
 
                 //发布视频时才会有这个按钮，修改头像时没有这个按钮
@@ -446,15 +580,15 @@ function selectImageByButton(fileName) {
                 //点击下一步
                 // fullId("com.zhiliaoapp.musically:id/l7a")
                 // fullId("com.ss.android.ugc.trill:id/l7b")
-                if(targetPackageName == GLOBAL_TikTokPackageName){
-                    clickId(GLOBAL_TikTokPackageName + ":id/l7a")
+                if(targetPackageName == CONFIG.APP.GLOBAL_PACKAGE){
+                    clickId(CONFIG.APP.GLOBAL_PACKAGE + ":id/l7a")
                 }else{
-                    clickId(ASIA_TikTokPackageName + ":id/l7b")
+                    clickId(CONFIG.APP.ASIA_PACKAGE + ":id/l7b")
                 }
 
 
                 //可能会出现一个下拉框，提示二次创作：text("確定")
-                find_btn_Text_base("確定", "确定", "OK")
+                findTextByLanguages(CONFIG.UI_TEXT.CONFIRM)
 
                 sleep(3000)
                 click_Video_desc()
@@ -474,13 +608,13 @@ function selectImageByButton(fileName) {
                 sleep(5000)
 
                 //可能会出现一个下拉框，提示是否添加到主屏幕:text("ADD TO HOME SCREEN")
-                find_btn_Text_base("添加到主屏幕", "新增到主螢幕", "ADD TO HOME SCREEN")
+                findTextByLanguages(CONFIG.UI_TEXT.ADD_TO_HOME_SCREEN)
 
-                sleep(120000) //上传需要耗时
+                sleep(CONFIG.TIMEOUTS.UPLOAD) //上传需要耗时
 
 
                 //删除临时媒体文件夹
-                const delFolder = "/storage/emulated/0/Download/" + A_NEST_TikTok_MEDIA;  // 替换成你想要的文件夹路径
+                var delFolder = CONFIG.PATHS.DOWNLOAD + CONFIG.PATHS.TEMP_MEDIA;
                 deleteNestMediaFile(delFolder)
 
                 break;
@@ -498,7 +632,7 @@ function selectImageByButton(fileName) {
 // 添加重试机制的版本
 function selectImageWithRetry(fileName) {
     var maxRetries = 1
-    for (let i = 0; i < maxRetries; i++) {
+    for (var i = 0; i < maxRetries; i++) {
         console.log("尝试第" + (i + 1) + "次选择图片");
         
         if (selectImageByButton(fileName)) {
@@ -514,70 +648,6 @@ function selectImageWithRetry(fileName) {
 }
 
 
-// 检查完整路径
-function checkPath(fileName) {
-    const path = "/storage/emulated/0/Download/" + fileName;
-    console.log("checkPath 完整路径: " + path);
-    console.log("checkPath 文件是否存在1111: " + files.exists(path));
-    let file = new java.io.File(path);
-    console.log("checkPath 文件是否存在2222: " + file.exists());
-
-    // 列出目录下所有文件
-    // let fileList = files.listDir("/storage/emulated/0/Download/");
-    // console.log("目录下的文件: " + fileList.join("\n"));
-}
-
-// 遍历并打印出实际的文件名
-function listAllFiles(dirPath) {
-    let files = new java.io.File(dirPath).listFiles();
-    for(let file of files) {
-        console.log("文件名: " + file.getName());
-        // 打印文件名的每个字符的编码
-        let name = file.getName();
-        for(let i = 0; i < name.length; i++) {
-            console.log(name[i] + ": " + name.charCodeAt(i));
-        }
-    }
-}
-
-function debugImageFind(fileName) {
-    const possiblePaths = [
-        // "/storage/emulated/0/DCIM/Camera/",
-        // "/storage/emulated/0/Pictures/",
-        // "/storage/emulated/0/DCIM/Screenshots/",
-        "/storage/emulated/0/Download/"
-    ];
-    
-    // 使用 java.io.File 来检查权限
-    function checkFileAccess(path) {
-        let file = new java.io.File(path);
-        console.log("路径: " + path);
-        console.log("存在: " + file.exists());
-        console.log("是文件夹: " + file.isDirectory());
-        console.log("可读: " + file.canRead());
-        
-        if (file.isDirectory()) {
-            try {
-                let fileList = files.listDir(path);
-                console.log("文件列表:");
-                fileList.forEach(f => console.log("- " + f));
-            } catch (e) {
-                console.log("列举文件失败: " + e);
-            }
-        }
-    }
-    
-    // 检查每个可能的路径
-    for (let basePath of possiblePaths) {
-        console.log("\n debugImageFind - 检查目录: " + basePath);
-        checkFileAccess(basePath);
-        
-        // 检查完整文件路径
-        let fullPath = basePath + fileName;
-        console.log("\n debugImageFind - 检查文件: " + fullPath);
-        checkFileAccess(fullPath);
-    }
-}
 
 // 刷新指定路径的媒体库
 function refreshMedia(path) {
@@ -594,114 +664,7 @@ function refreshMedia(path) {
 
 }
 
-// 刷新整个存储的媒体库
-function refreshAllMedia() {
-    try {
-        toast("开始刷新媒体库，用时5秒钟....");
-        // 获取外部存储路径
-        let storage = files.externalStorage();
-        // 发送媒体扫描广播
-        media.scanFile(storage);
-        // 等待扫描完成
-        sleep(5000);
-        toast("媒体库刷新完成，开始下一步任务...");
-    } catch (error) {
-        toast("refreshAllMedia , 媒体库刷新失败，error = " + error);
-    }
-    
-}
 
-function checkDownloadFiles(targetFileName) {
-    const DOWNLOAD_PATH = "/storage/emulated/0/Download/";
-    
-    // 检查文件是否包含目标文件名（不区分大小写）
-    function checkFileName(fileName, targetName) {
-        return fileName.toLowerCase().includes(targetName.toLowerCase());
-    }
-    
-    // 详细检查单个文件
-    function examineFile(path) {
-        let file = new java.io.File(path);
-        return {
-            name: file.getName(),
-            path: file.getAbsolutePath(),
-            size: file.length(),
-            lastModified: new Date(file.lastModified()),
-            isFile: file.isFile(),
-            isDirectory: file.isDirectory(),
-            canRead: file.canRead()
-        };
-    }
-    
-    console.log("\n========= 开始检查Download目录 =========");
-    console.log("checkDownloadFiles 目标文件名: " + targetFileName);
-    console.log("checkDownloadFiles 检查路径: " + DOWNLOAD_PATH);
-    
-    try {
-        // 检查目录本身
-        let downloadDir = new java.io.File(DOWNLOAD_PATH);
-        if (!downloadDir.exists()) {
-            console.log("Download目录不存在！");
-            return;
-        }
-        
-        console.log("\n=== 目录信息 ===");
-        console.log("checkDownloadFiles 目录是否可读: " + downloadDir.canRead());
-        console.log("checkDownloadFiles 是否是目录: " + downloadDir.isDirectory());
-        
-        // 获取所有文件
-        let fileList = files.listDir(DOWNLOAD_PATH);
-        console.log("\n=== 文件列表（共" + fileList.length + "个文件）===");
-        toast("文件列表（共" + fileList.length + "个文件）")
-        
-        // 遍历所有文件
-        let foundFiles = [];
-        fileList.forEach((fileName, index) => {
-            let fullPath = DOWNLOAD_PATH + fileName;
-            let fileInfo = examineFile(fullPath);
-            
-            // 打印所有文件信息
-            // console.log("\n文件 " + (index + 1) + ":");
-            // console.log("- 名称: " + fileInfo.name);
-            // console.log("- 路径: " + fileInfo.path);
-            // console.log("- 大小: " + (fileInfo.size / 1024).toFixed(2) + " KB");
-            // console.log("- 最后修改: " + fileInfo.lastModified.toLocaleString());
-            // console.log("- 可读: " + fileInfo.canRead);
-
-            // 检查是否匹配目标文件名
-            console.log("- fileName名称: " + fileInfo.name);
-            console.log("- targetFileName名称: " + targetFileName);
-            console.log("- checkFileName结果： "+checkFileName(fileName, targetFileName) );
-
-            if (checkFileName(fileName, targetFileName)) {
-                foundFiles.push(fileInfo);
-            }
-        });
-        
-        // 输出匹配结果
-        console.log("\n=== 查找结果 ===");
-        if (foundFiles.length > 0) {
-            console.log("找到" + foundFiles.length + "个匹配文件：");
-            foundFiles.forEach((file, index) => {
-                console.log("\n匹配文件 " + (index + 1) + ":");
-                console.log("- 完整名称: " + file.name);
-                console.log("- 完整路径: " + file.path);
-                console.log("- 文件大小: " + (file.size / 1024).toFixed(2) + " KB");
-                console.log("- 最后修改: " + file.lastModified.toLocaleString());
-                console.log("- 存在判断: " + files.exists(file.path));
-            });
-        } else {
-            console.log("未找到匹配的文件！");
-        }
-        
-    } catch (e) {
-        console.log("\n*** 发生错误 ***");
-        console.log("错误信息: " + e);
-        console.log("错误栈: " + e.stack);
-    }
-    
-    console.log("\n========= 检查完成 =========");
-}
 
 
 
@@ -717,113 +680,69 @@ function openAppSettings(packageName) {
 
 
 //强制停止TikTok 
-function forceStop_APP(packageName){
-    taskLog("准备强杀:" + packageName + "...")
-    sleep(3000);
-    openAppSettings(packageName)
-    sleep(5000)
+function forceStop_APP(packageName) {
+    taskLog("准备强杀:" + packageName + "...");
+    sleep(CONFIG.TIMEOUTS.SHORT);
+    openAppSettings(packageName);
+    sleep(CONFIG.TIMEOUTS.MEDIUM);
 
-    // 遍历所有可能的强制停止按钮文本
-    for (let lang in FORCE_STOP_TEXT) {
-        let stopText = FORCE_STOP_TEXT[lang];
-        if (text(stopText).exists()) {
-            let forceStopBtn = text(stopText).findOne();
-            if (forceStopBtn && forceStopBtn.clickable()) {
-                forceStopBtn.click();
-                sleep(1000);
-                
-                // 遍历所有可能的确认按钮文本
-                for (let confirmLang in FORCE_STOP_CONFIRM_TEXT) {
-                    let confirmText = FORCE_STOP_CONFIRM_TEXT[confirmLang];
-                    if (text(confirmText).exists()) {
-                        text(confirmText).findOne().click();
-                        taskLog("成功点击'" + stopText + "'按钮并确认");
-                        sleep(3000);
-                        home();
-                        return;
-                    }
-                }
-            } else {
-                taskLog("未找到可点击的'" + stopText + "'按钮");
-            }
+    // 使用统一的多语言点击函数
+    var forceStopSuccess = Utils.clickByText(CONFIG.UI_TEXT.FORCE_STOP);
+    
+    if (forceStopSuccess) {
+        sleep(CONFIG.TIMEOUTS.SHORT);
+        
+        // 点击确认按钮
+        var confirmSuccess = Utils.clickByText(CONFIG.UI_TEXT.FORCE_STOP_CONFIRM);
+        if (confirmSuccess) {
+            taskLog("成功强制停止应用并确认");
         } else {
-            taskLog("未找到'" + stopText + "'按钮");
+            taskLog("强制停止成功但确认失败");
         }
-        sleep(1000);
+        
+        sleep(CONFIG.TIMEOUTS.SHORT);
+        home();
+    } else {
+        taskLog("未找到强制停止按钮，直接返回主页");
+        home();
     }
-
-    // 如果所有语言都尝试失败，返回主页
-    home();
 }
 
 
 
-function click_back_btn(){
-    // 获取所有相同id的控件（
-    let targets = id("arv").find();
-    // 通过索引获取指定的那个，比如第二个就是[1]
-    let target = targets[0];
-    if (target) {
-        taskLog("已经找到返回按钮 " )
-        // 获取控件的坐标信息
-        let bounds = target.bounds();
-        
-        // 计算控件中心点坐标
-        let centerX = bounds.centerX();
-        let centerY = bounds.centerY();
-        
-        // 使用click函数模拟点击中心点位置
-        taskLog("已经找到返回按钮 centerX = " +centerX)
-        taskLog("已经找到返回按钮 centerY = " +centerY)
-        click(centerX, centerY);
-        
-        // 或者使用press函数来模拟按压
-        // press(centerX, centerY, 100); // 100是按压时长(毫秒)
-    }else{
-        taskLog("没有找到首页搜索确认按钮,所以直接back " )
-        back()
-    }
-
-}
 
 
 
-function clickId(a) {
-    taskLog("开始点击元素ID ：" + a);
-
-    let obj_ID = id(a).boundsInside(5, 5, device.width - 5, device.height - 5);
-    
-    // 检查是否找到元素
-    let elements = obj_ID.find();
-    if (elements.empty()) {
-        taskLog("没有找到元素ID ：" + a);
-        return false;
-    }
-    
-    // 获取第一个匹配的元素
-    let element = elements.get(0);
-    let X = element.bounds().centerX();
-    let Y = element.bounds().centerY();
-    
-    // 验证 X 和 Y 是否为正数
-    if (X < 0 || Y < 0) {
-        taskLog("坐标无效，中心点X或Y为负值: X=" + X + ", Y=" + Y);
-        return false;
-    }
-
-    // 生成随机偏差
-    let Deviation = random(-2, 2);
-    let X1 = X - Deviation;
-    let Y1 = Y - Deviation;
-
-    // 防止偏差导致负值
-    X1 = Math.max(0, X1);
-    Y1 = Math.max(0, Y1);
+function clickId(elementId) {
+    taskLog("开始点击元素ID：" + elementId);
 
     try {
-        device.sdkInt < 24 ? ra.tap(X1, Y1) : click(X1, Y1);
+        var element = Utils.waitForElement(
+            id(elementId).boundsInside(5, 5, device.width - 5, device.height - 5),
+            CONFIG.TIMEOUTS.MEDIUM
+        );
+        
+        if (!element) {
+            taskLog("没有找到元素ID：" + elementId);
+            return false;
+        }
+        
+        var bounds = element.bounds();
+        var centerX = bounds.centerX();
+        var centerY = bounds.centerY();
+        
+        // 验证坐标有效性
+        if (centerX < 0 || centerY < 0) {
+            taskLog("坐标无效，中心点X或Y为负值: X=" + centerX + ", Y=" + centerY);
+            return false;
+        }
+
+        // 使用安全的点击函数
+        return Utils.safeClick(centerX, centerY);
+        
     } catch (e) {
-        taskLog("点击操作失败：" + e.message);
+        taskLog("点击元素失败：" + e.message);
+        return false;
     }
 }
 
@@ -852,459 +771,56 @@ function getSystemDate(a) {
     var b = new SimpleDateFormat("HH:mm:ss"), c = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
     return "tf" == a ? b.format(new java.util.Date()) :"df" == a ? c.format(new java.util.Date()) :void 0;
 }
-function writeLog(a) {
-    var c, b = "/sdcard/Download/log/Info_" + getSystemDate("df") + ".log";
-    files.ensureDir("/sdcard/Download/log/"), files.exists(b) || files.create(b);
-    try {
-        c = new PrintWriter(new FileWriter(b, !0)), c.println("[" + getSystemDate("tf") + "] " + a),
-        c.flush(), c.close();
-    } catch (d) {
-        log(d);
-    }
-}
 
 
-function clickText(a) {
-    for (obj_Text = text(a).boundsInside(5, 5, device.width-5, device.height-5); obj_Text.find().empty(); ) sleep(1e3);
-    X = obj_Text.find().get(0).bounds().centerX(), Y = obj_Text.find().get(0).bounds().centerY(),
-    Deviation = random(-5, 5), X1 = X - Deviation, Y1 = Y - Deviation, device.sdkInt<24?ra.tap(X1,Y1):click(X1,Y1);
-}
-
-function clickDesc(a) {
-    for (obj_Desc = desc(a).boundsInside(5, 5, device.width-5, device.height-5); obj_Desc.find().empty(); ) sleep(1e3);
-    X = obj_Desc.find().get(0).bounds().centerX(), Y = obj_Desc.find().get(0).bounds().centerY(),
-    Deviation = random(-5, 5), X1 = X - Deviation, Y1 = Y - Deviation, device.sdkInt<24?ra.tap(X1,Y1):click(X1,Y1);
-}
 
 //========================================================================================================================
 
 
-//结束当前任务
-function stopCurrentTask(){
-    // saveImg()
-
-    sleep(3000)
-//    //将task的截图上报
-//    var res = http.postMultipart(url, {
-//        taskId: "xxxxxxxxxxx",
-//        file: open("/sdcard/Download/" + taskLogImgName)
-//    });
-//    log(res.body.string());
-
-    console.hide()
-
-}
-
-
-//通过Button的Text
-function find_btn_Text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
-
-    //是否找到该TextView，找到：true / 未找到：false
-    var findText_result = false
-    var loopCount  = 0
-
-     while (true) {
-         taskLog(findText_ZH_CN + " - 循环寻找执行：" + (++loopCount));
-         // 检查计数器是否达到3
-         if (loopCount >= 3) {
-             // 打印一条消息并退出循环
-             taskLog("循环已执行3次，即将退出循环。");
-
-             //不能抛出异常，因为可能Facebook记忆功能，自动跳转到输入页面
-//                 throw new Error(findText_ZH_CN +"按钮没有找到");
-            break;
-         }
-
-         // 查找控件
-         var button1 = className("android.widget.Button").text(findText_ZH_CN).findOne(3000);
-         var button2 = className("android.widget.Button").text(findText_ZH_TW).findOne(3000);
-         var button3 = className("android.widget.Button").text(findText_EN_US).findOne(3000);
-
-         if (button1) {
-             taskLog("找到" + findText_ZH_CN);
-             taskLog("找到button1 = " + button1.clickable() );
-            //  clickText(findText_ZH_CN)
-            //  click(button1.bounds().centerX(), button1.bounds().centerY())
-
-             var X1 = button1.bounds().centerX();
-             var Y1 = button1.bounds().centerY();
-             
-             // 验证 X 和 Y 是否为正数
-             if (X1 >= 0 && Y1 >= 0) {
-                click(X1, Y1)
-                findText_result = true
-             }else{
-                taskLog("坐标无效，中心点X或Y为负值: X=" + X1 + ", Y=" + Y1);
-             }
-             break; // 跳出循环
-         }else if(button2){
-             taskLog("找到" + findText_ZH_TW);
-             taskLog("找到button2 = " + button2.clickable() );
-
-            //  clickText(findText_ZH_TW)
-            var X2 = button2.bounds().centerX();
-            var Y2 = button2.bounds().centerY();
-            
-            // 验证 X 和 Y 是否为正数
-            if (X2 >= 0 && Y2 >= 0) {
-               click(X2, Y2)
-               findText_result = true
-            }else{
-               taskLog("坐标无效，中心点X或Y为负值: X=" + X2 + ", Y=" + Y2);
-            }
-             break; // 跳出循环
-         }else if(button3){
-             taskLog("找到" + findText_EN_US);
-            //  clickText(findText_EN_US)
-            var X3 = button3.bounds().centerX();
-            var Y3 = button3.bounds().centerY();
-            taskLog("找到button3 X= " + X3);
-            taskLog("找到button3 Y= " + Y3);
-
-            // 验证 X 和 Y 是否为正数
-            if (X3 >= 0 && Y3 >= 0) {
-               click(X3, Y3)
-               findText_result = true
-            }else{
-               taskLog("坐标无效，中心点X或Y为负值: X=" + X3 + ", Y=" + Y3);
-            }
-             break; // 跳出循环
-         }
-         sleep(4000)
-
-     }
-
-     return findText_result
-}
-
-
-
-//通过Button的Desc
-function find_btn_desc_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
-
-        var loopCount  = 0
-
-         while (true) {
-             taskLog(findText_ZH_CN + " - 循环寻找执行：" + (++loopCount));
-             // 检查计数器是否达到3
-             if (loopCount >= 3) {
-                 // 打印一条消息并退出循环
-                 taskLog("循环已执行3次，即将退出循环。");
-
-                 //不能抛出异常，因为可能Facebook记忆功能，自动跳转到输入页面
-//                 throw new Error(findText_ZH_CN +"按钮没有找到");
-                break;
-             }
-
-
-             // 查找控件
-            //  var button1 = className("android.widget.Button").desc(findText_ZH_CN).findOne(1000);
-            //  var button2 = className("android.widget.Button").desc(findText_ZH_TW).findOne(1000);
-            //  var button3 = className("android.widget.Button").desc(findText_EN_US).findOne(1000);
-            var button1 = desc(findText_ZH_CN).findOne(3000);
-            var button2 = desc(findText_ZH_TW).findOne(3000);
-            var button3 = desc(findText_EN_US).findOne(3000);
-
-
-             if (button1) {
-                 taskLog("找到" + findText_ZH_CN);
-                 taskLog("找到button1 = " + button1.clickable() );
-                 if(button1.clickable()) {
-                    button1.click()
-                    break; // 跳出循环
-                 }else{
-                    taskLog("找到button1 ，但是button1不可点击,所以根据坐标点击 " );
-
-                    var X1 = button1.bounds().centerX();
-                    var Y1 = button1.bounds().centerY();
-                    // 验证 X 和 Y 是否为正数
-                    if (X1 < 0 || Y1 < 0) {
-                        taskLog("坐标无效，中心点X或Y为负值: X=" + X + ", Y=" + Y);
-                        return
+// 通过语言对象查找文本
+function findTextByLanguages(languageObject) {
+    for (var lang in languageObject) {
+        var targetText = languageObject[lang];
+        // 如果targetText是数组，遍历数组中的每个文本
+        if (Array.isArray(targetText)) {
+            for (var j = 0; j < targetText.length; j++) {
+                var text_item = targetText[j];
+                if (text(text_item).exists()) {
+                    taskLog("找到文本：" + text_item);
+                    var element = text(text_item).findOne();
+                    if (element && element.clickable()) {
+                        element.click();
+                        return true;
+                    } else if (element) {
+                        // 如果元素存在但不可点击，尝试点击其坐标
+                        var bounds = element.bounds();
+                        click(bounds.centerX(), bounds.centerY());
+                        return true;
                     }
-                    // 生成随机偏差
-                    var _X1 = X1 - random(-2, 2);
-                    var _Y1 = Y1 - random(-2, 2);
-                    click(Math.max(0, _X1) , Math.max(0, _Y1))// 防止偏差导致负值
-
-                    break; // 跳出循环
-
-
-                 }
-             }else if(button2){
-                 taskLog("找到" + findText_ZH_TW);
-                 taskLog("找到button2 = " + button2.clickable() );
-                 if(button2.clickable()) {
-                    button2.click()
-                 }else{
-                    taskLog("找到button2 ，但是button2不可点击,所以根据坐标点击 " );
-
-                    var X2 = button2.bounds().centerX();
-                    var Y2 = button2.bounds().centerY();
-                    // 验证 X 和 Y 是否为正数
-                    if (X2 < 0 || Y2 < 0) {
-                        taskLog("坐标无效，中心点X或Y为负值: X=" + X2 + ", Y=" + Y2);
-                        return
-                    }
-                    // 生成随机偏差
-                    var _X2 = X2 - random(-2, 2);
-                    var _Y2 = Y2 - random(-2, 2);
-                    click(Math.max(0, _X2) , Math.max(0, _Y2))// 防止偏差导致负值
-
-                    break; // 跳出循环
-                 }
-                 break; // 跳出循环
-             }else if(button3){
-                 taskLog("找到" + findText_EN_US);
-                 taskLog("找到button3 = " + button3.clickable() );
-                 if(button3.clickable()) {
-                    button3.click()
-                 }else{
-                    taskLog("找到button3 ，但是button3不可点击,所以根据坐标点击 " );
-
-                    var X3 = button3.bounds().centerX();
-                    var Y3 = button3.bounds().centerY();
-                    // 验证 X 和 Y 是否为正数
-                    if (X3 < 0 || Y3 < 0) {
-                        taskLog("坐标无效，中心点X或Y为负值: X=" + X3 + ", Y=" + Y3);
-                        return
-                    }
-                    // 生成随机偏差
-                    var _X3 = X3 - random(-2, 2);
-                    var _Y3 = Y3 - random(-2, 2);
-                    click(Math.max(0, _X3) , Math.max(0, _Y3))// 防止偏差导致负值
-
-                 }
-                 break; // 跳出循环
-             }
-
-             sleep(1000)
-
-         }
-}
-
-
-
-
-//通过TextView的text
-function find_textview_text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
-
-    //是否找到该TextView，找到：true / 未找到：false
-    var findText_result = false
-
-
-    var loopCount  = 0
-
-     while (true) {
-         taskLog(findText_ZH_CN + " - 循环寻找执行：" + (++loopCount));
-         // 检查计数器是否达到3
-         if (loopCount >= 3) {
-             // 打印一条消息并退出循环
-             taskLog("循环已执行3次，即将退出循环。");
-
-             //不能抛出异常，因为可能Facebook记忆功能，自动跳转到输入页面
-//                 throw new Error(findText_ZH_CN +"按钮没有找到");
-            break;
-         }
-
-         // 查找控件
-        var button1 = className("android.widget.TextView").text(findText_ZH_CN).findOne(3000);
-        var button2 = className("android.widget.TextView").text(findText_ZH_TW).findOne(3000);
-        var button3 = className("android.widget.TextView").text(findText_EN_US).findOne(3000);
-
-        if (button1) {
-            taskLog("找到" + findText_ZH_CN);
-            taskLog("找到button1 = " + button1.clickable() );
-            if(button1.clickable()) {
-               button1.click()
-               break; // 跳出循环
-            }else{
-               taskLog("找到button1 ，但是button1不可点击,所以根据坐标点击 " );
-
-               var X1 = button1.bounds().centerX();
-               var Y1 = button1.bounds().centerY();
-               // 验证 X 和 Y 是否为正数
-               if (X1 < 0 || Y1 < 0) {
-                   taskLog("坐标无效，中心点X或Y为负值: X=" + X + ", Y=" + Y);
-                   return
-               }
-               // 生成随机偏差
-               var _X1 = X1 - random(-2, 2);
-               var _Y1 = Y1 - random(-2, 2);
-               click(Math.max(0, _X1) , Math.max(0, _Y1))// 防止偏差导致负值
-
-               break; // 跳出循环
-
-
+                }
             }
-        }else if(button2){
-            taskLog("找到" + findText_ZH_TW);
-            taskLog("找到button2 = " + button2.clickable() );
-            if(button2.clickable()) {
-               button2.click()
-            }else{
-               taskLog("找到button2 ，但是button2不可点击,所以根据坐标点击 " );
-
-               var X2 = button2.bounds().centerX();
-               var Y2 = button2.bounds().centerY();
-               // 验证 X 和 Y 是否为正数
-               if (X2 < 0 || Y2 < 0) {
-                   taskLog("坐标无效，中心点X或Y为负值: X=" + X2 + ", Y=" + Y2);
-                   return
-               }
-               // 生成随机偏差
-               var _X2 = X2 - random(-2, 2);
-               var _Y2 = Y2 - random(-2, 2);
-               click(Math.max(0, _X2) , Math.max(0, _Y2))// 防止偏差导致负值
-
-               break; // 跳出循环
-            }
-            break; // 跳出循环
-        }else if(button3){
-            taskLog("找到" + findText_EN_US);
-            taskLog("找到button3 = " + button3.clickable() );
-            if(button3.clickable()) {
-               button3.click()
-            }else{
-               taskLog("找到button3 ，但是button3不可点击,所以根据坐标点击 " );
-
-               var X3 = button3.bounds().centerX();
-               var Y3 = button3.bounds().centerY();
-               // 验证 X 和 Y 是否为正数
-               if (X3 < 0 || Y3 < 0) {
-                   taskLog("坐标无效，中心点X或Y为负值: X=" + X3 + ", Y=" + Y3);
-                   return
-               }
-               // 生成随机偏差
-               var _X3 = X3 - random(-2, 2);
-               var _Y3 = Y3 - random(-2, 2);
-               click(Math.max(0, _X3) , Math.max(0, _Y3))// 防止偏差导致负值
-
-            }
-            break; // 跳出循环
-        }
-         sleep(1000)
-
-     }
-     return findText_result
-}
-
-
-// 已经知道底部View的id是iy8，获取到这个view，拿到宽高，再点击这个view的中心位置，即可
-// className("android.widget.LinearLayout")
-function click_bottom_center_for_post_video(){
-
-    toast("开始寻找底部➕号按钮....")
-    // 通过ID选择器查找控件
-
-    let view = id("com.ss.android.ugc.trill:id/iy8").className("android.widget.LinearLayout").findOne(3000);
-
-    if (view) {
-        let bounds = view.bounds();
-        let width = bounds.width();
-        let height = bounds.height();
-        
-        console.log("控件宽度: " + width);
-        console.log("控件高度: " + height);
-        
-        // 计算中心点坐标
-        let centerX = bounds.centerX();
-        let centerY = bounds.centerY();
-        
-        // 尝试点击，最多重试3次
-        let maxRetries = 3;
-        let clickSuccess = false;
-        
-        for (let i = 0; i < maxRetries && !clickSuccess; i++) {
-            console.log("尝试第" + (i + 1) + "次点击");
-            
-            // 先尝试控件点击
-            clickSuccess = view.click();
-            
-            if (!clickSuccess) {
-                // 如果控件点击失败，等待短暂时间后尝试坐标点击
-                sleep(500);
-                click(centerX, centerY);
-                
-                // 等待一下看是否点击成功（可以根据实际情况判断点击后的界面变化）
-                sleep(1000);
-                
-                // 这里可以添加判断点击是否成功的逻辑
-                // 比如检查界面是否发生预期变化
-                clickSuccess = true
-            }
-        }
-        
-        if (clickSuccess) {
-            console.log("点击成功");
         } else {
-            console.log("多次尝试后仍然点击失败");
-            toast("因为一直没有找到底部的+号按钮，导致无法进入发布视频的界面，所以终止任务直接报错")
-            // throw new error("因为一直没有找到底部的+号按钮，导致无法进入发布视频的界面，所以终止任务直接报错")
-        }
-    } else {
-        console.log("未找到指定控件");
-    }
-}
-
-
-function click_choose_video_framelayout(){
-
-    click_permission_allow()
-
-    toast("开始点击选择图片的跳转按钮....")
-    // 通过ID选择器查找控件
-    // fullId("com.zhiliaoapp.musically:id/cg7")
-    let view = id(GLOBAL_TikTokPackageName + ":id/cg7").className("android.widget.FrameLayout").findOne();
-
-
-    if (view) {
-        let bounds = view.bounds();
-        let width = bounds.width();
-        let height = bounds.height();
-        
-        console.log("控件宽度: " + width);
-        console.log("控件高度: " + height);
-        
-        // 计算中心点坐标
-        let centerX = bounds.centerX();
-        let centerY = bounds.centerY();
-        
-        // 尝试点击，最多重试3次
-        let maxRetries = 3;
-        let clickSuccess = false;
-        
-        for (let i = 0; i < maxRetries && !clickSuccess; i++) {
-            console.log("尝试第" + (i + 1) + "次点击");
-            
-            // 先尝试控件点击
-            clickSuccess = view.click();
-            
-            if (!clickSuccess) {
-                // 如果控件点击失败，等待短暂时间后尝试坐标点击
-                sleep(500);
-                click(centerX, centerY);
-                
-                // 等待一下看是否点击成功（可以根据实际情况判断点击后的界面变化）
-                sleep(1000);
-                
-                // 这里可以添加判断点击是否成功的逻辑
-                // 比如检查界面是否发生预期变化
-                clickSuccess = true
+            // 原来的单个文本处理逻辑
+            if (text(targetText).exists()) {
+                taskLog("找到文本：" + targetText);
+                var element = text(targetText).findOne();
+                if (element && element.clickable()) {
+                    element.click();
+                    return true;
+                } else if (element) {
+                    // 如果元素存在但不可点击，尝试点击其坐标
+                    var bounds = element.bounds();
+                    click(bounds.centerX(), bounds.centerY());
+                    return true;
+                }
             }
         }
-        
-        if (clickSuccess) {
-            console.log("点击成功");
-        } else {
-            console.log("多次尝试后仍然点击失败");
-            toast("因为一直没有找到底部的+号按钮，导致无法进入发布视频的界面，所以终止任务直接报错")
-            //throw new error("因为一直没有找到底部的+号按钮，导致无法进入发布视频的界面，所以终止任务直接报错")
-        }
-    } else {
-        console.log("未找到指定控件");
     }
+    taskLog("未找到任何匹配的文本");
+    return false;
 }
+
+
 
 //给视频输入desc内容
 function click_Video_desc(){
@@ -1354,7 +870,7 @@ function click_Video_desc(){
                 taskLog("标题：" + titleText);
                 //短描述：fullId("com.zhiliaoapp.musically:id/eqw")
                 //fullId("com.ss.android.ugc.trill:id/eqx")
-                if(textView.id() == GLOBAL_TikTokPackageName + ":id/eqw" || textView.id() == ASIA_TikTokPackageName + ":id/eqx"){
+                if(textView.id() == CONFIG.APP.GLOBAL_PACKAGE + ":id/eqw" || textView.id() == CONFIG.APP.ASIA_PACKAGE + ":id/eqx"){
                     textView.setText(titleText)
                     sleep(random(3000,5000))
                 } 
@@ -1372,7 +888,7 @@ function click_Video_desc(){
                 taskLog("描述：" + descText);
                 //长描述：fullId("com.zhiliaoapp.musically:id/eqv")
                 //fullId("com.ss.android.ugc.trill:id/eqw")
-                if(textView.id() == GLOBAL_TikTokPackageName + ":id/eqv" || textView.id() == ASIA_TikTokPackageName + ":id/eqw"){
+                if(textView.id() == CONFIG.APP.GLOBAL_PACKAGE + ":id/eqv" || textView.id() == CONFIG.APP.ASIA_PACKAGE + ":id/eqw"){
                     textView.setText(descText)
                     sleep(random(5000,10000))
                 }   
@@ -1385,128 +901,195 @@ function click_Video_desc(){
 
 //可能会出现权限弹窗，如果弹出，那么允许
 function click_permission_allow(){
-    toast("开始处理权限问题.....")
-
-    var allListTextView = className("android.widget.TextView").find();
-    // taskLog("找到权限allListTextView: 全部 = "  + allListTextView.size());
-
-    for(var i = 0; i < allListTextView.size(); i++){
-        var textView = allListTextView.get(i);
-        // taskLog("找到权限textView: " + textView.text());
-    }
-
-    // 找到所有按钮
-    var allListButton = className("android.widget.Button").find();
-    // taskLog("找到权限allListButton: 全部 = "  + allListButton.size());
-
-    for(var i = 0; i < allListButton.size(); i++){
-        var button = allListButton.get(i);
-        // taskLog("找到权限button: " + button.text());
+    taskLog("开始处理权限问题.....");
+    
+    // 定义权限相关的文本配置
+    var PERMISSION_TEXTS = {
+        // 简体中文权限文本
+        ZH_CN: {
+            ALLOW: ["仅在使用该应用时允许", "仅限这一次", "允许"],
+            DENY: ["不允许"]
+        },
+        // 繁体中文权限文本
+        TW: {
+            ALLOW: ["使用應用程式時", "僅允許這一次", "允許"],
+            DENY: ["不允許"]
+        },
+        // 英文权限文本
+        EN: {
+            ALLOW: ["WHILE USING THE APP", "ONLY THIS TIME", "ALLOW"],
+            DENY: ["DON'T ALLOW"]
+        }
+    };
+    
+    // 快速检查并点击权限按钮
+    function quickClickPermission() {
+        // 查找所有可能的权限按钮
+        var allButtons = className("android.widget.Button").find();
+        var allTextViews = className("android.widget.TextView").find();
+        
+        // 合并所有文本元素
+        var allElements = [];
+        for (var i = 0; i < allButtons.size(); i++) {
+            allElements.push(allButtons.get(i));
+        }
+        for (var i = 0; i < allTextViews.size(); i++) {
+            allElements.push(allTextViews.get(i));
+        }
+        
+        // 快速遍历查找权限相关按钮
+        for (var k = 0; k < allElements.length; k++) {
+            var element = allElements[k];
+            if (!element || !element.clickable()) continue;
+            
+            var text = element.text();
+            if (!text) continue;
+            
+            // 检查是否包含允许相关的文本
+            var isAllowText = false;
+            // 检查简体中文
+            for (var m = 0; m < PERMISSION_TEXTS.ZH_CN.ALLOW.length; m++) {
+                if (text.includes(PERMISSION_TEXTS.ZH_CN.ALLOW[m])) {
+                    isAllowText = true;
+                    break;
+                }
+            }
+            // 检查繁体中文
+            if (!isAllowText) {
+                for (var n = 0; n < PERMISSION_TEXTS.TW.ALLOW.length; n++) {
+                    if (text.includes(PERMISSION_TEXTS.TW.ALLOW[n])) {
+                        isAllowText = true;
+                        break;
+                    }
+                }
+            }
+            // 检查英文
+            if (!isAllowText) {
+                for (var o = 0; o < PERMISSION_TEXTS.EN.ALLOW.length; o++) {
+                    if (text.includes(PERMISSION_TEXTS.EN.ALLOW[o])) {
+                        isAllowText = true;
+                        break;
+                    }
+                }
+            }
+            
+            // 检查是否包含拒绝相关的文本
+            var isDenyText = false;
+            // 检查简体中文
+            for (var p = 0; p < PERMISSION_TEXTS.ZH_CN.DENY.length; p++) {
+                if (text.includes(PERMISSION_TEXTS.ZH_CN.DENY[p])) {
+                    isDenyText = true;
+                    break;
+                }
+            }
+            // 检查繁体中文
+            if (!isDenyText) {
+                for (var q = 0; q < PERMISSION_TEXTS.TW.DENY.length; q++) {
+                    if (text.includes(PERMISSION_TEXTS.TW.DENY[q])) {
+                        isDenyText = true;
+                        break;
+                    }
+                }
+            }
+            // 检查英文
+            if (!isDenyText) {
+                for (var r = 0; r < PERMISSION_TEXTS.EN.DENY.length; r++) {
+                    if (text.includes(PERMISSION_TEXTS.EN.DENY[r])) {
+                        isDenyText = true;
+                        break;
+                    }
+                }
+            }
+            
+            // 如果是允许按钮且不是拒绝按钮，则点击
+            if (isAllowText && !isDenyText) {
+                taskLog("找到权限按钮: " + text);
+                element.click();
+                return true;
+            }
+        }
+        
+        return false;
     }
     
-
-    // 等待权限弹窗出现
-    let allow_tw = textContains("使用應用程式時").findOne(5000);
-    if(allow_tw){
-        taskLog("点击 - 使用應用程式時")
-        allow_tw.click();
+    // 使用快速检查方法，最多尝试3次
+    for (var i = 0; i < 3; i++) {
+        if (quickClickPermission()) {
+            taskLog("权限处理成功");
+            return;
+        }
+        sleep(1000); // 短暂等待后重试
     }
-
     
-    // 等待权限弹窗出现
-    let allow_tw_02 = textContains("允許").findOne(5000);
-    if(allow_tw_02){
-        // 获取控件的文本内容
-        taskLog("点击 - 允許")
-        let btnText_tw = allow_tw_02.text();
-        // 检查文本是否包含"不允许"，如果不包含才点击
-        if(!btnText_tw.includes("不允許")){
-            allow_tw_02.click();
-        }
-    }
-
-
-
-    // 等待权限弹窗出现
-    let allow_en = textContains("ONLY THIS TIME").findOne(5000);
-    if(allow_en){
-        taskLog("点击 - ONLY THIS TIME")
-        allow_en.click();
-    }
-
-
-    // 等待权限弹窗出现
-    let allow_en_02 = textContains("ALLOW").findOne(5000);
-    if(allow_en_02){
-        // 获取控件的文本内容
-        taskLog("点击 - ALLOW")
-        let btnText_en = allow_en_02.text();
-        // 检查文本是否包含"不允许"，如果不包含才点击
-        if(!btnText_en.includes("DON'T ALLOW")){
-            allow_en_02.click();
-        }
-    }
-
-
-
+    taskLog("未找到权限弹窗，继续执行");
 }
 
 
-try {
+// 主执行函数
+function main() {
+    try {
+        Logger.info("开始执行TikTok视频上传任务");
+        
+        // 点击发布按钮：Tiktok底部中间的Button按钮
+        var publishButtonId = targetPackageName === CONFIG.APP.GLOBAL_PACKAGE 
+            ? CONFIG.APP.GLOBAL_PACKAGE + ":id/k6_" 
+            : CONFIG.APP.ASIA_PACKAGE + ":id/k6a";
+        
+        clickId(publishButtonId);
+        sleep(CONFIG.TIMEOUTS.SHORT);
 
-    //Button:
-    //fullId("com.zhiliaoapp.musically:id/k6_")
-    //fullId("com.ss.android.ugc.trill:id/k6a")
-    if(targetPackageName == GLOBAL_TikTokPackageName){
-        clickId(GLOBAL_TikTokPackageName + ":id/k6_")
-    }else{
-        clickId(ASIA_TikTokPackageName + ":id/k6a")
+        // 处理权限问题
+        taskLog("开始处理权限问题.....");
+        click_permission_allow();
+        sleep(CONFIG.TIMEOUTS.SHORT);
+
+        // 刷新媒体库
+        taskLog("开始刷新本地媒体库.....");
+        refreshMedia(CONFIG.PATHS.DOWNLOAD);
+        sleep(CONFIG.TIMEOUTS.SHORT);
+
+        // 转移视频到临时文件夹
+        taskLog("开始转移视频到临时文件夹,TT_UPLOAD_VIDEO_URL = " + TT_UPLOAD_VIDEO_URL);
+        sleep(2000);
+        taskLog("开始转移视频到本地路径...");
+        var videoTempPath = transferVideoToNest(TT_UPLOAD_VIDEO_URL);
+        sleep(CONFIG.TIMEOUTS.MEDIUM);
+
+        // 再次处理权限问题
+        taskLog("开始处理权限问题.....");
+        click_permission_allow();
+        sleep(CONFIG.TIMEOUTS.SHORT);
+
+        // 点击选择视频按钮
+        var selectVideoButtonId = targetPackageName === CONFIG.APP.GLOBAL_PACKAGE 
+            ? CONFIG.APP.GLOBAL_PACKAGE + ":id/frp" 
+            : CONFIG.APP.ASIA_PACKAGE + ":id/frq";
+        
+        clickId(selectVideoButtonId);
+        sleep(CONFIG.TIMEOUTS.SHORT);
+
+        // 最后一次处理权限问题
+        taskLog("开始处理权限问题.....");
+        click_permission_allow();
+        sleep(CONFIG.TIMEOUTS.SHORT);
+
+        // 选择视频
+        taskLog("开始选择视频.....");
+        selectImageWithRetry(videoTempPath);
+        sleep(30000);
+
+        Logger.info("TikTok视频上传任务执行完成");
+
+    } catch (e) {
+        Logger.error("主执行函数发生错误", e);
+        handleError(e);
+    } finally {
+        // 清理资源
+        Utils.cleanup();
     }
-    sleep(3000)
-
-    taskLog("开始处理权限问题.....")
-    click_permission_allow()    
-    sleep(3000)
-
-
-    taskLog("开始刷新本地媒体库.....")
-    refreshMedia("/storage/emulated/0/Download/")
-    sleep(3000)
-
-    taskLog("开始转移视频到临时文件夹,TT_UPLOAD_VIDEO_URL = " + TT_UPLOAD_VIDEO_URL)
-    sleep(2000)
-    taskLog("开始转移视频到本地路径...")
-    var imageTempPath = transferVideoToNest(TT_UPLOAD_VIDEO_URL)
-    sleep(5000)
-
-    //可能会出现权限提示，直接允许
-    taskLog("开始处理权限问题.....")
-    click_permission_allow()    
-    sleep(3000)
-
-    //点击白色圆圈的右边:RelativeLayout
-    //fullId("com.zhiliaoapp.musically:id/frp")
-    //fullId("com.ss.android.ugc.trill:id/frq")
-    if(targetPackageName == GLOBAL_TikTokPackageName){
-        clickId(GLOBAL_TikTokPackageName + ":id/frp")
-    }else{
-        clickId(ASIA_TikTokPackageName + ":id/frq")
-    }
-    sleep(3000)
-
-
-    //可能会出现权限提示，直接允许
-    taskLog("开始处理权限问题.....")
-    click_permission_allow()    
-    sleep(3000)
-
-
-    //选中图片 
-    taskLog("开始选择图片.....")
-    selectImageWithRetry(imageTempPath) 
-    sleep(30000)
-
-
-} catch (e) {
-    handleError(e);
 }
+
+// 执行主函数
+main();
+
+
