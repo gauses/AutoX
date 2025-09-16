@@ -968,10 +968,13 @@ try {
     var comments = get_all_comments()
     var search_text_array = get_all_keyword()
 
-    if(comments.includes("$${T")){ 
+    if(comments.some(text => text.startsWith("${T_"))){ 
         throw_error_storage_not_enough()
     }
-    if(search_text_array.includes("$${T")){ 
+
+    //判断是不是${T_搜尋關鍵字}开头
+    taskLog("search_text_array："+search_text_array)
+    if(search_text_array.some(text => text.startsWith("${T_"))){
         throw_error_storage_not_enough()
     }
 

@@ -28,6 +28,12 @@ const FORCE_STOP_TEXT = {
     EN_US: "FORCE STOP"   // 英文
 };
 
+// 定义确认按钮文本
+const FORCE_STOP_CONFIRM_TEXT = {
+    ZH_CN: "确定",      // 简体中文
+    ZH_TW: "確定",      // 繁体中文
+    EN_US: "OK"         // 英文
+};
 
 
 
@@ -382,6 +388,15 @@ function taskLogError(_log){
         return findText_result
     }
 
+
+// 替代 app.openAppSetting 的方式
+function openAppSettings(packageName) {
+    var intent = new Intent();
+    intent.setAction(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+    intent.setData(android.net.Uri.parse("package:" + packageName));
+    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    app.startActivity(intent);
+}
 
 
 //强制停止TikTok 

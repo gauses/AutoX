@@ -25,6 +25,21 @@ const TT_UPLOAD_VIDEO_DESC = '$${T_上傳影片的說明}';
 var ASIA_TikTokPackageName = 'com.ss.android.ugc.trill';
 var GLOBAL_TikTokPackageName = 'com.zhiliaoapp.musically';
 
+
+const FORCE_STOP_TEXT = {
+    ZH_CN: "强行停止",    // 简体中文
+    ZH_TW: "強制停止",    // 繁体中文
+    EN_US: "FORCE STOP"   // 英文
+};
+
+// 定义确认按钮文本
+const FORCE_STOP_CONFIRM_TEXT = {
+    ZH_CN: "确定",      // 简体中文
+    ZH_TW: "確定",      // 繁体中文
+    EN_US: "OK"         // 英文
+};
+
+
 var targetPackageName = null;
 var targetClassName = null;
 
@@ -228,8 +243,8 @@ function transferVideoToNest(fileName){
     if (!videoPath) {
         console.error("未找到指定视频：" + fileName);
         toast("未找到指定视频：" + fileName);
-        //throw new error("没有找到需要上传的视频，所以异常直接退出")
-        return;
+        throw new Error("没有找到需要上传的视频，所以异常直接退出")
+        // return;
     }
 
 
@@ -376,7 +391,7 @@ function selectImageByButton(fileName) {
             for (var i = 0; i < allListTextView.size(); i++) {
                 var listTextView = allListTextView.get(i);
                 if (listTextView) {
-                    taskLog("找到listTextView控件-Text：" + listTextView.text());
+                    // taskLog("找到listTextView控件-Text：" + listTextView.text());
                     
                     // 检查text是否为"A_NEST_TikTok_MEDIA"
                     if (listTextView.text() == "A_NEST_TikTok_MEDIA") {
@@ -461,7 +476,7 @@ function selectImageByButton(fileName) {
                 //可能会出现一个下拉框，提示是否添加到主屏幕:text("ADD TO HOME SCREEN")
                 find_btn_Text_base("添加到主屏幕", "新增到主螢幕", "ADD TO HOME SCREEN")
 
-                sleep(60000) //上传需要耗时
+                sleep(120000) //上传需要耗时
 
 
                 //删除临时媒体文件夹
@@ -691,105 +706,55 @@ function checkDownloadFiles(targetFileName) {
 
 
 
+// 替代 app.openAppSetting 的方式
+function openAppSettings(packageName) {
+    var intent = new Intent();
+    intent.setAction(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+    intent.setData(android.net.Uri.parse("package:" + packageName));
+    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    app.startActivity(intent);
+}
 
 
 //强制停止TikTok 
 function forceStop_APP(packageName){
     taskLog("准备强杀:" + packageName + "...")
-    sleep(1000);
-    app.openAppSetting(packageName)
+    sleep(3000);
+    openAppSettings(packageName)
     sleep(5000)
 
-    //繁体
-    if (text("強制停止").exists()) {
-        let forceStopBtn = text("強制停止").findOne();
-        if (forceStopBtn && forceStopBtn.clickable()) {
-            forceStopBtn.click();
-            sleep(1000);
-            // 确认操作
-            if (text("確定").exists()) {
-                taskLog("已经找到可点击的'強制停止'按钮！！！！！！！！！！");
-                text("確定").findOne().click();
+    // 遍历所有可能的强制停止按钮文本
+    for (let lang in FORCE_STOP_TEXT) {
+        let stopText = FORCE_STOP_TEXT[lang];
+        if (text(stopText).exists()) {
+            let forceStopBtn = text(stopText).findOne();
+            if (forceStopBtn && forceStopBtn.clickable()) {
+                forceStopBtn.click();
+                sleep(1000);
+                
+                // 遍历所有可能的确认按钮文本
+                for (let confirmLang in FORCE_STOP_CONFIRM_TEXT) {
+                    let confirmText = FORCE_STOP_CONFIRM_TEXT[confirmLang];
+                    if (text(confirmText).exists()) {
+                        text(confirmText).findOne().click();
+                        taskLog("成功点击'" + stopText + "'按钮并确认");
+                        sleep(3000);
+                        home();
+                        return;
+                    }
+                }
+            } else {
+                taskLog("未找到可点击的'" + stopText + "'按钮");
             }
         } else {
-            taskLog("未找到可点击的'強制停止'按钮");
+            taskLog("未找到'" + stopText + "'按钮");
         }
-    } else {
-        taskLog("未找到'強制停止'按钮");
-    }
-    sleep(3000)
-
-    //简体
-    if (text("强行停止").exists()) {
-        let forceStopBtn = text("强行停止").findOne();
-        if (forceStopBtn && forceStopBtn.clickable()) {
-            forceStopBtn.click();
-            sleep(1000);
-            // 确认操作
-            if (text("确定").exists()) {
-                text("确定").findOne().click();
-            }
-        } else {
-            taskLog("未找到可点击的'强行停止'按钮");
-        }
-    } else {
-        taskLog("未找到'强行停止'按钮");
+        sleep(1000);
     }
 
-    sleep(3000)
-
-
-    //英语
-    if (text("Force stop").exists()) {
-        let forceStopBtn = text("Force stop").findOne();
-        if (forceStopBtn && forceStopBtn.clickable()) {
-            forceStopBtn.click();
-            sleep(1000);
-            // 确认操作
-            if (text("OK").exists()) {
-                text("OK").findOne().click();
-            }
-        } else {
-            taskLog("未找到可点击的'Force stop'按钮");
-        }
-    } else {
-        taskLog("未找到'Force stop'按钮");
-    }
-    sleep(3000)
-
-    //英语
-    if (text("FORCE STOP").exists()) {
-        let forceStopBtn = text("FORCE STOP").findOne();
-        if (forceStopBtn && forceStopBtn.clickable()) {
-            forceStopBtn.click();
-            sleep(1000);
-            // 确认操作
-            if (text("OK").exists()) {
-                text("OK").findOne().click();
-            }
-        } else {
-            taskLog("未找到可点击的'FORCE STOP'按钮");
-        }
-    } else {
-        taskLog("未找到'FORCE STOP'按钮");
-    }
-    sleep(3000)
-
-
-    home()
-
+    // 如果所有语言都尝试失败，返回主页
+    home();
 }
-
-
-//推荐好友的弹窗，直接关闭
-function close_friend_suggest(){
-    if(id("c67").exists()){
-        sleep(3000)
-        id("c67").click()
-    }
-}
-
-
 
 
 
@@ -882,30 +847,6 @@ function taskLog(_log){
 
 
 
-//无论成功或者失败，最后截图一张
-function saveImg(){
-    taskLog("开始截图...");
-
-    var toPath = "/sdcard/Download/" + taskLogImgName ;
-    if (files.exists(toPath) ){
-        taskLog("旧图片文件存在，删除");
-        files.remove(toPath);
-    } else {
-        taskLog("旧图片文件存在");
-    }
-
-
-    if(!requestScreenCapture()){
-        taskLog("请求截图失败...");
-        toast("请求截图失败");
-    }else{
-        toast("请求截图");
-    }
-    //截图并保存
-    taskLog("请求截图开始保存...");
-    images.saveImage(captureScreen(), toPath);
-}
-
 
 function getSystemDate(a) {
     var b = new SimpleDateFormat("HH:mm:ss"), c = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
@@ -940,7 +881,7 @@ function clickDesc(a) {
 
 //结束当前任务
 function stopCurrentTask(){
-    saveImg()
+    // saveImg()
 
     sleep(3000)
 //    //将task的截图上报
@@ -1411,8 +1352,9 @@ function click_Video_desc(){
                     throw_error_storage_not_enough()
                 }
                 taskLog("标题：" + titleText);
-                //短描述
-                if(textView.id() == GLOBAL_TikTokPackageName + ":id/epv" || textView.id() == ASIA_TikTokPackageName + ":id/eqx"){
+                //短描述：fullId("com.zhiliaoapp.musically:id/eqw")
+                //fullId("com.ss.android.ugc.trill:id/eqx")
+                if(textView.id() == GLOBAL_TikTokPackageName + ":id/eqw" || textView.id() == ASIA_TikTokPackageName + ":id/eqx"){
                     textView.setText(titleText)
                     sleep(random(3000,5000))
                 } 
@@ -1428,10 +1370,11 @@ function click_Video_desc(){
                     throw_error_storage_not_enough()
                 }
                 taskLog("描述：" + descText);
-                //长描述
-                if(textView.id() == GLOBAL_TikTokPackageName + ":id/epu" || textView.id() == ASIA_TikTokPackageName + ":id/eqw"){
+                //长描述：fullId("com.zhiliaoapp.musically:id/eqv")
+                //fullId("com.ss.android.ugc.trill:id/eqw")
+                if(textView.id() == GLOBAL_TikTokPackageName + ":id/eqv" || textView.id() == ASIA_TikTokPackageName + ":id/eqw"){
                     textView.setText(descText)
-                    sleep(random(3000,5000))
+                    sleep(random(5000,10000))
                 }   
             }
 
@@ -1445,20 +1388,20 @@ function click_permission_allow(){
     toast("开始处理权限问题.....")
 
     var allListTextView = className("android.widget.TextView").find();
-    taskLog("找到权限allListTextView: 全部 = "  + allListTextView.size());
+    // taskLog("找到权限allListTextView: 全部 = "  + allListTextView.size());
 
     for(var i = 0; i < allListTextView.size(); i++){
         var textView = allListTextView.get(i);
-        taskLog("找到权限textView: " + textView.text());
+        // taskLog("找到权限textView: " + textView.text());
     }
 
     // 找到所有按钮
     var allListButton = className("android.widget.Button").find();
-    taskLog("找到权限allListButton: 全部 = "  + allListButton.size());
+    // taskLog("找到权限allListButton: 全部 = "  + allListButton.size());
 
     for(var i = 0; i < allListButton.size(); i++){
         var button = allListButton.get(i);
-        taskLog("找到权限button: " + button.text());
+        // taskLog("找到权限button: " + button.text());
     }
     
 
