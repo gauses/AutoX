@@ -138,6 +138,7 @@ var handleErrorFlag = false;
 var total_target = 0;        // 需要私信的用户总数
 var total_success = 0;       // 成功私信的用户数量
 var fail_msg = "";           // 私信时出现的错误信息
+var failed_users = [];       // 私信失败的用户ID列表
 
 // 路径配置
 var RPAFilePath = CONFIG.PATHS.LOG_DIR;
@@ -293,8 +294,9 @@ events.on('exit', function(){
     taskLog("目标私信数量：" + total_target);
     taskLog("成功私信数量：" + total_success);
     taskLog("失败数量：" + (total_target - total_success));
-    if (fail_msg) {
-        taskLog("失败信息：" + fail_msg);
+    var formattedFailMsg = formatFailMsg();
+    if (formattedFailMsg) {
+        taskLog("失败信息：" + formattedFailMsg);
     }
     taskLog("成功率：" + (total_target > 0 ? (total_success / total_target * 100).toFixed(2) + "%" : "0%"));
     taskLog("========================");
@@ -315,7 +317,41 @@ events.on('exit', function(){
     openLogActivity();
 });
 
-// 通过语言对象查找文本
+// 添加失败用户记录函数
+function addFailedUser(userId, reason) {
+    if (!failed_users.some(user => user.userId === userId)) {
+        failed_users.push({
+            userId: userId,
+            reason: reason || "私信失败",
+            timestamp: getSystemDate("df")
+        });
+        taskLog("记录私信失败用户：" + userId + "，原因：" + (reason || "私信失败"));
+    }
+}
+
+// 格式化失败信息
+function formatFailMsg() {
+    var failInfo = {};
+    
+    // 如果有异常信息
+    if (fail_msg) {
+        failInfo.异常信息 = fail_msg;
+    }
+    
+    // 如果有失败用户
+    if (failed_users.length > 0) {
+        failInfo.私信失败用户ID = failed_users;
+    }
+    
+    // 如果没有任何失败信息，返回空字符串
+    if (Object.keys(failInfo).length === 0) {
+        return "";
+    }
+    
+    return JSON.stringify(failInfo, null, 2);
+}
+
+// 通过语言对象查找文本 - 优化版本
 function findTextByLanguages(languageObject) {
     for (var lang in languageObject) {
         var targetText = languageObject[lang];
@@ -323,38 +359,69 @@ function findTextByLanguages(languageObject) {
         if (Array.isArray(targetText)) {
             for (var j = 0; j < targetText.length; j++) {
                 var text_item = targetText[j];
-                if (text(text_item).exists()) {
-                    taskLog("找到文本：" + text_item);
-                    var element = text(text_item).findOne();
-                    if (element && element.clickable()) {
-                        element.click();
-                        return true;
-                    } else if (element) {
-                        // 如果元素存在但不可点击，尝试点击其坐标
-                        var bounds = element.bounds();
-                        click(bounds.centerX(), bounds.centerY());
-                        return true;
-                    }
+                if (findAndClickText(text_item)) {
+                    return true;
                 }
             }
         } else {
             // 原来的单个文本处理逻辑
-            if (text(targetText).exists()) {
-                taskLog("找到文本：" + targetText);
-                var element = text(targetText).findOne();
-                if (element && element.clickable()) {
-                    element.click();
-                    return true;
-                } else if (element) {
-                    // 如果元素存在但不可点击，尝试点击其坐标
-                    var bounds = element.bounds();
-                    click(bounds.centerX(), bounds.centerY());
-                    return true;
-                }
+            if (findAndClickText(targetText)) {
+                return true;
             }
         }
     }
     taskLog("未找到任何匹配的文本");
+    return false;
+}
+
+// 辅助函数：查找并点击文本
+function findAndClickText(targetText) {
+    // 首先尝试精确匹配
+    if (text(targetText).exists()) {
+        taskLog("找到文本（精确匹配）：" + targetText);
+        var element = text(targetText).findOne();
+        if (element && element.clickable()) {
+            element.click();
+            return true;
+        } else if (element) {
+            // 如果元素存在但不可点击，尝试点击其坐标
+            var bounds = element.bounds();
+            click(bounds.centerX(), bounds.centerY());
+            return true;
+        }
+    }
+    
+    // 如果精确匹配失败，尝试正则表达式匹配（处理前导空格）
+    var regexPattern = "^\\s*" + targetText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + "$";
+    if (textMatches(regexPattern).exists()) {
+        taskLog("找到文本（正则匹配）：" + targetText);
+        var element = textMatches(regexPattern).findOne();
+        if (element && element.clickable()) {
+            element.click();
+            return true;
+        } else if (element) {
+            // 如果元素存在但不可点击，尝试点击其坐标
+            var bounds = element.bounds();
+            click(bounds.centerX(), bounds.centerY());
+            return true;
+        }
+    }
+    
+    // 如果都失败，尝试包含匹配
+    if (textContains(targetText).exists()) {
+        taskLog("找到文本（包含匹配）：" + targetText);
+        var element = textContains(targetText).findOne();
+        if (element && element.clickable()) {
+            element.click();
+            return true;
+        } else if (element) {
+            // 如果元素存在但不可点击，尝试点击其坐标
+            var bounds = element.bounds();
+            click(bounds.centerX(), bounds.centerY());
+            return true;
+        }
+    }
+    
     return false;
 }
 
@@ -643,7 +710,7 @@ function taskLogError(_log){
 
 
 
-    //通过TextView的text
+    //通过TextView的text - 优化版本，使用统一的多语言点击函数
     function find_textview_text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
         //是否找到该TextView，找到：true / 未找到：false
         var findText_result = false
@@ -656,28 +723,15 @@ function taskLogError(_log){
                 break;
             }
 
-            // 使用正则表达式匹配可能带有前导空格的文本
-            var button1 = textMatches("^\\s*" + findText_ZH_CN + "$").className("android.widget.TextView").findOne(1000);
-            var button2 = textMatches("^\\s*" + findText_ZH_TW + "$").className("android.widget.TextView").findOne(1000);
-            var button3 = textMatches("^\\s*" + findText_EN_US + "$").className("android.widget.TextView").findOne(1000);
-
-            if (button1) {
-                taskLog("找到" + findText_ZH_CN);
-                taskLog("找到" + button1.clickable());
-                click(button1.bounds().centerX(), button1.bounds().centerY());
-                findText_result = true
-                break;
-            } else if(button2) {
-                taskLog("找到" + findText_ZH_TW);
-                taskLog("找到" + button2.clickable());
-                click(button2.bounds().centerX(), button2.bounds().centerY());
-                findText_result = true
-                break;
-            } else if(button3) {
-                taskLog("找到" + findText_EN_US);
-                taskLog("找到" + button3.clickable());
-                click(button3.bounds().centerX(), button3.bounds().centerY());
-                findText_result = true
+            // 使用统一的多语言点击函数
+            var languageObject = {
+                ZH_CN: findText_ZH_CN,
+                ZH_TW: findText_ZH_TW,
+                EN_US: findText_EN_US
+            };
+            
+            findText_result = findTextByLanguages(languageObject);
+            if (findText_result) {
                 break;
             }
 
@@ -1227,6 +1281,7 @@ function main() {
                     var findMSGTextResult = find_textview_text_base("用户","使用者","Users")
                     if(!findMSGTextResult) {
                         taskLog("没有找到用户Tab控件，终止本次操作，开始下一个用户的私信行为！！！");
+                        addFailedUser(userId, "未找到用户Tab控件");
                         back()    
                         break
                     }
@@ -1241,6 +1296,7 @@ function main() {
                     var findMSGTextResult = find_textview_text_base("訊息", "Message", "消息")
                     if(!findMSGTextResult) {
                         taskLog("没有找到消息控件，终止本次操作，开始下一个用户的私信行为！！！");
+                        addFailedUser(userId, "未找到消息控件");
                         sleep(3000)
                         back()
                         sleep(1000)
@@ -1252,7 +1308,8 @@ function main() {
 
                     var autoCompleteTextViews = className("android.widget.EditText").find();
                     if(autoCompleteTextViews.size() == 0){//这种场景对应的用户：mrbeast
-                        taskLog("没有找到訊息控件，终止本次操作，开始下一个用户的私信行为！！！");               
+                        taskLog("没有找到訊息控件，终止本次操作，开始下一个用户的私信行为！！！");
+                        addFailedUser(userId, "未找到私信输入控件");
                         back()
                         sleep(random(2000, 4000))
                         back()
@@ -1281,12 +1338,12 @@ function main() {
                                     var lastIndex = allImages.size() - 1;
                                     var lastImg = allImages.get(lastIndex);
                                     if (lastImg) {
-                                        var bounds = lastImg.bounds();
-                                        if (lastImg.clickable()) {
-                                            lastImg.click();
-                                        } else {
-                                            click(bounds.centerX(), bounds.centerY());
-                                        }
+                                            var bounds = lastImg.bounds();
+                                            if (lastImg.clickable()) {
+                                                lastImg.click();
+                                            } else {
+                                                click(bounds.centerX(), bounds.centerY());
+                                            }
 
                                         }
                                 }
@@ -1346,8 +1403,9 @@ function main() {
         taskLog("目标私信数量：" + total_target);
         taskLog("成功私信数量：" + total_success);
         taskLog("失败数量：" + (total_target - total_success));
-        if (fail_msg) {
-            taskLog("失败信息：" + fail_msg);
+        var formattedFailMsg = formatFailMsg();
+        if (formattedFailMsg) {
+            taskLog("失败信息：" + formattedFailMsg);
         }
         taskLog("成功率：" + (total_target > 0 ? (total_success / total_target * 100).toFixed(2) + "%" : "0%"));
         taskLog("========================");
@@ -1357,7 +1415,7 @@ function main() {
             var result = {
                 total_target: total_target,
                 total_success: total_success,
-                fail_msg: fail_msg
+                fail_msg: formatFailMsg()
             };
             // 打印统计结果
             taskLog("统计结果：" + JSON.stringify(result, null, 2));
