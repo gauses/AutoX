@@ -396,15 +396,24 @@ function get_DESC_comment_text(){
 }
 
 
-//转移视频到Nest临时文件夹
-function transferVideoToNest(fileName) {
-    // 验证视频文件存在
+//转移媒体文件到Nest临时文件夹
+function transferMediaToNest(fileName) {
+    // 验证媒体文件存在
     if (!files.exists(fileName)) {
-        var errorMsg = "未找到指定视频：" + fileName;
+        var errorMsg = "未找到指定媒体文件：" + fileName;
+        Logger.error(errorMsg);
+        throw new Error("没有找到需要上传的媒体文件，所以异常直接退出");
+    }
+    
+    // 验证传入的是文件而不是目录
+    var fileObj = new java.io.File(fileName);
+    if (fileObj.isDirectory()) {
+        var errorMsg = "传入的路径是目录而不是文件：" + fileName;
         Logger.error(errorMsg);
         toast(errorMsg);
-        throw new Error("没有找到需要上传的视频，所以异常直接退出");
+        throw new Error("传入的路径是目录，请提供具体的视频文件路径");
     }
+    
 
     // 创建临时文件夹
     var tempFolder = CONFIG.PATHS.DOWNLOAD + CONFIG.PATHS.TEMP_MEDIA;
@@ -424,6 +433,7 @@ function transferVideoToNest(fileName) {
     // 移动视频文件（复制后删除原文件）
     try {
         // 先复制文件
+        Logger.info("开始复制文件从 " + fileName + " 到 " + targetPath);
         files.copy(fileName, targetPath);
         Logger.info("视频文件复制成功");
         
@@ -455,8 +465,24 @@ function transferVideoToNest(fileName) {
         }
         
     } catch (e) {
-        Logger.error("视频文件转移失败: " + e.message);
-        throw e;
+        var errorMsg = "视频文件转移失败: " + e.message;
+        Logger.error(errorMsg);
+        Logger.error("源文件: " + fileName);
+        Logger.error("目标路径: " + targetPath);
+        Logger.error("错误类型: " + e.name);
+        
+        // 检查是否是目录相关的错误
+        if (e.message && e.message.includes("EISDIR")) {
+            errorMsg = "错误：传入的路径是目录而不是文件。请检查 TT_UPLOAD_VIDEO_URL 变量是否指向具体的视频文件。";
+            Logger.error(errorMsg);
+            toast(errorMsg);
+        } else if (e.message && e.message.includes("FileNotFoundException")) {
+            errorMsg = "错误：找不到指定的文件。请检查文件路径是否正确。";
+            Logger.error(errorMsg);
+            toast(errorMsg);
+        }
+        
+        throw new Error(errorMsg);
     }
 
     sleep(CONFIG.TIMEOUTS.SHORT);
@@ -466,6 +492,7 @@ function transferVideoToNest(fileName) {
     
     return targetPath;
 }
+
 
 
 //删除本地临时文件夹
@@ -1048,11 +1075,19 @@ function main() {
         refreshMedia(CONFIG.PATHS.DOWNLOAD);
         sleep(CONFIG.TIMEOUTS.SHORT);
 
-        // 转移视频到临时文件夹
-        taskLog("开始转移视频到临时文件夹,TT_UPLOAD_VIDEO_URL = " + TT_UPLOAD_VIDEO_URL);
+        // 检查媒体文件路径是否为空
+        if (!TT_UPLOAD_VIDEO_URL || TT_UPLOAD_VIDEO_URL.trim() === "") {
+            var errorMsg = "TT_UPLOAD_VIDEO_URL 为空，请设置有效的媒体文件路径";
+            taskLog(errorMsg);
+            Logger.error(errorMsg);
+            throw new Error(errorMsg);
+        }
+        
+        // 转移媒体文件到临时文件夹
+        taskLog("开始转移媒体文件到临时文件夹,TT_UPLOAD_VIDEO_URL = " + TT_UPLOAD_VIDEO_URL);
         sleep(2000);
-        taskLog("开始转移视频到本地路径...");
-        var videoTempPath = transferVideoToNest(TT_UPLOAD_VIDEO_URL);
+        taskLog("开始转移媒体文件到本地路径...");
+        var videoTempPath = transferMediaToNest(TT_UPLOAD_VIDEO_URL);
         sleep(CONFIG.TIMEOUTS.MEDIUM);
 
         // 再次处理权限问题
@@ -1082,7 +1117,11 @@ function main() {
 
     } catch (e) {
         Logger.error("主执行函数发生错误", e);
-        handleError(e);
+        if (e.message === "TASK_COMPLETED") {
+            taskLog("任务正常完成");
+        } else {
+            handleError(e);
+        }
     } finally {
         // 清理资源
         Utils.cleanup();
