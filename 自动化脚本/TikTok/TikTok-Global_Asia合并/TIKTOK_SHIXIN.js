@@ -4,45 +4,159 @@ importClass(java.io.PrintWriter);
 importClass(java.io.FileWriter);
 
 //******************************************************************
+//***********************全局日志拦截器*************************
+//******************************************************************
+
+// 保存原始的console.log方法
+var originalConsoleLog = console.log;
+
+// 全局日志配置（稍后会在文件路径定义后更新）
+var GLOBAL_LOG_CONFIG = {
+    enabled: true,
+    logToFile: true,
+    logToConsole: true,
+    logFilePath: "/sdcard/Download/log/temp_global.log"  // 临时路径，稍后会更新
+};
+
+// 重写console.log方法，使其同时输出到控制台和文件
+console.log = function() {
+    // 调用原始的console.log方法
+    if (GLOBAL_LOG_CONFIG.logToConsole) {
+        originalConsoleLog.apply(console, arguments);
+    }
+    
+    // 将日志写入文件
+    if (GLOBAL_LOG_CONFIG.logToFile && GLOBAL_LOG_CONFIG.enabled) {
+        try {
+            // 确保日志目录存在
+            files.ensureDir("/sdcard/Download/log/");
+            
+            // 将参数转换为字符串
+            var logMessage = Array.prototype.slice.call(arguments).map(function(arg) {
+                return typeof arg === 'object' ? JSON.stringify(arg) : String(arg);
+            }).join(' ');
+            
+            // 添加时间戳
+            var timestamp = getSystemDate("df");
+            var logContent = timestamp + ": " + logMessage + "\n";
+            
+            // 写入文件
+            files.append(GLOBAL_LOG_CONFIG.logFilePath, logContent);
+            
+        } catch(e) {
+            // 如果写入失败，至少输出到控制台
+            originalConsoleLog("日志写入文件失败：" + e);
+        }
+    }
+};
+
+//******************************************************************
 //***********************Tiktok私信：根據私訊列表UID的順序，去私訊​​用戶  *************************
 //******************************************************************
 
 
+// 配置对象
+var CONFIG = {
+    // 应用配置
+    APP: {
+        ASIA_PACKAGE: 'com.ss.android.ugc.trill',
+        GLOBAL_PACKAGE: 'com.zhiliaoapp.musically',
+        MAIN_ACTIVITY: 'com.ss.android.ugc.aweme.main.MainActivity'
+    },
+    
+    // 路径配置
+    PATHS: {
+        DOWNLOAD: "/storage/emulated/0/Download/",
+        LOG_DIR: "/sdcard/Download/log/"
+    },
+    
+    // 超时配置
+    TIMEOUTS: {
+        SHORT: 3000,
+        MEDIUM: 5000,
+        LONG: 10000
+    },
+    
+    // 重试配置
+    RETRY: {
+        MAX_ATTEMPTS: 3,
+        DELAY: 1000
+    },
+    
+    // UI文本配置
+    UI_TEXT: {
+        FORCE_STOP: {
+            ZH_CN: "强行停止",
+            ZH_TW: "強制停止", 
+            EN_US: "FORCE STOP"
+        },
+        FORCE_STOP_CONFIRM: {
+            ZH_CN: "确定",
+            ZH_TW: "確定",
+            EN_US: "OK"
+        },
+        USERS_TAB: {
+            ZH_CN: "用户",
+            ZH_TW: "使用者",
+            EN_US: "Users"
+        },
+        MESSAGE: {
+            ZH_CN: "消息",
+            ZH_TW: "訊息",
+            EN_US: "Message"
+        }
+    },
+    
+    // 日志配置
+    LOG: {
+        FILENAME: "nest_task_log.txt",
+        IMG_NAME: "nest_task_log.png"
+    }
+};
+
+// 私信配置
+var TT_Like_User_ID_GROUP = '$${T_关注用户ID列表}';
+var TT_Message_GROUP = '$${T_私信用户文案列表}';
+
+// 临时兼容性常量（为了向后兼容，稍后会全部替换）
+var GLOBAL_TikTokPackageName = CONFIG.APP.GLOBAL_PACKAGE;
+var ASIA_TikTokPackageName = CONFIG.APP.ASIA_PACKAGE;
+
 //保证Java层和JS代码两边的日志文件一致
-var taskLogFileName = "nest_task_log.txt"
-var taskLogImgName = "nest_task_log.png"
-
-
-//用户需要输入的关注用户ID列表
-const TT_Like_User_ID_GROUP = '$${T_关注用户ID列表}';
-const TT_Message_GROUP = '$${T_私信用户文案列表}';
+var taskLogFileName = CONFIG.LOG.FILENAME;
+var taskLogImgName = CONFIG.LOG.IMG_NAME;
 
 
 
-var ASIA_TikTokPackageName = 'com.ss.android.ugc.trill';
-var GLOBAL_TikTokPackageName = 'com.zhiliaoapp.musically';
+// 全局变量
+var targetPackageName = null;
+var targetClassName = null;
+var elementCache = new Map();
+var handleErrorFlag = false;
 
-const FORCE_STOP_TEXT = {
-    ZH_CN: "强行停止",    // 简体中文
-    ZH_TW: "強制停止",    // 繁体中文
-    EN_US: "FORCE STOP"   // 英文
-};
+// 私信统计参数
+var total_target = 0;        // 需要私信的用户总数
+var total_success = 0;       // 成功私信的用户数量
+var fail_msg = "";           // 私信时出现的错误信息
 
-// 定义确认按钮文本
-const FORCE_STOP_CONFIRM_TEXT = {
-    ZH_CN: "确定",      // 简体中文
-    ZH_TW: "確定",      // 繁体中文
-    EN_US: "OK"         // 英文
-};
+// 路径配置
+var RPAFilePath = CONFIG.PATHS.LOG_DIR;
+// 如果目录存在且有内容就删除
+if (files.exists(RPAFilePath)) {
+    files.removeDir(RPAFilePath);
+}
+//日志文件路径
+var logFilePath = RPAFilePath + taskLogFileName;
+//确保日志目录存在
+files.ensureDir(RPAFilePath);
 
+// 更新全局日志配置，使用与taskLog相同的日志文件路径
+GLOBAL_LOG_CONFIG.logFilePath = logFilePath;
 
-
-// 需要私信的粉丝总数
-var total_target = 0;
-// 成功私信的粉丝数量
-var total_success = 0;
-// 错误信息
-var fail_msg = "";
+//执行结果文件路径
+var resultPath = RPAFilePath + "nest_result_rpa.txt";
+//确保日志目录存在
+files.ensureDir(resultPath);
 
 
 
@@ -55,6 +169,114 @@ var fail_msg = "";
 //会在在无障碍服务启动后继续运行。
 auto.waitFor();
 
+// 工具函数库
+var Utils = {
+    // 重试装饰器
+    withRetry: function(fn, maxRetries, delay) {
+        maxRetries = maxRetries || CONFIG.RETRY.MAX_ATTEMPTS;
+        delay = delay || CONFIG.RETRY.DELAY;
+        
+        return function() {
+            var args = Array.prototype.slice.call(arguments);
+            for (var i = 0; i < maxRetries; i++) {
+                try {
+                    return fn.apply(this, args);
+                } catch (error) {
+                    if (i === maxRetries - 1) throw error;
+                    taskLog("重试第" + (i + 1) + "次: " + error.message);
+                    sleep(delay * (i + 1));
+                }
+            }
+        };
+    },
+
+    // 智能等待元素
+    waitForElement: function(selector, timeout, interval) {
+        timeout = timeout || CONFIG.TIMEOUTS.LONG;
+        interval = interval || 500;
+        
+        var startTime = Date.now();
+        while (Date.now() - startTime < timeout) {
+            var element = selector.findOne(interval);
+            if (element) return element;
+        }
+        throw new Error("元素未找到，超时" + timeout + "ms");
+    },
+
+    // 统一的多语言点击函数
+    clickByText: function(texts, elementType) {
+        elementType = elementType || "Button";
+        return findTextByLanguages(texts);
+    },
+
+    // 安全的坐标点击
+    safeClick: function(x, y, deviation) {
+        deviation = deviation || 2;
+        var finalX = Math.max(0, x + random(-deviation, deviation));
+        var finalY = Math.max(0, y + random(-deviation, deviation));
+        
+        try {
+            device.sdkInt < 24 ? ra.tap(finalX, finalY) : click(finalX, finalY);
+            return true;
+        } catch (e) {
+            taskLog("点击操作失败：" + e.message);
+            return false;
+        }
+    },
+
+    // 清理资源
+    cleanup: function() {
+        // 清理缓存
+        elementCache.clear();
+        
+        // 强制垃圾回收
+        if (typeof gc === 'function') {
+            gc();
+        }
+    }
+};
+
+// 日志系统
+var Logger = {
+    levels: { ERROR: 0, WARN: 1, INFO: 2, DEBUG: 3 },
+    currentLevel: 2,
+    
+    log: function(level, message, data) {
+        data = data || null;
+        if (this.levels[level] <= this.currentLevel) {
+            var timestamp = getSystemDate("df");
+            var logMessage = "[" + timestamp + "] [" + level + "] " + message;
+            
+            console.log(logMessage);
+            if (data) console.log(JSON.stringify(data, null, 2));
+            
+            // 写入文件
+            this.writeToFile(logMessage);
+        }
+    },
+    
+    error: function(msg, data) { 
+        var timestamp = getSystemDate("df");
+        var logMessage = "[" + timestamp + "] [ERROR] " + msg;
+        console.error(logMessage);
+        if (data) console.error(JSON.stringify(data, null, 2));
+        this.writeToFile(logMessage);
+    },
+    warn: function(msg, data) { this.log('WARN', msg, data); },
+    info: function(msg, data) { this.log('INFO', msg, data); },
+    debug: function(msg, data) { this.log('DEBUG', msg, data); },
+    
+    writeToFile: function(message) {
+        try {
+            var logFile = CONFIG.PATHS.LOG_DIR + CONFIG.LOG.FILENAME;
+            files.ensureDir(CONFIG.PATHS.LOG_DIR);
+            files.append(logFile, message + "\n");
+        } catch (e) {
+            console.error("写入日志文件失败: " + e.message);
+        }
+    }
+};
+
 //显示控制窗：https://github.com/kkevsekk1/AutoX/issues/868
 // console.show()
 
@@ -63,33 +285,119 @@ var handleErrorFlag = false //默认没有错误，如果出现异常，那么�
 
 // 注册退出事件监听器
 events.on('exit', function(){
-    console.hide()
-    sleep(1000)
+    console.hide();
+    sleep(1000);
+
+    // 输出统计信息
+    taskLog("=== 私信统计信息 ===");
+    taskLog("目标私信数量：" + total_target);
+    taskLog("成功私信数量：" + total_success);
+    taskLog("失败数量：" + (total_target - total_success));
+    if (fail_msg) {
+        taskLog("失败信息：" + fail_msg);
+    }
+    taskLog("成功率：" + (total_target > 0 ? (total_success / total_target * 100).toFixed(2) + "%" : "0%"));
+    taskLog("========================");
 
     if(handleErrorFlag){
-        taskLogError("-----------------脚本执行出现异常---------------");
-        taskLogError("Tiktok私信：根據私訊列表UID的順序，去私訊​​用戶---------------");
-        taskLogError("脚本执行时间：" + new Date().toLocaleString());
-    }else{
-        taskLog("-----------------脚本功能执行结束：---------------");
-        taskLog("Tiktok私信：根據私訊列表UID的順序，去私訊​​用戶---------------");
-        taskLog("脚本执行时间：" + new Date().toLocaleString());
+        Logger.error("脚本执行出现异常");
+        Logger.error("TikTok私信任务执行失败");
+        Logger.error("脚本执行时间：" + new Date().toLocaleString());
+    } else {
+        forceStop_APP(targetPackageName);
+        Logger.info("脚本功能执行结束");
+        Logger.info("TikTok私信任务执行完成");
+        Logger.info("脚本执行时间：" + new Date().toLocaleString());
     }
+    
+    // 清理资源
+    Utils.cleanup();
     openLogActivity();
 });
 
+// 通过语言对象查找文本
+function findTextByLanguages(languageObject) {
+    for (var lang in languageObject) {
+        var targetText = languageObject[lang];
+        // 如果targetText是数组，遍历数组中的每个文本
+        if (Array.isArray(targetText)) {
+            for (var j = 0; j < targetText.length; j++) {
+                var text_item = targetText[j];
+                if (text(text_item).exists()) {
+                    taskLog("找到文本：" + text_item);
+                    var element = text(text_item).findOne();
+                    if (element && element.clickable()) {
+                        element.click();
+                        return true;
+                    } else if (element) {
+                        // 如果元素存在但不可点击，尝试点击其坐标
+                        var bounds = element.bounds();
+                        click(bounds.centerX(), bounds.centerY());
+                        return true;
+                    }
+                }
+            }
+        } else {
+            // 原来的单个文本处理逻辑
+            if (text(targetText).exists()) {
+                taskLog("找到文本：" + targetText);
+                var element = text(targetText).findOne();
+                if (element && element.clickable()) {
+                    element.click();
+                    return true;
+                } else if (element) {
+                    // 如果元素存在但不可点击，尝试点击其坐标
+                    var bounds = element.bounds();
+                    click(bounds.centerX(), bounds.centerY());
+                    return true;
+                }
+            }
+        }
+    }
+    taskLog("未找到任何匹配的文本");
+    return false;
+}
+
 function handleError(e) {
-    handleErrorFlag = true
-    forceStop_APP(targetPackageName)
-    taskLogError("===错误报告开始===");
-    fail_msg += "错误信息：" + e + "\n"; 
-    taskLogError("错误信息：" + e);
-    fail_msg += "错误堆栈：" + e.stack + "\n";
-    taskLogError("错误堆栈：" + e.stack);
-    fail_msg += "===错误报告结束===" + "\n";
-    taskLogError("===错误报告结束===");
-    fail_msg += "===错误报告结束===" + "\n";
-    taskLog("脚本执行Error时间：" + new Date().toLocaleString());
+    handleErrorFlag = true;
+
+    // 记录失败信息（只记录一次）
+    var errorInfo = "错误信息：" + e.message + " | 错误堆栈：" + e.stack;
+    fail_msg += (fail_msg ? "; " : "") + errorInfo;
+
+    // 在出现异常时进行截图
+    try {
+        taskLog("检测到异常，开始截图记录错误状态...");
+        var errorScreenshotPath = Nest_ScreenCapture();
+        taskLog("异常截图已保存：" + errorScreenshotPath);
+        fail_msg += "异常截图路径：" + errorScreenshotPath;
+    } catch (screenshotError) {
+        taskLog("异常截图失败：" + screenshotError.message);
+        fail_msg += "异常截图失败：" + screenshotError.message;
+    }
+
+    forceStop_APP(targetPackageName);
+    Logger.error("===错误报告开始===");
+    Logger.error("错误信息：" + e.message);
+    Logger.error("错误堆栈：" + e.stack);
+    Logger.error("===错误报告结束===");
+    Logger.error("脚本执行Error时间：" + new Date().toLocaleString());
+
+    // 在异常退出前保存统计结果
+    try {
+        var result = {
+            total_target: total_target,
+            total_success: total_success,
+            fail_msg: fail_msg
+        };
+        taskLog("异常情况统计结果：" + JSON.stringify(result, null, 2));
+        files.write(resultPath, JSON.stringify(result, null, 2));
+        taskLog("已保存异常统计结果到：" + resultPath);
+    } catch(saveError) {
+        console.error("保存异常统计结果失败：" + saveError.message);
+    }
+
+    Utils.cleanup();
 }
 
 
@@ -109,25 +417,22 @@ function throw_error_storage_not_enough(){
 }
 
 taskLog("开始强制关闭同名的脚本...")
-let currentEngine = engines.myEngine()
-let runningEngines = engines.all()
-let currentSource = currentEngine.getSource() + ''
+var currentEngine = engines.myEngine()
+var runningEngines = engines.all()
+var currentSource = currentEngine.getSource() + ''
 if (runningEngines.length > 1) {
-  runningEngines.forEach(compareEngine => {
-    let compareSource = compareEngine.getSource() + ''
+  for (var i = 0; i < runningEngines.length; i++) {
+    var compareEngine = runningEngines[i];
+    var compareSource = compareEngine.getSource() + ''
     if (currentEngine.id !== compareEngine.id && compareSource === currentSource) {
       // 强制关闭同名的脚本
       compareEngine.forceStop()
     }
-  })
+  }
 }
-
 
 sleep(3000)
 taskLog("准备启动TikTok...")
-
-var targetPackageName = null;
-var targetClassName = null;
 
 function isAppInstalled(packageName) {
     var pm = context.getPackageManager();
@@ -139,32 +444,37 @@ function isAppInstalled(packageName) {
     }
 }
 
-if (isAppInstalled(GLOBAL_TikTokPackageName)) {
-    targetPackageName = GLOBAL_TikTokPackageName;
-    targetClassName = "com.ss.android.ugc.aweme.main.MainActivity";
-    taskLog("检测到已安装全球版TikTok，准备启动...");
-} else if (isAppInstalled(ASIA_TikTokPackageName)) {
-    targetPackageName = ASIA_TikTokPackageName;
-    targetClassName = "com.ss.android.ugc.aweme.main.MainActivity";
-    taskLog("检测到已安装亚洲版TikTok，准备启动...");
-} else {
-    toast("未检测到TikTok已安装，请先安装TikTok！");
-    taskLog("未检测到TikTok已安装，脚本终止。");
-    exit();
+// 检测并启动TikTok应用
+function detectAndStartTikTok() {
+    if (isAppInstalled(CONFIG.APP.GLOBAL_PACKAGE)) {
+        targetPackageName = CONFIG.APP.GLOBAL_PACKAGE;
+        targetClassName = CONFIG.APP.MAIN_ACTIVITY;
+        taskLog("检测到已安装全球版TikTok，准备启动...");
+    } else if (isAppInstalled(CONFIG.APP.ASIA_PACKAGE)) {
+        targetPackageName = CONFIG.APP.ASIA_PACKAGE;
+        targetClassName = CONFIG.APP.MAIN_ACTIVITY;
+        taskLog("检测到已安装亚洲版TikTok，准备启动...");
+    } else {
+        toast("未检测到TikTok已安装，请先安装TikTok！");
+        taskLog("未检测到TikTok已安装，脚本终止。");
+        throw new Error("未检测到TikTok安装，请先安装TikTok！"); 
+    }
+
+    forceStop_APP(targetPackageName);
+    sleep(CONFIG.TIMEOUTS.SHORT);
+
+    app.startActivity({
+        action: "android.intent.action.VIEW",
+        packageName: targetPackageName,
+        className: targetClassName
+    });
+
+    taskLog("等待TikTok启动完成, 等待时间：" + (CONFIG.TIMEOUTS.MEDIUM + 2000) + "s");
+    sleep(random(CONFIG.TIMEOUTS.MEDIUM + 2000, CONFIG.TIMEOUTS.LONG));
 }
 
-
-forceStop_APP(targetPackageName)
-sleep(3000)
-
-app.startActivity({
-    action: "android.intent.action.VIEW",
-    packageName: targetPackageName,
-    className: targetClassName
-});
-
-
-sleep(random(3000, 5000))
+// 执行应用检测和启动
+detectAndStartTikTok();
 
 
 
@@ -176,23 +486,11 @@ function getSystemDate(a) {
 
 //打印日志
 function taskLog(_log){
-    toast(_log)
-    console.log(getSystemDate("df") +":" +_log)
-    console.log(_log)
-
-
-    try {
-        //确保目录存在
-        files.ensureDir(RPAFilePath);
-        
-        //将日志写入文件
-        var logContent = getSystemDate("df") + ":" + _log + "\n";
-        // var logContent = _log + "\n";
-        files.append(logFilePath, logContent);
-        
-    } catch(e) {
-        console.error("写入日志文件失败：" + e);
-    }
+    // 显示toast提示
+    toast(_log);
+    
+    // 使用console.log输出（现在会自动写入文件）
+    console.log(_log);
 }
 
 
@@ -400,43 +698,32 @@ function openAppSettings(packageName) {
 
 
 //强制停止TikTok 
-function forceStop_APP(packageName){
-    taskLog("准备强杀:" + packageName + "...")
-    sleep(3000);
-    openAppSettings(packageName)
-    sleep(5000)
+function forceStop_APP(packageName) {
+    taskLog("准备强杀:" + packageName + "...");
+    sleep(CONFIG.TIMEOUTS.SHORT);
+    openAppSettings(packageName);
+    sleep(CONFIG.TIMEOUTS.MEDIUM);
 
-    // 遍历所有可能的强制停止按钮文本
-    for (let lang in FORCE_STOP_TEXT) {
-        let stopText = FORCE_STOP_TEXT[lang];
-        if (text(stopText).exists()) {
-            let forceStopBtn = text(stopText).findOne();
-            if (forceStopBtn && forceStopBtn.clickable()) {
-                forceStopBtn.click();
-                sleep(1000);
-                
-                // 遍历所有可能的确认按钮文本
-                for (let confirmLang in FORCE_STOP_CONFIRM_TEXT) {
-                    let confirmText = FORCE_STOP_CONFIRM_TEXT[confirmLang];
-                    if (text(confirmText).exists()) {
-                        text(confirmText).findOne().click();
-                        taskLog("成功点击'" + stopText + "'按钮并确认");
-                        sleep(3000);
-                        home();
-                        return;
-                    }
-                }
-            } else {
-                taskLog("未找到可点击的'" + stopText + "'按钮");
-            }
+    // 使用统一的多语言点击函数
+    var forceStopSuccess = Utils.clickByText(CONFIG.UI_TEXT.FORCE_STOP);
+    
+    if (forceStopSuccess) {
+        sleep(CONFIG.TIMEOUTS.SHORT);
+        
+        // 点击确认按钮
+        var confirmSuccess = Utils.clickByText(CONFIG.UI_TEXT.FORCE_STOP_CONFIRM);
+        if (confirmSuccess) {
+            taskLog("成功强制停止应用并确认");
         } else {
-            taskLog("未找到'" + stopText + "'按钮");
+            taskLog("强制停止成功但确认失败");
         }
-        sleep(1000);
+        
+        sleep(CONFIG.TIMEOUTS.SHORT);
+        home();
+    } else {
+        taskLog("未找到强制停止按钮，直接返回主页");
+        home();
     }
-
-    // 如果所有语言都尝试失败，返回主页
-    home();
 }
 
 
@@ -465,7 +752,7 @@ function click_home_search_btn(){
                 
                 //fullId("com.zhiliaoapp.musically:id/h0i")
                 //fullId("com.ss.android.ugc.trill:id/h0j")
-                if (img.id() == (GLOBAL_TikTokPackageName+":id/h0i") || img.id() == (ASIA_TikTokPackageName+":id/h0j")) {
+                if (img.id() == (CONFIG.APP.GLOBAL_PACKAGE+":id/h0i") || img.id() == (CONFIG.APP.ASIA_PACKAGE+":id/h0j")) {
                     gz5_img_count++;
                     taskLog("这是第" + gz5_img_count + "个h0i按钮");
                     
@@ -545,7 +832,7 @@ function click_Second_search_btn(){
                 
                 // fullId("com.zhiliaoapp.musically:id/tk1")
                 // fullId("com.ss.android.ugc.trill:id/tk4")
-                if (btn.id() == (GLOBAL_TikTokPackageName +":id/tk1") || btn.id() == (ASIA_TikTokPackageName +":id/tk4")) {
+                if (btn.id() == (CONFIG.APP.GLOBAL_PACKAGE +":id/tk1") || btn.id() == (CONFIG.APP.ASIA_PACKAGE +":id/tk4")) {
                     // 正确调用bounds()方法并点击
                     toast("找到Button控件: 第二个页面的搜索框！" );
 
@@ -574,7 +861,7 @@ function click_LinearLayout_GUANZHU(){
 				//fullId("com.zhiliaoapp.musically:id/iz8")
                 //fullId("com.ss.android.ugc.trill:id/iz9")
 
-                if (linearLayout.id() == (GLOBAL_TikTokPackageName +":id/iz8") || linearLayout.id() == (ASIA_TikTokPackageName +":id/iz9")) {
+                if (linearLayout.id() == (CONFIG.APP.GLOBAL_PACKAGE +":id/iz8") || linearLayout.id() == (CONFIG.APP.ASIA_PACKAGE +":id/iz9")) {
                     var linearLayout_click = clickId(linearLayout.id())
                     if (linearLayout_click) {
                         taskLog("找到LinearLayout控件:开始点击第一个" );
@@ -874,21 +1161,29 @@ function get_all_comments(){
     }
 
 
-try {
+// 主执行函数
+function main() {
+    try {
     
     
 
+    // 设置目标私信数量
     var all_TT_Comment_TEXT = get_all_comments()
     if(all_TT_Comment_TEXT.includes("$${T")){ 
         throw_error_storage_not_enough()
     }
-    toast("所有需要私信的文本数量 = " + all_TT_Comment_TEXT.length)
-    sleep(random(2000,3000))
-
+    
     var all_TT_Users = get_all_TT_Users()
     if(all_TT_Users.includes("$${T")){ 
         throw_error_storage_not_enough()
     }
+    
+    total_target = all_TT_Users.length;
+    taskLog("开始执行TikTok私信任务，目标私信数量：" + total_target);
+    Logger.info("开始执行TikTok私信任务");
+    
+    toast("所有需要私信的文本数量 = " + all_TT_Comment_TEXT.length)
+    sleep(random(2000,3000))
     toast("所有需要私信的用户数量 = " + all_TT_Users.length)
     sleep(random(2000,3000))
 
@@ -980,26 +1275,6 @@ try {
 
                                 textView.setText(messageText)
                                 sleep(random(2000, 4000))
-                
-                    
-
-                                //点击发送按钮
-                                // className("android.widget.ImageView").find().forEach((iv, idx) => {
-                                //     taskLog("ImageView " + idx + ": " + iv.bounds());
-                                // });
-
-                                // taskLog("开始寻找发送按钮.....")
-                                // taskLog("开始寻找发送按钮,device.width * 0.9 = " + device.width * 0.9)
-                                // taskLog("开始寻找发送按钮,device.height * 0.9 = " + device.height * 0.9)
-
-
-                                // let sendButton = className("android.widget.ImageView")
-                                // .filter(function(w) {
-                                //     let b = w.bounds();
-                                //     // 检查是否在右下角区域
-                                //     return b.centerX() > device.width * 0.8 && b.centerY() > device.height * 0.8;
-                                // }).findOne(5000);
-
 
                                 var allImages = className("android.widget.ImageView").find();
                                 if (allImages && allImages.size() > 0) {
@@ -1017,6 +1292,20 @@ try {
                                 }
 
                                 sleep(3000)
+                                
+                                // 私信发送成功，增加成功计数
+                                total_success++;
+                                taskLog("私信发送成功！当前成功数量：" + total_success);
+
+                                //开始截图
+                                sleep(random(3000, 5000))
+                                var screenshotPath = Nest_ScreenCapture();
+                                taskLog("已保存完成后的截图：" + screenshotPath);
+                                sleep(random(3000, 5000))
+
+
+
+                                
                                 back()      
                                 sleep(1000)
                                 back()
@@ -1041,32 +1330,51 @@ try {
 
 
  
-} catch(e) {
-    if (e.message === "TASK_COMPLETED") {
-        taskLog("任务正常完成");
-    } else {
-        handleError(e);
+    } catch (e) {
+        Logger.error("主执行函数发生错误", e);
+        if (e.message === "TASK_COMPLETED") {
+            taskLog("任务正常完成");
+        } else {
+            handleError(e);
+        }
+    } finally {
+        // 清理资源
+        Utils.cleanup();
+
+        // 输出统计信息
+        taskLog("=== 私信统计信息 ===");
+        taskLog("目标私信数量：" + total_target);
+        taskLog("成功私信数量：" + total_success);
+        taskLog("失败数量：" + (total_target - total_success));
+        if (fail_msg) {
+            taskLog("失败信息：" + fail_msg);
+        }
+        taskLog("成功率：" + (total_target > 0 ? (total_success / total_target * 100).toFixed(2) + "%" : "0%"));
+        taskLog("========================");
+
+        taskLog("保存统计结果到备用路径..." );
+        try {
+            var result = {
+                total_target: total_target,
+                total_success: total_success,
+                fail_msg: fail_msg
+            };
+            // 打印统计结果
+            taskLog("统计结果：" + JSON.stringify(result, null, 2));
+            // 使用JSON.stringify将对象转换为JSON字符串，第三个参数2是为了美化输出格式
+            files.write(resultPath, JSON.stringify(result, null, 2));
+            taskLog("已保存统计结果到：" + resultPath);
+        } catch(e) {
+            console.error("保存统计结果失败：" + e.message);
+        }
+        // 刷新媒体库
+        refreshMedia(RPAFilePath);
+        sleep(random(3000, 5000))
     }
-}finally{
-    taskLog("保存统计结果到备用路径..." );
-    try {
-        var result = {
-            total_target: total_target,
-            total_success: total_success,
-            fail_msg: fail_msg
-        };
-        // 打印统计结果
-        taskLog("统计结果：" + JSON.stringify(result, null, 2));
-        // 使用JSON.stringify将对象转换为JSON字符串，第三个参数2是为了美化输出格式
-        files.write(resultPath, JSON.stringify(result, null, 2));
-        taskLog("已保存统计结果到：" + resultPath);
-    } catch(e) {
-        console.error("保存统计结果失败：" + e.message);
-    }
-    // 刷新媒体库
-    refreshMedia(RPAFilePath);
-    sleep(random(3000, 5000))
 }
+
+// 执行主函数
+main();
 
 
 
