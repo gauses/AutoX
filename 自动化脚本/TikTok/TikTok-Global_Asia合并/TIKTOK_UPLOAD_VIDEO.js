@@ -686,13 +686,19 @@ function selectImageByButton(fileName) {
         //fullId("com.zhiliaoapp.musically:id/hkl")
         if(targetPackageName == CONFIG.APP.GLOBAL_PACKAGE){
             autoSelectButton = id(CONFIG.APP.GLOBAL_PACKAGE + ":id/hkl").find();
+            taskLog("查找全球版选择按钮，包名：" + CONFIG.APP.GLOBAL_PACKAGE + ":id/hkl");
         }else{
             autoSelectButton = id(CONFIG.APP.ASIA_PACKAGE + ":id/hkm").find();
+            taskLog("查找亚洲版选择按钮，包名：" + CONFIG.APP.ASIA_PACKAGE + ":id/hkm");
         }
+        
+        taskLog("找到的选择按钮数量：" + (autoSelectButton ? autoSelectButton.size() : 0));
         
         for(var i = 0; i < autoSelectButton.size(); i++) {
             var selectButton = autoSelectButton.get(i);
+            taskLog("处理第 " + (i + 1) + " 个选择按钮");
             if(selectButton) {
+                taskLog("找到有效的选择按钮，开始点击");
                 sleep(1000)
                 // 点击选择按钮
                 selectButton.click();
@@ -702,22 +708,26 @@ function selectImageByButton(fileName) {
                 //点击下一步
                 // fullId("com.zhiliaoapp.musically:id/r1q")
                 // fullId("com.ss.android.ugc.trill:id/r1r")
+                taskLog("开始点击下一步按钮...");
                 if(targetPackageName == CONFIG.APP.GLOBAL_PACKAGE){
                     clickId(CONFIG.APP.GLOBAL_PACKAGE + ":id/r1q")
                 }else{
                     clickId(CONFIG.APP.ASIA_PACKAGE + ":id/r1r")
                 }
+                taskLog("下一步按钮点击完成");
 
                 //发布视频时才会有这个按钮，修改头像时没有这个按钮
                 sleep(5000)
                 //点击下一步
                 // fullId("com.zhiliaoapp.musically:id/l7a")
                 // fullId("com.ss.android.ugc.trill:id/l7b")
+                taskLog("开始点击第二个下一步按钮...");
                 if(targetPackageName == CONFIG.APP.GLOBAL_PACKAGE){
                     clickId(CONFIG.APP.GLOBAL_PACKAGE + ":id/l7a")
                 }else{
                     clickId(CONFIG.APP.ASIA_PACKAGE + ":id/l7b")
                 }
+                taskLog("第二个下一步按钮点击完成");
 
 
                 //可能会出现一个下拉框，提示二次创作：text("確定")
@@ -735,20 +745,21 @@ function selectImageByButton(fileName) {
                     var lastPostButton = allPostButtons.get(allPostButtons.size() - 1);
                     if (lastPostButton) {
                         lastPostButton.click();
-                        break
+                        taskLog("Post按钮点击完成");
                     }
                 }
                 sleep(5000)
 
-
-                var screenshotPath = Nest_ScreenCapture();
-                taskLog("已保存完成后的截图：" + screenshotPath);
-                
-
-                //可能会出现一个下拉框，提示是否添加到主屏幕:text("ADD TO HOME SCREEN")
+                // //可能会出现一个下拉框，提示是否添加到主屏幕:text("ADD TO HOME SCREEN")
+                taskLog("开始查找是否添加到主屏幕.....")
                 findTextByLanguages(CONFIG.UI_TEXT.ADD_TO_HOME_SCREEN)
 
                 sleep(CONFIG.TIMEOUTS.UPLOAD) //上传需要耗时
+
+                // 上传完成后进行截图
+                taskLog("开始准备上传完成后进行截图.....")
+                var screenshotPath = Nest_ScreenCapture();
+                taskLog("已保存完成后的截图：" + screenshotPath);
 
                 // 视频上传成功，增加成功计数
                 total_success++;
