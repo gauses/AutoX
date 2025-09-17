@@ -4,6 +4,53 @@ importClass(java.io.PrintWriter);
 importClass(java.io.FileWriter);
 
 //******************************************************************
+//***********************全局日志拦截器*************************
+//******************************************************************
+
+// 保存原始的console.log方法
+var originalConsoleLog = console.log;
+
+// 全局日志配置（稍后会在文件路径定义后更新）
+var GLOBAL_LOG_CONFIG = {
+    enabled: true,
+    logToFile: true,
+    logToConsole: true,
+    logFilePath: "/sdcard/Download/log/temp_global.log"  // 临时路径，稍后会更新
+};
+
+// 重写console.log方法，使其同时输出到控制台和文件
+console.log = function() {
+    // 调用原始的console.log方法
+    if (GLOBAL_LOG_CONFIG.logToConsole) {
+        originalConsoleLog.apply(console, arguments);
+    }
+    
+    // 将日志写入文件
+    if (GLOBAL_LOG_CONFIG.logToFile && GLOBAL_LOG_CONFIG.enabled) {
+        try {
+            // 确保日志目录存在
+            files.ensureDir("/sdcard/Download/log/");
+            
+            // 将参数转换为字符串
+            var logMessage = Array.prototype.slice.call(arguments).map(function(arg) {
+                return typeof arg === 'object' ? JSON.stringify(arg) : String(arg);
+            }).join(' ');
+            
+            // 添加时间戳
+            var timestamp = getSystemDate("df");
+            var logContent = timestamp + ": " + logMessage + "\n";
+            
+            // 写入文件
+            files.append(GLOBAL_LOG_CONFIG.logFilePath, logContent);
+            
+        } catch(e) {
+            // 如果写入失败，至少输出到控制台
+            originalConsoleLog("日志写入文件失败：" + e);
+        }
+    }
+};
+
+//******************************************************************
 //***********************上传视频*************************
 //******************************************************************
 
@@ -18,6 +65,7 @@ var CONFIG = {
         GLOBAL_PACKAGE: 'com.zhiliaoapp.musically',
         MAIN_ACTIVITY: 'com.ss.android.ugc.aweme.main.MainActivity'
     },
+
     
     // 路径配置
     PATHS: {
@@ -80,7 +128,34 @@ var TT_UPLOAD_VIDEO_DESC = '$${T_上傳影片的說明}';
 var targetPackageName = null;
 var targetClassName = null;
 var elementCache = new Map();
-var handleErrorFlag = false;    
+var handleErrorFlag = false;
+
+// 视频上传统计参数
+var total_target = 0;        // 需要上传的视频总数
+var total_success = 0;       // 成功上传的视频数量
+var fail_msg = "";           // 上传视频时出现的错误信息    
+
+
+
+//保证Java层和JS代码两边的日志文件一致
+var taskLogFileName = "nest_task_log.txt"
+var RPAFilePath = "/sdcard/Download/log/";
+// 如果目录存在且有内容就删除
+if (files.exists(RPAFilePath)) {
+    files.removeDir(RPAFilePath);
+}
+//日志文件路径
+var logFilePath = RPAFilePath + taskLogFileName;
+//确保日志目录存在
+files.ensureDir(RPAFilePath);
+
+// 更新全局日志配置，使用与taskLog相同的日志文件路径
+GLOBAL_LOG_CONFIG.logFilePath = logFilePath;
+
+//执行结果文件路径
+var resultPath = RPAFilePath + "nest_result_rpa.txt";
+//确保日志目录存在
+files.ensureDir(resultPath);
 
 
 //1.autox.js侧边栏的打开USB调试先打开
@@ -232,19 +307,50 @@ events.on('exit', function(){
     openLogActivity();
 });
 
+
+
 function handleError(e) {
     handleErrorFlag = true;
+
+    // 记录失败信息（只记录一次）
+    var errorInfo = "错误信息：" + e.message + " | 错误堆栈：" + e.stack;
+    fail_msg += (fail_msg ? "; " : "") + errorInfo;
+
+    // 在出现异常时进行截图
+    try {
+        taskLog("检测到异常，开始截图记录错误状态...");
+        var errorScreenshotPath = Nest_ScreenCapture();
+        taskLog("异常截图已保存：" + errorScreenshotPath);
+        fail_msg += "异常截图路径：" + errorScreenshotPath;
+    } catch (screenshotError) {
+        taskLog("异常截图失败：" + screenshotError.message);
+        fail_msg += "异常截图失败：" + screenshotError.message;
+    }
+
     forceStop_APP(targetPackageName);
-    
     Logger.error("===错误报告开始===");
     Logger.error("错误信息：" + e.message);
     Logger.error("错误堆栈：" + e.stack);
     Logger.error("===错误报告结束===");
-    
-    // 清理资源
+    Logger.error("脚本执行Error时间：" + new Date().toLocaleString());
+
+    // 在异常退出前保存统计结果
+    try {
+        var result = {
+            total_target: total_target,
+            total_success: total_success,
+            fail_msg: fail_msg
+        };
+        taskLog("异常情况统计结果：" + JSON.stringify(result, null, 2));
+        files.write(resultPath, JSON.stringify(result, null, 2));
+        taskLog("已保存异常统计结果到：" + resultPath);
+    } catch(saveError) {
+        console.error("保存异常统计结果失败：" + saveError.message);
+    }
+
     Utils.cleanup();
-    exit();
 }
+
 
 function throw_error_storage_not_enough(){
     throw new Error("当前设备的存储空间不可用，请关机重启一次设备，然后重新执行一次脚本")
@@ -526,7 +632,7 @@ function selectImageByButton(fileName) {
             for (var i = 0; i < allTextView.size(); i++) {
                 var textView = allTextView.get(i);
                 if (textView) {
-                    taskLog("找到textView控件-Text：" + textView.text());
+                    // taskLog("找到textView控件-Text：" + textView.text());
                     
                     //点击顶部按钮：全部
                     //TextView全部：fullId("com.zhiliaoapp.musically:id/tqg")
@@ -634,11 +740,19 @@ function selectImageByButton(fileName) {
                 }
                 sleep(5000)
 
+
+                var screenshotPath = Nest_ScreenCapture();
+                taskLog("已保存完成后的截图：" + screenshotPath);
+                
+
                 //可能会出现一个下拉框，提示是否添加到主屏幕:text("ADD TO HOME SCREEN")
                 findTextByLanguages(CONFIG.UI_TEXT.ADD_TO_HOME_SCREEN)
 
                 sleep(CONFIG.TIMEOUTS.UPLOAD) //上传需要耗时
 
+                // 视频上传成功，增加成功计数
+                total_success++;
+                taskLog("视频上传成功！当前成功数量：" + total_success);
 
                 //删除临时媒体文件夹
                 var delFolder = CONFIG.PATHS.DOWNLOAD + CONFIG.PATHS.TEMP_MEDIA;
@@ -651,6 +765,10 @@ function selectImageByButton(fileName) {
         }
         
     } catch (e) {
+        // 记录失败信息
+        var errorInfo = "选择图片操作失败：" + e.message;
+        fail_msg += (fail_msg ? "; " : "") + errorInfo;
+        
         console.error("操作失败：" + e);
         return false;
     }
@@ -784,11 +902,26 @@ function clickId(elementId) {
 
 //打印日志
 function taskLog(_log){
-    toast(_log)
-    console.log(getSystemDate("df") +":" +_log)
-
-    //通过日志判断任务有没有结束：
-
+    // 显示toast提示
+    toast(_log);
+    
+    // 使用console.log输出（现在会自动写入文件）
+    console.log(_log);
+    
+    // 如果需要额外的文件写入（使用不同的文件路径），可以取消下面的注释
+    /*
+    try {
+        //确保目录存在
+        files.ensureDir(RPAFilePath);
+        
+        //将日志写入文件
+        var logContent = getSystemDate("df") + ":" + _log + "\n";
+        files.append(logFilePath, logContent);
+        
+    } catch(e) {
+        console.error("写入日志文件失败：" + e);
+    }
+    */
 }
 
 
@@ -1052,9 +1185,57 @@ function click_permission_allow(){
 }
 
 
+//开始录屏截图到本地
+function Nest_ScreenCapture(){
+    // 申请截图权限（会弹系统录屏权限框）
+    if (!requestScreenCapture()) {
+        taskLog("自动化任务-申请截图权限失败");
+    }
+
+    // 申请截图权限（会弹系统录屏权限框）
+    if (!requestScreenCapture()) {
+        taskLog("自动化任务-申请截图权限失败");
+    }
+
+    // 截一张整屏
+    var img = captureScreen();           // 返回 Image 对象
+    if (!img) {
+        taskLog("自动化任务-截图失败");
+    }
+
+    // 保存到相册/文件夹
+    // var dir = "/sdcard/Pictures";
+    // files.ensureDir(dir);
+    // var path = dir + "/nestshot_" + Date.now() + ".png";
+    var path = RPAFilePath + "/nestshot_rpa.png" ;
+    img.saveTo(path);                    // 保存
+    img.recycle();                       // 回收内存
+    taskLog("自动化任务已经完成-已保存截图："+ path);
+
+
+    //刷新媒体库
+    sleep(3000)
+    toast("开始刷新媒体库....");
+    refreshMedia(RPAFilePath)
+    return path
+}
+// 刷新指定路径的媒体库
+function refreshMedia(path) {
+    taskLog("开始刷新媒体库....");
+    // 发送媒体扫描广播
+    media.scanFile(path);
+    // 等待扫描完成
+    sleep(5000);
+    taskLog("媒体库刷新完成.");
+}
+
+
 // 主执行函数
 function main() {
     try {
+        // 设置目标上传数量（当前脚本每次只上传一个视频）
+        total_target = 1;
+        taskLog("开始执行TikTok视频上传任务，目标上传数量：" + total_target);
         Logger.info("开始执行TikTok视频上传任务");
         
         // 点击发布按钮：Tiktok底部中间的Button按钮
@@ -1125,7 +1306,38 @@ function main() {
     } finally {
         // 清理资源
         Utils.cleanup();
-    }
+
+        // 输出统计信息
+        taskLog("=== 视频上传统计信息 ===");
+        taskLog("目标上传数量：" + total_target);
+        taskLog("成功上传数量：" + total_success);
+        taskLog("失败数量：" + (total_target - total_success));
+        if (fail_msg) {
+            taskLog("失败信息：" + fail_msg);
+        }
+        taskLog("成功率：" + (total_target > 0 ? (total_success / total_target * 100).toFixed(2) + "%" : "0%"));
+        taskLog("========================");
+
+
+        taskLog("保存统计结果到备用路径..." );
+        try {
+            var result = {
+                total_target: total_target,
+                total_success: total_success,
+                fail_msg: fail_msg
+            };
+            // 打印统计结果
+            taskLog("统计结果：" + JSON.stringify(result, null, 2));
+            // 使用JSON.stringify将对象转换为JSON字符串，第三个参数2是为了美化输出格式
+            files.write(resultPath, JSON.stringify(result, null, 2));
+            taskLog("已保存统计结果到：" + resultPath);
+        } catch(e) {
+            console.error("保存统计结果失败：" + e.message);
+        }
+            // 刷新媒体库
+            refreshMedia(RPAFilePath);
+            sleep(random(3000, 5000))
+        }
 }
 
 // 执行主函数
