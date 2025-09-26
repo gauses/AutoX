@@ -467,9 +467,6 @@ detectAndStartTikTok();
 
 
 //使用冰拓进行打码
-
-
-
 function save_Bingtop_Pic(){
     // 申请截图权限（会弹系统录屏权限框）
     if (!requestScreenCapture()) {
@@ -1416,6 +1413,15 @@ function main() {
         taskLog("冰拓打码结果: " + captchaCode);
         if(captchaCode){
             taskLog("冰拓打码成功");
+            
+            //3.执行滑块移动
+            var moveResult = performSliderMove(captchaCode);
+            if(moveResult){
+                taskLog("滑块移动成功");
+                sleep(3000); // 等待验证完成
+            }else{
+                taskLog("滑块移动失败");
+            }
         }else{
             taskLog("冰拓打码失败");
         }
@@ -1529,6 +1535,337 @@ function main() {
             refreshMedia(RPAFilePath);
             sleep(random(3000, 5000))
         }
+}
+
+/**
+ * 执行滑块移动操作
+ * @param {string} captchaCode 冰拓返回的坐标字符串，格式如 "1143,197"
+ * @returns {boolean} 移动是否成功
+ */
+function performSliderMove(captchaCode) {
+    try {
+        taskLog("开始执行滑块移动，坐标：" + captchaCode);
+        
+        // 解析坐标
+        var coords = captchaCode.split(',');
+        if (coords.length !== 2) {
+            taskLog("坐标格式错误：" + captchaCode);
+            return false;
+        }
+        
+        var targetX = parseInt(coords[0]);
+        var targetY = parseInt(coords[1]);
+        
+        if (isNaN(targetX) || isNaN(targetY)) {
+            taskLog("坐标解析失败：" + captchaCode);
+            return false;
+        }
+        
+        taskLog("目标坐标：X=" + targetX + ", Y=" + targetY);
+        
+        // 查找滑块元素（通常是可拖拽的拼图块）
+        var sliderElement = findSliderElement();
+        if (!sliderElement) {
+            taskLog("未找到滑块元素");
+            return false;
+        }
+        
+        // 获取滑块当前位置
+        var sliderBounds = sliderElement.bounds();
+        var startX = sliderBounds.centerX();
+        var startY = sliderBounds.centerY();
+        
+        taskLog("滑块当前位置：X=" + startX + ", Y=" + startY);
+        taskLog("需要移动到：X=" + targetX + ", Y=" + targetY);
+        
+        // 计算移动距离
+        var deltaX = targetX - startX;
+        var deltaY = targetY - startY;
+        
+        taskLog("移动距离：deltaX=" + deltaX + ", deltaY=" + deltaY);
+        
+        // 执行拖拽操作
+        var dragResult = performDrag(startX, startY, targetX, targetY);
+        
+        if (dragResult) {
+            taskLog("滑块拖拽完成");
+            return true;
+        } else {
+            taskLog("滑块拖拽失败");
+            return false;
+        }
+        
+    } catch (e) {
+        taskLog("滑块移动异常：" + e.message);
+        return false;
+    }
+}
+
+/**
+ * 查找滑块元素
+ * @returns {Object} 滑块元素对象
+ */
+function findSliderElement() {
+    try {
+        taskLog("开始查找滑块元素...");
+        
+        // 等待验证码对话框完全加载
+        taskLog("等待验证码对话框加载...");
+        sleep(2000);
+        
+        // 方法1：查找所有可能的元素类型
+        taskLog("方法1：查找所有可能的元素类型");
+        var elementTypes = [
+            "android.view.View",
+            "android.widget.ImageView", 
+            "android.widget.Button",
+            "android.widget.TextView",
+            "android.widget.LinearLayout",
+            "android.widget.RelativeLayout",
+            "android.widget.FrameLayout",
+            "android.view.ViewGroup"
+        ];
+        
+        for (var typeIndex = 0; typeIndex < elementTypes.length; typeIndex++) {
+            var elementType = elementTypes[typeIndex];
+            taskLog("查找元素类型: " + elementType);
+            
+            var elements = className(elementType).find();
+            taskLog("找到" + elementType + "元素总数：" + (elements ? elements.size() : 0));
+            
+            if (elements && elements.size() > 0) {
+                for (var i = 0; i < elements.size(); i++) {
+                    var element = elements.get(i);
+                    if (element) {
+                        var bounds = element.bounds();
+                        var isClickable = element.clickable();
+                        var desc = element.desc();
+                        var text = element.text();
+                        var id = element.id();
+                        
+                        taskLog(elementType + "元素[" + i + "]: bounds=" + bounds + 
+                               ", clickable=" + isClickable + 
+                               ", desc='" + desc + "'" + 
+                               ", text='" + text + "'" + 
+                               ", id='" + id + "'");
+                        
+                        // 检查是否可能是滑块（横向条形，可点击）
+                        if (isClickable && bounds.height() < 150 && bounds.width() > 100) {
+                            taskLog("发现可能的滑块元素[" + i + "]: 类型=" + elementType + 
+                                   ", 高度=" + bounds.height() + ", 宽度=" + bounds.width());
+                            return element;
+                        }
+                    }
+                }
+            }
+        }
+        
+        // 方法2：通过坐标直接查找（在目标坐标附近查找可点击元素）
+        taskLog("方法2：在目标坐标附近查找可点击元素");
+        var targetX = 1029; // 从日志中获取的目标X坐标
+        var targetY = 428;  // 从日志中获取的目标Y坐标
+        var searchRadius = 100; // 搜索半径
+        
+        var searchArea = className("android.widget.Button").boundsInside(
+            targetX - searchRadius, 
+            targetY - searchRadius, 
+            targetX + searchRadius, 
+            targetY + searchRadius
+        ).find();
+        
+        taskLog("在目标坐标附近找到Button元素数量：" + (searchArea ? searchArea.size() : 0));
+        
+        if (searchArea && searchArea.size() > 0) {
+            for (var j = 0; j < searchArea.size(); j++) {
+                var element = searchArea.get(j);
+                if (element && element.clickable()) {
+                    var bounds = element.bounds();
+                    taskLog("在目标坐标附近找到可点击元素[" + j + "]: bounds=" + bounds);
+                    return element;
+                }
+            }
+        }
+        
+        // 方法3：查找所有可点击元素
+        taskLog("方法3：查找所有可点击元素");
+        var allClickableElements = className("android.widget.Button").clickable(true).find();
+        taskLog("找到所有可点击Button元素总数：" + (allClickableElements ? allClickableElements.size() : 0));
+        
+        if (allClickableElements && allClickableElements.size() > 0) {
+            for (var k = 0; k < allClickableElements.size(); k++) {
+                var element = allClickableElements.get(k);
+                if (element) {
+                    var bounds = element.bounds();
+                    var desc = element.desc();
+                    var text = element.text();
+                    var id = element.id();
+                    
+                    taskLog("可点击Button元素[" + k + "]: bounds=" + bounds + 
+                           ", desc='" + desc + "'" + 
+                           ", text='" + text + "'" + 
+                           ", id='" + id + "'");
+                    
+                    // 检查是否可能是滑块（横向条形）
+                    if (bounds.height() < 150 && bounds.width() > 100) {
+                        taskLog("发现可能的滑块元素[" + k + "]: 高度=" + bounds.height() + ", 宽度=" + bounds.width());
+                        return element;
+                    }
+                }
+            }
+        }
+        
+        // 方法4：通过文本查找
+        taskLog("方法4：通过文本查找滑块相关元素");
+        var textKeywords = ["Drag", "拖拽", "slider", "puzzle", "验证"];
+        
+        for (var t = 0; t < textKeywords.length; t++) {
+            var keyword = textKeywords[t];
+            taskLog("查找包含文本'" + keyword + "'的元素");
+            
+            var textElements = textContains(keyword).find();
+            taskLog("找到包含'" + keyword + "'的元素数量：" + (textElements ? textElements.size() : 0));
+            
+            if (textElements && textElements.size() > 0) {
+                for (var m = 0; m < textElements.size(); m++) {
+                    var element = textElements.get(m);
+                    if (element && element.clickable()) {
+                        var bounds = element.bounds();
+                        taskLog("通过文本找到可点击元素[" + m + "]: bounds=" + bounds + ", text='" + element.text() + "'");
+                        return element;
+                    }
+                }
+            }
+        }
+        
+        // 方法5：直接使用坐标点击（如果找不到元素，直接点击目标坐标）
+        taskLog("方法5：无法找到滑块元素，将直接使用坐标点击");
+        taskLog("目标坐标: X=" + targetX + ", Y=" + targetY);
+        
+        // 创建一个虚拟元素对象，用于后续的拖拽操作
+        var virtualElement = {
+            bounds: function() {
+                return {
+                    centerX: function() { return targetX; },
+                    centerY: function() { return targetY; }
+                };
+            },
+            clickable: function() { return true; }
+        };
+        
+        taskLog("使用虚拟元素进行拖拽操作");
+        return virtualElement;
+        
+    } catch (e) {
+        taskLog("查找滑块元素异常：" + e.message);
+        return null;
+    }
+}
+
+/**
+ * 执行拖拽操作
+ * @param {number} startX 起始X坐标
+ * @param {number} startY 起始Y坐标
+ * @param {number} endX 结束X坐标
+ * @param {number} endY 结束Y坐标
+ * @returns {boolean} 拖拽是否成功
+ */
+function performDrag(startX, startY, endX, endY) {
+    try {
+        taskLog("开始执行拖拽：从(" + startX + "," + startY + ")到(" + endX + "," + endY + ")");
+        
+        // 添加随机偏移，模拟人类操作
+        var randomOffset = 3;
+        startX += random(-randomOffset, randomOffset);
+        startY += random(-randomOffset, randomOffset);
+        endX += random(-randomOffset, randomOffset);
+        endY += random(-randomOffset, randomOffset);
+        
+        // 确保坐标在屏幕范围内
+        startX = Math.max(0, Math.min(startX, device.width));
+        startY = Math.max(0, Math.min(startY, device.height));
+        endX = Math.max(0, Math.min(endX, device.width));
+        endY = Math.max(0, Math.min(endY, device.height));
+        
+        taskLog("调整后坐标：从(" + startX + "," + startY + ")到(" + endX + "," + endY + ")");
+        
+        // 方法1：使用多点拖拽模拟更自然的滑动
+        taskLog("使用多点拖拽方法");
+        var steps = 15; // 增加中间点数量
+        var totalDuration = random(1200, 1800); // 增加拖拽时间
+        var stepDuration = totalDuration / steps;
+        
+        // 先按下
+        click(startX, startY);
+        sleep(random(50, 100));
+        
+        // 分段移动，模拟人类拖拽轨迹
+        for (var i = 1; i <= steps; i++) {
+            var progress = i / steps;
+            
+            // 使用贝塞尔曲线模拟更自然的拖拽路径
+            var t = progress;
+            var currentX = startX + (endX - startX) * t;
+            var currentY = startY + (endY - startY) * t;
+            
+            // 添加轻微的曲线偏移，模拟人类手部运动
+            if (i > 1 && i < steps) {
+                var curveOffset = Math.sin(progress * Math.PI) * 10;
+                currentY += curveOffset;
+            }
+            
+            // 确保坐标在屏幕范围内
+            currentX = Math.max(0, Math.min(currentX, device.width));
+            currentY = Math.max(0, Math.min(currentY, device.height));
+            
+            // 移动到当前点
+            click(currentX, currentY);
+            sleep(stepDuration + random(-20, 20)); // 添加随机时间变化
+        }
+        
+        // 最后释放
+        click(endX, endY);
+        sleep(random(100, 200));
+        
+        taskLog("多点拖拽执行完成");
+        return true;
+        
+    } catch (e) {
+        taskLog("多点拖拽异常：" + e.message);
+        
+        // 方法2：使用简单swipe作为备用
+        try {
+            taskLog("尝试使用简单swipe方法");
+            var swipeDuration = random(1000, 1500);
+            swipe(startX, startY, endX, endY, swipeDuration);
+            sleep(random(200, 400));
+            taskLog("简单swipe执行完成");
+            return true;
+        } catch (e2) {
+            taskLog("简单swipe也失败：" + e2.message);
+            
+            // 方法3：使用多次点击模拟拖拽
+            try {
+                taskLog("尝试使用多次点击方法");
+                var steps = 8;
+                for (var i = 0; i <= steps; i++) {
+                    var progress = i / steps;
+                    var currentX = startX + (endX - startX) * progress;
+                    var currentY = startY + (endY - startY) * progress;
+                    
+                    currentX = Math.max(0, Math.min(currentX, device.width));
+                    currentY = Math.max(0, Math.min(currentY, device.height));
+                    
+                    click(currentX, currentY);
+                    sleep(random(80, 150));
+                }
+                taskLog("多次点击执行完成");
+                return true;
+            } catch (e3) {
+                taskLog("所有拖拽方法都失败：" + e3.message);
+                return false;
+            }
+        }
+    }
 }
 
 // 执行主函数
