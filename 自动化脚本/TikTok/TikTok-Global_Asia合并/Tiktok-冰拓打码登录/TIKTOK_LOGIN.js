@@ -5,6 +5,10 @@ importClass(java.io.FileWriter);
 
 //******************************************************************
 //***********************使用购买的账号密码进行登录Tiktok*************************
+//打码 ：https://www.bingtop.com/static/html/autojs.html
+//购买 ：https://bingtop.com/account/index.html
+//TK平台：http://www.tkyingxiao.com/accountManagement/accountNotLogin
+//Nest平台：https://cloud.nestbrowser.com/#/account/used-list
 //******************************************************************
 
 // 保存原始的console.log方法
@@ -459,6 +463,74 @@ detectAndStartTikTok();
 //******************************************************************
 //******************************************************************
 //******************************************************************
+
+
+
+//使用冰拓进行打码
+
+
+
+function save_Bingtop_Pic(){
+    // 申请截图权限（会弹系统录屏权限框）
+    if (!requestScreenCapture()) {
+        taskLog("自动化任务-申请截图权限失败");
+    }
+
+    // 申请截图权限（会弹系统录屏权限框）
+    if (!requestScreenCapture()) {
+        taskLog("自动化任务-申请截图权限失败");
+    }
+
+    // 截一张整屏
+    var img = captureScreen();           // 返回 Image 对象
+    if (!img) {
+        taskLog("自动化任务-截图失败");
+    }
+
+    // 保存到相册/文件夹
+    var path = RPAFilePath + "/bingtop.png" ;
+    img.saveTo(path);                    // 保存
+    img.recycle();                       // 回收内存
+    taskLog("已保存Tiktok登陆验证码截图："+ path);
+
+
+    //刷新媒体库
+    sleep(3000)
+    toast("开始刷新媒体库....");
+    refreshMedia(RPAFilePath)
+    return path
+}
+
+function use_Bingtop_code(){
+    var imgPath = RPAFilePath + "/bingtop.png" ;
+    var imgfp = images.read(imgPath);
+    var img64 = images.toBase64(imgfp);
+    var response = http.post("https://www.bingtop.com/ocr/upload/",{
+        "username": "jockys",   //账号
+        "password": "Yeyu0927", //密码
+        "captchaData": img64,
+        //验证码类型：https://www.bingtop.com/type/
+        "captchaType": 1310 //滑块式图像，返回缺口位置 x,y 坐标值
+    },{
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'}
+    });
+
+    var dictdata = response.body.json();
+    taskLog("冰拓打码结果: " + JSON.stringify(dictdata, null, 2));
+    /*
+    23:28:50.658/D: 冰拓打码结果: {
+        "code": 0,
+        "message": "",
+        "data": {
+            "captchaId": "1310-b783e8ff-1447-4b9b-a358-70ff45667617",
+            "captchaType": "1310",
+            "recognition": "1143,197"
+        }
+        }
+    */
+    var captchaCode = dictdata["data"]["recognition"]; // 得到验证码，存于captchaCode变量中
+    return captchaCode;
+}
 
 
 
@@ -1239,50 +1311,7 @@ function main() {
         }
         sleep(random(3000, 5000))
 
-
-
-
-        // //开始切换账号类型
-        // //切换成:text("Email / Username")
-        // //className("android.view.ViewGroup")
-        // //fullId("com.ss.android.ugc.trill:id/d8t")
-        // //fullId("com.zhiliaoapp.musically:id/d8s")
-        // var allViewGroup = className("android.view.ViewGroup").find();
-        // taskLog("找到allViewGroup: 全部 = "  + allViewGroup.size());
-        // if (allViewGroup && allViewGroup.size() > 0) {
-        //     for (var i = 0; i < allViewGroup.size(); i++) {
-        //         var viewGroup = allViewGroup.get(i);
-        //         if (viewGroup) {
-        //             taskLog("找到ViewGroup: ID = "  +viewGroup.id());
-        //             if (viewGroup.id() == (CONFIG.APP.GLOBAL_PACKAGE +":id/d8t") || viewGroup.id() == (CONFIG.APP.ASIA_PACKAGE +":id/d8s")) {
-        //                 taskLog("找到顶部控件: Email / Username" );
-        //                 var bounds = viewGroup.bounds();
-        //                 click(bounds.centerX(), bounds.centerY());
-        //                 break;
-        //             }
-        //         }
-        //     }
-        // }
-
-        // //开始切换账号类型
-        // //fullId("android:id/text1") fullId("android:id/text1")
-        // var allTextView = className("android.widget.TextView").find();
-        // taskLog("找到allTextView: 全部 = "  + allTextView.size());
-        // if (allTextView && allTextView.size() > 0) {
-        //     for (var i = 0; i < allTextView.size(); i++) {
-        //         var textView = allTextView.get(i);
-        //         if (textView) {
-        //             taskLog("开始切换账号类型:  text = " + textView.text() + "，ID = " + textView.id());
-        //             if (textView.id() == ("android:id/text1")) {
-        //                 // taskLog("开始切换账号类型:  text = " + textView.text());
-        //                 var bounds = textView.bounds();
-        //                 click(bounds.centerX(), bounds.centerY());
-        //                 break;
-        //             }
-        //         }
-        //     }
-        // }
-
+       
         //开始切换账号类型
         var allTextView = className("android.widget.TextView").find();
         taskLog("开始切换账号类型: 全部 = "  + allTextView.size());
@@ -1375,7 +1404,24 @@ function main() {
                 }
             }
         }
-        sleep(random(300000, 500000))
+        sleep(random(45000, 50000))
+
+
+        //此时出现验证码，开始使用冰拓进行打码
+        //1.先截图，保存
+        save_Bingtop_Pic();
+
+        //2.调用冰拓打码
+        var captchaCode = use_Bingtop_code();
+        taskLog("冰拓打码结果: " + captchaCode);
+        if(captchaCode){
+            taskLog("冰拓打码成功");
+        }else{
+            taskLog("冰拓打码失败");
+        }
+
+        
+        sleep(random(800000, 1000000))
 
 
 
