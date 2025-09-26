@@ -1467,7 +1467,7 @@ function main() {
                 }
             }
         }
-        sleep(random(60000, 90000))
+        sleep(random(45000, 60000))
 
 
         //此时出现验证码，开始使用冰拓进行打码
@@ -1483,8 +1483,9 @@ function main() {
             //3.执行滑块移动
             var moveResult = performSliderMove(captchaCode);
             if(moveResult){
-                taskLog("滑块移动成功");
-                sleep(3000); // 等待验证完成
+                taskLog("滑块移动成功，等待验证码系统验证...");
+                sleep(random(3000, 5000)); // 等待3-5秒，配合拖拽后的4-6秒等待
+                taskLog("验证码验证等待完成");
             }else{
                 taskLog("滑块移动失败");
             }
@@ -1667,7 +1668,8 @@ function performSliderMove(captchaCode) {
         var targetX = frameBounds.left + relativeX;
         var targetY = frameBounds.top + relativeY;
         
-        taskLog("转换后的绝对坐标：X=" + targetX + ", Y=" + targetY);
+        taskLog("冰拓返回的绝对坐标：X=" + targetX + ", Y=" + targetY);
+
         
         // 查找滑块元素（通常是可拖拽的拼图块）
         var sliderElement = findSliderElement();
@@ -1682,16 +1684,16 @@ function performSliderMove(captchaCode) {
         var startY = sliderBounds.centerY();
         
         taskLog("滑块当前位置：X=" + startX + ", Y=" + startY);
-        taskLog("需要移动到：X=" + targetX + ", Y=" + targetY);
+        taskLog("冰拓返回的目标位置：X=" + targetX + ", Y=" + targetY);
         
-        // 计算移动距离
+        // 计算移动距离 - 滑块验证码只需要水平移动
         var deltaX = targetX - startX;
-        var deltaY = targetY - startY;
+        var deltaY = 0; // 滑块验证码通常不需要垂直移动，保持Y坐标不变
         
         taskLog("移动距离：deltaX=" + deltaX + ", deltaY=" + deltaY);
         
-        // 执行拖拽操作
-        var dragResult = performDrag(startX, startY, targetX, targetY);
+        // 执行拖拽操作 - 保持Y坐标不变，只移动X坐标
+        var dragResult = performDrag(startX, startY, targetX, startY);
         
         if (dragResult) {
             taskLog("滑块拖拽完成");
@@ -1719,8 +1721,8 @@ function findSliderElement() {
         taskLog("等待验证码对话框加载...");
         sleep(2000);
         
-        // 方法1：查找所有可能的元素类型
-        taskLog("方法1：查找所有可能的元素类型");
+        // 方法1：查找所有可拖拽的元素（简化版）
+        taskLog("方法1：查找可拖拽的元素");
         var elementTypes = [
             "android.view.View",
             "android.widget.ImageView", 
@@ -1728,8 +1730,7 @@ function findSliderElement() {
             "android.widget.TextView",
             "android.widget.LinearLayout",
             "android.widget.RelativeLayout",
-            "android.widget.FrameLayout",
-            "android.view.ViewGroup"
+            "android.widget.FrameLayout"
         ];
         
         for (var typeIndex = 0; typeIndex < elementTypes.length; typeIndex++) {
@@ -1749,15 +1750,10 @@ function findSliderElement() {
                         var text = element.text();
                         var id = element.id();
                         
-                        taskLog(elementType + "元素[" + i + "]: bounds=" + bounds + 
-                               ", clickable=" + isClickable + 
-                               ", desc='" + desc + "'" + 
-                               ", text='" + text + "'" + 
-                               ", id='" + id + "'");
-                        
-                        // 检查是否可能是滑块（横向条形，不要求可点击）
-                        if (bounds.height() < 150 && bounds.width() > 100) {
-                            taskLog("发现可能的滑块元素[" + i + "]: 类型=" + elementType + 
+                        // 简化判断：只要是合理大小的元素就认为是可拖拽的
+                        if (bounds.height() > 50 && bounds.height() < 200 && 
+                            bounds.width() > 50 && bounds.width() < 300) {
+                            taskLog("发现可拖拽元素[" + i + "]: 类型=" + elementType + 
                                    ", 高度=" + bounds.height() + ", 宽度=" + bounds.width() + 
                                    ", clickable=" + isClickable);
                             return element;
@@ -1767,35 +1763,8 @@ function findSliderElement() {
             }
         }
         
-        // 方法2：通过坐标直接查找（在目标坐标附近查找可点击元素）
-        taskLog("方法2：在目标坐标附近查找可点击元素");
-        var targetX = 1029; // 从日志中获取的目标X坐标
-        var targetY = 428;  // 从日志中获取的目标Y坐标
-        var searchRadius = 100; // 搜索半径
-        
-        var searchArea = className("android.widget.Button").boundsInside(
-            targetX - searchRadius, 
-            targetY - searchRadius, 
-            targetX + searchRadius, 
-            targetY + searchRadius
-        ).find();
-        
-        taskLog("在目标坐标附近找到Button元素数量：" + (searchArea ? searchArea.size() : 0));
-        
-        if (searchArea && searchArea.size() > 0) {
-            for (var j = 0; j < searchArea.size(); j++) {
-                var element = searchArea.get(j);
-                if (element) {
-                    var bounds = element.bounds();
-                    var isClickable = element.clickable();
-                    taskLog("在目标坐标附近找到元素[" + j + "]: bounds=" + bounds + ", clickable=" + isClickable);
-                    return element;
-                }
-            }
-        }
-        
-        // 方法3：查找所有Button元素（包括不可点击的）
-        taskLog("方法3：查找所有Button元素");
+        // 方法2：查找所有Button元素（简化版）
+        taskLog("方法2：查找所有Button元素");
         var allButtonElements = className("android.widget.Button").find();
         taskLog("找到所有Button元素总数：" + (allButtonElements ? allButtonElements.size() : 0));
         
@@ -1805,65 +1774,64 @@ function findSliderElement() {
                 if (element) {
                     var bounds = element.bounds();
                     var isClickable = element.clickable();
-                    var desc = element.desc();
-                    var text = element.text();
-                    var id = element.id();
                     
-                    taskLog("Button元素[" + k + "]: bounds=" + bounds + 
-                           ", clickable=" + isClickable +
-                           ", desc='" + desc + "'" + 
-                           ", text='" + text + "'" + 
-                           ", id='" + id + "'");
-                    
-                    // 检查是否可能是滑块（横向条形）
-                    if (bounds.height() < 150 && bounds.width() > 100) {
-                        taskLog("发现可能的滑块元素[" + k + "]: 高度=" + bounds.height() + ", 宽度=" + bounds.width() + ", clickable=" + isClickable);
+                    // 简化判断：只要是合理大小的Button就认为是可拖拽的
+                    if (bounds.height() > 50 && bounds.height() < 200 && 
+                        bounds.width() > 50 && bounds.width() < 300) {
+                        taskLog("发现可拖拽Button元素[" + k + "]: 高度=" + bounds.height() + ", 宽度=" + bounds.width() + ", clickable=" + isClickable);
                         return element;
                     }
                 }
             }
         }
         
-        // 方法4：通过文本查找
-        taskLog("方法4：通过文本查找滑块相关元素");
-        var textKeywords = ["Drag", "拖拽", "slider", "puzzle", "验证"];
+        // 方法3：查找所有ImageView元素
+        taskLog("方法3：查找所有ImageView元素");
+        var allImageElements = className("android.widget.ImageView").find();
+        taskLog("找到所有ImageView元素总数：" + (allImageElements ? allImageElements.size() : 0));
         
-        for (var t = 0; t < textKeywords.length; t++) {
-            var keyword = textKeywords[t];
-            taskLog("查找包含文本'" + keyword + "'的元素");
-            
-            var textElements = textContains(keyword).find();
-            taskLog("找到包含'" + keyword + "'的元素数量：" + (textElements ? textElements.size() : 0));
-            
-            if (textElements && textElements.size() > 0) {
-                for (var m = 0; m < textElements.size(); m++) {
-                    var element = textElements.get(m);
-                    if (element && element.clickable()) {
-                        var bounds = element.bounds();
-                        taskLog("通过文本找到可点击元素[" + m + "]: bounds=" + bounds + ", text='" + element.text() + "'");
+        if (allImageElements && allImageElements.size() > 0) {
+            for (var m = 0; m < allImageElements.size(); m++) {
+                var element = allImageElements.get(m);
+                if (element) {
+                    var bounds = element.bounds();
+                    var isClickable = element.clickable();
+                    
+                    // 简化判断：只要是合理大小的ImageView就认为是可拖拽的
+                    if (bounds.height() > 50 && bounds.height() < 200 && 
+                        bounds.width() > 50 && bounds.width() < 300) {
+                        taskLog("发现可拖拽ImageView元素[" + m + "]: 高度=" + bounds.height() + ", 宽度=" + bounds.width() + ", clickable=" + isClickable);
                         return element;
                     }
                 }
             }
         }
         
-        // 方法5：直接使用坐标点击（如果找不到元素，直接点击目标坐标）
-        taskLog("方法5：无法找到滑块元素，将直接使用坐标点击");
-        taskLog("目标坐标: X=" + targetX + ", Y=" + targetY);
+        // 方法4：如果前面都没找到，直接使用第一个合理大小的元素
+        taskLog("方法4：查找任意合理大小的元素");
+        var allElements = className("android.view.View").find();
+        taskLog("找到所有View元素总数：" + (allElements ? allElements.size() : 0));
         
-        // 创建一个虚拟元素对象，用于后续的拖拽操作
-        var virtualElement = {
-            bounds: function() {
-                return {
-                    centerX: function() { return targetX; },
-                    centerY: function() { return targetY; }
-                };
-            },
-            clickable: function() { return true; }
-        };
+        if (allElements && allElements.size() > 0) {
+            for (var n = 0; n < allElements.size(); n++) {
+                var element = allElements.get(n);
+                if (element) {
+                    var bounds = element.bounds();
+                    var isClickable = element.clickable();
+                    
+                    // 只要是合理大小的元素就认为是可拖拽的
+                    if (bounds.height() > 30 && bounds.height() < 300 && 
+                        bounds.width() > 30 && bounds.width() < 500) {
+                        taskLog("发现可拖拽View元素[" + n + "]: 高度=" + bounds.height() + ", 宽度=" + bounds.width() + ", clickable=" + isClickable);
+                        return element;
+                    }
+                }
+            }
+        }
         
-        taskLog("使用虚拟元素进行拖拽操作");
-        return virtualElement;
+        // 方法5：如果还是找不到，返回null
+        taskLog("方法5：未找到任何可拖拽的元素");
+        return null;
         
     } catch (e) {
         taskLog("查找滑块元素异常：" + e.message);
@@ -1898,101 +1866,154 @@ function performDrag(startX, startY, endX, endY) {
         
         taskLog("调整后坐标：从(" + startX + "," + startY + ")到(" + endX + "," + endY + ")");
         
-        // 方法1：使用连续拖拽模拟更丝滑的滑动
-        taskLog("使用连续拖拽方法");
-        var steps = 30; // 增加中间点数量，让轨迹更密集
-        var totalDuration = random(800, 1200); // 减少总时间，让拖拽更快
-        var stepDuration = totalDuration / steps;
+        // 方法1：使用手势模拟实现更自然的拖拽
+        taskLog("使用手势模拟实现更自然的拖拽");
         
-        // 使用手势API进行连续拖拽
-        var gesture = gestures.create();
-        
-        // 添加起始点
-        gesture.addPoint(startX, startY, 0);
-        
-        // 添加中间轨迹点，模拟丝滑的拖拽
-        for (var i = 1; i < steps; i++) {
-            var progress = i / steps;
+        try {
+            // 使用手势API模拟更自然的拖拽
+            var totalDuration = random(2500, 4000); // 更长的拖拽时间
+            var steps = 15; // 更多步骤，让轨迹更平滑
             
-            // 使用缓动函数模拟更自然的拖拽速度
-            var easeProgress = 1 - Math.pow(1 - progress, 3); // 缓出效果
+            // 计算轨迹点，使用贝塞尔曲线模拟自然轨迹
+            var points = [];
+            for (var i = 0; i <= steps; i++) {
+                var progress = i / steps;
+                
+                // 使用缓动函数，开始慢，中间快，结束慢
+                var easeProgress;
+                if (progress < 0.5) {
+                    easeProgress = 2 * progress * progress;
+                } else {
+                    easeProgress = 1 - Math.pow(-2 * progress + 2, 2) / 2;
+                }
+                
+                // 添加轻微的随机偏移，模拟手抖
+                var randomOffsetX = random(-2, 2);
+                var randomOffsetY = random(-1, 1);
+                
+                var currentX = startX + (endX - startX) * easeProgress + randomOffsetX;
+                var currentY = startY + (endY - startY) * easeProgress + randomOffsetY;
+                
+                // 确保坐标在屏幕范围内
+                currentX = Math.max(0, Math.min(currentX, device.width));
+                currentY = Math.max(0, Math.min(currentY, device.height));
+                
+                points.push([currentX, currentY]);
+            }
             
-            var currentX = startX + (endX - startX) * easeProgress;
-            var currentY = startY + (endY - startY) * easeProgress;
+            // 使用手势API执行拖拽
+            var gesturePoints = [];
+            for (var k = 0; k < points.length; k++) {
+                gesturePoints.push(points[k]);
+            }
             
-            // 添加轻微的随机偏移，模拟人类手部微颤
-            var microOffsetX = random(-2, 2);
-            var microOffsetY = random(-2, 2);
-            currentX += microOffsetX;
-            currentY += microOffsetY;
+            // 执行手势拖拽
+            gesture(totalDuration, gesturePoints);
+            taskLog("手势拖拽执行完成");
             
-            // 确保坐标在屏幕范围内
-            currentX = Math.max(0, Math.min(currentX, device.width));
-            currentY = Math.max(0, Math.min(currentY, device.height));
+        } catch (e) {
+            taskLog("手势拖拽失败，尝试分段swipe: " + e.message);
             
-            // 计算时间点
-            var timePoint = (i / steps) * totalDuration;
+            // 备用方法：使用分段swipe
+            var segments = 8; // 更多分段
+            var segmentTime = random(200, 400); // 每段时间随机化
             
-            // 添加轨迹点
-            gesture.addPoint(currentX, currentY, timePoint);
+            // 计算分段点
+            var points = [];
+            for (var i = 0; i <= segments; i++) {
+                var progress = i / segments;
+                
+                // 添加随机偏移
+                var randomOffsetX = random(-3, 3);
+                var randomOffsetY = random(-2, 2);
+                
+                var currentX = startX + (endX - startX) * progress + randomOffsetX;
+                var currentY = startY + (endY - startY) * progress + randomOffsetY;
+                
+                currentX = Math.max(0, Math.min(currentX, device.width));
+                currentY = Math.max(0, Math.min(currentY, device.height));
+                
+                points.push([currentX, currentY]);
+            }
+            
+            // 分段执行，每段之间添加随机停顿
+            for (var j = 0; j < points.length - 1; j++) {
+                var currentPoint = points[j];
+                var nextPoint = points[j + 1];
+                
+                swipe(currentPoint[0], currentPoint[1], nextPoint[0], nextPoint[1], segmentTime);
+                
+                // 随机停顿，模拟人类操作
+                if (j < points.length - 2) {
+                    sleep(random(80, 200));
+                }
+            }
+            
+            taskLog("分段swipe拖拽执行完成");
         }
         
-        // 添加结束点
-        gesture.addPoint(endX, endY, totalDuration);
+        // 拖拽完成后，在目标位置停留一段时间，模拟人类操作
+        taskLog("拖拽到指定位置，在目标位置停留等待验证...");
+        sleep(random(1000, 2000)); // 在目标位置停留1-2秒
         
-        // 执行连续手势
-        gesture.run();
-        sleep(random(50, 100));
+        // 然后等待验证码系统检查
+        taskLog("等待验证码系统检查...");
+        sleep(random(3000, 5000)); // 再等待3-5秒让验证码系统检查
         
-        taskLog("多点拖拽执行完成");
+        taskLog("简单swipe拖拽执行完成");
         return true;
         
     } catch (e) {
-        taskLog("多点拖拽异常：" + e.message);
+        taskLog("手势拖拽异常：" + e.message);
         
-        // 方法2：使用优化的swipe作为备用
+        // 备用方法：使用多点触控模拟
         try {
-            taskLog("尝试使用优化swipe方法");
-            var swipeDuration = random(600, 900); // 减少swipe时间
-            swipe(startX, startY, endX, endY, swipeDuration);
+            taskLog("尝试使用多点触控模拟方法");
+            
+            // 按下
+            press(startX, startY, 100);
+            sleep(random(50, 150));
+            
+            // 分段移动
+            var segments = 10;
+            for (var i = 1; i <= segments; i++) {
+                var progress = i / segments;
+                
+                // 使用缓动函数
+                var easeProgress = progress * progress * (3 - 2 * progress);
+                
+                var currentX = startX + (endX - startX) * easeProgress;
+                var currentY = startY + (endY - startY) * easeProgress;
+                
+                // 添加随机偏移
+                currentX += random(-2, 2);
+                currentY += random(-1, 1);
+                
+                // 确保坐标在屏幕范围内
+                currentX = Math.max(0, Math.min(currentX, device.width));
+                currentY = Math.max(0, Math.min(currentY, device.height));
+                
+                // 移动手指
+                gesture(50, [currentX, currentY]);
+                sleep(random(30, 80));
+            }
+            
+            // 抬起
             sleep(random(100, 200));
-            taskLog("优化swipe执行完成");
+            
+            // 拖拽完成后，在目标位置停留一段时间，模拟人类操作
+            taskLog("多点触控拖拽到指定位置，在目标位置停留等待验证...");
+            sleep(random(1000, 2000)); // 在目标位置停留1-2秒
+            
+            // 然后等待验证码系统检查
+            taskLog("等待验证码系统检查...");
+            sleep(random(3000, 5000)); // 再等待3-5秒让验证码系统检查
+            
+            taskLog("多点触控执行完成");
             return true;
         } catch (e2) {
-            taskLog("优化swipe也失败：" + e2.message);
-            
-            // 方法3：使用连续点击模拟更丝滑的拖拽
-            try {
-                taskLog("尝试使用连续点击方法");
-                var steps = 20; // 增加步骤数
-                var totalTime = random(500, 800); // 减少总时间
-                var stepTime = totalTime / steps;
-                
-                for (var i = 0; i <= steps; i++) {
-                    var progress = i / steps;
-                    
-                    // 使用缓动函数
-                    var easeProgress = 1 - Math.pow(1 - progress, 2);
-                    
-                    var currentX = startX + (endX - startX) * easeProgress;
-                    var currentY = startY + (endY - startY) * easeProgress;
-                    
-                    // 添加微小的随机偏移
-                    currentX += random(-1, 1);
-                    currentY += random(-1, 1);
-                    
-                    currentX = Math.max(0, Math.min(currentX, device.width));
-                    currentY = Math.max(0, Math.min(currentY, device.height));
-                    
-                    click(currentX, currentY);
-                    sleep(stepTime + random(-5, 5)); // 减少随机时间变化
-                }
-                taskLog("连续点击执行完成");
-                return true;
-            } catch (e3) {
-                taskLog("所有拖拽方法都失败：" + e3.message);
-                return false;
-            }
+            taskLog("所有拖拽方法都失败：" + e2.message);
+            return false;
         }
     }
 }
