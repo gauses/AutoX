@@ -468,28 +468,94 @@ detectAndStartTikTok();
 
 //使用冰拓进行打码
 function save_Bingtop_Pic(){
-    // 申请截图权限（会弹系统录屏权限框）
-    if (!requestScreenCapture()) {
-        taskLog("自动化任务-申请截图权限失败");
+    // 申请截图权限（会弹系统录屏权限框），重试3次
+    var screenCaptureSuccess = false;
+    for (var retry = 0; retry < 3; retry++) {
+        if (requestScreenCapture()) {
+            screenCaptureSuccess = true;
+            taskLog("自动化任务-申请截图权限成功，重试次数: " + retry);
+            break;
+        } else {
+            taskLog("自动化任务-申请截图权限失败，重试次数: " + (retry + 1));
+            sleep(2000); // 等待2秒后重试
+        }
+    }
+    
+    if (!screenCaptureSuccess) {
+        taskLog("自动化任务-申请截图权限最终失败");
+        return null;
     }
 
-    // 申请截图权限（会弹系统录屏权限框）
-    if (!requestScreenCapture()) {
-        taskLog("自动化任务-申请截图权限失败");
+    // 查找所有FrameLayout控件
+    var frameLayouts = className("android.widget.FrameLayout").find();
+    if (frameLayouts.length == 0) {
+        taskLog("自动化任务-未找到FrameLayout控件");
+        return null;
     }
 
-    // 截一张整屏
-    var img = captureScreen();           // 返回 Image 对象
+    // 筛选出合适的FrameLayout（排除全屏的，选择中等大小的对话框）
+    var frameLayout = null;
+    var screenWidth = device.width;
+    var screenHeight = device.height;
+    var screenArea = screenWidth * screenHeight;
+    
+    for (var i = 0; i < frameLayouts.length; i++) {
+        var bounds = frameLayouts[i].bounds();
+        var area = (bounds.right - bounds.left) * (bounds.bottom - bounds.top);
+        var width = bounds.right - bounds.left;
+        var height = bounds.bottom - bounds.top;
+        
+        taskLog("FrameLayout " + i + " 位置: " + bounds.left + "," + bounds.top + "," + bounds.right + "," + bounds.bottom + " 面积: " + area);
+        
+        // 排除全屏的FrameLayout，选择中等大小的对话框
+        // 验证码对话框通常不会占满整个屏幕，且有一定的宽高比
+        if (area < screenArea * 0.8 && area > 100000 && width > 200 && height > 200) {
+            taskLog("找到合适的FrameLayout: " + i + " 面积: " + area);
+            frameLayout = frameLayouts[i];
+            break;
+        }
+    }
+
+    if (!frameLayout) {
+        taskLog("自动化任务-未找到合适的FrameLayout控件");
+        return null;
+    }
+
+    // 获取最终选择的FrameLayout控件的边界
+    var bounds = frameLayout.bounds();
+    taskLog("选择的FrameLayout位置: " + bounds.left + "," + bounds.top + "," + bounds.right + "," + bounds.bottom);
+
+    // 先截全屏
+    var fullScreenImg = captureScreen();
+    if (!fullScreenImg) {
+        taskLog("自动化任务-全屏截图失败");
+        return null;
+    }
+
+    // 计算裁剪区域的宽高
+    var clipX = bounds.left;
+    var clipY = bounds.top;
+    var clipWidth = bounds.right - bounds.left;
+    var clipHeight = bounds.bottom - bounds.top;
+    
+    taskLog("裁剪区域: x=" + clipX + ", y=" + clipY + ", width=" + clipWidth + ", height=" + clipHeight);
+
+    // 裁剪指定区域
+    var img = images.clip(fullScreenImg, clipX, clipY, clipWidth, clipHeight);
     if (!img) {
-        taskLog("自动化任务-截图失败");
+        taskLog("自动化任务-区域裁剪失败");
+        fullScreenImg.recycle();
+        return null;
     }
+    
+    // 释放全屏图片内存
+    fullScreenImg.recycle();
 
     // 保存到相册/文件夹
     var path = RPAFilePath + "/bingtop.png" ;
     img.saveTo(path);                    // 保存
     img.recycle();                       // 回收内存
     taskLog("已保存Tiktok登陆验证码截图："+ path);
-
 
     //刷新媒体库
     sleep(3000)
@@ -1414,14 +1480,14 @@ function main() {
         if(captchaCode){
             taskLog("冰拓打码成功");
             
-            //3.执行滑块移动
-            var moveResult = performSliderMove(captchaCode);
-            if(moveResult){
-                taskLog("滑块移动成功");
-                sleep(3000); // 等待验证完成
-            }else{
-                taskLog("滑块移动失败");
-            }
+            // //3.执行滑块移动
+            // var moveResult = performSliderMove(captchaCode);
+            // if(moveResult){
+            //     taskLog("滑块移动成功");
+            //     sleep(3000); // 等待验证完成
+            // }else{
+            //     taskLog("滑块移动失败");
+            // }
         }else{
             taskLog("冰拓打码失败");
         }
