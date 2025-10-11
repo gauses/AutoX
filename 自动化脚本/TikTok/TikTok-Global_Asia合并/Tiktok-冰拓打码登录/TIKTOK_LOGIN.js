@@ -172,6 +172,9 @@ var targetClassName = null;
 var elementCache = new Map();
 var handleErrorFlag = false;
 
+// 冰拓API调用保护变量
+var bingtopApiCallInProgress = false;
+
 // 视频上传统计参数
 var total_target = 0;        // 需要上传的视频总数
 var total_success = 0;       // 成功上传的视频数量
@@ -507,6 +510,9 @@ function save_Bingtop_Pic(){
         taskLog("自动化任务-申请截图权限最终失败");
         return null;
     }
+    
+    // 等待一下确保权限生效
+    sleep(1000);
 
     // 查找所有FrameLayout控件
     var frameLayouts = className("android.widget.FrameLayout").find();
@@ -587,34 +593,54 @@ function save_Bingtop_Pic(){
 }
 
 function use_Bingtop_code(){
-    var imgPath = RPAFilePath + "/bingtop.png" ;
-    var imgfp = images.read(imgPath);
-    var img64 = images.toBase64(imgfp);
-    var response = http.post("https://www.bingtop.com/ocr/upload/",{
-        "username": "jockys",   //账号
-        "password": "Yeyu0927", //密码
-        "captchaData": img64,
-        //验证码类型：https://www.bingtop.com/type/
-        "captchaType": 1310 //滑块式图像，返回缺口位置 x,y 坐标值
-    },{
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'}
-    });
+    // 检查是否已经有API调用在进行中
+    if (bingtopApiCallInProgress) {
+        taskLog("冰拓API正在调用中，跳过重复调用");
+        return null;
+    }
+    
+    // 设置API调用标志
+    bingtopApiCallInProgress = true;
+    
+    try {
+        var imgPath = RPAFilePath + "/bingtop.png" ;
+        var imgfp = images.read(imgPath);
+        var img64 = images.toBase64(imgfp);
+        
+        taskLog("开始调用冰拓打码API...");
+        var response = http.post("https://www.bingtop.com/ocr/upload/",{
+            "username": "jockys",   //账号
+            "password": "Yeyu0927", //密码
+            "captchaData": img64,
+            //验证码类型：https://www.bingtop.com/type/
+            "captchaType": 1310 //滑块式图像，返回缺口位置 x,y 坐标值
+        },{
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'}
+        });
 
-    var dictdata = response.body.json();
-    taskLog("冰拓打码结果: " + JSON.stringify(dictdata, null, 2));
-    /*
-    23:28:50.658/D: 冰拓打码结果: {
-        "code": 0,
-        "message": "",
-        "data": {
-            "captchaId": "1310-b783e8ff-1447-4b9b-a358-70ff45667617",
-            "captchaType": "1310",
-            "recognition": "1143,197"
-        }
-        }
-    */
-    var captchaCode = dictdata["data"]["recognition"]; // 得到验证码，存于captchaCode变量中
-    return captchaCode;
+        var dictdata = response.body.json();
+        taskLog("冰拓打码结果: " + JSON.stringify(dictdata, null, 2));
+        /*
+        23:28:50.658/D: 冰拓打码结果: {
+            "code": 0,
+            "message": "",
+            "data": {
+                "captchaId": "1310-b783e8ff-1447-4b9b-a358-70ff45667617",
+                "captchaType": "1310",
+                "recognition": "1143,197"
+            }
+            }
+        */
+        var captchaCode = dictdata["data"]["recognition"]; // 得到验证码，存于captchaCode变量中
+        taskLog("冰拓API调用完成，返回结果: " + captchaCode);
+        return captchaCode;
+    } catch (e) {
+        taskLog("冰拓API调用异常: " + e.message);
+        return null;
+    } finally {
+        // 无论成功还是失败，都要重置标志
+        bingtopApiCallInProgress = false;
+    }
 }
 
 
@@ -1272,20 +1298,17 @@ function click_permission_allow(){
 
 //开始录屏截图到本地
 function Nest_ScreenCapture(){
-    // 申请截图权限（会弹系统录屏权限框）
+    // 申请截图权限（会弹系统录屏权限框），只申请一次
     if (!requestScreenCapture()) {
         taskLog("自动化任务-申请截图权限失败");
-    }
-
-    // 申请截图权限（会弹系统录屏权限框）
-    if (!requestScreenCapture()) {
-        taskLog("自动化任务-申请截图权限失败");
+        return null; // 如果权限申请失败，直接返回null
     }
 
     // 截一张整屏
     var img = captureScreen();           // 返回 Image 对象
     if (!img) {
         taskLog("自动化任务-截图失败");
+        return null; // 如果截图失败，直接返回null
     }
 
     // 保存到相册/文件夹
@@ -1527,7 +1550,12 @@ function main() {
 
         //此时出现验证码，开始使用冰拓进行打码
         //1.先截图，保存
-        save_Bingtop_Pic();
+        var screenshotResult = save_Bingtop_Pic();
+        if (!screenshotResult) {
+            taskLog("截图失败，无法进行冰拓打码");
+            throw new Error("验证码截图失败");
+        }
+        taskLog("验证码截图成功，开始调用冰拓API");
 
         //2.调用冰拓打码
         var captchaCode = use_Bingtop_code();
@@ -1539,7 +1567,8 @@ function main() {
             var moveResult = performSliderMove(captchaCode);
             if(moveResult){
                 taskLog("滑块移动成功，等待验证码系统验证...");
-                sleep(random(3000, 5000)); // 等待3-5秒，配合拖拽后的4-6秒等待
+                // 增加等待时间，确保验证码系统有足够时间处理
+                sleep(random(5000, 8000)); // 等待5-8秒，给验证码系统更多时间
                 taskLog("验证码验证等待完成");
             }else{
                 taskLog("滑块移动失败");
@@ -1895,7 +1924,7 @@ function findSliderElement() {
 }
 
 /**
- * 执行拖拽操作
+ * 执行拖拽操作 - 专门针对滑块验证码优化
  * @param {number} startX 起始X坐标
  * @param {number} startY 起始Y坐标
  * @param {number} endX 结束X坐标
@@ -1904,14 +1933,7 @@ function findSliderElement() {
  */
 function performDrag(startX, startY, endX, endY) {
     try {
-        taskLog("开始执行拖拽：从(" + startX + "," + startY + ")到(" + endX + "," + endY + ")");
-        
-        // 添加随机偏移，模拟人类操作
-        var randomOffset = 3;
-        startX += random(-randomOffset, randomOffset);
-        startY += random(-randomOffset, randomOffset);
-        endX += random(-randomOffset, randomOffset);
-        endY += random(-randomOffset, randomOffset);
+        taskLog("开始执行滑块拖拽：从(" + startX + "," + startY + ")到(" + endX + "," + endY + ")");
         
         // 确保坐标在屏幕范围内
         startX = Math.max(0, Math.min(startX, device.width));
@@ -1919,158 +1941,121 @@ function performDrag(startX, startY, endX, endY) {
         endX = Math.max(0, Math.min(endX, device.width));
         endY = Math.max(0, Math.min(endY, device.height));
         
-        taskLog("调整后坐标：从(" + startX + "," + startY + ")到(" + endX + "," + endY + ")");
+        // 计算移动距离
+        var deltaX = endX - startX;
+        var deltaY = endY - startY;
+        var distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
         
-        // 方法1：使用手势模拟实现更自然的拖拽
-        taskLog("使用手势模拟实现更自然的拖拽");
+        taskLog("移动距离：" + distance + "像素，deltaX=" + deltaX + ", deltaY=" + deltaY);
         
-        try {
-            // 使用手势API模拟更自然的拖拽
-            var totalDuration = random(2500, 4000); // 更长的拖拽时间
-            var steps = 15; // 更多步骤，让轨迹更平滑
-            
-            // 计算轨迹点，使用贝塞尔曲线模拟自然轨迹
-            var points = [];
-            for (var i = 0; i <= steps; i++) {
-                var progress = i / steps;
-                
-                // 使用缓动函数，开始慢，中间快，结束慢
-                var easeProgress;
-                if (progress < 0.5) {
-                    easeProgress = 2 * progress * progress;
-                } else {
-                    easeProgress = 1 - Math.pow(-2 * progress + 2, 2) / 2;
-                }
-                
-                // 添加轻微的随机偏移，模拟手抖
-                var randomOffsetX = random(-2, 2);
-                var randomOffsetY = random(-1, 1);
-                
-                var currentX = startX + (endX - startX) * easeProgress + randomOffsetX;
-                var currentY = startY + (endY - startY) * easeProgress + randomOffsetY;
-                
-                // 确保坐标在屏幕范围内
-                currentX = Math.max(0, Math.min(currentX, device.width));
-                currentY = Math.max(0, Math.min(currentY, device.height));
-                
-                points.push([currentX, currentY]);
-            }
-            
-            // 使用手势API执行拖拽
-            var gesturePoints = [];
-            for (var k = 0; k < points.length; k++) {
-                gesturePoints.push(points[k]);
-            }
-            
-            // 执行手势拖拽
-            gesture(totalDuration, gesturePoints);
-            taskLog("手势拖拽执行完成");
-            
-        } catch (e) {
-            taskLog("手势拖拽失败，尝试分段swipe: " + e.message);
-            
-            // 备用方法：使用分段swipe
-            var segments = 8; // 更多分段
-            var segmentTime = random(200, 400); // 每段时间随机化
-            
-            // 计算分段点
-            var points = [];
-            for (var i = 0; i <= segments; i++) {
-                var progress = i / segments;
-                
-                // 添加随机偏移
-                var randomOffsetX = random(-3, 3);
-                var randomOffsetY = random(-2, 2);
-                
-                var currentX = startX + (endX - startX) * progress + randomOffsetX;
-                var currentY = startY + (endY - startY) * progress + randomOffsetY;
-                
-                currentX = Math.max(0, Math.min(currentX, device.width));
-                currentY = Math.max(0, Math.min(currentY, device.height));
-                
-                points.push([currentX, currentY]);
-            }
-            
-            // 分段执行，每段之间添加随机停顿
-            for (var j = 0; j < points.length - 1; j++) {
-                var currentPoint = points[j];
-                var nextPoint = points[j + 1];
-                
-                swipe(currentPoint[0], currentPoint[1], nextPoint[0], nextPoint[1], segmentTime);
-                
-                // 随机停顿，模拟人类操作
-                if (j < points.length - 2) {
-                    sleep(random(80, 200));
-                }
-            }
-            
-            taskLog("分段swipe拖拽执行完成");
+        // 强制执行拖拽操作，确保拖拽能够正常进行
+        taskLog("开始强制拖拽操作");
+        taskLog("拖拽参数：起始(" + startX + "," + startY + ")，目标(" + endX + "," + endY + ")，距离=" + distance);
+        
+        // 确保坐标有效
+        if (startX < 0 || startY < 0 || endX < 0 || endY < 0) {
+            taskLog("坐标无效，无法执行拖拽");
+            return false;
         }
         
-        // 拖拽完成后，在目标位置停留一段时间，模拟人类操作
-        taskLog("拖拽到指定位置，在目标位置停留等待验证...");
-        sleep(random(1000, 2000)); // 在目标位置停留1-2秒
+        // 使用最简单直接的拖拽方法
+        taskLog("执行单次直接拖拽");
+        var dragDuration = Math.max(2000, Math.min(5000, distance * 2));
+        taskLog("拖拽持续时间：" + dragDuration + "ms");
         
-        // 然后等待验证码系统检查
-        taskLog("等待验证码系统检查...");
-        sleep(random(3000, 5000)); // 再等待3-5秒让验证码系统检查
+        try {
+            // 执行拖拽操作
+            swipe(startX, startY, endX, endY, dragDuration);
+            taskLog("拖拽操作已执行");
+            
+            // 等待拖拽完成
+            sleep(1000);
+            taskLog("拖拽操作完成，等待系统响应");
+            
+        } catch (swipeError) {
+            taskLog("swipe操作失败：" + swipeError.message);
+            
+            // 备用方案：使用gesture
+            try {
+                taskLog("尝试使用gesture方法");
+                gesture(dragDuration, [startX, startY, endX, endY]);
+                taskLog("gesture操作已执行");
+                sleep(1000);
+            } catch (gestureError) {
+                taskLog("gesture操作也失败：" + gestureError.message);
+                return false;
+            }
+        }
         
-        taskLog("简单swipe拖拽执行完成");
+        // 等待验证码系统处理
+        taskLog("等待验证码系统验证...");
+        sleep(random(3000, 5000));
+        
+        taskLog("滑块拖拽执行完成");
         return true;
         
     } catch (e) {
-        taskLog("手势拖拽异常：" + e.message);
+        taskLog("滑块拖拽异常：" + e.message);
         
-        // 备用方法：使用多点触控模拟
+        // 备用方案：强制执行拖拽
         try {
-            taskLog("尝试使用多点触控模拟方法");
+            taskLog("尝试备用方案：强制拖拽");
+            var simpleDuration = Math.max(3000, Math.min(6000, distance * 4));
             
-            // 按下
-            press(startX, startY, 100);
-            sleep(random(50, 150));
-            
-            // 分段移动
-            var segments = 10;
-            for (var i = 1; i <= segments; i++) {
-                var progress = i / segments;
+            // 方法1：尝试swipe
+            try {
+                swipe(startX, startY, endX, endY, simpleDuration);
+                taskLog("备用swipe拖拽完成");
+            } catch (swipeError) {
+                taskLog("备用swipe失败：" + swipeError.message);
                 
-                // 使用缓动函数
-                var easeProgress = progress * progress * (3 - 2 * progress);
-                
-                var currentX = startX + (endX - startX) * easeProgress;
-                var currentY = startY + (endY - startY) * easeProgress;
-                
-                // 添加随机偏移
-                currentX += random(-2, 2);
-                currentY += random(-1, 1);
-                
-                // 确保坐标在屏幕范围内
-                currentX = Math.max(0, Math.min(currentX, device.width));
-                currentY = Math.max(0, Math.min(currentY, device.height));
-                
-                // 移动手指
-                gesture(50, [currentX, currentY]);
-                sleep(random(30, 80));
+                // 方法2：尝试gesture
+                try {
+                    gesture(simpleDuration, [startX, startY, endX, endY]);
+                    taskLog("备用gesture拖拽完成");
+                } catch (gestureError) {
+                    taskLog("备用gesture也失败：" + gestureError.message);
+                    
+                    // 方法3：尝试多次点击
+                    taskLog("尝试多次点击方法");
+                    var steps = Math.max(5, Math.min(10, Math.floor(distance / 20)));
+                    for (var k = 0; k < steps; k++) {
+                        var progress = k / (steps - 1);
+                        var currentX = Math.round(startX + (endX - startX) * progress);
+                        var currentY = Math.round(startY + (endY - startY) * progress);
+                        click(currentX, currentY);
+                        sleep(100);
+                    }
+                    taskLog("多次点击拖拽完成");
+                }
             }
             
-            // 抬起
-            sleep(random(100, 200));
-            
-            // 拖拽完成后，在目标位置停留一段时间，模拟人类操作
-            taskLog("多点触控拖拽到指定位置，在目标位置停留等待验证...");
-            sleep(random(1000, 2000)); // 在目标位置停留1-2秒
-            
-            // 然后等待验证码系统检查
-            taskLog("等待验证码系统检查...");
-            sleep(random(3000, 5000)); // 再等待3-5秒让验证码系统检查
-            
-            taskLog("多点触控执行完成");
+            sleep(2000);
+            taskLog("备用拖拽完成");
             return true;
         } catch (e2) {
             taskLog("所有拖拽方法都失败：" + e2.message);
             return false;
         }
     }
+}
+
+/**
+ * 缓动函数：二次缓动（开始慢，中间快，结束慢）
+ * @param {number} t 进度值 (0-1)
+ * @returns {number} 缓动后的进度值
+ */
+function easeInOutQuad(t) {
+    return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+}
+
+/**
+ * 缓动函数：三次缓动（更平滑的曲线）
+ * @param {number} t 进度值 (0-1)
+ * @returns {number} 缓动后的进度值
+ */
+function easeInOutCubic(t) {
+    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 }
 
 // 执行主函数
