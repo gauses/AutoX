@@ -121,6 +121,28 @@ var CONFIG = {
             ZH_CN: "邮箱/用户名",
             ZH_TW: "電子郵件/使用者名稱",
             EN_US: "Email / Username"
+        },
+
+        // tiktok全球版：第一次打开Tiktok首页，会出现一个弹窗，提示"Agree and continue"  ：（tiktok亚洲版没有这个弹窗，不过也还是一起处理了）
+        //  text("Agree and continue")
+        //  text("同意並繼續")
+        //  text("同意并继续")
+        AGREE_AND_CONTINUE: {
+            ZH_CN: "同意并继续",
+            ZH_TW: "同意並繼續",
+            EN_US: "Agree and continue"
+        },
+        //在每次刚刚打开页面的时候，可能因为手机已经有手机号码，所以会自动弹出一个有手机号码的dialog弹窗，提示使用手机号码，这里要处理一下
+        //页面内容：
+            //Continue with 
+            //text("选择要登录的账号以继续：")
+            //text("選取要登入的帳戶以繼續")
+            //(212)591-1655
+            //NONE OF THE ABOVE
+        CONTINUE_WITH_PHONE_NUMBER: {
+            ZH_CN: "选择要登录的账号以继续：",
+            ZH_TW: "選取要登入的帳戶以繼續",
+            EN_US: "Continue with"
         }
 
     },
@@ -1326,28 +1348,61 @@ function main() {
 
         sleep(random(3000, 5000))
         //打开之后，底部会有一个Agree and continue
-        //fullId("com.ss.android.ugc.trill:id/d7o")
-        //国际版没有这个按钮，亚洲版有这个按钮，如果亚洲版有这个按钮，则点击,国际版则不点击 ，通过包名判断
-        if(targetPackageName == CONFIG.APP.ASIA_PACKAGE){
-            clickId(CONFIG.APP.ASIA_PACKAGE + ":id/d7o")
-            sleep(random(3000, 5000))
+        //国际版没有这个按钮，亚洲版有这个按钮，但都还是一起处理了
+        var agree_and_continue = findTextByLanguages(CONFIG.UI_TEXT.AGREE_AND_CONTINUE)
+        if(agree_and_continue){
+            taskLog("找到Agree and continue按钮，并且点击")
+        }else{
+            taskLog("没有找到Agree and continue按钮，直接跳过")
         }
+        sleep(random(3000, 5000))
+
+
 
         //继续打开之后，会出现类别，需要自己选择
         //fullId("com.ss.android.ugc.trill:id/bub")
         //国际版没有这个按钮，亚洲版有这个按钮，如果亚洲版有这个按钮，则点击,国际版则不点击 ，通过包名判断
         if(targetPackageName == CONFIG.APP.ASIA_PACKAGE){
-            clickId(CONFIG.APP.ASIA_PACKAGE + ":id/bub")
-            sleep(random(8000, 10000))
-        }
 
+            // 点击：text("跳过")
+            clickId(CONFIG.APP.ASIA_PACKAGE + ":id/bub")
+            sleep(random(3000, 5000))
+
+
+            // 点击：text("开始观看")
+            // fullId("com.ss.android.ugc.trill:id/qeh")
+            clickId(CONFIG.APP.ASIA_PACKAGE + ":id/qeh")
+            sleep(random(3000, 5000))
+
+        }
+        sleep(random(8000, 10000))
         //继续打开之后，可能会出现提示往上滑动
         swipe_to_up()
+        sleep(random(8000, 10000))
+
+
 
         taskLog("开始点击首页最右侧Profile按钮")
         var profile_btn = findTextByLanguages(CONFIG.UI_TEXT.PROFILE_TEXT)
     // if(profile_btn){
-        sleep(random(3000, 5000))
+        sleep(random(5000, 8000))
+
+
+        //在每次刚刚打开页面的时候，可能因为手机已经有手机号码，所以会自动弹出一个有手机号码的dialog弹窗，提示使用手机号码，这里要处理一下
+        //页面内容：
+            //Continue with 
+            //(212)591-1655
+            //NONE OF THE ABOVE
+        //fullId("com.google.android.gms:id/credentials_hint_picker_title")
+        var continue_with_phone_number = findTextByLanguages(CONFIG.UI_TEXT.CONTINUE_WITH_PHONE_NUMBER)
+        if(continue_with_phone_number){
+            taskLog("找到Continue with phone number按钮，点击一次回退按钮")
+            back()
+        }else{
+            taskLog("没有找到Continue with phone number按钮，直接跳过")
+        }
+        sleep(random(5000, 8000))
+
 
 
         //开始点击：desc("Use phone / email / username")
