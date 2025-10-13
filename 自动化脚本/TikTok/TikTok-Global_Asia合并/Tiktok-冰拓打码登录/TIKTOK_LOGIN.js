@@ -1633,16 +1633,31 @@ function main() {
         if(captchaCode){
             taskLog("冰拓打码成功，坐标: " + captchaCode);
             
-            //3.执行滑块移动
+            //3.执行滑块移动，支持重试机制
             taskLog("步骤3: 开始执行滑块移动");
-            var moveResult = performSliderMove(captchaCode);
-            if(moveResult){
-                taskLog("滑块移动成功，等待验证码系统验证...");
-                // 增加等待时间，确保验证码系统有足够时间处理
-                sleep(random(5000, 8000)); // 等待5-8秒，给验证码系统更多时间
-                taskLog("验证码验证等待完成");
-            }else{
-                taskLog("滑块移动失败");
+            var maxRetries = 3; // 最大重试次数
+            var moveResult = false;
+            
+            for (var retry = 0; retry < maxRetries; retry++) {
+                taskLog("第" + (retry + 1) + "次尝试滑块移动...");
+                moveResult = performSliderMove(captchaCode);
+                
+                if (moveResult) {
+                    taskLog("滑块移动成功，等待验证码系统验证...");
+                    // 增加等待时间，确保验证码系统有足够时间处理
+                    sleep(random(5000, 8000)); // 等待5-8秒，给验证码系统更多时间
+                    taskLog("验证码验证等待完成");
+                    break; // 成功则跳出重试循环
+                } else {
+                    taskLog("滑块移动失败，准备重试...");
+                    if (retry < maxRetries - 1) {
+                        sleep(random(2000, 3000)); // 重试前等待
+                    }
+                }
+            }
+            
+            if (!moveResult) {
+                taskLog("滑块移动经过" + maxRetries + "次尝试后仍然失败");
             }
         }else{
             taskLog("冰拓打码失败，无法获取验证码坐标");
@@ -2173,26 +2188,91 @@ function performDrag(startX, startY, endX, endY) {
             // 使用精确的拖拽操作 - 使用gesture函数，更精确
             taskLog("使用gesture拖拽方法，提高精度");
             
-            // 创建拖拽路径点
-            var path = [];
-            var steps = Math.max(3, Math.min(10, Math.floor(distance / 20))); // 根据距离计算步数
+            // 计算超调距离（超出目标位置10-20像素）
+            var overshootDistance = random(10, 20);
+            var overshootX = endX + overshootDistance;
             
-            for (var step = 0; step <= steps; step++) {
-                var progress = step / steps;
-                var currentX = Math.round(startX + (endX - startX) * progress);
-                var currentY = Math.round(startY + (endY - startY) * progress);
+            // 确保超调坐标在屏幕范围内
+            overshootX = Math.max(0, Math.min(overshootX, device.width));
+            
+            taskLog("超调策略：目标位置=" + endX + "，超调位置=" + overshootX + "，超调距离=" + overshootDistance);
+            
+            // 创建分阶段的拖拽路径，模拟真实人类行为
+            var path = [];
+            
+            // 第一阶段：从起始位置到超调位置
+            var overshootSteps = Math.max(4, Math.min(8, Math.floor(Math.abs(overshootX - startX) / 20)));
+            taskLog("第一阶段：从起始位置到超调位置，步数：" + overshootSteps);
+            
+            for (var step = 0; step <= overshootSteps; step++) {
+                var progress = step / overshootSteps;
+                var easedProgress = easeInOutQuad(progress);
+                
+                var currentX = Math.round(startX + (overshootX - startX) * easedProgress);
+                var currentY = startY;
+                
+                // 确保坐标在屏幕范围内
+                currentX = Math.max(0, Math.min(currentX, device.width));
+                currentY = Math.max(0, Math.min(currentY, device.height));
+                
                 path.push([currentX, currentY]);
             }
             
+            // 在超调位置添加一个过渡点，避免长时间停留
+            // 不添加多个停留点，避免被验证码系统误认为最终目标
+            path.push([overshootX, startY]);
+            taskLog("在超调位置添加1个过渡点，避免长时间停留");
+            
+            // 第二阶段：从超调位置回调到目标位置（更慢更精确）
+            var callbackSteps = Math.max(6, Math.min(12, Math.floor(overshootDistance / 4))); // 增加回调步数
+            taskLog("第二阶段：从超调位置回调到目标位置，步数：" + callbackSteps);
+            
+            for (var step = 0; step <= callbackSteps; step++) {
+                var progress = step / callbackSteps;
+                // 使用更慢的缓动函数，让回调过程更慢
+                var easedProgress = progress * progress * (3 - 2 * progress); // 使用smoothstep函数
+                
+                var currentX = Math.round(overshootX + (endX - overshootX) * easedProgress);
+                var currentY = startY;
+                
+                // 确保坐标在屏幕范围内
+                currentX = Math.max(0, Math.min(currentX, device.width));
+                currentY = Math.max(0, Math.min(currentY, device.height));
+                
+                path.push([currentX, currentY]);
+            }
+            
+            // 在目标位置添加多个停留点，确保滑块真正到达并停留
+            var finalPauseSteps = 4; // 在目标位置添加4个停留点
+            for (var i = 0; i < finalPauseSteps; i++) {
+                path.push([endX, startY]);
+            }
+            taskLog("在目标位置添加" + finalPauseSteps + "个停留点，确保滑块真正到达");
+            
+            // 确保最后一个点精确到达目标位置
+            path[path.length - 1] = [endX, startY];
+            
             taskLog("拖拽路径点数：" + path.length);
+            taskLog("起始坐标：(" + startX + "," + startY + ")");
+            taskLog("超调坐标：(" + overshootX + "," + startY + ")");
+            taskLog("目标坐标：(" + endX + "," + startY + ")");
+            taskLog("最终路径点：" + JSON.stringify(path[path.length - 1]));
             taskLog("拖拽路径：" + JSON.stringify(path));
             
-            // 执行gesture拖拽
-            gesture(dragDuration, path);
-            taskLog("gesture拖拽操作已执行");
+            // 增加拖拽持续时间，让整个过程更慢更自然
+            var naturalDuration = Math.max(4000, Math.min(8000, distance * 4));
+            taskLog("使用拖拽持续时间：" + naturalDuration + "ms");
             
-            // 等待拖拽完成
-            sleep(500);
+            // 执行gesture拖拽
+            gesture(naturalDuration, path);
+            taskLog("gesture拖拽操作已执行（包含超调和回调）");
+            
+            // 在目标位置短暂停留，模拟人类调整行为
+            sleep(random(300, 600));
+            taskLog("滑块已到达精确目标位置，短暂停留");
+            
+            // 增加等待时间，确保验证码系统有足够时间处理
+            sleep(random(1000, 2000));
             taskLog("拖拽操作完成，等待系统响应");
             
         } catch (gestureError) {
@@ -2214,8 +2294,15 @@ function performDrag(startX, startY, endX, endY) {
         taskLog("等待验证码系统验证...");
         sleep(random(3000, 5000));
         
-        taskLog("滑块拖拽执行完成");
-        return true;
+        // 检测验证码验证结果
+        var verificationResult = checkCaptchaVerificationResult();
+        if (verificationResult.success) {
+            taskLog("验证码验证成功！");
+            return true;
+        } else {
+            taskLog("验证码验证失败：" + verificationResult.reason);
+            return false;
+        }
         
     } catch (e) {
         taskLog("滑块拖拽异常：" + e.message);
@@ -2260,6 +2347,85 @@ function performDrag(startX, startY, endX, endY) {
             taskLog("所有拖拽方法都失败：" + e2.message);
             return false;
         }
+    }
+}
+
+/**
+ * 检测验证码验证结果
+ * @returns {Object} 验证结果 {success: boolean, reason: string}
+ */
+function checkCaptchaVerificationResult() {
+    try {
+        taskLog("开始检测验证码验证结果...");
+        
+        // 等待一段时间让验证码系统处理
+        sleep(random(2000, 3000));
+        
+        // 检测是否还有验证码界面（如果验证成功，验证码界面应该消失）
+        var frameLayouts = className("android.widget.FrameLayout").find();
+        var hasCaptchaInterface = false;
+        
+        if (frameLayouts && frameLayouts.length > 0) {
+            var screenWidth = device.width;
+            var screenHeight = device.height;
+            var screenArea = screenWidth * screenHeight;
+            
+            for (var i = 0; i < frameLayouts.length; i++) {
+                var bounds = frameLayouts[i].bounds();
+                var area = (bounds.right - bounds.left) * (bounds.bottom - bounds.top);
+                var width = bounds.right - bounds.left;
+                var height = bounds.bottom - bounds.top;
+                
+                // 检查是否还有验证码对话框
+                if (area < screenArea * 0.8 && area > 100000 && width > 200 && height > 200) {
+                    hasCaptchaInterface = true;
+                    taskLog("检测到验证码界面仍然存在，验证可能失败");
+                    break;
+                }
+            }
+        }
+        
+        if (!hasCaptchaInterface) {
+            taskLog("验证码界面已消失，验证成功");
+            return {success: true, reason: "验证码界面消失"};
+        }
+        
+        // 检测是否有错误提示文本
+        var errorTexts = [
+            "验证失败", "验证错误", "请重试", "Try again", 
+            "Verification failed", "Please try again",
+            "验证码错误", "滑动失败", "请重新滑动"
+        ];
+        
+        for (var j = 0; j < errorTexts.length; j++) {
+            var errorElement = text(errorTexts[j]).findOne(1000);
+            if (errorElement) {
+                taskLog("检测到错误提示：" + errorTexts[j]);
+                return {success: false, reason: "检测到错误提示：" + errorTexts[j]};
+            }
+        }
+        
+        // 检测是否有成功提示文本
+        var successTexts = [
+            "验证成功", "验证通过", "Success", "Verified",
+            "验证完成", "通过验证"
+        ];
+        
+        for (var k = 0; k < successTexts.length; k++) {
+            var successElement = text(successTexts[k]).findOne(1000);
+            if (successElement) {
+                taskLog("检测到成功提示：" + successTexts[k]);
+                return {success: true, reason: "检测到成功提示：" + successTexts[k]};
+            }
+        }
+        
+        // 如果验证码界面仍然存在但没有明确的错误或成功提示，认为验证失败
+        taskLog("验证码界面仍然存在，且无明确提示，认为验证失败");
+        return {success: false, reason: "验证码界面仍然存在"};
+        
+    } catch (e) {
+        taskLog("检测验证码验证结果时发生异常：" + e.message);
+        return {success: false, reason: "检测异常：" + e.message};
     }
 }
 
