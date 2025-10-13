@@ -421,20 +421,37 @@ function openLogActivity() {
 
 
 
+taskLog("=== 脚本启动检查开始 ===");
+taskLog("当前时间: " + new Date().toISOString());
+
 taskLog("开始强制关闭同名的脚本...")
 var currentEngine = engines.myEngine()
 var runningEngines = engines.all()
 var currentSource = currentEngine.getSource() + ''
+
+taskLog("当前脚本引擎ID: " + currentEngine.id);
+taskLog("当前运行中的引擎总数: " + runningEngines.length);
+taskLog("当前脚本源码长度: " + currentSource.length);
+
 if (runningEngines.length > 1) {
+  taskLog("发现多个运行中的引擎，开始检查同名脚本...");
   for (var i = 0; i < runningEngines.length; i++) {
     var compareEngine = runningEngines[i];
     var compareSource = compareEngine.getSource() + ''
+    taskLog("检查引擎[" + i + "]: ID=" + compareEngine.id + ", 源码长度=" + compareSource.length);
+    
     if (currentEngine.id !== compareEngine.id && compareSource === currentSource) {
+      taskLog("发现同名脚本，引擎ID: " + compareEngine.id + "，准备强制关闭");
       // 强制关闭同名的脚本
       compareEngine.forceStop()
+      taskLog("已强制关闭同名脚本: " + compareEngine.id);
     }
   }
+} else {
+  taskLog("只有一个运行中的引擎，无需关闭其他脚本");
 }
+
+taskLog("=== 脚本启动检查结束 ===");
 
 sleep(3000)
 taskLog("准备启动TikTok...")
@@ -593,33 +610,67 @@ function save_Bingtop_Pic(){
 }
 
 function use_Bingtop_code(){
+    // 生成唯一请求ID
+    var requestId = Date.now() + "_" + Math.random().toString(36).substr(2, 9);
+    
+    taskLog("=== 冰拓API调用开始 ===");
+    taskLog("请求ID: " + requestId);
+    taskLog("当前时间: " + new Date().toISOString());
+    taskLog("bingtopApiCallInProgress状态: " + bingtopApiCallInProgress);
+    
     // 检查是否已经有API调用在进行中
     if (bingtopApiCallInProgress) {
-        taskLog("冰拓API正在调用中，跳过重复调用");
+        taskLog("冰拓API正在调用中，跳过重复调用，请求ID: " + requestId);
         return null;
     }
     
     // 设置API调用标志
     bingtopApiCallInProgress = true;
+    taskLog("设置API调用标志为true，请求ID: " + requestId);
     
     try {
         var imgPath = RPAFilePath + "/bingtop.png" ;
-        var imgfp = images.read(imgPath);
-        var img64 = images.toBase64(imgfp);
+        taskLog("读取图片文件: " + imgPath);
         
-        taskLog("开始调用冰拓打码API...");
+        var imgfp = images.read(imgPath);
+        if (!imgfp) {
+            taskLog("图片读取失败，请求ID: " + requestId);
+            return null;
+        }
+        
+        taskLog("图片读取成功，开始转换为Base64，请求ID: " + requestId);
+        var img64 = images.toBase64(imgfp);
+        taskLog("图片Base64转换完成，长度: " + img64.length + "，请求ID: " + requestId);
+        
+        // 释放图片内存
+        imgfp.recycle();
+        taskLog("图片内存已释放，请求ID: " + requestId);
+        
+        taskLog("开始调用冰拓打码API，请求ID: " + requestId);
+        taskLog("API请求参数: username=jockys, captchaType=1310");
+        
+        var startTime = Date.now();
         var response = http.post("https://www.bingtop.com/ocr/upload/",{
             "username": "jockys",   //账号
             "password": "Yeyu0927", //密码
             "captchaData": img64,
             //验证码类型：https://www.bingtop.com/type/
-            "captchaType": 1310 //滑块式图像，返回缺口位置 x,y 坐标值
+            "captchaType": 1310, //滑块式图像，返回缺口位置 x,y 坐标值
+            "requestId": requestId  // 添加请求ID用于跟踪
         },{
             headers: {'Content-Type': 'application/x-www-form-urlencoded'}
         });
 
+        var endTime = Date.now();
+        var duration = endTime - startTime;
+        taskLog("API请求完成，耗时: " + duration + "ms，请求ID: " + requestId);
+        taskLog("HTTP响应状态码: " + response.statusCode);
+        taskLog("HTTP响应头: " + JSON.stringify(response.headers));
+
         var dictdata = response.body.json();
         taskLog("冰拓打码结果: " + JSON.stringify(dictdata, null, 2));
+        taskLog("请求ID: " + requestId);
+        
         /*
         23:28:50.658/D: 冰拓打码结果: {
             "code": 0,
@@ -631,15 +682,24 @@ function use_Bingtop_code(){
             }
             }
         */
-        var captchaCode = dictdata["data"]["recognition"]; // 得到验证码，存于captchaCode变量中
-        taskLog("冰拓API调用完成，返回结果: " + captchaCode);
-        return captchaCode;
+        
+        if (dictdata && dictdata["data"] && dictdata["data"]["recognition"]) {
+            var captchaCode = dictdata["data"]["recognition"]; // 得到验证码，存于captchaCode变量中
+            taskLog("冰拓API调用成功，返回结果: " + captchaCode + "，请求ID: " + requestId);
+            return captchaCode;
+        } else {
+            taskLog("冰拓API返回数据格式异常，请求ID: " + requestId);
+            return null;
+        }
     } catch (e) {
-        taskLog("冰拓API调用异常: " + e.message);
+        taskLog("冰拓API调用异常: " + e.message + "，请求ID: " + requestId);
+        taskLog("异常堆栈: " + e.stack);
         return null;
     } finally {
         // 无论成功还是失败，都要重置标志
         bingtopApiCallInProgress = false;
+        taskLog("重置API调用标志为false，请求ID: " + requestId);
+        taskLog("=== 冰拓API调用结束 ===");
     }
 }
 
@@ -1501,14 +1561,14 @@ function main() {
                 var button = allButton.get(i);
                 if (button) {
                     if (button.id() == (CONFIG.APP.GLOBAL_PACKAGE +":id/dn1") || button.id() == (CONFIG.APP.ASIA_PACKAGE +":id/dn2")) {
-                        taskLog("找到顶部控件: continue" );
+                        taskLog("找到底部控件: continue" );
                         button.click();
                         // break;
                     }
                 }
             }
         }
-        sleep(random(3000, 5000))
+        sleep(random(5000, 8000))
 
 
         //开始输入密码
@@ -1545,25 +1605,36 @@ function main() {
                 }
             }
         }
-        sleep(random(45000, 60000))
+        sleep(random(50000, 80000))
 
 
         //此时出现验证码，开始使用冰拓进行打码
+        taskLog("=== 开始验证码处理流程 ===");
+        taskLog("当前时间: " + new Date().toISOString());
+        
         //1.先截图，保存
+        taskLog("步骤1: 开始截图验证码");
         var screenshotResult = save_Bingtop_Pic();
         if (!screenshotResult) {
             taskLog("截图失败，无法进行冰拓打码");
             throw new Error("验证码截图失败");
         }
-        taskLog("验证码截图成功，开始调用冰拓API");
+        taskLog("验证码截图成功，文件路径: " + screenshotResult);
 
         //2.调用冰拓打码
+        taskLog("步骤2: 开始调用冰拓打码API");
+        taskLog("调用前bingtopApiCallInProgress状态: " + bingtopApiCallInProgress);
+        
         var captchaCode = use_Bingtop_code();
-        taskLog("冰拓打码结果: " + captchaCode);
+        
+        taskLog("冰拓打码API调用完成，返回结果: " + captchaCode);
+        taskLog("调用后bingtopApiCallInProgress状态: " + bingtopApiCallInProgress);
+        
         if(captchaCode){
-            taskLog("冰拓打码成功");
+            taskLog("冰拓打码成功，坐标: " + captchaCode);
             
             //3.执行滑块移动
+            taskLog("步骤3: 开始执行滑块移动");
             var moveResult = performSliderMove(captchaCode);
             if(moveResult){
                 taskLog("滑块移动成功，等待验证码系统验证...");
@@ -1574,8 +1645,10 @@ function main() {
                 taskLog("滑块移动失败");
             }
         }else{
-            taskLog("冰拓打码失败");
+            taskLog("冰拓打码失败，无法获取验证码坐标");
         }
+        
+        taskLog("=== 验证码处理流程结束 ===");
 
         
         sleep(random(800000, 1000000))
@@ -1749,10 +1822,39 @@ function performSliderMove(captchaCode) {
         taskLog("FrameLayout位置：" + frameBounds.left + "," + frameBounds.top + "," + frameBounds.right + "," + frameBounds.bottom);
         
         // 将相对坐标转换为屏幕绝对坐标
+        // 注意：冰拓返回的坐标可能需要微调
         var targetX = frameBounds.left + relativeX;
         var targetY = frameBounds.top + relativeY;
         
-        taskLog("冰拓返回的绝对坐标：X=" + targetX + ", Y=" + targetY);
+        // 动态检测边距距离
+        // 不使用估算，而是根据实际滑块大小和位置动态计算边距
+        var offsetX = 0; // 先不设置偏移，等找到滑块后再计算
+        var offsetY = 0;  // Y坐标不需要调整
+        
+        targetX += offsetX;
+        targetY += offsetY;
+        
+        taskLog("=== 坐标计算详情 ===");
+        taskLog("冰拓原始相对坐标：X=" + relativeX + ", Y=" + relativeY);
+        taskLog("FrameLayout边界：left=" + frameBounds.left + ", top=" + frameBounds.top);
+        taskLog("理论绝对坐标：X=" + (frameBounds.left + relativeX) + ", Y=" + (frameBounds.top + relativeY));
+        taskLog("初步目标坐标：X=" + targetX + ", Y=" + targetY);
+        taskLog("*** 注意：将在找到滑块后动态计算边距 ***");
+        taskLog("==================");
+
+        
+        
+        // 验证目标坐标是否在FrameLayout范围内
+        if (targetX < frameBounds.left || targetX > frameBounds.right) {
+            taskLog("警告：目标X坐标超出FrameLayout范围，进行调整");
+            targetX = Math.max(frameBounds.left + 10, Math.min(targetX, frameBounds.right - 10));
+        }
+        if (targetY < frameBounds.top || targetY > frameBounds.bottom) {
+            taskLog("警告：目标Y坐标超出FrameLayout范围，进行调整");
+            targetY = Math.max(frameBounds.top + 10, Math.min(targetY, frameBounds.bottom - 10));
+        }
+        
+        taskLog("最终目标坐标：X=" + targetX + ", Y=" + targetY);
 
         
         // 查找滑块元素（通常是可拖拽的拼图块）
@@ -1767,17 +1869,40 @@ function performSliderMove(captchaCode) {
         var startX = sliderBounds.centerX();
         var startY = sliderBounds.centerY();
         
+        // 记录选择的滑块信息，用于调试
+        taskLog("选择的滑块信息：位置=(" + sliderBounds.left + "," + sliderBounds.top + ")，大小=" + sliderBounds.width() + "x" + sliderBounds.height());
+        
+        // 根据滑块实际大小动态计算边距
+        var sliderWidth = sliderBounds.width();
+        var sliderHeight = sliderBounds.height();
+        var dynamicMargin = Math.max(5, Math.min(15, sliderWidth * 0.1)); // 根据滑块宽度计算边距
+        var adjustedTargetX = targetX - dynamicMargin; // 应用动态边距
+        
+        taskLog("滑块大小：宽度=" + sliderWidth + "，高度=" + sliderHeight);
+        taskLog("动态边距计算：边距=" + dynamicMargin + "像素");
+        taskLog("调整后目标位置：X=" + adjustedTargetX + "（原=" + targetX + "）");
+        
         taskLog("滑块当前位置：X=" + startX + ", Y=" + startY);
         taskLog("冰拓返回的目标位置：X=" + targetX + ", Y=" + targetY);
         
-        // 计算移动距离 - 滑块验证码只需要水平移动
-        var deltaX = targetX - startX;
-        var deltaY = 0; // 滑块验证码通常不需要垂直移动，保持Y坐标不变
+        // 计算移动距离 - 使用调整后的目标位置
+        var deltaX = adjustedTargetX - startX;
+        var deltaY = 0; // 滑块验证码不需要垂直移动，保持Y坐标不变
         
         taskLog("移动距离：deltaX=" + deltaX + ", deltaY=" + deltaY);
+        taskLog("详细坐标信息：");
+        taskLog("  滑块起始位置：(" + startX + ", " + startY + ")");
+        taskLog("  原始目标位置：(" + targetX + ", " + targetY + ")");
+        taskLog("  调整后目标位置：(" + adjustedTargetX + ", " + startY + ")");
+        taskLog("  移动距离：deltaX=" + deltaX + "像素");
         
-        // 执行拖拽操作 - 保持Y坐标不变，只移动X坐标
-        var dragResult = performDrag(startX, startY, targetX, startY);
+        // 如果移动距离太小，可能需要调整
+        if (Math.abs(deltaX) < 10) {
+            taskLog("警告：移动距离太小，可能需要调整坐标计算");
+        }
+        
+        // 执行拖拽操作 - 使用调整后的目标位置
+        var dragResult = performDrag(startX, startY, adjustedTargetX, startY);
         
         if (dragResult) {
             taskLog("滑块拖拽完成");
@@ -1805,8 +1930,8 @@ function findSliderElement() {
         taskLog("等待验证码对话框加载...");
         sleep(2000);
         
-        // 方法1：查找所有可拖拽的元素（简化版）
-        taskLog("方法1：查找可拖拽的元素");
+        // 方法1：查找所有可拖拽的元素，收集所有候选元素
+        taskLog("方法1：查找所有可拖拽的元素");
         var elementTypes = [
             "android.view.View",
             "android.widget.ImageView", 
@@ -1816,6 +1941,8 @@ function findSliderElement() {
             "android.widget.RelativeLayout",
             "android.widget.FrameLayout"
         ];
+        
+        var candidateElements = []; // 存储所有候选滑块元素
         
         for (var typeIndex = 0; typeIndex < elementTypes.length; typeIndex++) {
             var elementType = elementTypes[typeIndex];
@@ -1837,14 +1964,31 @@ function findSliderElement() {
                         // 简化判断：只要是合理大小的元素就认为是可拖拽的
                         if (bounds.height() > 50 && bounds.height() < 200 && 
                             bounds.width() > 50 && bounds.width() < 300) {
-                            taskLog("发现可拖拽元素[" + i + "]: 类型=" + elementType + 
+                            taskLog("发现候选滑块元素[" + i + "]: 类型=" + elementType + 
                                    ", 高度=" + bounds.height() + ", 宽度=" + bounds.width() + 
-                                   ", clickable=" + isClickable);
-                            return element;
+                                   ", clickable=" + isClickable + ", 位置=(" + bounds.left + "," + bounds.top + ")");
+                            candidateElements.push({
+                                element: element,
+                                type: elementType,
+                                index: i,
+                                bounds: bounds,
+                                clickable: isClickable
+                            });
                         }
                     }
                 }
             }
+        }
+        
+        // 选择第二个滑块（索引为1）
+        if (candidateElements.length >= 2) {
+            taskLog("找到" + candidateElements.length + "个候选滑块元素，选择第二个滑块（索引1）");
+            var secondSlider = candidateElements[1];
+            taskLog("选择的第二个滑块：类型=" + secondSlider.type + "，位置=(" + secondSlider.bounds.left + "," + secondSlider.bounds.top + ")，大小=" + secondSlider.bounds.width() + "x" + secondSlider.bounds.height());
+            return secondSlider.element;
+        } else if (candidateElements.length === 1) {
+            taskLog("只找到1个候选滑块元素，使用第一个滑块");
+            return candidateElements[0].element;
         }
         
         // 方法2：查找所有Button元素（简化版）
@@ -1853,6 +1997,7 @@ function findSliderElement() {
         taskLog("找到所有Button元素总数：" + (allButtonElements ? allButtonElements.size() : 0));
         
         if (allButtonElements && allButtonElements.size() > 0) {
+            var buttonCandidates = [];
             for (var k = 0; k < allButtonElements.size(); k++) {
                 var element = allButtonElements.get(k);
                 if (element) {
@@ -1862,9 +2007,39 @@ function findSliderElement() {
                     // 简化判断：只要是合理大小的Button就认为是可拖拽的
                     if (bounds.height() > 50 && bounds.height() < 200 && 
                         bounds.width() > 50 && bounds.width() < 300) {
-                        taskLog("发现可拖拽Button元素[" + k + "]: 高度=" + bounds.height() + ", 宽度=" + bounds.width() + ", clickable=" + isClickable);
-                        return element;
+                        taskLog("发现候选Button滑块元素[" + k + "]: 高度=" + bounds.height() + ", 宽度=" + bounds.width() + ", clickable=" + isClickable + ", 位置=(" + bounds.left + "," + bounds.top + ")");
+                        buttonCandidates.push({
+                            element: element,
+                            bounds: bounds,
+                            clickable: isClickable
+                        });
                     }
+                }
+            }
+            
+            // 如果有多个Button候选，选择最合适的
+            if (buttonCandidates.length > 0) {
+                if (buttonCandidates.length > 1) {
+                    taskLog("找到" + buttonCandidates.length + "个候选Button滑块元素，选择最合适的");
+                    // 优先选择可点击的
+                    for (var l = 0; l < buttonCandidates.length; l++) {
+                        if (buttonCandidates[l].clickable) {
+                            taskLog("选择可点击的Button滑块元素[" + l + "]");
+                            return buttonCandidates[l].element;
+                        }
+                    }
+                    // 如果没有可点击的，选择位置最靠右的
+                    var rightmostButton = buttonCandidates[0];
+                    for (var m = 1; m < buttonCandidates.length; m++) {
+                        if (buttonCandidates[m].bounds.left > rightmostButton.bounds.left) {
+                            rightmostButton = buttonCandidates[m];
+                        }
+                    }
+                    taskLog("选择位置最靠右的Button滑块元素");
+                    return rightmostButton.element;
+                } else {
+                    taskLog("找到1个候选Button滑块元素");
+                    return buttonCandidates[0].element;
                 }
             }
         }
@@ -1875,6 +2050,7 @@ function findSliderElement() {
         taskLog("找到所有ImageView元素总数：" + (allImageElements ? allImageElements.size() : 0));
         
         if (allImageElements && allImageElements.size() > 0) {
+            var imageCandidates = [];
             for (var m = 0; m < allImageElements.size(); m++) {
                 var element = allImageElements.get(m);
                 if (element) {
@@ -1884,9 +2060,39 @@ function findSliderElement() {
                     // 简化判断：只要是合理大小的ImageView就认为是可拖拽的
                     if (bounds.height() > 50 && bounds.height() < 200 && 
                         bounds.width() > 50 && bounds.width() < 300) {
-                        taskLog("发现可拖拽ImageView元素[" + m + "]: 高度=" + bounds.height() + ", 宽度=" + bounds.width() + ", clickable=" + isClickable);
-                        return element;
+                        taskLog("发现候选ImageView滑块元素[" + m + "]: 高度=" + bounds.height() + ", 宽度=" + bounds.width() + ", clickable=" + isClickable + ", 位置=(" + bounds.left + "," + bounds.top + ")");
+                        imageCandidates.push({
+                            element: element,
+                            bounds: bounds,
+                            clickable: isClickable
+                        });
                     }
+                }
+            }
+            
+            // 如果有多个ImageView候选，选择最合适的
+            if (imageCandidates.length > 0) {
+                if (imageCandidates.length > 1) {
+                    taskLog("找到" + imageCandidates.length + "个候选ImageView滑块元素，选择最合适的");
+                    // 优先选择可点击的
+                    for (var n = 0; n < imageCandidates.length; n++) {
+                        if (imageCandidates[n].clickable) {
+                            taskLog("选择可点击的ImageView滑块元素[" + n + "]");
+                            return imageCandidates[n].element;
+                        }
+                    }
+                    // 如果没有可点击的，选择位置最靠右的
+                    var rightmostImage = imageCandidates[0];
+                    for (var o = 1; o < imageCandidates.length; o++) {
+                        if (imageCandidates[o].bounds.left > rightmostImage.bounds.left) {
+                            rightmostImage = imageCandidates[o];
+                        }
+                    }
+                    taskLog("选择位置最靠右的ImageView滑块元素");
+                    return rightmostImage.element;
+                } else {
+                    taskLog("找到1个候选ImageView滑块元素");
+                    return imageCandidates[0].element;
                 }
             }
         }
@@ -1964,27 +2170,44 @@ function performDrag(startX, startY, endX, endY) {
         taskLog("拖拽持续时间：" + dragDuration + "ms");
         
         try {
-            // 执行拖拽操作
-            swipe(startX, startY, endX, endY, dragDuration);
-            taskLog("拖拽操作已执行");
+            // 使用精确的拖拽操作 - 使用gesture函数，更精确
+            taskLog("使用gesture拖拽方法，提高精度");
+            
+            // 创建拖拽路径点
+            var path = [];
+            var steps = Math.max(3, Math.min(10, Math.floor(distance / 20))); // 根据距离计算步数
+            
+            for (var step = 0; step <= steps; step++) {
+                var progress = step / steps;
+                var currentX = Math.round(startX + (endX - startX) * progress);
+                var currentY = Math.round(startY + (endY - startY) * progress);
+                path.push([currentX, currentY]);
+            }
+            
+            taskLog("拖拽路径点数：" + path.length);
+            taskLog("拖拽路径：" + JSON.stringify(path));
+            
+            // 执行gesture拖拽
+            gesture(dragDuration, path);
+            taskLog("gesture拖拽操作已执行");
             
             // 等待拖拽完成
-            sleep(1000);
+            sleep(500);
             taskLog("拖拽操作完成，等待系统响应");
             
-        } catch (swipeError) {
-            taskLog("swipe操作失败：" + swipeError.message);
+        } catch (gestureError) {
+            taskLog("gesture拖拽失败：" + gestureError.message);
             
-            // 备用方案：使用gesture
-            try {
-                taskLog("尝试使用gesture方法");
-                gesture(dragDuration, [startX, startY, endX, endY]);
-                taskLog("gesture操作已执行");
-                sleep(1000);
-            } catch (gestureError) {
-                taskLog("gesture操作也失败：" + gestureError.message);
-                return false;
-            }
+            // // 备用方案：使用swipe
+            // try {
+            //     taskLog("尝试使用swipe方法");
+            //     swipe(startX, startY, endX, endY, dragDuration);
+            //     taskLog("swipe操作已执行");
+            //     sleep(1000);
+            // } catch (swipeError) {
+            //     taskLog("swipe操作也失败：" + swipeError.message);
+            //     return false;
+            // }
         }
         
         // 等待验证码系统处理
