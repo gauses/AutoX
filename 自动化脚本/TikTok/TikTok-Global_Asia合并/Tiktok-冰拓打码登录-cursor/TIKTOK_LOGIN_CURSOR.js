@@ -1872,7 +1872,8 @@ function performSliderMove(captchaCode) {
         
         // 记录选择的滑块信息，用于调试
         taskLog("选择的滑块信息：位置=(" + sliderBounds.left + "," + sliderBounds.top + ")，大小=" + sliderBounds.width() + "x" + sliderBounds.height());
-        
+
+
         // 根据滑块实际大小动态计算边距
         var sliderWidth = sliderBounds.width();
         var sliderHeight = sliderBounds.height();
@@ -1981,15 +1982,12 @@ function findSliderElement() {
             }
         }
         
-        // 选择第二个滑块（索引为1）
-        if (candidateElements.length >= 2) {
-            taskLog("找到" + candidateElements.length + "个候选滑块元素，选择第二个滑块（索引1）");
-            var secondSlider = candidateElements[1];
-            taskLog("选择的第二个滑块：类型=" + secondSlider.type + "，位置=(" + secondSlider.bounds.left + "," + secondSlider.bounds.top + ")，大小=" + secondSlider.bounds.width() + "x" + secondSlider.bounds.height());
-            return secondSlider.element;
-        } else if (candidateElements.length === 1) {
-            taskLog("只找到1个候选滑块元素，使用第一个滑块");
-            return candidateElements[0].element;
+        // 直接使用第一个滑块（索引为0）
+        if (candidateElements.length >= 1) {
+            taskLog("找到" + candidateElements.length + "个候选滑块元素，使用第一个滑块（索引0）");
+            var firstSlider = candidateElements[0];
+            taskLog("选择的第一个滑块：类型=" + firstSlider.type + "，位置=(" + firstSlider.bounds.left + "," + firstSlider.bounds.top + ")，大小=" + firstSlider.bounds.width() + "x" + firstSlider.bounds.height());
+            return firstSlider.element;
         }
         
         // 方法2：查找所有Button元素（简化版）
