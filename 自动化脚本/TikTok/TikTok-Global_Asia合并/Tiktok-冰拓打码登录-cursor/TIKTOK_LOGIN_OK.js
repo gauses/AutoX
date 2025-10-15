@@ -1419,6 +1419,42 @@ function swipe_to_up(){
 
 }
 
+/**
+ * 检查验证码FrameLayout是否存在
+ * @returns {Object|null} 返回找到的FrameLayout对象，如果未找到返回null
+ */
+function checkCaptchaFrameLayoutExists() {
+    var frameLayouts = className("android.widget.FrameLayout").find();
+    if (frameLayouts.length == 0) {
+        taskLog("未找到FrameLayout控件");
+        return null;
+    }
+    
+    // 使用与截图时相同的逻辑找到FrameLayout
+    var frameLayout = null;
+    var screenWidth = device.width;
+    var screenHeight = device.height;
+    var screenArea = screenWidth * screenHeight;
+    
+    for (var i = 0; i < frameLayouts.length; i++) {
+        var bounds = frameLayouts[i].bounds();
+        var area = (bounds.right - bounds.left) * (bounds.bottom - bounds.top);
+        var width = bounds.right - bounds.left;
+        var height = bounds.bottom - bounds.top;
+        
+        if (area < screenArea * 0.8 && area > 100000 && width > 200 && height > 200) {
+            frameLayout = frameLayouts[i];
+            break;
+        }
+    }
+    
+    if (!frameLayout) {
+        taskLog("未找到合适的FrameLayout控件");
+        return null;
+    }
+    
+    return frameLayout;
+}
 
 // 主执行函数
 function main() {
@@ -1612,40 +1648,82 @@ function main() {
         taskLog("=== 开始验证码处理流程 ===");
         taskLog("当前时间: " + new Date().toISOString());
         
-        //1.先截图，保存
-        taskLog("步骤1: 开始截图验证码");
-        var screenshotResult = save_Bingtop_Pic();
-        if (!screenshotResult) {
-            taskLog("截图失败，无法进行冰拓打码");
-            throw new Error("验证码截图失败");
-        }
-        taskLog("验证码截图成功，文件路径: " + screenshotResult);
-
-        //2.调用冰拓打码
-        taskLog("步骤2: 开始调用冰拓打码API");
-        taskLog("调用前bingtopApiCallInProgress状态: " + bingtopApiCallInProgress);
+        var maxRetries = 3; // 最大重试次数
+        var captchaSuccess = false; // 验证码是否成功
         
-        var captchaCode = use_Bingtop_code();
-        
-        taskLog("冰拓打码API调用完成，返回结果: " + captchaCode);
-        taskLog("调用后bingtopApiCallInProgress状态: " + bingtopApiCallInProgress);
-        
-        if(captchaCode){
-            taskLog("冰拓打码成功，坐标: " + captchaCode);
+        for (var retryCount = 0; retryCount < maxRetries; retryCount++) {
+            taskLog("=== 验证码尝试 第" + (retryCount + 1) + "次，共" + maxRetries + "次 ===");
             
-            //3.执行滑块移动
-            taskLog("步骤3: 开始执行滑块移动");
-            var moveResult = performSliderMove(captchaCode);
-            if(moveResult){
-                taskLog("滑块移动成功，等待验证码系统验证...");
-                // 增加等待时间，确保验证码系统有足够时间处理
-                sleep(random(5000, 8000)); // 等待5-8秒，给验证码系统更多时间
-                taskLog("验证码验证等待完成");
-            }else{
-                taskLog("滑块移动失败");
+            //1.先截图，保存
+            taskLog("步骤1: 开始截图验证码");
+            var screenshotResult = save_Bingtop_Pic();
+            if (!screenshotResult) {
+                taskLog("截图失败，无法进行冰拓打码");
+                if (retryCount === maxRetries - 1) {
+                    throw new Error("验证码截图失败，已重试" + maxRetries + "次");
+                }
+                continue;
             }
-        }else{
-            taskLog("冰拓打码失败，无法获取验证码坐标");
+            taskLog("验证码截图成功，文件路径: " + screenshotResult);
+
+            //2.调用冰拓打码
+            taskLog("步骤2: 开始调用冰拓打码API");
+            taskLog("调用前bingtopApiCallInProgress状态: " + bingtopApiCallInProgress);
+            
+            var captchaCode = use_Bingtop_code();
+            
+            taskLog("冰拓打码API调用完成，返回结果: " + captchaCode);
+            taskLog("调用后bingtopApiCallInProgress状态: " + bingtopApiCallInProgress);
+            
+            if(captchaCode){
+                taskLog("冰拓打码成功，坐标: " + captchaCode);
+                
+                //3.执行滑块移动
+                taskLog("步骤3: 开始执行滑块移动");
+                var moveResult = performSliderMove(captchaCode);
+                if(moveResult){
+                    taskLog("滑块移动成功，等待验证码系统验证...");
+                    // 等待验证码系统处理
+                    sleep(5000);
+                    taskLog("验证码验证等待完成");
+                    
+                    // 检查FrameLayout是否还存在
+                    taskLog("步骤4: 检查验证码是否通过（检查FrameLayout是否消失）");
+                    var frameLayoutStillExists = checkCaptchaFrameLayoutExists();
+                    
+                    if (!frameLayoutStillExists) {
+                        // FrameLayout已消失，说明验证成功
+                        taskLog("✓ 验证码验证成功！FrameLayout已消失");
+                        captchaSuccess = true;
+                        break;
+                    } else {
+                        // FrameLayout还存在，说明验证失败
+                        taskLog("✗ 验证码验证失败，FrameLayout仍然存在");
+                        if (retryCount < maxRetries - 1) {
+                            taskLog("准备进行第" + (retryCount + 2) + "次重试...");
+                            sleep(random(2000, 3000)); // 等待一段时间再重试
+                        }
+                    }
+                }else{
+                    taskLog("滑块移动失败");
+                    if (retryCount < maxRetries - 1) {
+                        taskLog("准备进行第" + (retryCount + 2) + "次重试...");
+                        sleep(random(2000, 3000));
+                    }
+                }
+            }else{
+                taskLog("冰拓打码失败，无法获取验证码坐标");
+                if (retryCount < maxRetries - 1) {
+                    taskLog("准备进行第" + (retryCount + 2) + "次重试...");
+                    sleep(random(2000, 3000));
+                }
+            }
+        }
+        
+        // 检查最终结果
+        if (!captchaSuccess) {
+            taskLog("✗✗✗ 验证码处理失败！已重试" + maxRetries + "次仍未通过验证");
+            throw new Error("验证码处理失败，已重试" + maxRetries + "次");
         }
         
         taskLog("=== 验证码处理流程结束 ===");
@@ -1788,32 +1866,8 @@ function performSliderMove(captchaCode) {
         taskLog("冰拓返回的相对坐标：X=" + relativeX + ", Y=" + relativeY);
         
         // 获取FrameLayout的位置信息（需要与截图时保持一致）
-        var frameLayouts = className("android.widget.FrameLayout").find();
-        if (frameLayouts.length == 0) {
-            taskLog("未找到FrameLayout控件");
-            return false;
-        }
-        
-        // 使用与截图时相同的逻辑找到FrameLayout
-        var frameLayout = null;
-        var screenWidth = device.width;
-        var screenHeight = device.height;
-        var screenArea = screenWidth * screenHeight;
-        
-        for (var i = 0; i < frameLayouts.length; i++) {
-            var bounds = frameLayouts[i].bounds();
-            var area = (bounds.right - bounds.left) * (bounds.bottom - bounds.top);
-            var width = bounds.right - bounds.left;
-            var height = bounds.bottom - bounds.top;
-            
-            if (area < screenArea * 0.8 && area > 100000 && width > 200 && height > 200) {
-                frameLayout = frameLayouts[i];
-                break;
-            }
-        }
-        
+        var frameLayout = checkCaptchaFrameLayoutExists();
         if (!frameLayout) {
-            taskLog("未找到合适的FrameLayout控件");
             return false;
         }
         
