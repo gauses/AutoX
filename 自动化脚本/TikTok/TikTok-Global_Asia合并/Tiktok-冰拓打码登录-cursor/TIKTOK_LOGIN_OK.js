@@ -1637,18 +1637,9 @@ function main() {
             taskLog("步骤3: 开始执行滑块移动");
             var moveResult = performSliderMove(captchaCode);
             if(moveResult){
-                taskLog("滑块移动成功，等待验证码系统初步反应...");
-                sleep(2000); // 等待2秒，观察验证码反应
-                
-                //4. 尝试微调（如果需要）
-                taskLog("步骤4: 检查是否需要微调位置");
-                var fineTuneResult = performFineTuning(captchaCode);
-                if(fineTuneResult){
-                    taskLog("微调执行完成");
-                }
-                
-                taskLog("等待验证码系统最终验证...");
-                sleep(random(3000, 5000)); // 继续等待验证码系统处理
+                taskLog("滑块移动成功，等待验证码系统验证...");
+                // 增加等待时间，确保验证码系统有足够时间处理
+                sleep(random(5000, 8000)); // 等待5-8秒，给验证码系统更多时间
                 taskLog("验证码验证等待完成");
             }else{
                 taskLog("滑块移动失败");
@@ -1771,129 +1762,6 @@ function main() {
 }
 
 /**
- * 微调滑块位置（如果拖过头了就拖回来）
- * @param {string} captchaCode 冰拓返回的目标坐标
- * @returns {boolean} 是否执行了微调
- */
-function performFineTuning(captchaCode) {
-    try {
-        taskLog("=== 开始微调检测 ===");
-        
-        // 解析目标坐标
-        var coords = captchaCode.split(',');
-        if (coords.length !== 2) {
-            taskLog("坐标格式错误，跳过微调");
-            return false;
-        }
-        
-        var relativeX = parseInt(coords[0]);
-        var relativeY = parseInt(coords[1]);
-        
-        // 获取FrameLayout位置
-        var frameLayouts = className("android.widget.FrameLayout").find();
-        if (frameLayouts.length == 0) {
-            taskLog("未找到FrameLayout，跳过微调");
-            return false;
-        }
-        
-        var frameLayout = null;
-        var screenWidth = device.width;
-        var screenHeight = device.height;
-        var screenArea = screenWidth * screenHeight;
-        
-        for (var i = 0; i < frameLayouts.length; i++) {
-            var bounds = frameLayouts[i].bounds();
-            var area = (bounds.right - bounds.left) * (bounds.bottom - bounds.top);
-            var width = bounds.right - bounds.left;
-            var height = bounds.bottom - bounds.top;
-            
-            if (area < screenArea * 0.8 && area > 100000 && width > 200 && height > 200) {
-                frameLayout = frameLayouts[i];
-                break;
-            }
-        }
-        
-        if (!frameLayout) {
-            taskLog("未找到合适的FrameLayout，跳过微调");
-            return false;
-        }
-        
-        var frameBounds = frameLayout.bounds();
-        var targetX = frameBounds.left + relativeX; // 缺口左边缘的绝对坐标
-        
-        // 重新查找滑块当前位置
-        var sliderElement = findSliderElement();
-        if (!sliderElement) {
-            taskLog("未找到滑块元素，跳过微调");
-            return false;
-        }
-        
-        var sliderBounds = sliderElement.bounds();
-        var currentLeft = sliderBounds.left;
-        var currentCenter = sliderBounds.centerX();
-        var sliderWidth = sliderBounds.width();
-        
-        // 计算偏差
-        var deviation = currentLeft - targetX;
-        
-        taskLog("微调检测结果：");
-        taskLog("  - 滑块当前左边缘：" + currentLeft);
-        taskLog("  - 目标左边缘：" + targetX);
-        taskLog("  - 偏差：" + deviation + "像素");
-        
-        // 如果偏差在可接受范围内（±5像素），不需要微调
-        if (Math.abs(deviation) <= 5) {
-            taskLog("✓ 偏差在可接受范围内（±5px），无需微调");
-            return false;
-        }
-        
-        // 如果偏差太大（超过50像素），可能是判断错误
-        if (Math.abs(deviation) > 50) {
-            taskLog("⚠️ 偏差过大（" + deviation + "px），可能判断有误，跳过微调");
-            return false;
-        }
-        
-        // 执行微调
-        taskLog("⚠️ 需要微调：" + (deviation > 0 ? "往左" : "往右") + " " + Math.abs(deviation) + "像素");
-        
-        // 计算微调的起点和终点（都是中心点坐标）
-        var startX = currentCenter;
-        var startY = sliderBounds.centerY();
-        var endX = currentCenter - deviation; // 如果滑过头（deviation>0），就往左拉回来
-        var endY = startY;
-        
-        taskLog("微调动作：从(" + startX + "," + startY + ")到(" + endX + "," + endY + ")");
-        
-        // 执行微调拖拽（快速小幅度调整）
-        var adjustDuration = Math.min(1000, Math.abs(deviation) * 30); // 根据偏差计算时长
-        taskLog("微调时长：" + adjustDuration + "ms");
-        
-        swipe(startX, startY, endX, endY, adjustDuration);
-        
-        taskLog("✓ 微调执行完成");
-        sleep(1000);
-        
-        // 再次检测位置
-        sliderElement = findSliderElement();
-        if (sliderElement) {
-            var finalLeft = sliderElement.bounds().left;
-            var finalDeviation = finalLeft - targetX;
-            taskLog("微调后检测：");
-            taskLog("  - 最终左边缘：" + finalLeft);
-            taskLog("  - 最终偏差：" + finalDeviation + "像素");
-        }
-        
-        taskLog("=== 微调检测结束 ===");
-        return true;
-        
-    } catch (e) {
-        taskLog("微调过程异常：" + e.message);
-        taskLog("异常堆栈：" + e.stack);
-        return false;
-    }
-}
-
-/**
  * 执行滑块移动操作
  * @param {string} captchaCode 冰拓返回的坐标字符串，格式如 "1143,197"（基于截图的相对坐标）
  * @returns {boolean} 移动是否成功
@@ -1953,7 +1821,6 @@ function performSliderMove(captchaCode) {
         var frameBounds = frameLayout.bounds();
         taskLog("FrameLayout位置：" + frameBounds.left + "," + frameBounds.top + "," + frameBounds.right + "," + frameBounds.bottom);
         
-        
         // 将相对坐标转换为屏幕绝对坐标
         // 注意：冰拓返回的坐标可能需要微调
         var targetX = frameBounds.left + relativeX;
@@ -1997,289 +1864,56 @@ function performSliderMove(captchaCode) {
             return false;
         }
         
-        // 调用新方法：计算滑块距离并执行拖拽
-        return calculateAndDragSlider(sliderElement, targetX, targetY);
-        
-    } catch (e) {
-        taskLog("滑块移动异常：" + e.message);
-        return false;
-    }
-}
-
-/**
- * 计算滑块移动距离并执行拖拽操作
- * @param {Object} sliderElement 滑块元素对象
- * @param {number} targetX 目标X坐标（绝对屏幕坐标）
- * @param {number} targetY 目标Y坐标（绝对屏幕坐标，通常不使用）
- * @returns {boolean} 拖拽是否成功
- */
-function calculateAndDragSlider(sliderElement, targetX, targetY) {
-    try {
         // 获取滑块当前位置
         var sliderBounds = sliderElement.bounds();
         var startX = sliderBounds.centerX();
         var startY = sliderBounds.centerY();
-        var startLeft = sliderBounds.left;
         
         // 记录选择的滑块信息，用于调试
-        taskLog("=== 滑块坐标计算详情 ===");
-        taskLog("滑块当前信息：位置=(" + sliderBounds.left + "," + sliderBounds.top + ")，大小=" + sliderBounds.width() + "x" + sliderBounds.height());
-
-        // 获取滑块尺寸
+        taskLog("选择的滑块信息：位置=(" + sliderBounds.left + "," + sliderBounds.top + ")，大小=" + sliderBounds.width() + "x" + sliderBounds.height());
+        
+        // 根据滑块实际大小动态计算边距
         var sliderWidth = sliderBounds.width();
         var sliderHeight = sliderBounds.height();
+        var dynamicMargin = Math.max(5, Math.min(15, sliderWidth * 0.1)); // 根据滑块宽度计算边距
+        var adjustedTargetX = targetX - dynamicMargin; // 应用动态边距
         
-        // 关键修正：targetX 是缺口左边缘的绝对屏幕坐标
-        // 我们需要计算：当滑块左边缘移动到 targetX 时，滑块中心点的位置
-        // 滑块中心点的目标位置 = 缺口左边缘位置 + 滑块宽度的一半
-        var adjustedTargetX = targetX + (sliderWidth / 2);
+        taskLog("滑块大小：宽度=" + sliderWidth + "，高度=" + sliderHeight);
+        taskLog("动态边距计算：边距=" + dynamicMargin + "像素");
+        taskLog("调整后目标位置：X=" + adjustedTargetX + "（原=" + targetX + "）");
         
-        // ⚠️ 重要：滑块有物理惯性，手势停止后滑块会继续滑动
-        // 策略：使用超慢拖拽（10秒）减少惯性，同时适当补偿
-        var distance = Math.abs(adjustedTargetX - startX);
+        taskLog("滑块当前位置：X=" + startX + ", Y=" + startY);
+        taskLog("冰拓返回的目标位置：X=" + targetX + ", Y=" + targetY);
         
-        // 因为拖拽速度极慢（10秒），惯性几乎为零，所以补偿可以进一步减少
-        // 基础补偿：滑块宽度的20%（极慢拖拽，惯性极小）
-        var baseCompensation = sliderWidth * 0.20;
+        // 计算移动距离 - 使用调整后的目标位置
+        var deltaX = adjustedTargetX - startX;
+        var deltaY = 0; // 滑块验证码不需要垂直移动，保持Y坐标不变
         
-        // 距离补偿：移动距离的8%（极慢速度，惯性小）
-        var distanceCompensation = distance * 0.08;
+        taskLog("移动距离：deltaX=" + deltaX + ", deltaY=" + deltaY);
+        taskLog("详细坐标信息：");
+        taskLog("  滑块起始位置：(" + startX + ", " + startY + ")");
+        taskLog("  原始目标位置：(" + targetX + ", " + targetY + ")");
+        taskLog("  调整后目标位置：(" + adjustedTargetX + ", " + startY + ")");
+        taskLog("  移动距离：deltaX=" + deltaX + "像素");
         
-        // 取两者的最大值，但设置上下限
-        var inertiaCompensation = Math.max(baseCompensation, distanceCompensation);
-        inertiaCompensation = Math.min(30, Math.max(10, inertiaCompensation)); // 范围：10-30像素（惯性极小）
-        
-        adjustedTargetX = adjustedTargetX - inertiaCompensation;
-        
-        taskLog("⚠️ 超慢拖拽惯性补偿计算：");
-        taskLog("  - 拖拽策略：10秒超慢拖拽，惯性几乎为零");
-        taskLog("  - 滑块宽度：" + sliderWidth + "px");
-        taskLog("  - 移动距离：" + Math.round(distance) + "px");
-        taskLog("  - 基础补偿（宽度20%）：" + Math.round(baseCompensation) + "px");
-        taskLog("  - 距离补偿（距离8%）：" + Math.round(distanceCompensation) + "px");
-        taskLog("  - 最终补偿：" + Math.round(inertiaCompensation) + "px（10秒极慢，补偿极小）");
-        
-        // 计算实际需要移动的距离（从当前左边缘到目标左边缘）
-        var leftEdgeDelta = targetX - startLeft;
-        
-        taskLog("滑块当前状态：");
-        taskLog("  - 左边缘位置：" + startLeft);
-        taskLog("  - 中心点位置：" + startX);
-        taskLog("  - 宽度：" + sliderWidth);
-        taskLog("");
-        taskLog("目标位置分析：");
-        taskLog("  - 缺口左边缘（冰拓返回）：" + targetX);
-        taskLog("  - 理论中心点目标：" + (targetX + sliderWidth / 2) + " = " + targetX + " + " + (sliderWidth / 2));
-        taskLog("  - 惯性补偿值：-" + Math.round(inertiaCompensation) + "像素");
-        taskLog("  - 实际中心点目标：" + Math.round(adjustedTargetX) + " (补偿后)");
-        taskLog("  - 左边缘需要移动的距离：" + leftEdgeDelta + "像素");
-        taskLog("");
-        taskLog("拖拽路径：");
-        taskLog("  - 起点（中心）：(" + startX + ", " + startY + ")");
-        taskLog("  - 终点（中心）：(" + Math.round(adjustedTargetX) + ", " + startY + ")");
-        taskLog("  - 中心点移动距离：" + Math.round(adjustedTargetX - startX) + "像素");
-        taskLog("======================");
-        
-        // 验证计算结果
-        var expectedEndLeft = startLeft + leftEdgeDelta;
-        taskLog("验证：滑块拖拽后的左边缘预计位置 = " + expectedEndLeft + " (应该等于 " + targetX + ")");
-        
-        // 如果移动距离太小，可能坐标有问题
-        if (Math.abs(leftEdgeDelta) < 10) {
-            taskLog("警告：移动距离太小（" + leftEdgeDelta + "像素），可能坐标计算有误或滑块已在正确位置");
+        // 如果移动距离太小，可能需要调整
+        if (Math.abs(deltaX) < 10) {
+            taskLog("警告：移动距离太小，可能需要调整坐标计算");
         }
         
-        // 方法A：直接对滑块元素执行拖拽（推荐！）
-        taskLog("=== 尝试方法A：直接拖拽滑块元素 ===");
-        try {
-            // 计算移动距离
-            var deltaX = adjustedTargetX - startX;
-            var deltaY = 0;
-            
-            taskLog("滑块元素详细信息：");
-            taskLog("  - className: " + (sliderElement.className ? sliderElement.className() : "无"));
-            taskLog("  - id: " + (sliderElement.id ? sliderElement.id() : "无"));
-            taskLog("  - desc: " + (sliderElement.desc ? sliderElement.desc() : "无"));
-            taskLog("  - text: " + (sliderElement.text ? sliderElement.text() : "无"));
-            taskLog("  - clickable: " + (sliderElement.clickable ? sliderElement.clickable() : false));
-            taskLog("  - scrollable: " + (sliderElement.scrollable ? sliderElement.scrollable() : false));
-            taskLog("  - longClickable: " + (sliderElement.longClickable ? sliderElement.longClickable() : false));
-            
-            taskLog("对滑块元素执行拖拽，移动距离：X=" + deltaX + ", Y=" + deltaY);
-            
-            // 尝试1：使用元素的drag方法
-            if (sliderElement && typeof sliderElement.drag === 'function') {
-                taskLog("尝试使用元素的drag方法");
-                sliderElement.drag(deltaX, deltaY, 3000); // 3秒内拖拽
-                taskLog("✓ 元素drag方法执行完成");
-                sleep(random(2000, 3000));
-                return true;
-            } else {
-                taskLog("滑块元素不支持drag方法");
-            }
-            
-            // 尝试2：使用元素的手势操作
-            if (sliderElement && typeof sliderElement.gesture === 'function') {
-                taskLog("尝试使用元素的gesture方法");
-                // 生成路径
-                var steps = Math.max(30, Math.min(50, Math.floor(Math.abs(deltaX) / 8)));
-                var path = [];
-                for (var i = 0; i <= steps; i++) {
-                    var progress = i / steps;
-                    var easedProgress = easeInOutCubic(progress);
-                    var x = Math.round(startX + deltaX * easedProgress);
-                    var y = startY;
-                    if (i > 0 && i < steps) {
-                        x += random(-1, 1);
-                    }
-                    path.push([x, y]);
-                }
-                path[path.length - 1] = [adjustedTargetX, startY];
-                
-                sliderElement.gesture(3000, path);
-                taskLog("✓ 元素gesture方法执行完成");
-                sleep(random(2000, 3000));
-                return true;
-            } else {
-                taskLog("滑块元素不支持gesture方法");
-            }
-            
-            // 尝试3：点击元素然后拖拽
-            taskLog("尝试点击元素激活后再拖拽");
-            if (sliderElement.click()) {
-                sleep(200);
-                taskLog("元素已点击，开始拖拽");
-                // 这里会使用performDragOnElement
-            }
-            
-        } catch (elementDragError) {
-            taskLog("✗ 元素拖拽失败：" + elementDragError.message);
-            taskLog("错误堆栈：" + elementDragError.stack);
-        }
-        
-        // 方法B：使用屏幕坐标拖拽
-        taskLog("=== 尝试方法B：使用屏幕坐标拖拽 ===");
-        var dragResult = performDragOnElement(sliderElement, startX, startY, adjustedTargetX, startY);
+        // 执行拖拽操作 - 使用调整后的目标位置
+        var dragResult = performDrag(startX, startY, adjustedTargetX, startY);
         
         if (dragResult) {
-            taskLog("✓ 滑块拖拽完成");
+            taskLog("滑块拖拽完成");
             return true;
         } else {
-            taskLog("✗ 滑块拖拽失败");
+            taskLog("滑块拖拽失败");
             return false;
         }
         
     } catch (e) {
-        taskLog("滑块距离计算和拖拽异常：" + e.message);
-        taskLog("异常堆栈：" + e.stack);
-        return false;
-    }
-}
-
-/**
- * 专门针对滑块元素的拖拽函数
- * @param {Object} element 滑块元素
- * @param {number} startX 起始X
- * @param {number} startY 起始Y
- * @param {number} endX 结束X
- * @param {number} endY 结束Y
- * @returns {boolean} 是否成功
- */
-function performDragOnElement(element, startX, startY, endX, endY) {
-    try {
-        taskLog("开始对滑块元素执行专用拖拽");
-        
-        var deltaX = endX - startX;
-        var deltaY = endY - startY;
-        var distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-        
-        taskLog("移动距离：" + Math.round(distance) + "像素");
-        
-        // 计算持续时间（稍微慢一点，更像人类）
-        var duration = Math.max(2000, Math.min(4000, distance * 6));
-        taskLog("拖拽持续时间：" + duration + "ms");
-        
-        // 方法1：使用gesture高精度路径（主要方法）
-        try {
-            taskLog("方法1: 使用gesture高精度路径");
-            
-            // 创建拖拽路径，增加路径点数
-            var steps = Math.max(30, Math.min(50, Math.floor(distance / 8)));
-            var path = [];
-            
-            taskLog("生成路径，步数：" + steps);
-            
-            for (var i = 0; i <= steps; i++) {
-                var progress = i / steps;
-                var easedProgress = easeInOutCubic(progress);
-                var x = Math.round(startX + deltaX * easedProgress);
-                var y = Math.round(startY + deltaY * easedProgress);
-                
-                // 添加微小抖动
-                if (i > 0 && i < steps) {
-                    x += random(-1, 1);
-                    y += random(-1, 1);
-                }
-                
-                path.push([x, y]);
-            }
-            
-            // 强制最后一点精确到达
-            path[path.length - 1] = [endX, endY];
-            
-            taskLog("执行gesture拖拽，路径点数：" + path.length);
-            gesture(duration, path);
-            
-            taskLog("✓ gesture拖拽完成");
-            sleep(1000);
-            sleep(random(2000, 3000));
-            return true;
-            
-        } catch (gestureError) {
-            taskLog("✗ gesture失败：" + gestureError.message);
-        }
-        
-        // 方法2：尝试使用gestures API（多点触控）
-        try {
-            taskLog("方法2: 使用gestures API（多点触控）");
-            
-            var steps = Math.max(20, Math.min(40, Math.floor(distance / 8)));
-            var path = [];
-            
-            for (var i = 0; i <= steps; i++) {
-                var progress = i / steps;
-                var easedProgress = easeInOutCubic(progress);
-                var x = Math.round(startX + deltaX * easedProgress);
-                var y = Math.round(startY + deltaY * easedProgress);
-                
-                if (i < steps) {
-                    x += random(-1, 1);
-                    y += random(-1, 1);
-                } else {
-                    x = endX;
-                    y = endY;
-                }
-                
-                path.push([x, y]);
-            }
-            
-            taskLog("执行gestures拖拽，路径点数：" + path.length);
-            gestures([duration, path]); // 注意：gestures需要数组包装
-            
-            taskLog("✓ gestures拖拽完成");
-            sleep(random(2000, 3000));
-            return true;
-            
-        } catch (gesturesError) {
-            taskLog("✗ gestures失败：" + gesturesError.message);
-        }
-        
-        // 方法3：回退到performDrag的其他方法
-        taskLog("方法3: 回退到标准拖拽方法");
-        return performDrag(startX, startY, endX, endY);
-        
-    } catch (e) {
-        taskLog("✗ 元素拖拽异常：" + e.message);
+        taskLog("滑块移动异常：" + e.message);
         return false;
     }
 }
@@ -2346,12 +1980,15 @@ function findSliderElement() {
             }
         }
         
-        // 直接使用第一个滑块（索引为0）
-        if (candidateElements.length >= 1) {
-            taskLog("找到" + candidateElements.length + "个候选滑块元素，使用第一个滑块（索引0）");
-            var firstSlider = candidateElements[0];
-            taskLog("选择的第一个滑块：类型=" + firstSlider.type + "，位置=(" + firstSlider.bounds.left + "," + firstSlider.bounds.top + ")，大小=" + firstSlider.bounds.width() + "x" + firstSlider.bounds.height());
-            return firstSlider.element;
+        // 选择第二个滑块（索引为1）
+        if (candidateElements.length >= 2) {
+            taskLog("找到" + candidateElements.length + "个候选滑块元素，选择第二个滑块（索引1）");
+            var secondSlider = candidateElements[1];
+            taskLog("选择的第二个滑块：类型=" + secondSlider.type + "，位置=(" + secondSlider.bounds.left + "," + secondSlider.bounds.top + ")，大小=" + secondSlider.bounds.width() + "x" + secondSlider.bounds.height());
+            return secondSlider.element;
+        } else if (candidateElements.length === 1) {
+            taskLog("只找到1个候选滑块元素，使用第一个滑块");
+            return candidateElements[0].element;
         }
         
         // 方法2：查找所有Button元素（简化版）
@@ -2493,18 +2130,16 @@ function findSliderElement() {
 }
 
 /**
- * 执行拖拽操作 - 专门针对滑块验证码优化，确保精确对齐
- * @param {number} startX 起始X坐标（滑块中心点）
- * @param {number} startY 起始Y坐标（滑块中心点）
- * @param {number} endX 结束X坐标（目标中心点）
- * @param {number} endY 结束Y坐标（目标中心点）
+ * 执行拖拽操作 - 专门针对滑块验证码优化
+ * @param {number} startX 起始X坐标
+ * @param {number} startY 起始Y坐标
+ * @param {number} endX 结束X坐标
+ * @param {number} endY 结束Y坐标
  * @returns {boolean} 拖拽是否成功
  */
 function performDrag(startX, startY, endX, endY) {
     try {
-        taskLog("=== 开始执行精确拖拽 ===");
-        taskLog("起始坐标（中心点）：(" + startX + ", " + startY + ")");
-        taskLog("目标坐标（中心点）：(" + endX + ", " + endY + ")");
+        taskLog("开始执行滑块拖拽：从(" + startX + "," + startY + ")到(" + endX + "," + endY + ")");
         
         // 确保坐标在屏幕范围内
         startX = Math.max(0, Math.min(startX, device.width));
@@ -2517,252 +2152,114 @@ function performDrag(startX, startY, endX, endY) {
         var deltaY = endY - startY;
         var distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
         
-        taskLog("移动分析：");
-        taskLog("  - X轴移动：" + deltaX + "像素");
-        taskLog("  - Y轴移动：" + deltaY + "像素");
-        taskLog("  - 总距离：" + Math.round(distance) + "像素");
+        taskLog("移动距离：" + distance + "像素，deltaX=" + deltaX + ", deltaY=" + deltaY);
         
-        // 验证坐标有效性
+        // 强制执行拖拽操作，确保拖拽能够正常进行
+        taskLog("开始强制拖拽操作");
+        taskLog("拖拽参数：起始(" + startX + "," + startY + ")，目标(" + endX + "," + endY + ")，距离=" + distance);
+        
+        // 确保坐标有效
         if (startX < 0 || startY < 0 || endX < 0 || endY < 0) {
-            taskLog("✗ 错误：坐标无效，无法执行拖拽");
+            taskLog("坐标无效，无法执行拖拽");
             return false;
         }
         
-        if (distance < 5) {
-            taskLog("警告：移动距离太小（" + distance + "像素），滑块可能已经在正确位置");
-            return true;
-        }
+        // 使用最简单直接的拖拽方法
+        taskLog("执行单次直接拖拽");
+        var dragDuration = Math.max(2000, Math.min(5000, distance * 2));
+        taskLog("拖拽持续时间：" + dragDuration + "ms");
         
-        // 计算拖拽持续时间：根据距离动态调整，模拟人类滑动速度
-        // 人类滑动速度约为 200-500 像素/秒
-        var humanSpeed = 300; // 像素/秒
-        var baseDuration = Math.round((distance / humanSpeed) * 1000);
-        var dragDuration = Math.max(1500, Math.min(4000, baseDuration)); // 限制在1.5-4秒之间
-        
-        taskLog("拖拽时长：" + dragDuration + "ms (基于距离" + Math.round(distance) + "像素)");
-        
-        // 方法1：使用gesture高精度路径拖拽（分段减速版）
         try {
-            taskLog("方法1：使用gesture分段减速拖拽（精确停止版）");
+            // 使用精确的拖拽操作 - 使用gesture函数，更精确
+            taskLog("使用gesture拖拽方法，提高精度");
             
-            // 创建分段减速的拖拽路径
-            // 策略：前60%快速接近 → 中30%大幅减速 → 最后10%超慢爬行
-            var totalSteps = 80; // 增加到80步，让减速更精细
+            // 创建拖拽路径点
             var path = [];
-            
-            taskLog("生成激进减速拖拽路径，总步数：" + totalSteps);
-            
-            for (var step = 0; step <= totalSteps; step++) {
-                var progress = step / totalSteps;
-                var easedProgress;
-                
-                if (progress < 0.6) {
-                    // 前60%：快速平滑移动（提前开始减速）
-                    var normalizedProgress = progress / 0.6;
-                    easedProgress = easeInOutCubic(normalizedProgress) * 0.6;
-                } else if (progress < 0.9) {
-                    // 中间30%（0.6-0.9）：大幅减速
-                    // 这个阶段速度降低到之前的30%（降速70%）
-                    var normalizedProgress = (progress - 0.6) / 0.3;
-                    var slowProgress = normalizedProgress * 0.3; // 降速70%，更狠！
-                    easedProgress = 0.6 + (0.3 * slowProgress);
-                } else {
-                    // 最后10%（0.9-1.0）：超慢爬行到终点
-                    // 这个阶段速度降低到之前的10%（降速90%）
-                    var normalizedProgress = (progress - 0.9) / 0.1;
-                    easedProgress = 0.69 + (0.31 * normalizedProgress * 0.1); // 只移动剩余距离的10%，超慢！
-                }
-                
-                // 计算当前点的坐标
-                var currentX = Math.round(startX + deltaX * easedProgress);
-                var currentY = startY;
-                
-                path.push([currentX, currentY]);
-            }
-            
-            // 强制最后一个点精确到达目标位置（补偿后的位置）
-            path[path.length - 1] = [endX, endY];
-            
-            // 分析路径分段情况
-            var segment60 = Math.floor(totalSteps * 0.6);
-            var segment90 = Math.floor(totalSteps * 0.9);
-            
-            taskLog("拖拽路径生成完成（激进减速策略）");
-            taskLog("  - 起点：[" + path[0][0] + ", " + path[0][1] + "]");
-            taskLog("  - 60%位置（第" + segment60 + "点）：[" + path[segment60][0] + ", " + path[segment60][1] + "]");
-            taskLog("  - 90%位置（第" + segment90 + "点）：[" + path[segment90][0] + ", " + path[segment90][1] + "]");
-            taskLog("  - 终点：[" + path[path.length - 1][0] + ", " + path[path.length - 1][1] + "]");
-            taskLog("  - 路径点总数：" + path.length);
-            taskLog("  - 减速策略：前60%快速 → 中30%减速70% → 后10%减速90%（超狠！）");
-            
-            // 使用超长时长，让速度极慢，几乎没有惯性
-            var stableDuration = 10000; // 10秒超慢拖拽，惯性几乎为零
-            taskLog("  - 拖拽时长：" + stableDuration + "ms（10秒超慢拖拽，惯性几乎为零）");
-            
-            // 执行gesture拖拽
-            taskLog("执行gesture拖拽...");
-            gesture(stableDuration, path);
-            taskLog("✓ gesture拖拽执行完成");
-            
-            // 短暂等待
-            sleep(1000);
-            
-            taskLog("拖拽完成，等待验证系统响应...");
-            sleep(2000);
-            
-            taskLog("=== 拖拽操作成功完成 ===");
-            return true;
-            
-        } catch (gestureError) {
-            taskLog("✗ gesture拖拽失败：" + gestureError.message);
-            taskLog("尝试备用方案...");
-        }
-        
-        // 方法2：使用底层触摸事件序列（精确控制）
-        try {
-            taskLog("方法2：使用底层触摸事件序列（touchDown→touchMove→touchUp）");
-            
-            // 检查是否有RootAutomator权限
-            var hasRoot = false;
-            var ra = null;
-            try {
-                ra = new RootAutomator();
-                hasRoot = true;
-                taskLog("检测到Root权限，使用RootAutomator");
-            } catch (e) {
-                taskLog("无Root权限，跳过此方法");
-            }
-            
-            if (hasRoot && ra) {
-                // 使用RootAutomator进行精确控制
-                taskLog("步骤1: touchDown - 按下滑块位置 (" + startX + "," + startY + ")");
-                ra.touchDown(0, startX, startY);
-                sleep(50);
-                
-                // 生成移动路径
-                var steps = Math.max(20, Math.min(40, Math.floor(distance / 10)));
-                taskLog("步骤2: touchMove - 移动滑块，步数：" + steps);
-                
-                for (var i = 1; i <= steps; i++) {
-                    var progress = i / steps;
-                    var easedProgress = easeInOutCubic(progress);
-                    var currentX = Math.round(startX + deltaX * easedProgress);
-                    var currentY = Math.round(startY + deltaY * easedProgress);
-                    
-                    if (i < steps) {
-                        currentX += random(-1, 1);
-                    } else {
-                        currentX = endX;
-                    }
-                    
-                    ra.touchMove(0, currentX, currentY);
-                    sleep(Math.round(dragDuration / steps));
-                }
-                
-                taskLog("步骤3: touchUp - 释放滑块");
-                ra.touchUp(0);
-                
-                taskLog("✓ 底层触摸事件拖拽完成");
-                sleep(random(2000, 3000));
-                return true;
-            }
-            
-        } catch (touchError) {
-            taskLog("✗ 底层触摸事件失败：" + touchError.message);
-            taskLog("尝试备用方案...");
-        }
-        
-        // 方法3：使用gesture高精度拖拽（备用）
-        try {
-            taskLog("方法3：使用gesture高精度拖拽");
-            
-            // 创建平滑的拖拽路径
-            var steps = Math.max(20, Math.min(40, Math.floor(distance / 10)));
-            var path = [];
-            
-            taskLog("生成拖拽路径，步数：" + steps);
+            var steps = Math.max(3, Math.min(10, Math.floor(distance / 20))); // 根据距离计算步数
             
             for (var step = 0; step <= steps; step++) {
                 var progress = step / steps;
-                var easedProgress = easeInOutCubic(progress);
-                var currentX = Math.round(startX + deltaX * easedProgress);
-                var currentY = Math.round(startY + deltaY * easedProgress);
-                
-                if (step > 0 && step < steps) {
-                    currentX += random(-1, 1);
-                    currentY += random(-1, 1);
-                }
-                
+                var currentX = Math.round(startX + (endX - startX) * progress);
+                var currentY = Math.round(startY + (endY - startY) * progress);
                 path.push([currentX, currentY]);
             }
             
-            // 强制最后一个点精确到达
-            path[path.length - 1] = [endX, endY];
+            taskLog("拖拽路径点数：" + path.length);
+            taskLog("拖拽路径：" + JSON.stringify(path));
             
-            taskLog("拖拽路径：起点 " + JSON.stringify(path[0]) + " → 终点 " + JSON.stringify(path[path.length - 1]));
-            
-            taskLog("执行gesture拖拽...");
+            // 执行gesture拖拽
             gesture(dragDuration, path);
-            taskLog("✓ gesture拖拽执行完成");
+            taskLog("gesture拖拽操作已执行");
             
-            sleep(800);
-            sleep(random(2000, 3000));
-            
-            taskLog("=== 拖拽操作成功完成 ===");
-            return true;
+            // 等待拖拽完成
+            sleep(500);
+            taskLog("拖拽操作完成，等待系统响应");
             
         } catch (gestureError) {
-            taskLog("✗ gesture拖拽失败：" + gestureError.message);
-            taskLog("尝试备用方案...");
+            taskLog("gesture拖拽失败：" + gestureError.message);
+            
+            // // 备用方案：使用swipe
+            // try {
+            //     taskLog("尝试使用swipe方法");
+            //     swipe(startX, startY, endX, endY, dragDuration);
+            //     taskLog("swipe操作已执行");
+            //     sleep(1000);
+            // } catch (swipeError) {
+            //     taskLog("swipe操作也失败：" + swipeError.message);
+            //     return false;
+            // }
         }
         
-        // 方法4：最后的备用方案 - 简单swipe
-        try {
-            taskLog("方法4：使用简单swipe拖拽");
-            var swipeDuration = Math.max(2000, Math.min(5000, dragDuration));
-            
-            swipe(startX, startY, endX, endY, swipeDuration);
-            taskLog("✓ swipe拖拽完成");
-            
-            sleep(random(2000, 3000));
-            return true;
-            
-        } catch (swipeError) {
-            taskLog("✗ swipe拖拽失败：" + swipeError.message);
-        }
+        // 等待验证码系统处理
+        taskLog("等待验证码系统验证...");
+        sleep(random(3000, 5000));
         
-        // 方法5：最后的备用方案 - 分段点击
-        try {
-            taskLog("方法5：使用分段点击模拟拖拽");
-            
-            var clickSteps = Math.max(10, Math.min(20, Math.floor(distance / 15)));
-            taskLog("分段点击步数：" + clickSteps);
-            
-            for (var i = 0; i <= clickSteps; i++) {
-                var progress = i / clickSteps;
-                var easedProgress = easeInOutCubic(progress);
-                var currentX = Math.round(startX + deltaX * easedProgress);
-                var currentY = Math.round(startY + deltaY * easedProgress);
-                
-                click(currentX, currentY);
-                sleep(Math.round(dragDuration / clickSteps));
-            }
-            
-            taskLog("✓ 分段点击拖拽完成");
-            sleep(random(2000, 3000));
-            return true;
-            
-        } catch (clickError) {
-            taskLog("✗ 分段点击也失败：" + clickError.message);
-        }
-        
-        taskLog("=== 所有拖拽方法均失败 ===");
-        return false;
+        taskLog("滑块拖拽执行完成");
+        return true;
         
     } catch (e) {
-        taskLog("✗ 拖拽操作发生异常：" + e.message);
-        taskLog("异常堆栈：" + e.stack);
-        return false;
+        taskLog("滑块拖拽异常：" + e.message);
+        
+        // 备用方案：强制执行拖拽
+        try {
+            taskLog("尝试备用方案：强制拖拽");
+            var simpleDuration = Math.max(3000, Math.min(6000, distance * 4));
+            
+            // 方法1：尝试swipe
+            try {
+                swipe(startX, startY, endX, endY, simpleDuration);
+                taskLog("备用swipe拖拽完成");
+            } catch (swipeError) {
+                taskLog("备用swipe失败：" + swipeError.message);
+                
+                // 方法2：尝试gesture
+                try {
+                    gesture(simpleDuration, [startX, startY, endX, endY]);
+                    taskLog("备用gesture拖拽完成");
+                } catch (gestureError) {
+                    taskLog("备用gesture也失败：" + gestureError.message);
+                    
+                    // 方法3：尝试多次点击
+                    taskLog("尝试多次点击方法");
+                    var steps = Math.max(5, Math.min(10, Math.floor(distance / 20)));
+                    for (var k = 0; k < steps; k++) {
+                        var progress = k / (steps - 1);
+                        var currentX = Math.round(startX + (endX - startX) * progress);
+                        var currentY = Math.round(startY + (endY - startY) * progress);
+                        click(currentX, currentY);
+                        sleep(100);
+                    }
+                    taskLog("多次点击拖拽完成");
+                }
+            }
+            
+            sleep(2000);
+            taskLog("备用拖拽完成");
+            return true;
+        } catch (e2) {
+            taskLog("所有拖拽方法都失败：" + e2.message);
+            return false;
+        }
     }
 }
 
@@ -2786,5 +2283,4 @@ function easeInOutCubic(t) {
 
 // 执行主函数
 main();
-
 
