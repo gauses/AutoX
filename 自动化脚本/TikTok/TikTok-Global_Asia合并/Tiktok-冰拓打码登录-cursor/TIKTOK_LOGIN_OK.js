@@ -131,18 +131,6 @@ var CONFIG = {
             ZH_CN: "同意并继续",
             ZH_TW: "同意並繼續",
             EN_US: "Agree and continue"
-        },
-        //在每次刚刚打开页面的时候，可能因为手机已经有手机号码，所以会自动弹出一个有手机号码的dialog弹窗，提示使用手机号码，这里要处理一下
-        //页面内容：
-            //Continue with 
-            //text("选择要登录的账号以继续：")
-            //text("選取要登入的帳戶以繼續")
-            //(212)591-1655
-            //NONE OF THE ABOVE
-        CONTINUE_WITH_PHONE_NUMBER: {
-            ZH_CN: "选择要登录的账号以继续：",
-            ZH_TW: "選取要登入的帳戶以繼續",
-            EN_US: "Continue with"
         }
 
     },
