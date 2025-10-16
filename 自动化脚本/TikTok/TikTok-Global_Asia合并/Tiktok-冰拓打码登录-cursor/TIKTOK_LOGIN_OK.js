@@ -1588,9 +1588,25 @@ function main() {
             }
         }
         sleep(random(3000, 5000))
-        var switch_account_type = findTextByLanguages(CONFIG.UI_TEXT.SWITCH_ACCOUNT_TYPE)
+        
+        // 重试3次查找切换账号类型按钮
+        var switch_account_type = null;
+        var maxRetryCount = 3;
+        for (var retryIndex = 0; retryIndex < maxRetryCount; retryIndex++) {
+            taskLog("第" + (retryIndex + 1) + "次查找切换账号类型按钮...");
+            switch_account_type = findTextByLanguages(CONFIG.UI_TEXT.SWITCH_ACCOUNT_TYPE);
+            if (switch_account_type) {
+                taskLog("成功找到切换账号类型按钮");
+                break;
+            }
+            if (retryIndex < maxRetryCount - 1) {
+                taskLog("未找到切换账号类型按钮，等待后重试...");
+                sleep(random(2000, 3000));
+            }
+        }
+        
         if(!switch_account_type){
-            taskLog("没有找到切换账号类型按钮")
+            taskLog("重试" + maxRetryCount + "次后仍未找到切换账号类型按钮")
             throw new Error("没有找到切换账号类型按钮，请重试")
         }
 
