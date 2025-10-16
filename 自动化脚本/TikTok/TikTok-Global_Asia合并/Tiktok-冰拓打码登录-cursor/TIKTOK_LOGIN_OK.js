@@ -1494,33 +1494,30 @@ function main() {
             sleep(random(3000, 5000))
 
         }
+
         sleep(random(8000, 10000))
         //继续打开之后，可能会出现提示往上滑动
         swipe_to_up()
         sleep(random(8000, 10000))
-
-
-
         taskLog("开始点击首页最右侧Profile按钮")
         var profile_btn = findTextByLanguages(CONFIG.UI_TEXT.PROFILE_TEXT)
     // if(profile_btn){
-        sleep(random(5000, 8000))
+        sleep(random(12000, 15000))
 
 
-        //在每次刚刚打开页面的时候，可能因为手机已经有手机号码，所以会自动弹出一个有手机号码的dialog弹窗，提示使用手机号码，这里要处理一下
-        //页面内容：
-            //Continue with 
-            //(212)591-1655
-            //NONE OF THE ABOVE
-        //fullId("com.google.android.gms:id/credentials_hint_picker_title")
-        var continue_with_phone_number = findTextByLanguages(CONFIG.UI_TEXT.CONTINUE_WITH_PHONE_NUMBER)
-        if(continue_with_phone_number){
-            taskLog("找到Continue with phone number按钮，点击一次回退按钮")
+        //如果手机已经登陆过google账号，此时有可能底部弹出一个弹窗，弹窗的整体布局是：fullId("com.google.android.gms:id/main_container") 这里要处理一下
+        //fullId("com.google.android.gms:id/main_container")
+        //text("换一种方式登录")  - > text("使用其他设备上的通行密钥")
+        //如果找到，则点击，如果没找到，则不处理：fullId("com.google.android.gms:id/cancel") - > 点击
+        //先查看是否存在fullId("com.google.android.gms:id/main_container") ，如果存在，就点击一下back()
+        //fullId("com.google.android.gms:id/container")
+        if(id("com.google.android.gms:id/main_container").exists() || id("com.google.android.gms:id/container").exists()){
+            taskLog("找到google_main_container，点击一次back()")
             back()
         }else{
-            taskLog("没有找到Continue with phone number按钮，直接跳过")
+            taskLog("没有找到google_main_container，直接跳过")
         }
-        sleep(random(5000, 8000))
+
 
 
 
@@ -1546,7 +1543,23 @@ function main() {
                 }
             }
         }
-        sleep(random(3000, 5000))
+
+        sleep(random(12000, 15000))
+        //在每次刚刚打开页面的时候，可能因为手机已经有手机号码，所以会自动弹出一个有手机号码的dialog弹窗，提示使用手机号码，这里要处理一下
+        //页面内容：
+            //Continue with 
+            //(212)591-1655
+            //NONE OF THE ABOVE
+        //fullId("com.google.android.gms:id/credentials_hint_picker_title")
+        //fullId("com.google.android.gms:id/credential_picker_options")
+        if(id("com.google.android.gms:id/credentials_hint_picker_title").exists() || id("com.google.android.gms:id/credential_picker_options").exists()){
+            taskLog("找到Continue with phone number按钮，点击一次回退按钮")
+            back()
+        }else{
+            taskLog("没有找到Continue with phone number按钮，直接跳过")
+        }
+        sleep(random(5000, 8000))
+
 
        
         //开始切换账号类型
