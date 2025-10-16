@@ -1518,7 +1518,7 @@ function main() {
             taskLog("没有找到google_main_container，直接跳过")
         }
 
-
+        sleep(random(5000, 8000))
 
 
         //开始点击：desc("Use phone / email / username")
@@ -1542,6 +1542,9 @@ function main() {
                     }
                 }
             }
+        }else{
+            taskLog("没有找到Use phone / email / username按钮，抛出异常")
+            throw new Error("没有找到Use phone / email / username按钮，请重试")
         }
 
         sleep(random(12000, 15000))
