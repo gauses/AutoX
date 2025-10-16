@@ -1641,7 +1641,28 @@ function main() {
                 }
             }
         }
-        sleep(random(50000, 80000))
+        
+        // 通过循环检查验证码框架是否出现
+        taskLog("开始等待验证码框架出现...");
+        var maxCheckCount = 5; // 最大检查次数
+        var captchaFrameFound = false;
+        for (var checkCount = 0; checkCount < maxCheckCount; checkCount++) {
+            taskLog("第" + (checkCount + 1) + "次检查验证码框架是否存在...");
+            var frameLayout = checkCaptchaFrameLayoutExists();
+            if (frameLayout) {
+                taskLog("验证码框架已出现，继续执行");
+                captchaFrameFound = true;
+                break;
+            }
+            if (checkCount < maxCheckCount - 1) {
+                taskLog("验证码框架未出现，等待后重试...");
+                sleep(random(5000, 6000));
+            }
+        }
+        
+        if (!captchaFrameFound) {
+            throw new Error("等待验证码框架超时：检查了" + maxCheckCount + "次仍未出现");
+        }
 
 
         //此时出现验证码，开始使用冰拓进行打码
