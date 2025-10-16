@@ -131,6 +131,15 @@ var CONFIG = {
             ZH_CN: "同意并继续",
             ZH_TW: "同意並繼續",
             EN_US: "Agree and continue"
+        },
+        //社区指南更新弹窗：
+        //标题：fullId("com.ss.android.ugc.trill:id/rvw") : text("Community Guidelines update")
+        //内容：fullId("com.ss.android.ugc.trill:id/dc0") ：text("We will be updating our Community Guidelines on September 13, 2025, so you can continue to create, discover, and share safely on TikTok. Check out what's new and learn more.")
+        //确认按钮：没有ID ： text("Got it") className("android.widget.Button")
+        COMMUNITY_GUIDELINES_UPDATE_CONFIRM: {
+            ZH_CN: "确认",
+            ZH_TW: "確定",
+            EN_US: "Got it"
         }
 
     },
@@ -1473,6 +1482,44 @@ function main() {
         sleep(random(5000, 8000))
 
 
+
+        //打开之后，可能会有一个弹窗：(只在亚洲版出现过，全球版没有遇到)
+        //标题：fullId("com.ss.android.ugc.trill:id/rvw") : text("Community Guidelines update")
+        //内容：fullId("com.ss.android.ugc.trill:id/dc0") ：text("We will be updating our Community Guidelines on September 13, 2025, so you can continue to create, discover, and share safely on TikTok. Check out what's new and learn more.")
+        //确认按钮：没有ID ： text("Got it") className("android.widget.Button")
+        //尝试过：back键不可点击
+        
+        // 处理社区指南更新弹窗（如果存在）
+        taskLog("检查是否存在社区指南更新弹窗...");
+        sleep(random(2000, 3000));
+        
+        // 先检查标题ID和内容ID是否存在，确认弹窗是否真的出现
+        var dialogTitle = id(CONFIG.APP.ASIA_PACKAGE + ":id/rvw").findOne(3000);
+        var dialogContent = id(CONFIG.APP.ASIA_PACKAGE + ":id/dc0").findOne(3000);
+        
+        // 如果没找到亚洲版的，尝试全球版的ID（全球版的ID没有看，只是暂时加了）
+        if (!dialogTitle) {
+            dialogTitle = id(CONFIG.APP.GLOBAL_PACKAGE + ":id/rvw").findOne(3000);
+        }
+        if (!dialogContent) {
+            dialogContent = id(CONFIG.APP.GLOBAL_PACKAGE + ":id/dc0").findOne(3000);
+        }
+        
+        if (dialogTitle || dialogContent) {
+            taskLog("确认存在社区指南更新弹窗");
+            
+            var gotItButton = findTextByLanguages(CONFIG.UI_TEXT.GOT_IT);
+            if(gotItButton){
+                taskLog("找到Got it按钮，并且点击")
+            }else{
+                taskLog("没有找到Got it按钮，直接跳过")
+            }
+        } else {
+            taskLog("未发现社区指南弹窗，继续执行");
+        }
+
+
+
         //继续打开之后，会出现类别，需要自己选择
         //fullId("com.ss.android.ugc.trill:id/bub")
         taskLog("当前包名：" + targetPackageName)
@@ -1684,7 +1731,7 @@ function main() {
         
         // 通过循环检查验证码框架是否出现
         taskLog("开始等待验证码框架出现...");
-        var maxCheckCount = 5; // 最大检查次数
+        var maxCheckCount = 10; // 最大检查次数
         var captchaFrameFound = false;
         for (var checkCount = 0; checkCount < maxCheckCount; checkCount++) {
             taskLog("第" + (checkCount + 1) + "次检查验证码框架是否存在...");
