@@ -1489,7 +1489,6 @@ function main() {
         sleep(random(8000, 10000))
         taskLog("开始点击首页最右侧Profile按钮")
         var profile_btn = findTextByLanguages(CONFIG.UI_TEXT.PROFILE_TEXT)
-    // if(profile_btn){
         sleep(random(12000, 15000))
 
 
@@ -1637,10 +1636,7 @@ function main() {
                 if (button) {
                     if (button.id() == (CONFIG.APP.GLOBAL_PACKAGE +":id/dn1") || button.id() == (CONFIG.APP.ASIA_PACKAGE +":id/dn2")) {
                         taskLog("找到控件: continue" );
-                        // var bounds = button.bounds();
-                        // click(bounds.centerX(), bounds.centerY());
                         button.click();
-                        // break;
                     }
                 }
             }
@@ -1652,7 +1648,7 @@ function main() {
         taskLog("=== 开始验证码处理流程 ===");
         taskLog("当前时间: " + new Date().toISOString());
         
-        var maxRetries = 3; // 最大重试次数
+        var maxRetries = 5; // 最大重试次数
         var captchaSuccess = false; // 验证码是否成功
         
         for (var retryCount = 0; retryCount < maxRetries; retryCount++) {
@@ -1731,70 +1727,7 @@ function main() {
         }
         
         taskLog("=== 验证码处理流程结束 ===");
-
-        
-        sleep(random(800000, 1000000))
-
-
-
-
-
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-    // }else{
-    //     Nest_ScreenCapture()
-    //     sleep(random(3000, 5000))
-    //     taskLog("没有找到首页最右侧Profile按钮")
-    //     throw new Error("没有找到首页最右侧Profile按钮")
-    // }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-
-
-        
-
-        // // 处理权限问题
-        // taskLog("开始处理权限问题.....");
-        // click_permission_allow();
-        // sleep(CONFIG.TIMEOUTS.SHORT);
-
-        // // 刷新媒体库
-        // taskLog("开始刷新本地媒体库.....");
-        // refreshMedia(CONFIG.PATHS.DOWNLOAD);
-        // sleep(CONFIG.TIMEOUTS.SHORT);
-
-        
+        sleep(random(5000, 8000))
 
         Logger.info("TikTok账号密码登录任务执行完成");
 
