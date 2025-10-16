@@ -1465,11 +1465,19 @@ function main() {
         sleep(random(3000, 5000))
 
 
+        //国际版：底部直接有一个“同意并继续”的红色按钮，直接点击即可
+        //className("android.widget.Button") fullId("com.zhiliaoapp.musically:id/d7n") 直接根据ID点击即可
+        if(targetPackageName == CONFIG.APP.GLOBAL_PACKAGE){
+            clickId(CONFIG.APP.GLOBAL_PACKAGE + ":id/d7n");
+        }
+        sleep(random(5000, 8000))
+
 
         //继续打开之后，会出现类别，需要自己选择
         //fullId("com.ss.android.ugc.trill:id/bub")
-        //国际版没有这个按钮，亚洲版有这个按钮，如果亚洲版有这个按钮，则点击,国际版则不点击 ，通过包名判断
+        taskLog("当前包名：" + targetPackageName)
         if(targetPackageName == CONFIG.APP.ASIA_PACKAGE){
+            taskLog("亚洲版：找到跳过按钮，并且点击")
 
             // 点击：text("跳过")
             clickId(CONFIG.APP.ASIA_PACKAGE + ":id/bub")
@@ -1481,7 +1489,23 @@ function main() {
             clickId(CONFIG.APP.ASIA_PACKAGE + ":id/qeh")
             sleep(random(3000, 5000))
 
+        }else if(targetPackageName == CONFIG.APP.GLOBAL_PACKAGE){
+            taskLog("全球版：找到跳过按钮，并且点击")
+
+            // 点击：text("跳过")
+            //fullId("com.zhiliaoapp.musically:id/bub")
+            clickId(CONFIG.APP.GLOBAL_PACKAGE + ":id/bub")
+            sleep(random(3000, 5000))
+
+            // 点击：text("开始观看"),但是这个按钮实际一直没有找到，不过Asia有，所以全球版也一起加上
+            clickId(CONFIG.APP.GLOBAL_PACKAGE + ":id/qeh")
+            sleep(random(3000, 5000))
+        }else{
+            taskLog("包名全都匹配不上，抛出异常")
+            throw new Error("包名全都匹配不上，请重试")
         }
+
+
 
         sleep(random(8000, 10000))
         //继续打开之后，可能会出现提示往上滑动
