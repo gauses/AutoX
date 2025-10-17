@@ -140,7 +140,14 @@ var CONFIG = {
             ZH_CN: "确认",
             ZH_TW: "確定",
             EN_US: "Got it"
+        },
+        //注册页面的底部：Login In按钮的text
+        LOGIN_IN_TEXT: {
+            ZH_CN: "登录",//text("已有账号？登录")
+            ZH_TW: "登入", //text("已經有帳號？登入")
+            EN_US: "Login in" //text("Already have an account? Log in")
         }
+
 
     },
     
@@ -1519,7 +1526,7 @@ function main() {
         }
 
 
-
+        sleep(random(5000, 8000))
         //继续打开之后，会出现类别，需要自己选择
         //fullId("com.ss.android.ugc.trill:id/bub")
         taskLog("当前包名：" + targetPackageName)
@@ -1563,6 +1570,28 @@ function main() {
         sleep(random(12000, 15000))
 
 
+        //可能会直接出现注册页面，"Login In"按钮此时在下方，需要点击这个ID，切换成登陆界面，如果没有发现这个ID，那么直接跳过
+        //fullId("com.ss.android.ugc.trill:id/t35") ：亚洲版本确定是这个ID
+        //fullId("com.zhiliaoapp.musically:id/t35") ：全球版本不确定，暂时也写这个ID
+        var login_in_btn = id(CONFIG.APP.ASIA_PACKAGE + ":id/t35").findOne(3000) || id(CONFIG.APP.GLOBAL_PACKAGE + ":id/t35").findOne(3000);
+        if(login_in_btn){
+            taskLog("找到Login In按钮，查看按钮text是否包含Login In，如果是，则点击，如果不是，则直接跳过")
+            taskLog("login_in_btn按钮的text是：" + login_in_btn.text())
+            var btnText = login_in_btn.text();
+            // 检查按钮文本是否包含任何一种语言的"Login in"关键词
+            if(btnText.indexOf(CONFIG.UI_TEXT.LOGIN_IN_TEXT.ZH_CN) >= 0 || 
+               btnText.indexOf(CONFIG.UI_TEXT.LOGIN_IN_TEXT.ZH_TW) >= 0 || 
+               btnText.indexOf(CONFIG.UI_TEXT.LOGIN_IN_TEXT.EN_US) >= 0){
+                taskLog("Login In按钮的text包含Login In关键词，并且点击")
+                login_in_btn.click();
+            }else{
+                taskLog("Login In底部按钮的text不包含Login In关键词，直接跳过")
+            }
+        }
+        sleep(random(5000, 8000))
+
+
+
         //如果手机已经登陆过google账号，此时有可能底部弹出一个弹窗，弹窗的整体布局是：fullId("com.google.android.gms:id/main_container") 这里要处理一下
         //fullId("com.google.android.gms:id/main_container")
         //text("换一种方式登录")  - > text("使用其他设备上的通行密钥")
@@ -1584,26 +1613,29 @@ function main() {
         //fullId("com.ss.android.ugc.trill:id/cee")
         //fullId("com.zhiliaoapp.musically:id/cee")
         //如果有这个按钮对应的ID，则点击，如果没有，则不点击
-        var allTextView = className("android.widget.TextView").find();
-        taskLog("找到allTextView: 全部 = "  + allTextView.size());
-        if (allTextView && allTextView.size() > 0) {
-            for (var i = 0; i < allTextView.size(); i++) {
-                var textView = allTextView.get(i);
-                if (textView) {                    
-                    if (textView.id() == (CONFIG.APP.GLOBAL_PACKAGE +":id/cee") || textView.id() == (CONFIG.APP.ASIA_PACKAGE +":id/cee")) {
-                        // 正确调用bounds()方法并点击
-                        taskLog("找到顶部控件: Use phone / email / username" );
-                        var bounds = textView.bounds();
-                        click(bounds.centerX(), bounds.centerY());
-                        // 找到并点击后可以跳出循环
-                        break;
-                    }
-                }
-            }
-        }else{
+        // var allTextView = className("android.widget.TextView").find();
+        // taskLog("找到allTextView: 全部 = "  + allTextView.size());
+        // if (allTextView && allTextView.size() > 0) {
+        //     for (var i = 0; i < allTextView.size(); i++) {
+        //         var textView = allTextView.get(i);
+        //         if (textView) {                    
+        //             if (textView.id() == (CONFIG.APP.GLOBAL_PACKAGE +":id/cee") || textView.id() == (CONFIG.APP.ASIA_PACKAGE +":id/cee")) {
+        //                 // 正确调用bounds()方法并点击
+        //                 taskLog("找到顶部控件: Use phone / email / username" );
+        //                 var bounds = textView.bounds();
+        //                 click(bounds.centerX(), bounds.centerY());
+        //                 // 找到并点击后可以跳出循环
+        //                 break;
+        //             }
+        //         }
+        //     }
+        var click_use_phone_email_username_btn = clickId(targetPackageName + ":id/cee");
+        if(!click_use_phone_email_username_btn){
             taskLog("没有找到Use phone / email / username按钮，抛出异常")
             throw new Error("没有找到Use phone / email / username按钮，请重试")
         }
+
+
 
         sleep(random(12000, 15000))
         //在每次刚刚打开页面的时候，可能因为手机已经有手机号码，所以会自动弹出一个有手机号码的dialog弹窗，提示使用手机号码，这里要处理一下
@@ -1638,7 +1670,7 @@ function main() {
         
         // 重试3次查找切换账号类型按钮
         var switch_account_type = null;
-        var maxRetryCount = 3;
+        var maxRetryCount = 6;
         for (var retryIndex = 0; retryIndex < maxRetryCount; retryIndex++) {
             taskLog("第" + (retryIndex + 1) + "次查找切换账号类型按钮...");
             switch_account_type = findTextByLanguages(CONFIG.UI_TEXT.SWITCH_ACCOUNT_TYPE);
@@ -1756,7 +1788,7 @@ function main() {
         taskLog("=== 开始验证码处理流程 ===");
         taskLog("当前时间: " + new Date().toISOString());
         
-        var maxRetries = 5; // 最大重试次数
+        var maxRetries = 10; // 最大重试次数
         var captchaSuccess = false; // 验证码是否成功
         
         for (var retryCount = 0; retryCount < maxRetries; retryCount++) {
