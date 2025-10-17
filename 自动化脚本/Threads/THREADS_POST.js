@@ -890,6 +890,13 @@ function transferVideoToNest(fileName){
         files.copy(videoPath, targetPath);
         console.log("复制成功!");
         console.log("新视频路径: " + targetPath);
+        
+        // 复制成功后删除原文件
+        if(files.remove(videoPath)){
+            console.log("原文件已删除: " + videoPath);
+        } else {
+            console.log("原文件删除失败: " + videoPath);
+        }
     } catch(e) {
         console.error("复制失败: " + e);
     }
@@ -1120,6 +1127,15 @@ try {
             }
         }
     }
+
+
+    //最最后，删除整个临时文件夹
+    files.removeDir("/storage/emulated/0/Download/" + A_NEST_Threads_MEDIA)
+    toast("临时文件夹已删除")
+    sleep(random(3000, 5000))
+    refreshMedia("/storage/emulated/0/Download/")
+    sleep(random(3000, 5000))
+
 
 
 
