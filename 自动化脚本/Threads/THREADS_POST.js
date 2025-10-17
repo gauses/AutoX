@@ -103,7 +103,130 @@ if (runningEngines.length > 1) {
 sleep(3000)
 taskLog("准备启动Threads...")
 
-
+//可能会出现权限弹窗，如果弹出，那么允许
+function click_permission_allow(){
+    taskLog("开始处理权限问题.....");
+    
+    // 定义权限相关的文本配置
+    var PERMISSION_TEXTS = {
+        // 简体中文权限文本
+        ZH_CN: {
+            ALLOW: ["仅在使用该应用时允许", "仅限这一次", "允许"],
+            DENY: ["不允许"]
+        },
+        // 繁体中文权限文本
+        TW: {
+            ALLOW: ["使用應用程式時", "僅允許這一次", "允許"],
+            DENY: ["不允許"]
+        },
+        // 英文权限文本
+        EN: {
+            ALLOW: ["WHILE USING THE APP", "ONLY THIS TIME", "ALLOW"],
+            DENY: ["DON'T ALLOW"]
+        }
+    };
+    
+    // 快速检查并点击权限按钮
+    function quickClickPermission() {
+        // 查找所有可能的权限按钮
+        var allButtons = className("android.widget.Button").find();
+        var allTextViews = className("android.widget.TextView").find();
+        
+        // 合并所有文本元素
+        var allElements = [];
+        for (var i = 0; i < allButtons.size(); i++) {
+            allElements.push(allButtons.get(i));
+        }
+        for (var i = 0; i < allTextViews.size(); i++) {
+            allElements.push(allTextViews.get(i));
+        }
+        
+        // 快速遍历查找权限相关按钮
+        for (var k = 0; k < allElements.length; k++) {
+            var element = allElements[k];
+            if (!element || !element.clickable()) continue;
+            
+            var text = element.text();
+            if (!text) continue;
+            
+            // 检查是否包含允许相关的文本
+            var isAllowText = false;
+            // 检查简体中文
+            for (var m = 0; m < PERMISSION_TEXTS.ZH_CN.ALLOW.length; m++) {
+                if (text.includes(PERMISSION_TEXTS.ZH_CN.ALLOW[m])) {
+                    isAllowText = true;
+                    break;
+                }
+            }
+            // 检查繁体中文
+            if (!isAllowText) {
+                for (var n = 0; n < PERMISSION_TEXTS.TW.ALLOW.length; n++) {
+                    if (text.includes(PERMISSION_TEXTS.TW.ALLOW[n])) {
+                        isAllowText = true;
+                        break;
+                    }
+                }
+            }
+            // 检查英文
+            if (!isAllowText) {
+                for (var o = 0; o < PERMISSION_TEXTS.EN.ALLOW.length; o++) {
+                    if (text.includes(PERMISSION_TEXTS.EN.ALLOW[o])) {
+                        isAllowText = true;
+                        break;
+                    }
+                }
+            }
+            
+            // 检查是否包含拒绝相关的文本
+            var isDenyText = false;
+            // 检查简体中文
+            for (var p = 0; p < PERMISSION_TEXTS.ZH_CN.DENY.length; p++) {
+                if (text.includes(PERMISSION_TEXTS.ZH_CN.DENY[p])) {
+                    isDenyText = true;
+                    break;
+                }
+            }
+            // 检查繁体中文
+            if (!isDenyText) {
+                for (var q = 0; q < PERMISSION_TEXTS.TW.DENY.length; q++) {
+                    if (text.includes(PERMISSION_TEXTS.TW.DENY[q])) {
+                        isDenyText = true;
+                        break;
+                    }
+                }
+            }
+            // 检查英文
+            if (!isDenyText) {
+                for (var r = 0; r < PERMISSION_TEXTS.EN.DENY.length; r++) {
+                    if (text.includes(PERMISSION_TEXTS.EN.DENY[r])) {
+                        isDenyText = true;
+                        break;
+                    }
+                }
+            }
+            
+            // 如果是允许按钮且不是拒绝按钮，则点击
+            if (isAllowText && !isDenyText) {
+                taskLog("找到权限按钮: " + text);
+                element.click();
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    // 使用快速检查方法，最多尝试3次
+    for (var i = 0; i < 3; i++) {
+        if (quickClickPermission()) {
+            taskLog("权限处理成功");
+            return;
+        }
+        sleep(1000); // 短暂等待后重试
+    }
+    
+    taskLog("未找到权限弹窗，继续执行");
+}
 
 function isAppInstalled(packageName) {
     var pm = context.getPackageManager();
@@ -215,7 +338,7 @@ function click_Comment_Btn(commentText){
                 // 遍历所有找到的View
                 for (let i = 0; i < autoViewList.length; i++) {
                     // 或者输出控件的某个属性
-                    taskLog("autoViewList[" + i + "] id = " + autoViewList[i].id());
+                    // taskLog("autoViewList[" + i + "] id = " + autoViewList[i].id());
 
                     //clickable("false")
                     if (autoViewList[i] != null && autoViewList[i].id() == "permalink_inline_composer_post_button") {
@@ -856,44 +979,6 @@ try {
     }
 
 
-    //描述
-    var all_TT_DESC_text = []
-    if(THREADS_POST_VIDEO_DESC && 
-        THREADS_POST_VIDEO_DESC.trim() !== "" && 
-        THREADS_POST_VIDEO_DESC.trim().toLowerCase() !== "off" && 
-        !THREADS_POST_VIDEO_DESC.includes("$${")){
-            all_TT_DESC_text = get_DESC_comment_text()
-
-            //从数组中，随机挑选一条描述
-            var randomIndex = Math.floor(Math.random() * all_TT_DESC_text.length);
-            var randomDesc = all_TT_DESC_text[randomIndex];
-            taskLog("随机挑选的描述 = " + randomDesc)
-
-            //输入内容
-            //className("android.widget.EditText") fullId("new_thread_screen_composer") clickable("true")
-            var autoEditTextList = className("android.widget.EditText").find();
-            taskLog("当前页面找到 " + autoEditTextList.length + " 个EditText");
-            if(autoEditTextList.length > 0){
-                for (let i = 0; i < autoEditTextList.length; i++) {
-                    if (autoEditTextList[i] != null) {
-                        taskLog("autoEditTextList[" + i + "] id = " + autoEditTextList[i].id());    
-                        if(autoEditTextList[i].id() == "new_thread_screen_composer"){
-                            taskLog("找到输入框，开始输入内容")
-                            autoEditTextList[i].setText(randomDesc)
-                            sleep(random(3000, 5000))
-                            break;
-                        }   
-                    }
-                }
-            }else{
-                taskLog("没有找到输入框，直接无视")
-            }
-            
-    }else{
-        taskLog("没有设置文本，所以不需要设文本")
-    }
-
-
     //图片&视频
     var foundClickIMGAE = false
     if(THREADS_POST_VIDEO_URL && 
@@ -907,12 +992,10 @@ try {
                 taskLog("当前页面找到 " + autoButtonList.length + " 个按钮");
                 if(autoButtonList.length > 0){
                     for (let i = 0; i < autoButtonList.length; i++) {
-                        if (autoButtonList[i] != null) {  
-                            // 或者输出控件的某个属性
-                            taskLog("autoButtonList[" + i + "] id = " + autoButtonList[i].id());
-            
+                        if (autoButtonList[i] != null) {                                          
                             //点击第一个按钮
                             //fullId("new_thread_screen_gallery_button")
+                            taskLog("寻找图片 ： autoButtonList[" + i + "] id = " + autoButtonList[i].id());
                             if(autoButtonList[i].id() == "new_thread_screen_gallery_button"){
                                 taskLog("找到按钮，开始准备寻找图片")
                                 autoButtonList[i].click()
@@ -930,6 +1013,10 @@ try {
                 }
         
         
+                // 处理权限问题
+                taskLog("开始处理权限问题.....");
+                click_permission_allow();
+                sleep(random(3000, 5000))
         
                 if(foundClickIMGAE){
                     //开始点击图片：className("android.view.ViewGroup") fullId("com.instagram.barcelona:id/gallery_picker_grid_item_container") clickable("true")
@@ -938,7 +1025,7 @@ try {
                     if(autoGalleryList.length > 0){
                         for (let i = 0; i < autoGalleryList.length; i++) {
                             if (autoGalleryList[i] != null) {  
-                                taskLog("autoGalleryList[" + i + "] id = " + autoGalleryList[i].id());
+                                // taskLog("autoGalleryList[" + i + "] id = " + autoGalleryList[i].id());
                                 if(autoGalleryList[i].id() == THREADS_PACKAGE_NAME + ":id/gallery_picker_grid_item_container"){
                                     taskLog("找到图片，开始点击")
                                     autoGalleryList[i].click()
@@ -975,6 +1062,47 @@ try {
         taskLog("没有设置图片视频地址，所以不需要上传图片，只设置文字即可")
     }
 
+    sleep(random(3000, 5000))
+
+    
+    //描述
+    var all_TT_DESC_text = []
+    if(THREADS_POST_VIDEO_DESC && 
+        THREADS_POST_VIDEO_DESC.trim() !== "" && 
+        THREADS_POST_VIDEO_DESC.trim().toLowerCase() !== "off" && 
+        !THREADS_POST_VIDEO_DESC.includes("$${")){
+            all_TT_DESC_text = get_DESC_comment_text()
+
+            //从数组中，随机挑选一条描述
+            var randomIndex = Math.floor(Math.random() * all_TT_DESC_text.length);
+            var randomDesc = all_TT_DESC_text[randomIndex];
+            taskLog("随机挑选的描述 = " + randomDesc)
+
+            //输入内容
+            //className("android.widget.EditText") fullId("new_thread_screen_composer") clickable("true")
+            var autoEditTextList = className("android.widget.EditText").find();
+            taskLog("当前页面找到 " + autoEditTextList.length + " 个EditText");
+            if(autoEditTextList.length > 0){
+                for (let i = 0; i < autoEditTextList.length; i++) {
+                    if (autoEditTextList[i] != null) {
+                        taskLog("autoEditTextList[" + i + "] id = " + autoEditTextList[i].id());    
+                        if(autoEditTextList[i].id() == "new_thread_screen_composer"){
+                            taskLog("找到输入框，开始输入内容")
+                            // autoEditTextList[i].setText(randomDesc) //从文本中随机挑选一个内容，然后输入
+                            autoEditTextList[i].setText(all_TT_DESC_text.join("\n")) //直接放进整个的txt内容，但是有换行
+                            sleep(random(3000, 5000))
+                            break;
+                        }   
+                    }
+                }
+            }else{
+                taskLog("没有找到输入框，直接无视")
+            }
+            
+    }else{
+        taskLog("没有设置文本，所以不需要设文本")
+    }
+
 
 
 
@@ -987,7 +1115,7 @@ try {
             if(autoViewList[i].id() == "new_thread_screen_post_button"){
                 taskLog("找到POST按钮，开始点击")
                 click(autoViewList[i].bounds().centerX(), autoViewList[i].bounds().centerY())   
-                sleep(random(3000, 5000))
+                sleep(random(15000, 20000))
                 break;
             }
         }
