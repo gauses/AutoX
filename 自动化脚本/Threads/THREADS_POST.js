@@ -1179,10 +1179,12 @@ try {
                                             var textViewCount = currentView.find(className("android.widget.TextView")).length;
                                             var buttonCount = currentView.find(className("android.widget.Button")).length;
                                             
-                                            // 只有当：1.恰好1个TextView 2.恰好1个Button 3.子元素总数为2时才是有效的
-                                            if(textViewCount === 1 && buttonCount === 1 && childCount === 2){
+                                            // 有效情况1：1.恰好1个TextView 2.恰好1个Button 3.子元素总数为2
+                                            // 有效情况2：1.恰好2个TextView 2.恰好1个Button 3.子元素总数为3
+                                            if((textViewCount === 1 && buttonCount === 1 && childCount === 2) ||
+                                               (textViewCount === 2 && buttonCount === 1 && childCount === 3)){
                                                 validDropdownViews.push(currentView);
-                                                taskLog("找到有效的下拉选项View[" + j + "]，包含1个TextView和1个Button");
+                                                taskLog("找到有效的下拉选项View[" + j + "]，包含" + textViewCount + "个TextView和" + buttonCount + "个Button");
                                             }
                                         }
                                         
@@ -1209,8 +1211,6 @@ try {
                                             taskLog("随机点击第" + (randomIndex + 1) + "个选项，位置: (" + bounds.centerX() + ", " + bounds.centerY() + ")");
                                             click(bounds.centerX(), bounds.centerY());
                                             sleep(random(2000, 3000));
-                                        }else{
-                                            taskLog("未检测到有效的下拉列表，跳过选择主题");
                                         }
                                         
         
