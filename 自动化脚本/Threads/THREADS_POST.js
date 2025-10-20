@@ -1162,13 +1162,13 @@ try {
                                         }
                                     }
                                     
-                                    // 点击第一个有效的View
-                                    var firstView = validDropdownViews[0];
-                                    var bounds = firstView.bounds();
-                                    taskLog("点击第一个选项，位置: (" + bounds.centerX() + ", " + bounds.centerY() + ")");
+                                    // 随机点击一个有效的View
+                                    var randomIndex = random(0, validDropdownViews.length - 1);
+                                    var randomView = validDropdownViews[randomIndex];
+                                    var bounds = randomView.bounds();
+                                    taskLog("随机点击第" + (randomIndex + 1) + "个选项，位置: (" + bounds.centerX() + ", " + bounds.centerY() + ")");
                                     click(bounds.centerX(), bounds.centerY());
                                     sleep(random(2000, 3000));
-                                    taskLog("已成功选择第一个主题");
                                 }else{
                                     taskLog("未检测到有效的下拉列表，跳过选择主题");
                                 }
