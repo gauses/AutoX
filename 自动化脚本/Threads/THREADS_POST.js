@@ -100,8 +100,118 @@ if (runningEngines.length > 1) {
 }
 
 
+
+// 配置对象
+var CONFIG = {
+    // 应用配置
+    APP: {
+        ASIA_PACKAGE: 'com.ss.android.ugc.trill',
+        GLOBAL_PACKAGE: 'com.zhiliaoapp.musically',
+        MAIN_ACTIVITY: 'com.ss.android.ugc.aweme.main.MainActivity'
+    },
+
+    
+    // 路径配置
+    PATHS: {
+        DOWNLOAD: "/storage/emulated/0/Download/",
+        TEMP_MEDIA: "A_NEST_TikTok_MEDIA",
+        LOG_DIR: "/sdcard/Download/log/"
+    },
+    
+    // 超时配置
+    TIMEOUTS: {
+        SHORT: 3000,
+        MEDIUM: 5000,
+        LONG: 10000,
+        UPLOAD: 120000
+    },
+    
+    // 重试配置
+    RETRY: {
+        MAX_ATTEMPTS: 3,
+        DELAY: 1000
+    },
+    
+    // UI文本配置
+    UI_TEXT: {
+        FORCE_STOP: {
+            ZH_CN: "强行停止",
+            ZH_TW: "強制停止", 
+            EN_US: "FORCE STOP"
+        },
+        FORCE_STOP_CONFIRM: {
+            ZH_CN: "确定",
+            ZH_TW: "確定",
+            EN_US: "OK"
+        },
+        CONFIRM: {
+            ZH_CN: "确定",
+            ZH_TW: "確定",
+            EN_US: "OK"
+        },
+
+        CREATE_POST_TEX: {
+            ZH_CN: "添加主题",//text("feeeeeeg �添加主题 ")
+            ZH_TW: "新增主題", //text("feeeeeeg �新增主題 ")
+            EN_US: "Add a topic" //text("feeeeeeg �Add a topic ")
+        }
+
+
+    },
+    
+    // 日志配置
+    LOG: {
+        FILENAME: "nest_task_log.txt",
+        IMG_NAME: "nest_task_log.png"
+    }
+};
+
 sleep(3000)
 taskLog("准备启动Threads...")
+
+
+// 通过语言对象查找文本
+function findTextByLanguages(languageObject) {
+    for (var lang in languageObject) {
+        var targetText = languageObject[lang];
+        // 如果targetText是数组，遍历数组中的每个文本
+        if (Array.isArray(targetText)) {
+            for (var j = 0; j < targetText.length; j++) {
+                var text_item = targetText[j];
+                if (text(text_item).exists()) {
+                    taskLog("找到文本：" + text_item);
+                    var element = text(text_item).findOne();
+                    if (element && element.clickable()) {
+                        element.click();
+                        return true;
+                    } else if (element) {
+                        // 如果元素存在但不可点击，尝试点击其坐标
+                        var bounds = element.bounds();
+                        click(bounds.centerX(), bounds.centerY());
+                        return true;
+                    }
+                }
+            }
+        } else {
+            // 原来的单个文本处理逻辑
+            if (text(targetText).exists()) {
+                taskLog("找到文本：" + targetText);
+                var element = text(targetText).findOne();
+                if (element && element.clickable()) {
+                    element.click();
+                    return true;
+                } else if (element) {
+                    // 如果元素存在但不可点击，尝试点击其坐标
+                    var bounds = element.bounds();
+                    click(bounds.centerX(), bounds.centerY());
+                    return true;
+                }
+            }
+        }
+    }
+    taskLog("未找到任何匹配的文本");
+    return false;
+}
 
 //可能会出现权限弹窗，如果弹出，那么允许
 function click_permission_allow(){
@@ -968,7 +1078,7 @@ try {
     //className("android.view.View") fullId("barcelona_tab_create")  clickable("false")
     var foundWhatNew = false
     var autoViewList = className("android.view.View").find();
-    taskLog("当前页面找到 " + autoViewList.length + " 个View");
+    // taskLog("当前页面找到 " + autoViewList.length + " 个View");
     if(autoViewList.length > 0){
         for (let i = 0; i < autoViewList.length; i++) {
             if (autoViewList[i] != null) {  
@@ -984,6 +1094,48 @@ try {
             }
         }
     }
+
+    sleep(random(5000, 8000))
+
+    //添加主题：className("android.widget.TextView")
+    var addTopicButton = className("android.widget.TextView").find();
+    taskLog("当前页面找到 " + addTopicButton.length + " 个TextView");
+    if(addTopicButton.length > 0){
+        for (let i = 0; i < addTopicButton.length; i++) {
+            taskLog("addTopicButton[" + i + "] text = " + addTopicButton[i].text());
+            if(addTopicButton[i].text().indexOf(CONFIG.UI_TEXT.CREATE_POST_TEX.ZH_CN) >= 0  || 
+                addTopicButton[i].text().indexOf(CONFIG.UI_TEXT.CREATE_POST_TEX.ZH_TW) >= 0 || 
+                addTopicButton[i].text().indexOf(CONFIG.UI_TEXT.CREATE_POST_TEX.EN_US) >= 0 ){ 
+                    taskLog("找到添加主题按钮，并且点击") //clickable("false")
+                    var bounds = addTopicButton[i].bounds();
+                    click(bounds.centerX(), bounds.centerY());
+                    sleep(random(3000, 5000))
+
+                    //开始输入主题
+                    var autoEditTextList = className("android.widget.EditText").find();
+                    taskLog("当前页面找到 " + autoEditTextList.length + " 个EditText");
+                    if(autoEditTextList.length > 0){
+                        for (let i = 0; i < autoEditTextList.length; i++) {
+                            // if(autoEditTextList[i].id() == "new_thread_screen_composer"){
+                                taskLog("找到输入框，开始输入内容")
+                                autoEditTextList[i].setText("汽车")
+                                sleep(random(3000, 5000))
+                            //     break;
+                            // }
+                        }
+                    }else{
+                        taskLog("没有找到输入框，直接无视")
+                    }
+                    break;
+                }else{
+                    taskLog("没有找到添加主题按钮，直接跳过")
+                }
+            }
+        }else{
+            taskLog("没有找到添加主题按钮，直接跳过")
+    }
+    
+    sleep(3000000000)
 
 
     //图片&视频
@@ -1111,6 +1263,7 @@ try {
     }
 
 
+    sleep(3000000000)
 
 
     //最后点击POST
