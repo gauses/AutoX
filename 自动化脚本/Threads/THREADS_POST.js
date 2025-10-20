@@ -1097,7 +1097,7 @@ try {
 
     sleep(random(5000, 8000))
 
-    //添加主题：className("android.widget.TextView")
+    //1.添加主题：className("android.widget.TextView")
     var addTopicButton = className("android.widget.TextView").find();
     taskLog("当前页面找到 " + addTopicButton.length + " 个TextView");
     if(addTopicButton.length > 0){
@@ -1111,17 +1111,72 @@ try {
                     click(bounds.centerX(), bounds.centerY());
                     sleep(random(3000, 5000))
 
-                    //开始输入主题
+                    //2.开始输入主题
                     var autoEditTextList = className("android.widget.EditText").find();
                     taskLog("当前页面找到 " + autoEditTextList.length + " 个EditText");
                     if(autoEditTextList.length > 0){
                         for (let i = 0; i < autoEditTextList.length; i++) {
-                            // if(autoEditTextList[i].id() == "new_thread_screen_composer"){
                                 taskLog("找到输入框，开始输入内容")
                                 autoEditTextList[i].setText("汽车")
                                 sleep(random(3000, 5000))
-                            //     break;
-                            // }
+
+                                //3.选择第一个弹出的主题
+                                sleep(random(2000, 3000)); // 等待下拉框出现
+                                
+                                // 查找下拉框中的View列表
+                                var allViews = className("android.view.View").find();
+                                taskLog("当前页面找到 " + allViews.length + " 个View");
+                                
+                                // 筛选出只包含1个TextView和1个Button的View
+                                var validDropdownViews = [];
+                                for(let j = 0; j < allViews.length; j++){
+                                    var currentView = allViews[j];
+                                    
+                                    // 获取当前View的所有子元素
+                                    var childCount = currentView.childCount();
+                                    
+                                    // 统计TextView和Button的数量
+                                    var textViewCount = currentView.find(className("android.widget.TextView")).length;
+                                    var buttonCount = currentView.find(className("android.widget.Button")).length;
+                                    
+                                    // 只有当：1.恰好1个TextView 2.恰好1个Button 3.子元素总数为2时才是有效的
+                                    if(textViewCount === 1 && buttonCount === 1 && childCount === 2){
+                                        validDropdownViews.push(currentView);
+                                        taskLog("找到有效的下拉选项View[" + j + "]，包含1个TextView和1个Button");
+                                    }
+                                }
+                                
+                                taskLog("筛选后找到 " + validDropdownViews.length + " 个有效的下拉选项");
+                                
+                                if(validDropdownViews.length > 0){
+                                    taskLog("检测到下拉列表已弹出，共有 " + validDropdownViews.length + " 个有效选项");
+                                    
+                                    // 打印所有有效选项中的TextView文字内容
+                                    for(let k = 0; k < validDropdownViews.length; k++){
+                                        var textViewInView = validDropdownViews[k].findOne(className("android.widget.TextView"));
+                                        if(textViewInView){
+                                            var textContent = textViewInView.text();
+                                            taskLog("下拉选项[" + k + "]的TextView内容: " + textContent);
+                                        }else{
+                                            taskLog("下拉选项[" + k + "]未找到TextView内容");
+                                        }
+                                    }
+                                    
+                                    // 点击第一个有效的View
+                                    var firstView = validDropdownViews[0];
+                                    var bounds = firstView.bounds();
+                                    taskLog("点击第一个选项，位置: (" + bounds.centerX() + ", " + bounds.centerY() + ")");
+                                    click(bounds.centerX(), bounds.centerY());
+                                    sleep(random(2000, 3000));
+                                    taskLog("已成功选择第一个主题");
+                                }else{
+                                    taskLog("未检测到有效的下拉列表，跳过选择主题");
+                                }
+                                
+
+
+
+                   
                         }
                     }else{
                         taskLog("没有找到输入框，直接无视")
