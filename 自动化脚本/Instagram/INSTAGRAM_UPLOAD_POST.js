@@ -89,6 +89,146 @@ function openLogActivity() {
     app.startActivity(intent);
 }
 
+// 工具函数库
+var Utils = {
+    // 重试装饰器
+    withRetry: function(fn, maxRetries, delay) {
+        maxRetries = maxRetries || CONFIG.RETRY.MAX_ATTEMPTS;
+        delay = delay || CONFIG.RETRY.DELAY;
+        
+        return function() {
+            var args = Array.prototype.slice.call(arguments);
+            for (var i = 0; i < maxRetries; i++) {
+                try {
+                    return fn.apply(this, args);
+                } catch (error) {
+                    if (i === maxRetries - 1) throw error;
+                    taskLog("重试第" + (i + 1) + "次: " + error.message);
+                    sleep(delay * (i + 1));
+                }
+            }
+        };
+    },
+
+    // 智能等待元素
+    waitForElement: function(selector, timeout, interval) {
+        timeout = timeout || CONFIG.TIMEOUTS.LONG;
+        interval = interval || 500;
+        
+        var startTime = Date.now();
+        while (Date.now() - startTime < timeout) {
+            var element = selector.findOne(interval);
+            if (element) return element;
+        }
+        throw new Error("元素未找到，超时" + timeout + "ms");
+    },
+
+    // 统一的多语言点击函数
+    clickByText: function(texts, elementType) {
+        elementType = elementType || "Button";
+        // 使用新的findTextByLanguages函数
+        return findTextByLanguages(texts);
+    },
+
+    // 安全的坐标点击
+    safeClick: function(x, y, deviation) {
+        deviation = deviation || 2;
+        var finalX = Math.max(0, x + random(-deviation, deviation));
+        var finalY = Math.max(0, y + random(-deviation, deviation));
+        
+        try {
+            device.sdkInt < 24 ? ra.tap(finalX, finalY) : click(finalX, finalY);
+            return true;
+        } catch (e) {
+            taskLog("点击操作失败：" + e.message);
+            return false;
+        }
+    },
+
+    // 清理资源
+    cleanup: function() {
+        // 清理临时文件
+        var tempFolder = CONFIG.PATHS.DOWNLOAD + CONFIG.PATHS.TEMP_MEDIA;
+        if (files.exists(tempFolder)) {
+            files.removeDir(tempFolder);
+            taskLog("清理临时文件夹完成");
+        }
+        
+        // 清理缓存
+        elementCache.clear();
+        
+        // 强制垃圾回收
+        if (typeof gc === 'function') {
+            gc();
+        }
+    }
+};
+
+
+// 配置对象
+var CONFIG = {
+    
+
+    
+    // 超时配置
+    TIMEOUTS: {
+        SHORT: 3000,
+        MEDIUM: 5000,
+        LONG: 10000,
+        UPLOAD: 120000
+    },
+    
+    // 重试配置
+    RETRY: {
+        MAX_ATTEMPTS: 3,
+        DELAY: 1000
+    },
+    
+    // UI文本配置
+    UI_TEXT: {
+        FORCE_STOP: {
+            ZH_CN: "强行停止",
+            ZH_TW: "強制停止", 
+            EN_US: "FORCE STOP"
+        },
+        FORCE_STOP_CONFIRM: {
+            ZH_CN: "确定",
+            ZH_TW: "確定",
+            EN_US: "OK"
+        },
+        CONFIRM: {
+            ZH_CN: "确定",
+            ZH_TW: "確定",
+            EN_US: "OK"
+        } ,
+
+        //是否分享到Threads
+        //可能会出现一个提示，是否同步到Threads
+        // var notNowBtn = find_btn_Text_base("Not now", "不要", "現在不要", "Not now")
+        NOT_NOW_TO_THREADS: {
+            ZH_CN: "不要",
+            ZH_TW: "現在不要",
+            EN_US: "Not now"
+        },
+
+        //是否分享到Facebook
+        //可能会出现一个提示，是否同步到Threads
+        // var notNowBtn = find_btn_Text_base("Not now", "不要", "現在不要", "Not now")
+        NOT_NOW_TO_Facebook: {
+            ZH_CN: "不要",
+            ZH_TW: "現在不要",
+            EN_US: "Not now"
+        }
+
+
+    },
+    
+    // 日志配置
+    LOG: {
+        FILENAME: "nest_task_log.txt",
+        IMG_NAME: "nest_task_log.png"
+    }
+};
 
 
 
@@ -177,7 +317,48 @@ toast("本地视频地址：" + INSTAGRAM_UPLOAD_VIDEO_URL)
 //******************************************************************
 //******************************************************************
 
-
+// 通过语言对象查找文本
+function findTextByLanguages(languageObject) {
+    for (var lang in languageObject) {
+        var targetText = languageObject[lang];
+        // 如果targetText是数组，遍历数组中的每个文本
+        if (Array.isArray(targetText)) {
+            for (var j = 0; j < targetText.length; j++) {
+                var text_item = targetText[j];
+                if (text(text_item).exists()) {
+                    taskLog("找到文本：" + text_item);
+                    var element = text(text_item).findOne();
+                    if (element && element.clickable()) {
+                        element.click();
+                        return true;
+                    } else if (element) {
+                        // 如果元素存在但不可点击，尝试点击其坐标
+                        var bounds = element.bounds();
+                        click(bounds.centerX(), bounds.centerY());
+                        return true;
+                    }
+                }
+            }
+        } else {
+            // 原来的单个文本处理逻辑
+            if (text(targetText).exists()) {
+                taskLog("找到文本：" + targetText);
+                var element = text(targetText).findOne();
+                if (element && element.clickable()) {
+                    element.click();
+                    return true;
+                } else if (element) {
+                    // 如果元素存在但不可点击，尝试点击其坐标
+                    var bounds = element.bounds();
+                    click(bounds.centerX(), bounds.centerY());
+                    return true;
+                }
+            }
+        }
+    }
+    taskLog("未找到任何匹配的文本");
+    return false;
+}
 
 
 //从评论数组中，顺序挑选一条标题
@@ -302,90 +483,32 @@ function refreshAllMedia() {
 
 
 //强制停止TikTok 
-function forceStop_APP(packageName){
-    taskLog("准备强杀:" + packageName + "...")
-    sleep(1000);
-    app.openAppSetting(packageName)
-    sleep(5000)
+function forceStop_APP(packageName) {
+    taskLog("准备强杀:" + packageName + "...");
+    sleep(CONFIG.TIMEOUTS.SHORT);
+    openAppSettings(packageName);
+    sleep(CONFIG.TIMEOUTS.MEDIUM);
 
-    //繁体
-    if (text("強制停止").exists()) {
-        let forceStopBtn = text("強制停止").findOne();
-        if (forceStopBtn && forceStopBtn.clickable()) {
-            forceStopBtn.click();
-            sleep(1000);
-            // 确认操作
-            if (text("確定").exists()) {
-                taskLog("已经找到可点击的'強制停止'按钮！！！！！！！！！！");
-                text("確定").findOne().click();
-            }
+    // 使用统一的多语言点击函数
+    var forceStopSuccess = Utils.clickByText(CONFIG.UI_TEXT.FORCE_STOP);
+    
+    if (forceStopSuccess) {
+        sleep(CONFIG.TIMEOUTS.SHORT);
+        
+        // 点击确认按钮
+        var confirmSuccess = Utils.clickByText(CONFIG.UI_TEXT.FORCE_STOP_CONFIRM);
+        if (confirmSuccess) {
+            taskLog("成功强制停止应用并确认");
         } else {
-            taskLog("未找到可点击的'強制停止'按钮");
+            taskLog("强制停止成功但确认失败");
         }
+        
+        sleep(CONFIG.TIMEOUTS.SHORT);
+        home();
     } else {
-        taskLog("未找到'強制停止'按钮");
+        taskLog("未找到强制停止按钮，直接返回主页");
+        home();
     }
-    sleep(3000)
-
-    //简体
-    if (text("强行停止").exists()) {
-        let forceStopBtn = text("强行停止").findOne();
-        if (forceStopBtn && forceStopBtn.clickable()) {
-            forceStopBtn.click();
-            sleep(1000);
-            // 确认操作
-            if (text("确定").exists()) {
-                text("确定").findOne().click();
-            }
-        } else {
-            taskLog("未找到可点击的'强行停止'按钮");
-        }
-    } else {
-        taskLog("未找到'强行停止'按钮");
-    }
-
-    sleep(3000)
-
-
-    //英语
-    if (text("Force stop").exists()) {
-        let forceStopBtn = text("Force stop").findOne();
-        if (forceStopBtn && forceStopBtn.clickable()) {
-            forceStopBtn.click();
-            sleep(1000);
-            // 确认操作
-            if (text("OK").exists()) {
-                text("OK").findOne().click();
-            }
-        } else {
-            taskLog("未找到可点击的'Force stop'按钮");
-        }
-    } else {
-        taskLog("未找到'Force stop'按钮");
-    }
-    sleep(3000)
-
-    //英语
-    if (text("FORCE STOP").exists()) {
-        let forceStopBtn = text("FORCE STOP").findOne();
-        if (forceStopBtn && forceStopBtn.clickable()) {
-            forceStopBtn.click();
-            sleep(1000);
-            // 确认操作
-            if (text("OK").exists()) {
-                text("OK").findOne().click();
-            }
-        } else {
-            taskLog("未找到可点击的'FORCE STOP'按钮");
-        }
-    } else {
-        taskLog("未找到'FORCE STOP'按钮");
-    }
-    sleep(3000)
-
-
-    home()
-
 }
 
 
@@ -985,74 +1108,130 @@ function click_Video_desc(){
 }
 
 //可能会出现权限弹窗，如果弹出，那么允许
+//可能会出现权限弹窗，如果弹出，那么允许
 function click_permission_allow(){
-    taskLog("开始处理权限问题....")
-
-    var allListTextView = className("android.widget.TextView").find();
-    taskLog("找到权限allListTextView: 全部 = "  + allListTextView.size());
-
-    for(var i = 0; i < allListTextView.size(); i++){
-        var textView = allListTextView.get(i);
-        taskLog("找到权限textView: " + textView.text());
-    }
-
-    // 找到所有按钮
-    var allListButton = className("android.widget.Button").find();
-    taskLog("找到权限allListButton: 全部 = "  + allListButton.size());
-
-    for(var i = 0; i < allListButton.size(); i++){
-        var button = allListButton.get(i);
-        taskLog("找到权限button: " + button.text());
+    taskLog("开始处理权限问题.....");
+    
+    // 定义权限相关的文本配置
+    var PERMISSION_TEXTS = {
+        // 简体中文权限文本
+        ZH_CN: {
+            ALLOW: ["仅在使用该应用时允许", "仅限这一次", "允许"],
+            DENY: ["不允许"]
+        },
+        // 繁体中文权限文本
+        TW: {
+            ALLOW: ["使用應用程式時", "僅允許這一次", "允許"],
+            DENY: ["不允許"]
+        },
+        // 英文权限文本
+        EN: {
+            ALLOW: ["WHILE USING THE APP", "ONLY THIS TIME", "ALLOW"],
+            DENY: ["DON'T ALLOW"]
+        }
+    };
+    
+    // 快速检查并点击权限按钮
+    function quickClickPermission() {
+        // 查找所有可能的权限按钮
+        var allButtons = className("android.widget.Button").find();
+        var allTextViews = className("android.widget.TextView").find();
+        
+        // 合并所有文本元素
+        var allElements = [];
+        for (var i = 0; i < allButtons.size(); i++) {
+            allElements.push(allButtons.get(i));
+        }
+        for (var i = 0; i < allTextViews.size(); i++) {
+            allElements.push(allTextViews.get(i));
+        }
+        
+        // 快速遍历查找权限相关按钮
+        for (var k = 0; k < allElements.length; k++) {
+            var element = allElements[k];
+            if (!element || !element.clickable()) continue;
+            
+            var text = element.text();
+            if (!text) continue;
+            
+            // 检查是否包含允许相关的文本
+            var isAllowText = false;
+            // 检查简体中文
+            for (var m = 0; m < PERMISSION_TEXTS.ZH_CN.ALLOW.length; m++) {
+                if (text.includes(PERMISSION_TEXTS.ZH_CN.ALLOW[m])) {
+                    isAllowText = true;
+                    break;
+                }
+            }
+            // 检查繁体中文
+            if (!isAllowText) {
+                for (var n = 0; n < PERMISSION_TEXTS.TW.ALLOW.length; n++) {
+                    if (text.includes(PERMISSION_TEXTS.TW.ALLOW[n])) {
+                        isAllowText = true;
+                        break;
+                    }
+                }
+            }
+            // 检查英文
+            if (!isAllowText) {
+                for (var o = 0; o < PERMISSION_TEXTS.EN.ALLOW.length; o++) {
+                    if (text.includes(PERMISSION_TEXTS.EN.ALLOW[o])) {
+                        isAllowText = true;
+                        break;
+                    }
+                }
+            }
+            
+            // 检查是否包含拒绝相关的文本
+            var isDenyText = false;
+            // 检查简体中文
+            for (var p = 0; p < PERMISSION_TEXTS.ZH_CN.DENY.length; p++) {
+                if (text.includes(PERMISSION_TEXTS.ZH_CN.DENY[p])) {
+                    isDenyText = true;
+                    break;
+                }
+            }
+            // 检查繁体中文
+            if (!isDenyText) {
+                for (var q = 0; q < PERMISSION_TEXTS.TW.DENY.length; q++) {
+                    if (text.includes(PERMISSION_TEXTS.TW.DENY[q])) {
+                        isDenyText = true;
+                        break;
+                    }
+                }
+            }
+            // 检查英文
+            if (!isDenyText) {
+                for (var r = 0; r < PERMISSION_TEXTS.EN.DENY.length; r++) {
+                    if (text.includes(PERMISSION_TEXTS.EN.DENY[r])) {
+                        isDenyText = true;
+                        break;
+                    }
+                }
+            }
+            
+            // 如果是允许按钮且不是拒绝按钮，则点击
+            if (isAllowText && !isDenyText) {
+                taskLog("找到权限按钮: " + text);
+                element.click();
+                return true;
+            }
+        }
+        
+        return false;
     }
     
-
-    // 等待权限弹窗出现
-    let allow_tw = textContains("使用應用程式時").findOne(5000);
-    if(allow_tw){
-        taskLog("点击 - 使用應用程式時")
-        allow_tw.click();
+    // 使用快速检查方法，最多尝试3次
+    for (var i = 0; i < 3; i++) {
+        if (quickClickPermission()) {
+            taskLog("权限处理成功");
+            return;
+        }
+        sleep(1000); // 短暂等待后重试
     }
-
     
-    // 等待权限弹窗出现
-    let allow_tw_02 = textContains("允許").findOne(5000);
-    if(allow_tw_02){
-        // 获取控件的文本内容
-        taskLog("点击 - 允許")
-        let btnText_tw = allow_tw_02.text();
-        // 检查文本是否包含"不允许"，如果不包含才点击
-        if(!btnText_tw.includes("不允許")){
-            allow_tw_02.click();
-        }
-    }
-
-
-
-    // 等待权限弹窗出现
-    let allow_en = textContains("ONLY THIS TIME").findOne(5000);
-    if(allow_en){
-        taskLog("点击 - ONLY THIS TIME")
-        allow_en.click();
-    }
-
-
-    // 等待权限弹窗出现
-    let allow_en_02 = textContains("ALLOW").findOne(5000);
-    if(allow_en_02){
-        // 获取控件的文本内容
-        taskLog("点击 - ALLOW")
-        let btnText_en = allow_en_02.text();
-        // 检查文本是否包含"不允许"，如果不包含才点击
-        if(!btnText_en.includes("DON'T ALLOW")){
-            allow_en_02.click();
-        }
-    }
-
-    taskLog("结束处理权限问题....")
-
-
+    taskLog("未找到权限弹窗，继续执行");
 }
-
 
 function swipe_up(){
     //使用多段swipe实现曲线滑动
@@ -1092,6 +1271,56 @@ function swipe_up(){
     sleep(3000); //等待滚动完成
 }
 
+//转移视频到Nest临时文件夹
+function transferVideoToNest(fileName){
+    let videoPath = null;
+    if (files.exists(fileName)) {
+        videoPath = fileName;
+    }
+    
+    if (!videoPath) {
+        console.error("未找到指定视频：" + fileName);
+        toast("未找到指定视频：" + fileName);
+        //throw new error("没有找到需要上传的视频，所以异常直接退出")
+        return;
+    }
+
+
+    //开始拷贝一份，到本地自己的文件夹来单独处理，不处理原来的图片，
+    // 创建文件夹(如果不存在)
+    const newFolder = "/storage/emulated/0/Download/" + A_NEST_Instagram_MEDIA;  // 替换成你想要的文件夹路径
+    if(!files.exists(newFolder)){
+        files.ensureDir(newFolder);
+        console.log("创建文件夹: " + newFolder);
+    }
+
+    // 目标视频路径(在新文件夹中)
+    const targetFileName = files.getName(videoPath);
+    const targetPath = newFolder + "/" + targetFileName;
+    console.log("新视频文件的绝对路径: " + targetPath);
+    // 复制图片文件
+    try {
+        files.copy(videoPath, targetPath);
+        console.log("复制成功!");
+        console.log("新视频路径: " + targetPath);
+        
+        // 复制成功后删除原文件
+        if(files.remove(videoPath)){
+            console.log("原文件已删除: " + videoPath);
+        } else {
+            console.log("原文件删除失败: " + videoPath);
+        }
+    } catch(e) {
+        console.error("复制失败: " + e);
+    }
+
+    sleep(3000);
+
+    refreshMedia(newFolder)
+
+    return targetPath
+}
+
 
 //start
 try {
@@ -1102,6 +1331,12 @@ try {
     taskLog("开始刷新本地媒体库.....")
     refreshMedia("/storage/emulated/0/Download/")
     sleep(random(3000,5000))
+
+    taskLog("开始转移视频到临时文件夹,INSTAGRAM_UPLOAD_VIDEO_URL = " + INSTAGRAM_UPLOAD_VIDEO_URL)
+    sleep(2000)
+    taskLog("开始转移视频到本地路径...")
+    var imageTempPath = transferVideoToNest(INSTAGRAM_UPLOAD_VIDEO_URL)
+    sleep(5000)
 
 
 
@@ -1131,136 +1366,118 @@ try {
     sleep(random(2000,3000))
 
 
-    // //选中图片的右上角的圆圈
-    // //fullId("com.instagram.android:id/gallery_grid_item_selection_circle")
-    // var gallery_grid_item_list = id(INSTAGRAM_PACKAGE_NAME + ":id/gallery_grid_item_selection_circle").className("android.widget.ImageView").find();
-    // taskLog("找到gallery_grid_item_list: 全部 = "  + gallery_grid_item_list.size());
-    // sleep(random(2000,3000))
 
-    // if (gallery_grid_item_list.size() > 0) {
-       
-
-        // //点击Next
-        // // fullId("com.instagram.android:id/camera_settings_gear") - className("android.widget.Button")
-        // var next = className("android.widget.Button").id(INSTAGRAM_PACKAGE_NAME + ":id/camera_settings_gear").find();
-        // if(next){
-            // taskLog("已经找到Next按钮，点击Next,next个数 = " + next.size())
-            // let element = next.get(0);
-            // let X = element.bounds().centerX();
-            // let Y = element.bounds().centerY();
-            // click(X, Y);
-            // taskLog("点击Next坐标 X = " + X + " Y = " + Y)
-            // sleep(random(2000,3000)) 
-
-
-
-            //右上角Next
-            // fullId("com.instagram.android:id/next_button_textview")
-            //fullId("com.instagram.android:id/next_button_textview")
-            var next = className("android.widget.Button").id(INSTAGRAM_PACKAGE_NAME + ":id/next_button_textview").find();
-            if(next){
-                taskLog("已经找到Next按钮，点击Next,next个数 = " + next.size())
-                next.click();
-                sleep(random(2000,3000)) 
-            }   
-            
+        //右上角Next
+        // fullId("com.instagram.android:id/next_button_textview")
+        //fullId("com.instagram.android:id/next_button_textview")
+        var next = className("android.widget.Button").id(INSTAGRAM_PACKAGE_NAME + ":id/next_button_textview").find();
+        if(next){
+            taskLog("已经找到Next按钮，点击Next,next个数 = " + next.size())
+            next.click();
             sleep(random(2000,3000)) 
-
-
-
-
-            taskLog("开始第一次检查权限问题 .....")
-            click_permission_allow()    
-            sleep(random(2000,3000))
-            taskLog("开始第二次检查权限问题.....")
-            click_permission_allow()    
-            sleep(random(2000,3000))
-
-
-
-            //点击右下角继续
-            //fullId("com.instagram.android:id/creation_next_button")
-            clickId(INSTAGRAM_PACKAGE_NAME + ":id/creation_next_button")
-            sleep(random(2000,3000)) 
-
-
-            //点击右下角继续
-            //fullId("com.instagram.android:id/clips_right_action_button")  
-            clickId(INSTAGRAM_PACKAGE_NAME + ":id/clips_right_action_button")
-            sleep(random(2000,3000)) 
-
-
-            //下方会弹出询问：是否分享帖子
-            //fullId("com.instagram.android:id/bb_primary_action_container")
-            clickId(INSTAGRAM_PACKAGE_NAME + ":id/bb_primary_action_container")
-            sleep(random(2000,3000)) 
-
-
-            //开始写入说明
-            // fullId("com.instagram.android:id/caption_input_text_view")
-            //写入说明
-            //描述
-            var all_TT_DESC_text = []
-            if(INSTAGRAM_UPLOAD_VIDEO_DESC && 
-                INSTAGRAM_UPLOAD_VIDEO_DESC.trim() !== "" && 
-                INSTAGRAM_UPLOAD_VIDEO_DESC.trim().toLowerCase() !== "off" && 
-                !INSTAGRAM_UPLOAD_VIDEO_DESC.includes("$${")){
-                    all_TT_DESC_text = get_DESC_comment_text()
-            }
-            
-            if(all_TT_DESC_text.length > 0){
-                var randDescIdx = random(0, all_TT_DESC_text.length - 1)
-                var descText = all_TT_DESC_text[randDescIdx];
-                taskLog("描述：" + descText);
-                //长描述
-                var caption_input_text_view = id(INSTAGRAM_PACKAGE_NAME + ":id/caption_input_text_view").findOne();
-                    taskLog("找到caption_input_text_view: " + caption_input_text_view.text());
-                    if(caption_input_text_view){
-                        caption_input_text_view.setText(INSTAGRAM_UPLOAD_VIDEO_DESC)
-                        sleep(3000)
-                }
-            }else{
-                taskLog("没有找到描述")
-            }
-
-
-            //可能会出现一个提示，是否同步到Threads
-            //text("Not now")
-            var notNowBtn = find_btn_Text_base("Not now", "不要", "現在不要", "Not now")
-            if(notNowBtn){
-                taskLog("存在提示，点击Not now")
-            }
-
-
-            //可能会出现一个提示，是否同步到Facebook
-            //className("android.widget.TextView") text("Not now")
-            var notNowBtn = find_textview_text_base("Not now", "不要", "現在不要", "Not now")
-            if(notNowBtn){
-                taskLog("存在提示，点击Not now")
-            }
-            
-            
-
-
-            //底部分享按钮
-            // className("android.widget.FrameLayout") fullId("com.instagram.android:id/share_button")  clickable("true")
-            clickId(INSTAGRAM_PACKAGE_NAME + ":id/share_button")
-            sleep(random(2000,3000))
-
-            // fullId("com.instagram.android:id/share_footer_button")
-            clickId(INSTAGRAM_PACKAGE_NAME + ":id/share_footer_button")
-            sleep(random(2000,3000))
-
-      
-            taskLog("等待上传完成，大概15秒.....")
-            sleep(random(10000,15000))
-            
-        // }else{
-        //     taskLog("没有找到Next按钮，本次任务终止.")
-        //     throw new Error("没有找到Next按钮，本次任务终止.")
-        // }
+        }   
         
-    // }
+        sleep(random(2000,3000)) 
+
+
+        taskLog("开始第一次检查权限问题 .....")
+        click_permission_allow()    
+        sleep(random(2000,3000))
+        taskLog("开始第二次检查权限问题.....")
+        click_permission_allow()    
+        sleep(random(2000,3000))
+
+
+
+        //点击右下角继续
+        //fullId("com.instagram.android:id/creation_next_button")
+        clickId(INSTAGRAM_PACKAGE_NAME + ":id/creation_next_button")
+        sleep(random(3000,5000)) 
+
+
+        //点击右下角继续
+        //fullId("com.instagram.android:id/clips_right_action_button")  
+        clickId(INSTAGRAM_PACKAGE_NAME + ":id/clips_right_action_button")
+        sleep(random(3000,5000)) 
+
+
+        //下方会弹出询问：是否分享帖子
+        //fullId("com.instagram.android:id/bb_primary_action_container")
+        clickId(INSTAGRAM_PACKAGE_NAME + ":id/bb_primary_action_container")
+        sleep(random(3000,5000)) 
+
+
+        //开始写入说明
+        // fullId("com.instagram.android:id/caption_input_text_view")
+        //写入说明
+        //描述
+        var all_TT_DESC_text = []
+        if(INSTAGRAM_UPLOAD_VIDEO_DESC && 
+            INSTAGRAM_UPLOAD_VIDEO_DESC.trim() !== "" && 
+            INSTAGRAM_UPLOAD_VIDEO_DESC.trim().toLowerCase() !== "off" && 
+            !INSTAGRAM_UPLOAD_VIDEO_DESC.includes("$${")){
+                all_TT_DESC_text = get_DESC_comment_text()
+        }
+        
+        if(all_TT_DESC_text.length > 0){
+            var randDescIdx = random(0, all_TT_DESC_text.length - 1)
+            var descText = all_TT_DESC_text[randDescIdx];
+            taskLog("描述：" + descText);
+            //长描述
+            var caption_input_text_view = id(INSTAGRAM_PACKAGE_NAME + ":id/caption_input_text_view").findOne();
+                taskLog("找到caption_input_text_view: " + caption_input_text_view.text());
+                if(caption_input_text_view){
+                    caption_input_text_view.setText(INSTAGRAM_UPLOAD_VIDEO_DESC)
+                    sleep(3000)
+            }
+        }else{
+            taskLog("没有找到描述")
+        }
+
+
+        //可能会出现一个提示，是否同步到Threads
+        //text("Not now")
+        var notNowToThreads = findTextByLanguages(CONFIG.UI_TEXT.NOT_NOW_TO_THREADS)
+        if(notNowToThreads){
+            taskLog("存在提示，点击Not now to Threads")
+            sleep(random(2000,3000))
+        }
+
+        //可能会出现一个提示，是否同步到Facebook
+        //className("android.widget.TextView") text("Not now")
+        var notNowToFacebook = findTextByLanguages(CONFIG.UI_TEXT.NOT_NOW_TO_Facebook)
+        if(notNowToFacebook){
+            taskLog("存在提示，点击Not now to Facebook")
+            sleep(random(2000,3000))
+        }
+
+        
+        //底部弹窗：text("將這則和日後的貼文分享到 Facebook")
+        //fullId("com.instagram.android:id/unified_onboarding_primary_button")
+        clickId(INSTAGRAM_PACKAGE_NAME + ":id/unified_onboarding_primary_button")
+        
+
+
+        //底部分享按钮
+        // className("android.widget.FrameLayout") fullId("com.instagram.android:id/share_button")  clickable("true")
+        clickId(INSTAGRAM_PACKAGE_NAME + ":id/share_button")
+        sleep(random(2000,3000))
+
+        // fullId("com.instagram.android:id/share_footer_button")
+        clickId(INSTAGRAM_PACKAGE_NAME + ":id/share_footer_button")
+        sleep(random(2000,3000))
+
+    
+        taskLog("等待上传完成，大概15秒.....")
+        sleep(random(10000,15000))
+
+        //最最后，删除整个临时文件夹
+        files.removeDir("/storage/emulated/0/Download/" + A_NEST_Instagram_MEDIA)
+        toast("临时文件夹已删除")
+        sleep(random(3000, 5000))
+        refreshMedia("/storage/emulated/0/Download/")
+        sleep(random(3000, 5000))
+            
 
 
 
