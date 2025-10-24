@@ -452,7 +452,7 @@ function click_Comment_Btn(commentText){
             }
 
             sleep(random(2000, 3000))
-            total_success++
+            // total_success++
             Nest_ScreenCapture()
             sleep(random(2000, 3000))
     
@@ -869,6 +869,7 @@ try {
         count++;
 
         sleep(random(10000, 15000))
+        total_success++
 
         if (Math.random() * 100 < TT_Like_Count)  {
             taskLog("开始触发点赞概率")

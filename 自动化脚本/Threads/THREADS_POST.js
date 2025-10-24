@@ -21,7 +21,7 @@ var taskLogImgName = "nest_task_log.png"
 //用户需要输入的评论内容
 const THREADS_POST_VIDEO_URL = '$${T_需要上傳影片的本地地址}';
 const THREADS_POST_VIDEO_DESC = '$${T_上傳影片的說明}';
-const THREADS_POST_VIDEO_TOPIC = '$${T_上傳影片的话题}';
+const THREADS_POST_VIDEO_TOPIC = '$${T_上傳影片的主题}';
 
 
 

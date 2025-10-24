@@ -17,7 +17,7 @@ var taskLogImgName = "nest_task_log.png"
 
 //用户需要输入的关注用户ID列表
 const TT_Like_User_ID_KEYWORD = '$${T_需要关注指定的关键词}';
-const TT_Like_User_COUNT = '$${需要关注的用户数量}'; // 每个号关注多少人 ： 如果为0，则限制关注数量是1
+const TT_Like_User_COUNT = '$${需要关注的用户数量}'; // 每个号关注多少人 ： 如果为0，则限制关注数量是1 
 
 
 //定义Follow按钮在不同语言下的文本
@@ -739,6 +739,29 @@ function find_textview_text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US)
      return findText_result
 }
 
+//获取需要关注的用户数量
+function get_TT_Like_User_COUNT(){
+    let Like_User_COUNT = 0;
+    const file = new java.io.File(TT_Like_User_COUNT);
+    if (file.exists() && file.isFile()) {
+        try {
+            // 读取文件内容
+            const reader = new java.io.BufferedReader(new java.io.FileReader(file));
+            let line;
+            while ((line = reader.readLine()) !== null) {
+                Like_User_COUNT = line;
+            }
+            reader.close();
+        } catch (e) {
+            taskLog("读取文件时发生错误：" + e.message);
+        }
+    } else {
+        // 如果文件不存在，将文件名添加到数组中
+        Like_User_COUNT = 0;
+    }
+    
+    return Like_User_COUNT
+}
 
 
 try{
@@ -820,8 +843,17 @@ try{
                     sleep(random(3000, 5000))
 
 
+                    // var Like_User_COUNT = get_TT_Like_User_COUNT();
+                    var Like_User_COUNT = TT_Like_User_COUNT;
+                    // var Like_User_COUNT = 3;
+
+
+                    taskLog("此次需要关注的用户数量：" + Like_User_COUNT);
+                    if(Like_User_COUNT <= 0) {
+                        throw new Error("需要关注的用户数量为0，无法关注，所以报错")
+                    }
                     //按照要求的数量，开始准备关注用户
-                    if(TT_Like_User_COUNT > 0) {
+                    if(Like_User_COUNT > 0) {
                         // 当前已关注的用户数量
                         var currentFollowCount = 0;
                         // 滑动次数计数
@@ -830,8 +862,8 @@ try{
                         const MAX_SCROLL_COUNT = 15;
 
                         // 只要没达到目标关注数量且未超过最大滑动次数，就继续执行
-                        while(currentFollowCount < TT_Like_User_COUNT && scrollCount < MAX_SCROLL_COUNT) {
-                            taskLog("当前已关注数量：" + currentFollowCount + "，目标数量：" + TT_Like_User_COUNT);
+                        while(currentFollowCount < Like_User_COUNT && scrollCount < MAX_SCROLL_COUNT) {
+                            taskLog("当前已关注数量：" + currentFollowCount + "，目标数量：" + Like_User_COUNT);
                             
                             //直接在当前页面，找到Follow按钮，然后点击关注
                             var allButtons = className("android.widget.Button").find();
@@ -841,7 +873,7 @@ try{
                             
                             // 遍历当前页面的所有按钮
                             for(var k = 0; k < allButtons.size(); k++) {
-                                if(currentFollowCount >= TT_Like_User_COUNT) {
+                                if(currentFollowCount >= Like_User_COUNT) {
                                     taskLog("已达到目标关注数量，停止任务！");
                                     Nest_ScreenCapture()
                                     sleep(random(3000, 5000))
@@ -880,7 +912,7 @@ try{
                             }
 
                             // 如果当前页面没有找到可关注的按钮，或者还没达到目标数量，就往下滑动
-                            if(!foundFollowButtonInCurrentPage || currentFollowCount < TT_Like_User_COUNT) {
+                            if(!foundFollowButtonInCurrentPage || currentFollowCount < Like_User_COUNT) {
                                 scrollCount++;
                                 taskLog("往下滑动第 " + scrollCount + " 次");
                                 // 确保滑动的起点和终点都在屏幕范围内
@@ -894,7 +926,7 @@ try{
                             }
 
                             // 如果达到最大滑动次数但还未完成目标，提示用户
-                            if(scrollCount >= MAX_SCROLL_COUNT && currentFollowCount < TT_Like_User_COUNT) {
+                            if(scrollCount >= MAX_SCROLL_COUNT && currentFollowCount < Like_User_COUNT) {
                                 taskLog("已达到最大滑动次数（" + MAX_SCROLL_COUNT + "次），但只完成了 " + currentFollowCount + " 个关注，任务终止！");
                                 break;
                             }

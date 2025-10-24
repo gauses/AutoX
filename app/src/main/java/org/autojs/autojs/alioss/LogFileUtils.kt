@@ -96,7 +96,9 @@ object LogFileUtils {
 //        "report":"","screenshot":"","remark":"","xToken":"THAQJHAWTEYNLCWFDWIGQIMFLPPBSDMKAMXLLHMUWOEFWIZPFUIXNBUQRBFDHSYC"}
 
         var nestScriptJson= JSONObject(nestScript)
-        val task_uuid = nestScriptJson.getString("task_uuid")
+        val task_id = nestScriptJson.getString("task_id")
+        val env_id = nestScriptJson.getString("env_id")
+        val account_id = nestScriptJson.getString("account_id")
         val xToken = nestScriptJson.getString("xToken")
 
         var txtUploadSuccess = false
@@ -148,7 +150,7 @@ object LogFileUtils {
 
                             for (attempt in 1..3) { // 最多尝试3次
                                 Log.d("LogFileUtils", "正在上传文本文件，第${attempt}次尝试")
-                                if (AliOSSUtils.upload(xToken, "template-store/rpa-report/$task_uuid.txt", file.path)) {
+                                if (AliOSSUtils.upload(xToken, "template-store/rpa-report/$task_id.txt", file.path)) {
                                     txtUploadSuccess = true
                                     Log.d("LogFileUtils", "文本文件 ${file.name} 上传成功")
                                     break
@@ -168,7 +170,7 @@ object LogFileUtils {
                             // 等待图片文件上传完成
                             for (attempt in 1..3) { // 最多尝试3次
                                 Log.d("LogFileUtils", "正在上传图片文件，第${attempt}次尝试")
-                                if (AliOSSUtils.upload(xToken, "template-store/rpa-report/$task_uuid.png", file.path)) {
+                                if (AliOSSUtils.upload(xToken, "template-store/rpa-report/$task_id.png", file.path)) {
                                     pngUploadSuccess = true
                                     Log.d("LogFileUtils", "图片文件 ${file.name} 上传成功")
                                     break
@@ -213,7 +215,12 @@ object LogFileUtils {
         Log.d("LogFileUtils", "开始执行上报任务...")
 
         var reportJson = JSONObject()
-        reportJson.put("task_uuid", nestScriptJson.get("task_uuid").toString())
+        reportJson.put("task_id", nestScriptJson.get("task_id").toString())
+        reportJson.put("env_id", nestScriptJson.get("env_id").toString())
+        reportJson.put("account_id", nestScriptJson.get("account_id").toString())
+        reportJson.put("report_id", nestScriptJson.optString("report_id"))
+
+
         reportJson.put("success", updatedResult)
         
         // 读取 nest_result_rpa.txt 的内容
@@ -246,7 +253,6 @@ object LogFileUtils {
                     // 解析JSON内容并添加fail_msg字段
                     try {
                         val contentJson = JSONObject(jsonContent)
-                        contentJson.put("fail_msg", errorMsg)
                         Log.d("LogFileUtils", "添加fail_msg后的内容: $contentJson")
                         reportJson.put("msg", contentJson)
                     } catch (e: Exception) {
@@ -269,7 +275,7 @@ object LogFileUtils {
         // 构建请求体
         val requestBody = RequestBody.create("application/json; charset=utf-8".toMediaType(), reportJson.toString())
         val request: Request = Request.Builder()
-            .url("https://cloud.nestbrowser.com/cm/v1/rpa-report")
+            .url("https://cs.nestbrowser.com/cm/v1/tk-report")
             .method("POST", requestBody)
             .addHeader("X-Token", nestScriptJson.get("xToken").toString())
             .addHeader("Content-Type", "application/json")

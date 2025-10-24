@@ -764,91 +764,6 @@ function stopCurrentTask(){
 
 
 
-
-
-
-
-
-//通过TextView的text
-function find_textview_text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
-
-    //是否找到该TextView，找到：true / 未找到：false
-    var findText_result = false
-
-
-    var loopCount  = 0
-
-     while (true) {
-         taskLog(findText_ZH_CN + " - 循环寻找执行：" + (++loopCount));
-         // 检查计数器是否达到3
-         if (loopCount >= 6) {
-             // 打印一条消息并退出循环
-             taskLog("循环已执行6次，即将退出循环。");
-
-             //不能抛出异常，因为可能Facebook记忆功能，自动跳转到输入页面
-//                 throw new Error(findText_ZH_CN +"按钮没有找到");
-            break;
-         }
-
-         // 查找控件
-        var button1 = className("android.widget.TextView").text(findText_ZH_CN).findOne(1000);
-        var button2 = className("android.widget.TextView").text(findText_ZH_TW).findOne(1000);
-        var button3 = className("android.widget.TextView").text(findText_EN_US).findOne(1000);
-
-        if (button1) {
-            taskLog("找到" + findText_ZH_CN);
-            taskLog("找到button1 = " + button1.clickable() );
-
-            var X1 = button1.bounds().centerX();
-            var Y1 = button1.bounds().centerY();
-            
-            // 验证 X 和 Y 是否为正数
-            if (X1 >= 0 && Y1 >= 0) {
-               click(X1, Y1)
-            }else{
-               taskLog("坐标无效，中心点X或Y为负值: X=" + X1 + ", Y=" + Y1);
-            }
-            break; // 跳出循环
-        }else if(button2){
-            taskLog("找到" + findText_ZH_TW);
-            taskLog("找到button2 = " + button2.clickable() );
-
-           //  clickText(findText_ZH_TW)
-           var X2 = button2.bounds().centerX();
-           var Y2 = button2.bounds().centerY();
-           
-           // 验证 X 和 Y 是否为正数
-           if (X2 >= 0 && Y2 >= 0) {
-              click(X2, Y2)
-           }else{
-              taskLog("坐标无效，中心点X或Y为负值: X=" + X2 + ", Y=" + Y2);
-           }
-            break; // 跳出循环
-        }else if(button3){
-            taskLog("找到" + findText_EN_US);
-           //  clickText(findText_EN_US)
-           var X3 = button3.bounds().centerX();
-           var Y3 = button3.bounds().centerY();
-           taskLog("找到button3 X= " + X3);
-           taskLog("找到button3 Y= " + Y3);
-
-           // 验证 X 和 Y 是否为正数
-           if (X3 >= 0 && Y3 >= 0) {
-              click(X3, Y3)
-           }else{
-              taskLog("坐标无效，中心点X或Y为负值: X=" + X3 + ", Y=" + Y3);
-           }
-            break; // 跳出循环
-        }
-
-         sleep(1000)
-
-     }
-     return findText_result
-}
-
-
-
 try{
     
     taskLog("打开TikTok成功，首页会停留10-15秒...")
@@ -932,29 +847,6 @@ try{
 
                     click_LinearLayout_GUANZHU_IN_Author_Page(commentText)
                     sleep(random(3000, 5000))
-
-
-                    // //先判断这时候是不是已经是关注状态了
-                    // var findFollowingTextResult = findTextByLanguages(FOLLOWING_LIST_TEXT)
-                    // if(findFollowingTextResult){
-                    //     fail_msg += commentText + "已经关注了，直接跳过" + "\n";
-                    //     taskLog(commentText + "已经关注了，直接跳过")
-                    // }else{
-                    //     //text("關注，Follow")
-                    //     var findFollowTextResult = findTextByLanguages(FOLLOW_TEXT)
-                        
-                    //     // 如果找到并点击了关注按钮，增加成功计数
-                    //     if (findFollowTextResult) {
-                    //         total_success++;
-                    //         taskLog("成功关注数量更新为：" + total_success);    
-                    //     }
-
-                    //     //增加一个判断，如果此时randIdx等于comments.length-1，则进行一次截图操作
-                    //     if(randIdx == comments.length-1){
-                    //         Nest_ScreenCapture()
-                    //     }
-                    // }
-
                     
                     sleep(random(3000, 5000))
                     back()
