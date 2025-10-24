@@ -11,6 +11,7 @@ import okhttp3.RequestBody
 import org.json.JSONObject
 import java.io.File
 import java.io.IOException
+import java.util.UUID
 
 object LogFileUtils {
 
@@ -96,10 +97,23 @@ object LogFileUtils {
 //        "report":"","screenshot":"","remark":"","xToken":"THAQJHAWTEYNLCWFDWIGQIMFLPPBSDMKAMXLLHMUWOEFWIZPFUIXNBUQRBFDHSYC"}
 
         var nestScriptJson= JSONObject(nestScript)
+        // 获取基本参数
         val task_id = nestScriptJson.getString("task_id")
         val env_id = nestScriptJson.getString("env_id")
         val account_id = nestScriptJson.getString("account_id")
         val xToken = nestScriptJson.getString("xToken")
+
+        // 生成OSS路径
+        val uuid = UUID.randomUUID().toString()
+        val report_oss_path = "template-store/rpa-report/$uuid.txt"
+        val screenshot_oss_path = "template-store/rpa-report/$uuid.png"
+        
+        // 记录生成的路径
+        Log.d("LogFileUtils", "生成上传路径:")
+        Log.d("LogFileUtils", "UUID: $uuid")
+        Log.d("LogFileUtils", "报告路径: $report_oss_path")
+        Log.d("LogFileUtils", "截图路径: $screenshot_oss_path")
+
 
         var txtUploadSuccess = false
         var pngUploadSuccess = false
@@ -117,22 +131,13 @@ object LogFileUtils {
             }
         }
 
-        // 记录文件验证状态
-        var fileValidationError = false
+        // 记录上传状态
         var uploadInProgress = false
         var uploadError = false
         var errorMsg = ""
 
-        // 如果缺少任何一种文件类型，记录错误
-        if (!hasTxtFile || !hasPngFile) {
-            fileValidationError = true
-            errorMsg = "缺少必需的文件类型: ${if (!hasTxtFile) "文本文件" else ""} ${if (!hasPngFile) "PNG文件" else ""}"
-            Log.e("LogFileUtils", errorMsg)
-        }
-
-        // 如果文件验证通过，尝试上传
-        if (!fileValidationError) {
-            uploadInProgress = true
+        // 开始上传可用的文件
+        uploadInProgress = true
             Log.d("LogFileUtils", "开始上传文件，将等待上传完成后再执行上报...")
             
             // 开始上传文件
@@ -150,7 +155,8 @@ object LogFileUtils {
 
                             for (attempt in 1..3) { // 最多尝试3次
                                 Log.d("LogFileUtils", "正在上传文本文件，第${attempt}次尝试")
-                                if (AliOSSUtils.upload(xToken, "template-store/rpa-report/$task_id.txt", file.path)) {
+//                                if (AliOSSUtils.upload(xToken, "template-store/rpa-report/$task_id.txt", file.path)) {
+                                if (AliOSSUtils.upload(xToken, report_oss_path, file.path)) {
                                     txtUploadSuccess = true
                                     Log.d("LogFileUtils", "文本文件 ${file.name} 上传成功")
                                     break
@@ -170,7 +176,8 @@ object LogFileUtils {
                             // 等待图片文件上传完成
                             for (attempt in 1..3) { // 最多尝试3次
                                 Log.d("LogFileUtils", "正在上传图片文件，第${attempt}次尝试")
-                                if (AliOSSUtils.upload(xToken, "template-store/rpa-report/$task_id.png", file.path)) {
+//                                if (AliOSSUtils.upload(xToken, "template-store/rpa-report/$task_id.png", file.path)) {
+                                if (AliOSSUtils.upload(xToken, screenshot_oss_path, file.path)) {
                                     pngUploadSuccess = true
                                     Log.d("LogFileUtils", "图片文件 ${file.name} 上传成功")
                                     break
@@ -195,12 +202,12 @@ object LogFileUtils {
             }
             uploadInProgress = false
             Log.d("LogFileUtils", "文件上传流程已完成，准备执行上报...")
-        }
+
 
         // 更新result状态
         var updatedResult = result
         
-        if (fileValidationError || uploadError) {
+        if (uploadError) {
             updatedResult = "fail"
         }
 
@@ -219,6 +226,9 @@ object LogFileUtils {
         reportJson.put("env_id", nestScriptJson.get("env_id").toString())
         reportJson.put("account_id", nestScriptJson.get("account_id").toString())
         reportJson.put("report_id", nestScriptJson.optString("report_id"))
+
+        reportJson.put("report", report_oss_path) //上传oss的执行记录txt地址
+        reportJson.put("screenshot", screenshot_oss_path)//上传oss的截图记录txt地址
 
 
         reportJson.put("success", updatedResult)
