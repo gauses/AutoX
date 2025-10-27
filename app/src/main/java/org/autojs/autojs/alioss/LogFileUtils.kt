@@ -204,12 +204,12 @@ object LogFileUtils {
             Log.d("LogFileUtils", "文件上传流程已完成，准备执行上报...")
 
 
-        // 更新result状态
-        var updatedResult = result
-        
-        if (uploadError) {
-            updatedResult = "fail"
-        }
+//        // 更新result状态
+//        var updatedResult = result
+//
+//        if (uploadError) {
+//            updatedResult = "fail"
+//        }
 
         // 确保上传流程完全结束后再继续
         if (uploadInProgress) {
@@ -231,7 +231,7 @@ object LogFileUtils {
         reportJson.put("screenshot", screenshot_oss_path)//上传oss的截图记录txt地址
 
 
-        reportJson.put("success", updatedResult)
+        reportJson.put("success", result)
         
         // 读取 nest_result_rpa.txt 的内容
         try {
