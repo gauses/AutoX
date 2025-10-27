@@ -773,7 +773,8 @@ try{
     // 用于存储评论的数组
     let comments = [];
     // 检查文件是否存在
-    toast("关注列表地址 =  " + TT_Like_User_ID_KEYWORD)
+    taskLog("关注关键词 =  " + TT_Like_User_ID_KEYWORD)
+    taskLog("关注用户数量 =  " + TT_Like_User_COUNT)
     const file = new java.io.File(TT_Like_User_ID_KEYWORD);
     if (file.exists() && file.isFile()) {
         try {
@@ -802,8 +803,6 @@ try{
     }
 
     taskLog("可用的关注关键词, 一共的数量有： " + comments.length);
-    var total_target = comments.length;
-
 
     taskLog("开始点击首页搜索按钮")
     click_home_search_btn()
@@ -845,7 +844,8 @@ try{
 
                     // var Like_User_COUNT = get_TT_Like_User_COUNT();
                     var Like_User_COUNT = TT_Like_User_COUNT;
-                    // var Like_User_COUNT = 3;
+                    var total_target = Like_User_COUNT; // 此次需要关注的用户数量
+
 
 
                     taskLog("此次需要关注的用户数量：" + Like_User_COUNT);
