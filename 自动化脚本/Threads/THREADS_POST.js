@@ -1214,11 +1214,12 @@ try {
                                                     }
                                                 }
                                                 
-                                                // 随机点击一个有效的View
-                                                var randomIndex = random(0, validDropdownViews.length - 1);
+                                                // 从前4个有效选项中随机选择一个，因为太长的选项，可能被键盘挡住，无法选择
+                                                var maxOptions = Math.min(4, validDropdownViews.length);
+                                                var randomIndex = random(0, maxOptions - 1);
                                                 var randomView = validDropdownViews[randomIndex];
                                                 var bounds = randomView.bounds();
-                                                taskLog("随机点击第" + (randomIndex + 1) + "个选项，位置: (" + bounds.centerX() + ", " + bounds.centerY() + ")");
+                                                taskLog("从前" + maxOptions + "个选项中随机点击第" + (randomIndex + 1) + "个选项，位置: (" + bounds.centerX() + ", " + bounds.centerY() + ")");
                                                 click(bounds.centerX(), bounds.centerY());
                                                 sleep(random(2000, 3000));
                                                 foundValidOption = true;
