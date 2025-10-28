@@ -1161,7 +1161,7 @@ try {
                                         sleep(random(3000, 5000))
         
                                         //3.选择第一个弹出的主题
-                                        sleep(random(2000, 3000)); // 等待下拉框出现
+                                        sleep(random(5000, 6000)); // 等待下拉框出现
                                         
                                         // 查找下拉框中的View列表
                                         var allViews = className("android.view.View").find();
