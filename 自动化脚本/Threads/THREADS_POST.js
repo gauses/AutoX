@@ -868,6 +868,14 @@ function get_all_TT_comment_text(){
     let comments = [];
     // 户是否存在
     taskLog("TT评论数组 =  " + THREADS_POST_VIDEO_DESC)
+    
+    // 检查是否传入了错误的Windows文件路径格式（包含盘符和反斜杠）
+    if(THREADS_POST_VIDEO_DESC && 
+       (THREADS_POST_VIDEO_DESC.includes(":\\") || 
+        THREADS_POST_VIDEO_DESC.match(/^[A-Za-z]:\\/))) {
+        throw new Error("检测到传输错误：内容包含Windows文件路径格式，请检查配置 - " + THREADS_POST_VIDEO_DESC);
+    }
+    
     const file = new java.io.File(THREADS_POST_VIDEO_DESC);
     if (file.exists() && file.isFile()) {
         try {
@@ -894,6 +902,14 @@ function get_all_TT_comment_text(){
 function get_post_text(){
     // 用于存储私信用户的数组
     let comments = [];
+    
+    // 检查是否传入了错误的Windows文件路径格式（包含盘符和反斜杠）
+    if(THREADS_POST_VIDEO_DESC && 
+       (THREADS_POST_VIDEO_DESC.includes(":\\") || 
+        THREADS_POST_VIDEO_DESC.match(/^[A-Za-z]:\\/))) {
+        throw new Error("检测到传输错误：内容包含Windows文件路径格式，请检查配置 - " + THREADS_POST_VIDEO_DESC);
+    }
+    
     const file = new java.io.File(THREADS_POST_VIDEO_DESC);
     if (file.exists() && file.isFile()) {
         try {
