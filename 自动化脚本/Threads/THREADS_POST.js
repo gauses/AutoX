@@ -1163,54 +1163,79 @@ try {
                                         //3.选择第一个弹出的主题
                                         sleep(random(5000, 6000)); // 等待下拉框出现
                                         
-                                        // 查找下拉框中的View列表
-                                        var allViews = className("android.view.View").find();
-                                        taskLog("当前页面找到 " + allViews.length + " 个View");
+                                        // 重试逻辑：最多尝试3次查找有效的下拉选项
+                                        var maxRetries = 3;
+                                        var foundValidOption = false;
                                         
-                                        // 筛选出只包含1个TextView和1个Button的View
-                                        var validDropdownViews = [];
-                                        for(let j = 0; j < allViews.length; j++){
-                                            var currentView = allViews[j];
-                                            
-                                            // 获取当前View的所有子元素
-                                            var childCount = currentView.childCount();
-                                            
-                                            // 统计TextView和Button的数量
-                                            var textViewCount = currentView.find(className("android.widget.TextView")).length;
-                                            var buttonCount = currentView.find(className("android.widget.Button")).length;
-                                            
-                                            // 有效情况1：1.恰好1个TextView 2.恰好1个Button 3.子元素总数为2
-                                            // 有效情况2：1.恰好2个TextView 2.恰好1个Button 3.子元素总数为3
-                                            if((textViewCount === 1 && buttonCount === 1 && childCount === 2) ||
-                                               (textViewCount === 2 && buttonCount === 1 && childCount === 3)){
-                                                validDropdownViews.push(currentView);
-                                                taskLog("找到有效的下拉选项View[" + j + "]，包含" + textViewCount + "个TextView和" + buttonCount + "个Button");
+                                        for(let retryCount = 0; retryCount < maxRetries; retryCount++){
+                                            if(retryCount > 0){
+                                                taskLog("第" + retryCount + "次重试，等待5秒后重新检查下拉列表...");
+                                                sleep(5000);
                                             }
-                                        }
-                                        
-                                        taskLog("筛选后找到 " + validDropdownViews.length + " 个有效的下拉选项");
-                                        
-                                        if(validDropdownViews.length > 0){
-                                            taskLog("检测到下拉列表已弹出，共有 " + validDropdownViews.length + " 个有效选项");
                                             
-                                            // 打印所有有效选项中的TextView文字内容
-                                            for(let k = 0; k < validDropdownViews.length; k++){
-                                                var textViewInView = validDropdownViews[k].findOne(className("android.widget.TextView"));
-                                                if(textViewInView){
-                                                    var textContent = textViewInView.text();
-                                                    taskLog("下拉选项[" + k + "]的TextView内容: " + textContent);
-                                                }else{
-                                                    taskLog("下拉选项[" + k + "]未找到TextView内容");
+                                            // 查找下拉框中的View列表
+                                            var allViews = className("android.view.View").find();
+                                            taskLog("当前页面找到 " + allViews.length + " 个View");
+                                            
+                                            // 筛选出只包含1个TextView和1个Button的View
+                                            var validDropdownViews = [];
+                                            for(let j = 0; j < allViews.length; j++){
+                                                var currentView = allViews[j];
+                                                
+                                                // 获取当前View的所有子元素
+                                                var childCount = currentView.childCount();
+                                                
+                                                // 统计TextView和Button的数量
+                                                var textViewCount = currentView.find(className("android.widget.TextView")).length;
+                                                var buttonCount = currentView.find(className("android.widget.Button")).length;
+                                                
+                                                // 有效情况1：1.恰好1个TextView 2.恰好1个Button 3.子元素总数为2
+                                                // 有效情况2：1.恰好2个TextView 2.恰好1个Button 3.子元素总数为3
+                                                if((textViewCount === 1 && buttonCount === 1 && childCount === 2) ||
+                                                   (textViewCount === 2 && buttonCount === 1 && childCount === 3)){
+                                                    validDropdownViews.push(currentView);
+                                                    taskLog("找到有效的下拉选项View[" + j + "]，包含" + textViewCount + "个TextView和" + buttonCount + "个Button");
                                                 }
                                             }
                                             
-                                            // 随机点击一个有效的View
-                                            var randomIndex = random(0, validDropdownViews.length - 1);
-                                            var randomView = validDropdownViews[randomIndex];
-                                            var bounds = randomView.bounds();
-                                            taskLog("随机点击第" + (randomIndex + 1) + "个选项，位置: (" + bounds.centerX() + ", " + bounds.centerY() + ")");
-                                            click(bounds.centerX(), bounds.centerY());
+                                            taskLog("筛选后找到 " + validDropdownViews.length + " 个有效的下拉选项");
+                                            
+                                            if(validDropdownViews.length > 0){
+                                                taskLog("检测到下拉列表已弹出，共有 " + validDropdownViews.length + " 个有效选项");
+                                                
+                                                // 打印所有有效选项中的TextView文字内容
+                                                for(let k = 0; k < validDropdownViews.length; k++){
+                                                    var textViewInView = validDropdownViews[k].findOne(className("android.widget.TextView"));
+                                                    if(textViewInView){
+                                                        var textContent = textViewInView.text();
+                                                        taskLog("下拉选项[" + k + "]的TextView内容: " + textContent);
+                                                    }else{
+                                                        taskLog("下拉选项[" + k + "]未找到TextView内容");
+                                                    }
+                                                }
+                                                
+                                                // 随机点击一个有效的View
+                                                var randomIndex = random(0, validDropdownViews.length - 1);
+                                                var randomView = validDropdownViews[randomIndex];
+                                                var bounds = randomView.bounds();
+                                                taskLog("随机点击第" + (randomIndex + 1) + "个选项，位置: (" + bounds.centerX() + ", " + bounds.centerY() + ")");
+                                                click(bounds.centerX(), bounds.centerY());
+                                                sleep(random(2000, 3000));
+                                                foundValidOption = true;
+                                                break; // 找到有效选项后跳出重试循环
+                                            }else{
+                                                taskLog("未找到有效的下拉选项，当前重试次数: " + (retryCount + 1) + "/" + maxRetries);
+                                            }
+                                        }
+                                        
+                                        // 如果3次重试后仍未找到有效选项，点击两次back
+                                        if(!foundValidOption){
+                                            taskLog("3次重试后仍未找到有效的下拉选项，准备点击两次back退出");
+                                            back(); // 第一次back：收回键盘
                                             sleep(random(2000, 3000));
+                                            back(); // 第二次back：关闭话题输入框
+                                            sleep(random(2000, 3000));
+                                            taskLog("已点击两次back，退出话题输入");
                                         }
                                         
         
