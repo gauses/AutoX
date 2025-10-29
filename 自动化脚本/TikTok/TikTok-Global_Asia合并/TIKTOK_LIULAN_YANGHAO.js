@@ -465,12 +465,12 @@ function click_Comment_Btn(commentText){
                 
                 
             }
+    }else{
+        //页面没有评论按钮，直接返回
+        taskLog("页面没有评论按钮，直接返回")
+        back()
+        sleep(random(2000, 3000))
     }
-
-    
-
-
-
    
 }
 
@@ -862,7 +862,7 @@ try {
 
 
     //开始观看
-    var count = 1;
+    var count = 0;
     do {
         // 将 count 加 1
         taskLog("开始观看第"+count+"个TikTok视频")

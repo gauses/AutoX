@@ -756,16 +756,19 @@ try{
 
             taskLog("需要取消关注的用户, 一共有： " + TT_Cancel_Follow_Count + "个");
             total_target = TT_Cancel_Follow_Count;
-            taskLog("每次取消关注后等待的时间: " + TT_Cancel_Follow_Sleep_Time_Start + "毫秒 - " + TT_Cancel_Follow_Sleep_Time_End + "毫秒");
-            if (TT_Cancel_Follow_Count.length > 0) {
+            taskLog("每次取消关注后等待的时间: " + TT_Cancel_Follow_Sleep_Time_Start + "秒 - " + TT_Cancel_Follow_Sleep_Time_End + "秒");
+            if (TT_Cancel_Follow_Count > 0) {
                 var successCount = 0; // 成功取消关注的计数
                 for (var i = 0; i < TT_Cancel_Follow_Count; i++) {
                     taskLog("开始取消关注用户: " + i)
-                    // if(TT_Cancel_Follow_Sleep_Time_Start.length > 0 && TT_Cancel_Follow_Sleep_Time_End.length > 0){
-                    //     sleep(random(TT_Cancel_Follow_Sleep_Time_Start, TT_Cancel_Follow_Sleep_Time_End))
-                    // }else{
+                    if(TT_Cancel_Follow_Sleep_Time_Start > 0 && TT_Cancel_Follow_Sleep_Time_End > 0){
+                        var sleepTime = random(TT_Cancel_Follow_Sleep_Time_Start, TT_Cancel_Follow_Sleep_Time_End )
+                        taskLog("取消关注后等待的时间，后台分配: " + sleepTime + "秒");
+                        sleep(sleepTime * 1000)
+                    }else{
                         sleep(random(3000, 5000))
-                    // }
+                        taskLog("取消关注后等待的时间: " + random(3, 5) + "秒");
+                    }
 
                     // 尝试查找并点击Following按钮，如果找不到则滑动屏幕
                     var maxScrollAttempts = 10; // 最大滑动尝试次数
