@@ -776,6 +776,8 @@ try {
     if (e.message === "TASK_COMPLETED") {
         taskLog("任务正常完成");
     } else {
+        Nest_ScreenCapture()
+        sleep(random(5000, 8000))
         handleError(e);
     }
 }finally{
