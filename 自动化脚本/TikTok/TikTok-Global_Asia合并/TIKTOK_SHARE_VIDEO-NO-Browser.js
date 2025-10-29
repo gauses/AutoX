@@ -20,9 +20,74 @@ const TT_VIDEO_URL = '$${指定视频链接/直播間鏈接}';
 const TT_VIDEO_SHARE_TEXT = '$${分享文案}';
 const TT_VIDEO_SHARE_FRIENDS_NUMBER = '$${分享好友數量}';
 
+// 需要关注的总数
+var total_target = 0;
+// 成功关注的数量
+var total_success = 0;
+// 错误信息
+var fail_msg = "";
+
 
 var ASIA_TikTokPackageName = 'com.ss.android.ugc.trill';
 var GLOBAL_TikTokPackageName = 'com.zhiliaoapp.musically';
+
+
+const FORCE_STOP_TEXT = {
+    ZH_CN: "强行停止",    // 简体中文
+    ZH_TW: "強制停止",    // 繁体中文
+    EN_US: "FORCE STOP"   // 英文
+};
+
+// 定义确认按钮文本
+const FORCE_STOP_CONFIRM_TEXT = {
+    ZH_CN: "确定",      // 简体中文
+    ZH_TW: "確定",      // 繁体中文
+    EN_US: "OK"         // 英文
+};
+
+
+
+
+// 通过语言对象查找文本
+function findTextByLanguages(languageObject) {
+    for (let lang in languageObject) {
+        let targetText = languageObject[lang];
+        if (text(targetText).exists()) {
+            taskLog("找到文本：" + targetText);
+            let element = text(targetText).findOne();
+            if (element && element.clickable()) {
+                element.click();
+                return true;
+            } else if (element) {
+                // 如果元素存在但不可点击，尝试点击其坐标
+                let bounds = element.bounds();
+                click(bounds.centerX(), bounds.centerY());
+                return true;
+            }
+        }
+    }
+    taskLog("未找到任何匹配的文本");
+    return false;
+}
+
+//保证Java层和JS代码两边的日志文件一致
+var taskLogFileName = "nest_task_log_" + getSystemDate("df").replace(/:/g, "-").replace(" ", "_") + ".txt"
+var RPAFilePath = "/sdcard/Download/log/";
+// 如果目录存在且有内容就删除
+if (files.exists(RPAFilePath)) {
+    files.removeDir(RPAFilePath);
+}
+//日志文件路径
+var logFilePath = RPAFilePath + taskLogFileName;
+//确保日志目录存在
+files.ensureDir(RPAFilePath);
+
+
+//日志文件路径
+var resultPath = RPAFilePath + "nest_result_rpa.txt";
+//确保日志目录存在
+files.ensureDir(resultPath);
+
 
 
 
@@ -45,25 +110,34 @@ var handleErrorFlag = false //默认没有错误，如果出现异常，那么�
     sleep(1000)
 
     if(handleErrorFlag){
-        console.error("-----------------脚本执行出现异常---------------");
-        console.error("Tiktok根據關鍵字，搜尋影片瀏覽養號，評論，點讚---------------");
-        console.error("脚本执行时间：" + new Date().toLocaleString());
+        taskLogError("-----------------脚本执行出现异常---------------");
+        taskLogError("Tiktok根據關鍵字，搜尋影片瀏覽養號，評論，點讚---------------");
+        taskLogError("脚本执行时间：" + new Date().toLocaleString());
     }else{
-        console.log("-----------------脚本功能执行结束：---------------");
-        console.log("Tiktok根據關鍵字，搜尋影片瀏覽養號，評論，點讚---------------");
-        console.log("脚本执行时间：" + new Date().toLocaleString());
+        taskLog("-----------------脚本功能执行结束：---------------");
+        taskLog("Tiktok根據關鍵字，搜尋影片瀏覽養號，評論，點讚---------------");
+        taskLog("脚本执行时间：" + new Date().toLocaleString());
     }
     openLogActivity();
 });
 
+
 function handleError(e) {
     handleErrorFlag = true
-    console.error("===错误报告开始===");
-    console.error("错误信息：" + e);
-    console.error("错误堆栈：" + e.stack);
-    console.error("===错误报告结束===");
-    exit()
+    forceStop_APP(targetPackageName)
+    taskLogError("===错误报告开始===");
+    fail_msg += "错误信息：" + e + "\n"; 
+    taskLogError("错误信息：" + e);
+    fail_msg += "错误堆栈：" + e.stack + "\n";
+    taskLogError("错误堆栈：" + e.stack);
+    fail_msg += "===错误报告结束===" + "\n";
+    taskLogError("===错误报告结束===");
+    fail_msg += "===错误报告结束===" + "\n";
+    taskLog("脚本执行Error时间：" + new Date().toLocaleString());
 }
+
+
+
 function throw_error_storage_not_enough(){
     throw new Error("当前设备的存储空间不可用，请关机重启一次设备，然后重新执行一次脚本")
 }
@@ -125,9 +199,8 @@ if (isAppInstalled(GLOBAL_TikTokPackageName)) {
     targetClassName = "com.ss.android.ugc.aweme.main.MainActivity";
     taskLog("检测到已安装亚洲版TikTok，准备启动...");
 } else {
-    toast("未检测到TikTok已安装，请先安装TikTok！");
     taskLog("未检测到TikTok已安装，脚本终止。");
-    exit();
+    throw new Error("未检测到TikTok未安装，请先安装TikTok！");
 }
 
 
@@ -142,28 +215,35 @@ sleep(3000)
 //******************************************************************
 
 function openTikTokByUrl(tiktokUrl){
-    taskLog("准备打开链接 = " + tiktokUrl);
+    try {
+        taskLog("准备打开链接 = " + tiktokUrl);
 
-    // 1. 从 URL 提取视频 ID
-    var match = /\/video\/(\d+)/.exec(tiktokUrl);
-    if(!match){
-        taskLog("无法识别视频 ID: " + tiktokUrl);
-        return;
+        // 1. 从 URL 提取视频 ID
+        var match = /\/video\/(\d+)/.exec(tiktokUrl);
+        if(!match){
+            taskLog("无法识别视频 ID: " + tiktokUrl);
+            return false;
+        }
+        var videoId = match[1];
+        taskLog("解析到视频 ID = " + videoId);
+
+        // 2. 拼接 TikTok 深链
+        var deepLink = "snssdk1233://aweme/detail/" + videoId;
+
+        // 3. 构造 Intent 打开 TikTok
+        var intent = new android.content.Intent(android.content.Intent.ACTION_VIEW);
+        intent.setData(android.net.Uri.parse(deepLink));
+        intent.setPackage(targetPackageName); // TikTok 包名
+        intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+
+        // 4. 直接启动
+        app.startActivity(intent);
+        
+        return true;
+    } catch (e) {
+        taskLog("打开链接异常: " + e);
+        return false;
     }
-    var videoId = match[1];
-    taskLog("解析到视频 ID = " + videoId);
-
-    // 2. 拼接 TikTok 深链
-    var deepLink = "snssdk1233://aweme/detail/" + videoId;
-
-    // 3. 构造 Intent 打开 TikTok
-    var intent = new android.content.Intent(android.content.Intent.ACTION_VIEW);
-    intent.setData(android.net.Uri.parse(deepLink));
-    intent.setPackage(targetPackageName); // TikTok 包名
-    intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
-
-    // 4. 直接启动
-    app.startActivity(intent);
 }
 
 
@@ -176,6 +256,7 @@ function openAppSettings(packageName) {
     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
     app.startActivity(intent);
 }
+
 //强制停止TikTok 
 function forceStop_APP(packageName){
     taskLog("准备强杀:" + packageName + "...")
@@ -183,84 +264,37 @@ function forceStop_APP(packageName){
     openAppSettings(packageName)
     sleep(5000)
 
-    //繁体
-    if (text("強制停止").exists()) {
-        let forceStopBtn = text("強制停止").findOne();
-        if (forceStopBtn && forceStopBtn.clickable()) {
-            forceStopBtn.click();
-            sleep(1000);
-            // 确认操作
-            if (text("確定").exists()) {
-                taskLog("已经找到可点击的'強制停止'按钮！！！！！！！！！！");
-                text("確定").findOne().click();
+    // 遍历所有可能的强制停止按钮文本
+    for (let lang in FORCE_STOP_TEXT) {
+        let stopText = FORCE_STOP_TEXT[lang];
+        if (text(stopText).exists()) {
+            let forceStopBtn = text(stopText).findOne();
+            if (forceStopBtn && forceStopBtn.clickable()) {
+                forceStopBtn.click();
+                sleep(1000);
+                
+                // 遍历所有可能的确认按钮文本
+                for (let confirmLang in FORCE_STOP_CONFIRM_TEXT) {
+                    let confirmText = FORCE_STOP_CONFIRM_TEXT[confirmLang];
+                    if (text(confirmText).exists()) {
+                        text(confirmText).findOne().click();
+                        taskLog("成功点击'" + stopText + "'按钮并确认");
+                        sleep(3000);
+                        home();
+                        return;
+                    }
+                }
+            } else {
+                taskLog("未找到可点击的'" + stopText + "'按钮");
             }
         } else {
-            taskLog("未找到可点击的'強制停止'按钮");
+            taskLog("未找到'" + stopText + "'按钮");
         }
-    } else {
-        taskLog("未找到'強制停止'按钮");
-    }
-    sleep(3000)
-
-    //简体
-    if (text("强行停止").exists()) {
-        let forceStopBtn = text("强行停止").findOne();
-        if (forceStopBtn && forceStopBtn.clickable()) {
-            forceStopBtn.click();
-            sleep(1000);
-            // 确认操作
-            if (text("确定").exists()) {
-                text("确定").findOne().click();
-            }
-        } else {
-            taskLog("未找到可点击的'强行停止'按钮");
-        }
-    } else {
-        taskLog("未找到'强行停止'按钮");
+        sleep(1000);
     }
 
-    sleep(3000)
-
-
-    //英语
-    if (text("Force stop").exists()) {
-        let forceStopBtn = text("Force stop").findOne();
-        if (forceStopBtn && forceStopBtn.clickable()) {
-            forceStopBtn.click();
-            sleep(1000);
-            // 确认操作
-            if (text("OK").exists()) {
-                text("OK").findOne().click();
-            }
-        } else {
-            taskLog("未找到可点击的'Force stop'按钮");
-        }
-    } else {
-        taskLog("未找到'Force stop'按钮");
-    }
-    sleep(3000)
-
-    //英语
-    if (text("FORCE STOP").exists()) {
-        let forceStopBtn = text("FORCE STOP").findOne();
-        if (forceStopBtn && forceStopBtn.clickable()) {
-            forceStopBtn.click();
-            sleep(1000);
-            // 确认操作
-            if (text("OK").exists()) {
-                text("OK").findOne().click();
-            }
-        } else {
-            taskLog("未找到可点击的'FORCE STOP'按钮");
-        }
-    } else {
-        taskLog("未找到'FORCE STOP'按钮");
-    }
-    sleep(3000)
-
-
-    home()
-
+    // 如果所有语言都尝试失败，返回主页
+    home();
 }
 
 
@@ -336,46 +370,91 @@ function clickId(a) {
 
 
 
-
-
-
-
-
-
-
 //打印日志
 function taskLog(_log){
     toast(_log)
     console.log(getSystemDate("df") +":" +_log)
+    console.log(_log)
 
-    //通过日志判断任务有没有结束：
 
+    try {
+        //确保目录存在
+        files.ensureDir(RPAFilePath);
+        
+        //将日志写入文件
+        var logContent = getSystemDate("df") + ":" + _log + "\n";
+        // var logContent = _log + "\n";
+        files.append(logFilePath, logContent);
+        
+    } catch(e) {
+        console.error("写入日志文件失败：" + e);
+    }
 }
 
 
+function taskLogError(_log){
+    toast(_log);
+    
+    console.error(getSystemDate("df") +":" +_log)
+    // console.error(_log)
 
-//无论成功或者失败，最后截图一张
-function saveImg(){
-    taskLog("开始截图...");
+    try {
+        //确保目录存在
+        files.ensureDir(RPAFilePath);
+        
+        //将日志写入文件
+        var logContent = getSystemDate("df") + ":" + "【!!!ERROR!!!】" + _log + "\n";
+        // var logContent = "【!!!ERROR!!!】" + _log + "\n";
+        files.append(logFilePath, logContent);
+        
+    } catch(e) {
+        console.error("写入日志文件失败：" + e);
+    }
+}
 
-    var toPath = "/sdcard/Download/" + taskLogImgName ;
-    if (files.exists(toPath) ){
-        taskLog("旧图片文件存在，删除");
-        files.remove(toPath);
-    } else {
-        taskLog("旧图片文件存在");
+
+//开始录屏截图到本地
+function Nest_ScreenCapture(){
+    // 申请截图权限（会弹系统录屏权限框）
+    if (!requestScreenCapture()) {
+        taskLog("自动化任务-申请截图权限失败");
     }
 
-
-    if(!requestScreenCapture()){
-        taskLog("请求截图失败...");
-        toast("请求截图失败");
-    }else{
-        toast("请求截图");
+    // 申请截图权限（会弹系统录屏权限框）
+    if (!requestScreenCapture()) {
+        taskLog("自动化任务-申请截图权限失败");
     }
-    //截图并保存
-    taskLog("请求截图开始保存...");
-    images.saveImage(captureScreen(), toPath);
+
+    // 截一张整屏
+    var img = captureScreen();           // 返回 Image 对象
+    if (!img) {
+        taskLog("自动化任务-截图失败");
+    }
+
+    // 保存到相册/文件夹
+    // var dir = "/sdcard/Pictures";
+    // files.ensureDir(dir);
+    // var path = dir + "/nestshot_" + Date.now() + ".png";
+    var path = RPAFilePath + "/nestshot_" + Date.now() + ".png";
+    img.saveTo(path);                    // 保存
+    img.recycle();                       // 回收内存
+    taskLog("自动化任务已经完成-已保存截图："+ path);
+
+
+    //刷新媒体库
+    sleep(3000)
+    toast("开始刷新媒体库....");
+    refreshMedia(RPAFilePath)
+    return path
+}
+// 刷新指定路径的媒体库
+function refreshMedia(path) {
+    taskLog("开始刷新媒体库....");
+    // 发送媒体扫描广播
+    media.scanFile(path);
+    // 等待扫描完成
+    sleep(5000);
+    taskLog("媒体库刷新完成.");
 }
 
 
@@ -425,302 +504,6 @@ function stopCurrentTask(){
     console.hide()
 
 }
-
-
-//通过Button的Text
-function find_btn_Text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
-
-    //是否找到该TextView，找到：true / 未找到：false
-    var findText_result = false
-    var loopCount  = 0
-
-     while (true) {
-         taskLog(findText_ZH_CN + " - 循环寻找执行：" + (++loopCount));
-         // 检查计数器是否达到3
-         if (loopCount >= 3) {
-             // 打印一条消息并退出循环
-             taskLog("循环已执行3次，即将退出循环。");
-
-             //不能抛出异常，因为可能Facebook记忆功能，自动跳转到输入页面
-//                 throw new Error(findText_ZH_CN +"按钮没有找到");
-            break;
-         }
-
-         // 查找控件
-         var button1 = className("android.widget.Button").text(findText_ZH_CN).findOne(1000);
-         var button2 = className("android.widget.Button").text(findText_ZH_TW).findOne(1000);
-         var button3 = className("android.widget.Button").text(findText_EN_US).findOne(1000);
-
-         if (button1) {
-             taskLog("找到" + findText_ZH_CN);
-             taskLog("找到button1 = " + button1.clickable() );
-            //  clickText(findText_ZH_CN)
-            //  click(button1.bounds().centerX(), button1.bounds().centerY())
-
-             var X1 = button1.bounds().centerX();
-             var Y1 = button1.bounds().centerY();
-             
-             // 验证 X 和 Y 是否为正数
-             if (X1 >= 0 && Y1 >= 0) {
-                click(X1, Y1)
-                findText_result = true
-             }else{
-                taskLog("坐标无效，中心点X或Y为负值: X=" + X1 + ", Y=" + Y1);
-             }
-             break; // 跳出循环
-         }else if(button2){
-             taskLog("找到" + findText_ZH_TW);
-             taskLog("找到button2 = " + button2.clickable() );
-
-            //  clickText(findText_ZH_TW)
-            var X2 = button2.bounds().centerX();
-            var Y2 = button2.bounds().centerY();
-            
-            // 验证 X 和 Y 是否为正数
-            if (X2 >= 0 && Y2 >= 0) {
-               click(X2, Y2)
-               findText_result = true
-            }else{
-               taskLog("坐标无效，中心点X或Y为负值: X=" + X2 + ", Y=" + Y2);
-            }
-             break; // 跳出循环
-         }else if(button3){
-             taskLog("找到" + findText_EN_US);
-            //  clickText(findText_EN_US)
-            var X3 = button3.bounds().centerX();
-            var Y3 = button3.bounds().centerY();
-            taskLog("找到button3 X= " + X3);
-            taskLog("找到button3 Y= " + Y3);
-
-            // 验证 X 和 Y 是否为正数
-            if (X3 >= 0 && Y3 >= 0) {
-               click(X3, Y3)
-               findText_result = true
-            }else{
-               taskLog("坐标无效，中心点X或Y为负值: X=" + X3 + ", Y=" + Y3);
-            }
-             break; // 跳出循环
-         }
-         sleep(4000)
-
-     }
-
-     return findText_result
-}
-
-
-
-//通过Button的Desc
-function find_btn_desc_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
-
-        var loopCount  = 0
-
-         while (true) {
-             taskLog(findText_ZH_CN + " - 循环寻找执行：" + (++loopCount));
-             // 检查计数器是否达到3
-             if (loopCount >= 3) {
-                 // 打印一条消息并退出循环
-                 taskLog("循环已执行3次，即将退出循环。");
-
-                 //不能抛出异常，因为可能Facebook记忆功能，自动跳转到输入页面
-//                 throw new Error(findText_ZH_CN +"按钮没有找到");
-                break;
-             }
-
-
-             // 查找控件
-            //  var button1 = className("android.widget.Button").desc(findText_ZH_CN).findOne(1000);
-            //  var button2 = className("android.widget.Button").desc(findText_ZH_TW).findOne(1000);
-            //  var button3 = className("android.widget.Button").desc(findText_EN_US).findOne(1000);
-            var button1 = desc(findText_ZH_CN).findOne(1000);
-            var button2 = desc(findText_ZH_TW).findOne(1000);
-            var button3 = desc(findText_EN_US).findOne(1000);
-
-
-             if (button1) {
-                 taskLog("找到" + findText_ZH_CN);
-                 taskLog("找到button1 = " + button1.clickable() );
-                 if(button1.clickable()) {
-                    button1.click()
-                    break; // 跳出循环
-                 }else{
-                    taskLog("找到button1 ，但是button1不可点击,所以根据坐标点击 " );
-
-                    var X1 = button1.bounds().centerX();
-                    var Y1 = button1.bounds().centerY();
-                    // 验证 X 和 Y 是否为正数
-                    if (X1 < 0 || Y1 < 0) {
-                        taskLog("坐标无效，中心点X或Y为负值: X=" + X + ", Y=" + Y);
-                        return
-                    }
-                    // 生成随机偏差
-                    var _X1 = X1 - random(-2, 2);
-                    var _Y1 = Y1 - random(-2, 2);
-                    click(Math.max(0, _X1) , Math.max(0, _Y1))// 防止偏差导致负值
-
-                    break; // 跳出循环
-
-
-                 }
-             }else if(button2){
-                 taskLog("找到" + findText_ZH_TW);
-                 taskLog("找到button2 = " + button2.clickable() );
-                 if(button2.clickable()) {
-                    button2.click()
-                 }else{
-                    taskLog("找到button2 ，但是button2不可点击,所以根据坐标点击 " );
-
-                    var X2 = button2.bounds().centerX();
-                    var Y2 = button2.bounds().centerY();
-                    // 验证 X 和 Y 是否为正数
-                    if (X2 < 0 || Y2 < 0) {
-                        taskLog("坐标无效，中心点X或Y为负值: X=" + X2 + ", Y=" + Y2);
-                        return
-                    }
-                    // 生成随机偏差
-                    var _X2 = X2 - random(-2, 2);
-                    var _Y2 = Y2 - random(-2, 2);
-                    click(Math.max(0, _X2) , Math.max(0, _Y2))// 防止偏差导致负值
-
-                    break; // 跳出循环
-                 }
-                 break; // 跳出循环
-             }else if(button3){
-                 taskLog("找到" + findText_EN_US);
-                 taskLog("找到button3 = " + button3.clickable() );
-                 if(button3.clickable()) {
-                    button3.click()
-                 }else{
-                    taskLog("找到button3 ，但是button3不可点击,所以根据坐标点击 " );
-
-                    var X3 = button3.bounds().centerX();
-                    var Y3 = button3.bounds().centerY();
-                    // 验证 X 和 Y 是否为正数
-                    if (X3 < 0 || Y3 < 0) {
-                        taskLog("坐标无效，中心点X或Y为负值: X=" + X3 + ", Y=" + Y3);
-                        return
-                    }
-                    // 生成随机偏差
-                    var _X3 = X3 - random(-2, 2);
-                    var _Y3 = Y3 - random(-2, 2);
-                    click(Math.max(0, _X3) , Math.max(0, _Y3))// 防止偏差导致负值
-
-                 }
-                 break; // 跳出循环
-             }
-
-             sleep(1000)
-
-         }
-}
-
-
-
-
-//通过TextView的text
-function find_textview_text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
-
-    //是否找到该TextView，找到：true / 未找到：false
-    var findText_result = false
-
-
-    var loopCount  = 0
-
-     while (true) {
-         taskLog(findText_ZH_CN + " - 循环寻找执行：" + (++loopCount));
-         // 检查计数器是否达到3
-         if (loopCount >= 3) {
-             // 打印一条消息并退出循环
-             taskLog("循环已执行3次，即将退出循环。");
-
-             //不能抛出异常，因为可能Facebook记忆功能，自动跳转到输入页面
-//                 throw new Error(findText_ZH_CN +"按钮没有找到");
-            break;
-         }
-
-         // 查找控件
-        var button1 = className("android.widget.TextView").text(findText_ZH_CN).findOne(1000);
-        var button2 = className("android.widget.TextView").text(findText_ZH_TW).findOne(1000);
-        var button3 = className("android.widget.TextView").text(findText_EN_US).findOne(1000);
-
-        if (button1) {
-            taskLog("找到" + findText_ZH_CN);
-            taskLog("找到button1 = " + button1.clickable() );
-            if(button1.clickable()) {
-               button1.click()
-               break; // 跳出循环
-            }else{
-               taskLog("找到button1 ，但是button1不可点击,所以根据坐标点击 " );
-
-               var X1 = button1.bounds().centerX();
-               var Y1 = button1.bounds().centerY();
-               // 验证 X 和 Y 是否为正数
-               if (X1 < 0 || Y1 < 0) {
-                   taskLog("坐标无效，中心点X或Y为负值: X=" + X + ", Y=" + Y);
-                   return
-               }
-               // 生成随机偏差
-               var _X1 = X1 - random(-2, 2);
-               var _Y1 = Y1 - random(-2, 2);
-               click(Math.max(0, _X1) , Math.max(0, _Y1))// 防止偏差导致负值
-
-               break; // 跳出循环
-
-
-            }
-        }else if(button2){
-            taskLog("找到" + findText_ZH_TW);
-            taskLog("找到button2 = " + button2.clickable() );
-            if(button2.clickable()) {
-               button2.click()
-            }else{
-               taskLog("找到button2 ，但是button2不可点击,所以根据坐标点击 " );
-
-               var X2 = button2.bounds().centerX();
-               var Y2 = button2.bounds().centerY();
-               // 验证 X 和 Y 是否为正数
-               if (X2 < 0 || Y2 < 0) {
-                   taskLog("坐标无效，中心点X或Y为负值: X=" + X2 + ", Y=" + Y2);
-                   return
-               }
-               // 生成随机偏差
-               var _X2 = X2 - random(-2, 2);
-               var _Y2 = Y2 - random(-2, 2);
-               click(Math.max(0, _X2) , Math.max(0, _Y2))// 防止偏差导致负值
-
-               break; // 跳出循环
-            }
-            break; // 跳出循环
-        }else if(button3){
-            taskLog("找到" + findText_EN_US);
-            taskLog("找到button3 = " + button3.clickable() );
-            if(button3.clickable()) {
-               button3.click()
-            }else{
-               taskLog("找到button3 ，但是button3不可点击,所以根据坐标点击 " );
-
-               var X3 = button3.bounds().centerX();
-               var Y3 = button3.bounds().centerY();
-               // 验证 X 和 Y 是否为正数
-               if (X3 < 0 || Y3 < 0) {
-                   taskLog("坐标无效，中心点X或Y为负值: X=" + X3 + ", Y=" + Y3);
-                   return
-               }
-               // 生成随机偏差
-               var _X3 = X3 - random(-2, 2);
-               var _Y3 = Y3 - random(-2, 2);
-               click(Math.max(0, _X3) , Math.max(0, _Y3))// 防止偏差导致负值
-
-            }
-            break; // 跳出循环
-        }
-         sleep(1000)
-
-     }
-     return findText_result
-}
-
-
 
 
 
@@ -921,6 +704,11 @@ function click_friend_list(){
         }
     }
 
+
+    taskLog("点击好友列表完成，准备截图....")
+    Nest_ScreenCapture()
+    sleep(random(5000, 8000))
+
     //点击传送按钮： Button fullId("com.zhiliaoapp.musically:id/tks")
     //fullId("com.ss.android.ugc.trill:id/tkv")
     taskLog("点击传送按钮")
@@ -937,9 +725,7 @@ function click_friend_list(){
 
 
 try {
-
    
-
     var all_TT_VIDEO_LINK = get_all_video_link()
     if(all_TT_VIDEO_LINK.includes("$${T")){ 
         throw_error_storage_not_enough()
@@ -947,48 +733,68 @@ try {
     if(TT_VIDEO_SHARE_TEXT.includes("$${T")){ 
         throw_error_storage_not_enough()
     }
-    toast("所有需要分享的视频数量 = " + all_TT_VIDEO_LINK.length)
-    sleep(5000)
+
+    total_target = all_TT_VIDEO_LINK.length
+    taskLog("需要分享的视频数量 = " + total_target)
+    
     
     if(all_TT_VIDEO_LINK.length == 0){
-        toast("没有需要分享的视频") 
-        stopCurrentTask()
+        taskLog("没有需要分享的视频") 
+        throw new Error("没有需要分享的视频，请检查视频链接是否正确！");
     }else{
         for(var i = 0; i < all_TT_VIDEO_LINK.length; i++){
-            toast("当前视频在第" + (i+1) + "个 = " + all_TT_VIDEO_LINK[i])      
+            taskLog("当前视频在第" + (i+1) + "个 = " + all_TT_VIDEO_LINK[i])      
             var video_info_link = all_TT_VIDEO_LINK[i]
             sleep(2000)
     
-            openTikTokByUrl(video_info_link)
+            var open_TikTok_success = openTikTokByUrl(video_info_link)
+            if(!open_TikTok_success){
+                taskLog("打开TikTok失败，继续下一个视频")
+                fail_msg += "打开TikTok-" + video_info_link + "失败，继续下一个视频\n";
+                continue
+            }
             sleep(random(15000,18000))
+            total_success++
 
-            taskLog("打开TikTok成功...")
-            sleep(5000)
+            taskLog("打开TikTok-" + video_info_link + "成功...")
+            sleep(random(5000,8000))
 
             //点赞
             click_Like_Btn()
             sleep(random(3000,5000))
 
-
-
             //转发
             click_Zhuanfa_Btn()
-            sleep(random(3000,5000))
-
-
-
-            sleep(random(3000,5000))
-
-
-
-        }
-
-        
+            sleep(random(8000,10000))
+        }  
 
     }
 
     
     
-} catch (e) {
-    handleError(e);
+} catch(e) {
+    if (e.message === "TASK_COMPLETED") {
+        taskLog("任务正常完成");
+    } else {
+        handleError(e);
+    }
+}finally{
+    taskLog("保存统计结果到备用路径..." );
+    try {
+        var result = {
+            total_target: total_target,
+            total_success: total_success,
+            fail_msg: fail_msg
+        };
+        // 打印统计结果
+        taskLog("统计结果：" + JSON.stringify(result, null, 2));
+        // 使用JSON.stringify将对象转换为JSON字符串，第三个参数2是为了美化输出格式
+        files.write(resultPath, JSON.stringify(result, null, 2));
+        taskLog("已保存统计结果到：" + resultPath);
+    } catch(e) {
+        console.error("保存统计结果失败：" + e.message);
+    }
+    // 刷新媒体库
+    refreshMedia(RPAFilePath);
+    sleep(random(3000, 5000))
 }
