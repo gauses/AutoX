@@ -436,7 +436,7 @@ function click_Comment_Btn(commentText){
             //className("android.widget.Button") fullId("com.ss.android.ugc.trill:id/czl") clickable("true")
 
             if(targetPackageName == GLOBAL_TikTokPackageName){  
-                clickId(GLOBAL_TikTokPackageName + ":id/czl")
+                clickId(GLOBAL_TikTokPackageName + ":id/czk")
             }else{
                 clickId(ASIA_TikTokPackageName + ":id/czl")
             }
@@ -446,7 +446,7 @@ function click_Comment_Btn(commentText){
             sleep(random(2000, 3000))
             
             if(targetPackageName == GLOBAL_TikTokPackageName){  
-                clickId(GLOBAL_TikTokPackageName + ":id/czl")
+                clickId(GLOBAL_TikTokPackageName + ":id/czk")
             }else{
                 clickId(ASIA_TikTokPackageName + ":id/czl")
             }

@@ -1,0 +1,87 @@
+henryjoss1432@gmail.com----@A939535#----ppunam189@hotmail.com - 12001已经使用
+
+
+brozero24@gmail.com----aass1122----bdxplabon793@hotmail.com  - 密码不对，不可使用
+asfaqueen121@gmail.com----aass1122----prabhatt3687@hotmail.com - 密码不对
+yeepdep@gmail.com----aass1122----manish49@hotmail.com- 密码不对
+
+
+
+hunterkos428262@gmail.com----HunterKos77aa----hunterkos428262@pwnquer.com- 12002已经使用
+yyyruhani@gmail.com----ppruhanrr----tridepray824@hotmail.com - 12003已经使用
+kamrulkhan00g@gmail.com----Ibrahim@99----adfdghu6564@hotmail.com - 12004已经使用
+darikdavid664@gmail.com - Darikdavid88 - darikdavid664@pwnquer.com - 12005已经使用
+webbnteresa@gmail.com----yui456ert789opa - webbnteresa@pwnquer.com - 12006已经使用
+janepierceb@gmail.com----ert789ghj901hjkc-janepierceb@pwnquer.com - 12007已经使用
+kennedymsamantha@gmail.com----uio123asd345bnm----kennedymsamantha@pwnquer.com - 12008已经使用
+tinnikhanom217@gmail.com--- Yeyu745706@ - tinnikhanom217@pwnquer.com- 12009已经使用
+frankkos39949@gmail.com----FrankK28@@@ - frankkos39949@pwnquer.com - 12010已经使用：
+aarondoa5292729@gmail.com----AaronDoa22aa---aarondoa5292729@pwnquer.com- 12011已经使用
+
+
+
+
+Hub - 182 - nathankaren4bjpx5@gmail.com - Yeyu745706@ - NathanKaren4bjpx5@pwnquer.com  - 广州 - 192.168.1.137：12025
+
+
+
+
+
+
+
+自己被封禁账号：
+rudywehmeyer733@gmail.com - Yeyu745706@ - rudywehmeyer733@pwnquer.com  - 已经被封禁
+douglaseliza107@gmail.com - F5xLiRDJKa - douglaseliza107@pwnquer.com  - 已经被封禁
+YoshitakaMcglew@gmail.com - Yeyu745706@ - YoshitakaMcglew@pwnquer.com - 已经被封禁
+coxchristianqtb272@gmail.com - Yeyu745706 - coxchristianqtb272@pwnquer.com  - 已经被封禁
+se.kinard14@gmail.com - Yeyu745706@ - se.kinard14@pwnquer.com - 已经被封禁
+danielleestrayf@gmail.com----yeyu745706@----danielleestrayf@pwnquer.com  - 已经被封禁
+bradlfhcatherine@gmail.com----Yeyu745706 - bradlfhcatherine@pwnquer.com - 已经被封禁
+crystalcastroj41@pwnquer.com - Yeyu745706@ - crystalcastroj41@pwnquer.com - 已经被封禁
+oscarcos39951@gmail.com----Yeyu745706@ - oscarcos39951@pwnquer.com- 已经被封禁
+shanedao439262@gmail.com----ShaneDao11aa- shanedao439262@pwnquer.com- 已经被封禁
+
+
+
+
+
+
+
+
+
+自己账号：
+ 192.168.0.120:12002 - Redmi-M2003J15SC - 登录三个账号都显示封禁，是不是设备有问题
+ 192.168.0.120:12009- Xiaomi-M2004J19C - 登录三个账号都显示封禁，是不是设备有问题
+
+ 
+ 
+ 
+ 	
+HONOR-ALA-AN70 - 该设备-打开google商店之后，未通过安全防护，不能登录google账号 （星哥已知）
+
+192.168.0.120:12006  -- Samsung-SM-G975U - 非常容易卡死，稍微一跑脚本就死机
+
+
+
+有数据：
+192.168.0.120:12005
+192.168.0.120:12006 -- Samsung-SM-G975U - 非常容易卡死，稍微一跑脚本就死机
+192.168.0.120:12011
+
+
+
+1.导入apk，手动安装，会失败；
+2.能不能批量安装apk；
+3.导入多张图片的时候，会比较麻烦
+4.不能批量开机，关机
+5.打开设备之后，设备的标题栏那里能不能显示序号，不要显示机型
+6.能不能一个云卡上限制每次开启的最多云机数量，不然超过之后，很容易打开失败，超过最大数量之后，直接提示关闭一些闲置机器
+7.导入图片到设备之后，不会实时刷新媒体库
+8.HONOR-ALA-AN70 - 该设备打开google商店之后，提示未通过安全防护，不能登录google账号 
+9.Samsung-SM-G975U (192.168.0.120:12006) - 该设备非常容易卡死，一跑自动化就直接机器卡死
+
+
+
+
+
+
