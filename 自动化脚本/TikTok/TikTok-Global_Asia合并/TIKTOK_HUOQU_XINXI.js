@@ -13,11 +13,6 @@ var taskLogFileName = "nest_task_log.txt"
 var taskLogImgName = "nest_task_log.png"
 
 
-//用户需要输入的关注用户ID列表
-const TT_Like_User_FANS_ID_COUNT = '$${私信用户粉丝数量}';
-const TT_Message_GROUP = '$${T_私信用户文案列表}';
-
-
 // 需要私信的粉丝总数
 var total_target = 0;
 // 成功私信的粉丝数量
@@ -28,6 +23,7 @@ var fail_msg = "";
 
 //将需要获取的个人信息
 var TT_User_Info = {
+    "InBoxCount": "",
     "UserId": "",
     "Nickname": "",
     "Followers": "",
@@ -70,35 +66,14 @@ const PROFILE_TEXT = {
     EN_US: "Profile"   // 英文
 };
 
-
-//定义Following列表的TextView在不同语言下的文本
-const FOLLOWING_LIST_TEXT = {
-    ZH_CN: "已关注",    // 简体中文
-    ZH_TW: "關注中",    // 繁体中文
-    EN_US: "Following"   // 英文
+//Tiktok第三页的按钮文字
+const INBOX_PAGE_TEXT = {
+    ZH_CN: "收件箱",    // 简体中文
+    ZH_TW: "收信匣",    // 繁体中文 text("收信匣")
+    EN_US: "Inbox"   // 英文 text("Inbox")
 };
 
 
-//定义粉丝按钮在不同语言下的文本（Profile页面）
-const PROFILE_FANS_TEXT = {
-    ZH_CN: "粉丝",    // 简体中文
-    ZH_TW: "粉絲",    // 繁体中文 text("粉絲")
-    EN_US: ["Followers", "Follower"]   // 英文可能出现的两种形式
-};
-
-//定义粉丝按钮一共有多少个用户
-const PROFILE_FANS_COUNT_TEXT = {
-    ZH_CN: "粉丝 0",    // 简体中文
-    ZH_TW: "粉絲 0",    // 繁体中文
-    EN_US: "Followers 0"   // 英文
-};
-
-//定义粉丝页面需要私信的按钮
-const FANS_SIXIN_MESSAGE_TEXT = {
-    ZH_CN: "消息",    // 简体中文
-    ZH_TW: "訊息",    // 繁体中文
-    EN_US: "Message"   // 英文
-};
 
 // 通过语言对象查找文本
 function findTextByLanguages(languageObject) {
@@ -542,8 +517,155 @@ function taskLogError(_log){
 
 
 
+function getInBoxCountInfoInPage(){
+    //className("android.widget.FrameLayout") - fullId("com.ss.android.ugc.trill:id/k6e") : 包含两个Textview，分别是收件匣和99+， 一个Imageview，是收件匣的logo
+    //className("android.widget.FrameLayout") - fullId("com.zhiliaoapp.musically:id/k6d") : 包含两个Imageview，分别是一个红点和收件匣的logo， 一个收件匣
+
+    var InBoxCountInfoInPage_button;
+    if (targetPackageName == ASIA_TikTokPackageName) {
+        InBoxCountInfoInPage_button = id("com.ss.android.ugc.trill:id/k6e").find();
+    } else {
+        InBoxCountInfoInPage_button = id("com.zhiliaoapp.musically:id/k6d").find();
+    }
+    
+    if (InBoxCountInfoInPage_button && InBoxCountInfoInPage_button.length > 0) {
+        taskLog("找到收件箱信息页面按钮，继续执行");
+
+        //遍历InBoxCountInfoInPage_button布局内部，找到所有的Textview，查看text是否包含数字
+        var container = InBoxCountInfoInPage_button.get(0);
+        var allTextViews = container.find(className("android.widget.TextView"));
+        
+        if (allTextViews && allTextViews.size() > 0) {
+            taskLog("在InBoxCountInfoInPage_button容器内找到TextView数量：" + allTextViews.size());
+            for (var i = 0; i < allTextViews.size(); i++) {
+                var textView = allTextViews.get(i);
+                if (textView && textView.text()) {
+                    taskLog("第" + (i+1) + "个TextView - text = " + textView.text());
+                    // 检查是否包含数字（比如99+或者1都算是包含数字）
+                    if (/\d/.test(textView.text())) {
+                        taskLog("  └─ 包含数字！记录：" + textView.text());
+                        // 这里可以将数据保存到变量中
+                        TT_User_Info.InBoxCount = textView.text();
+                    }
+                }
+            }
+        } else {
+            taskLog("在InBoxCountInfoInPage_button容器内未找到TextView");
+        }
+
+    }
+    sleep(random(2000, 3000));
+
+} 
 
 
+function getInBoxInfo(){
+    //fullId("com.zhiliaoapp.musically:id/k6d") - className("android.widget.FrameLayout") - clickable("true")
+    //fullId("com.ss.android.ugc.trill:id/k6e") - className("android.widget.FrameLayout") - clickable("true")
+
+
+    var InBox_button;
+    if (targetPackageName == ASIA_TikTokPackageName) {
+        InBox_button = id("com.ss.android.ugc.trill:id/k6e").find();
+    } else {
+        InBox_button = id("com.zhiliaoapp.musically:id/k6d").find();
+    }
+    
+    if (InBox_button && InBox_button.length > 0) {
+        taskLog("找到收件箱按钮，继续执行");
+        InBox_button.click();
+        sleep(random(2000, 3000));
+
+
+       //新粉丝人数的布局：fullId("com.ss.android.ugc.trill:id/ol5") - 24
+       //新活动的布局：fullId("com.ss.android.ugc.trill:id/ol5") - 99+
+       //新讯息的布局：fullId("com.ss.android.ugc.trill:id/pg0") - 4
+       
+       // 遍历所有控件，查找包含数字的控件
+       taskLog("开始遍历收件箱页面的所有控件...");
+       
+       // 方法1：查找所有TextView控件
+       var allTextViews = className("android.widget.TextView").find();
+       if (allTextViews && allTextViews.size() > 0) {
+           taskLog("找到TextView控件总数：" + allTextViews.size());
+           for (var i = 0; i < allTextViews.size(); i++) {
+               var textView = allTextViews.get(i);
+               if (textView && textView.text()) {
+                   var text = textView.text();
+                   // 只输出包含数字的控件
+                   if (/\d/.test(text)) {
+                       taskLog("第" + (i+1) + "个TextView - Text: " + text + 
+                              " | ID: " + textView.id() + 
+                              " | ClassName: " + textView.className() +
+                              " | Clickable: " + textView.clickable());
+                       
+                       // 获取父容器信息
+                       var parent = textView.parent();
+                       if (parent) {
+                           taskLog("  父容器 - ID: " + parent.id() + 
+                                  " | ClassName: " + parent.className());
+                       }
+                   }
+               }
+           }
+       }
+       
+       taskLog("---分隔线---");
+       
+       // 方法2：根据已知ID查找控件
+       taskLog("开始根据ID查找控件...");
+       
+       // 查找新粉丝/新活动的控件 (ol5)
+       var ol5_controls;
+       if (targetPackageName == ASIA_TikTokPackageName) {
+           ol5_controls = id("com.ss.android.ugc.trill:id/ol5").find();
+       } else {
+           ol5_controls = id("com.zhiliaoapp.musically:id/ol5").find();
+       }
+       
+       if (ol5_controls && ol5_controls.size() > 0) {
+           taskLog("找到ol5控件数量：" + ol5_controls.size());
+           for (var j = 0; j < ol5_controls.size(); j++) {
+               var control = ol5_controls.get(j);
+               if (control) {
+                   taskLog("第" + (j+1) + "个ol5控件 - Text: " + control.text() + 
+                          " | ID: " + control.id() + 
+                          " | ClassName: " + control.className());
+               }
+           }
+       } else {
+           taskLog("未找到ol5控件");
+       }
+       
+       // 查找新讯息的控件 (pg0)
+       var pg0_controls;
+       if (targetPackageName == ASIA_TikTokPackageName) {
+           pg0_controls = id("com.ss.android.ugc.trill:id/pg0").find();
+       } else {
+           pg0_controls = id("com.zhiliaoapp.musically:id/pg0").find();
+       }
+       
+       if (pg0_controls && pg0_controls.size() > 0) {
+           taskLog("找到pg0控件数量：" + pg0_controls.size());
+           for (var k = 0; k < pg0_controls.size(); k++) {
+               var control = pg0_controls.get(k);
+               if (control) {
+                   taskLog("第" + (k+1) + "个pg0控件 - Text: " + control.text() + 
+                          " | ID: " + control.id() + 
+                          " | ClassName: " + control.className());
+               }
+           }
+       } else {
+           taskLog("未找到pg0控件");
+       }
+
+
+
+    }
+    sleep(random(2000, 3000));
+
+
+}
 
 
 
@@ -677,6 +799,12 @@ try {
                     TT_User_Info.Likes = Likes;
                 }
                 sleep(random(2000, 3000));
+
+
+                getInBoxCountInfoInPage()
+
+                //打印一下TT_User_Info
+                taskLog("TT_User_Info = " + JSON.stringify(TT_User_Info, null, 2));
 
 
     
