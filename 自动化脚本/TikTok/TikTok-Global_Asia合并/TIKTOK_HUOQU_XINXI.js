@@ -516,6 +516,301 @@ function taskLogError(_log){
     }
 
 
+//获取该用户所有的video信息，包含视频数量，视频播放量，视频点赞量，视频评论量，视频分享量，视频收藏量
+//参数：videoUrl - 视频链接，如：https://vt.tiktok.com/ZSySrbSTa/
+function getVideoInfoInPage(videoUrl){
+    try {
+        taskLog("=== 开始获取视频信息 ===");
+        taskLog("视频链接：" + videoUrl);
+        
+        // 1. 打开视频链接（会自动跳转到 TikTok App）
+        taskLog("正在打开视频链接...");
+        app.openUrl(videoUrl);
+        sleep(random(5000, 7000)); // 等待 TikTok 打开并加载视频
+        
+        // 2. 等待视频播放器加载完成
+        if (!waitForVideoLoad()) {
+            taskLogError("视频加载超时");
+            return null;
+        }
+        
+        // 3. 提取视频数据
+        var videoData = extractVideoData();
+        
+        // 4. 打印获取到的数据
+        taskLog("=== 视频信息获取完成 ===");
+        taskLog("视频数据：" + JSON.stringify(videoData, null, 2));
+        
+        return videoData;
+        
+    } catch(e) {
+        taskLogError("获取视频信息失败：" + e);
+        taskLogError("错误堆栈：" + e.stack);
+        return null;
+    }
+}
+
+// 等待视频加载完成
+function waitForVideoLoad() {
+    taskLog("等待视频加载...");
+    var maxWait = 15; // 最大等待15秒
+    var count = 0;
+    
+    while(count < maxWait) {
+        // 检查是否有点赞按钮（说明视频已加载）
+        // 全球版和亚洲版的点赞按钮可能不同，尝试多种方式
+        if (desc("Like").exists() || 
+            desc("like").exists() || 
+            text("Like").exists() ||
+            className("android.widget.ImageView").desc("Like").exists()) {
+            taskLog("视频加载完成");
+            sleep(random(2000, 3000)); // 额外等待确保所有数据加载
+            return true;
+        }
+        
+        // 也可以通过查找评论按钮来判断
+        if (desc("Comment").exists() || desc("comment").exists()) {
+            taskLog("视频加载完成（通过评论按钮检测）");
+            sleep(random(2000, 3000));
+            return true;
+        }
+        
+        taskLog("等待中... (" + (count + 1) + "/" + maxWait + ")");
+        sleep(1000);
+        count++;
+    }
+    
+    taskLogError("视频加载超时");
+    return false;
+}
+
+// 提取视频数据
+function extractVideoData() {
+    var videoData = {
+        author: "",           // 作者昵称
+        authorId: "",         // 作者ID
+        description: "",      // 视频描述
+        likes: "",           // 点赞数
+        comments: "",        // 评论数
+        shares: "",          // 分享数
+        favorites: "",       // 收藏数
+        videoUrl: ""         // 视频链接
+    };
+    
+    taskLog("开始提取视频数据...");
+    
+    try {
+        // 1. 提取作者信息
+        videoData.author = extractAuthorInfo();
+        
+        // 2. 提取视频描述
+        videoData.description = extractVideoDescription();
+        
+        // 3. 提取互动数据（点赞、评论、分享等）
+        var interactionData = extractInteractionData();
+        videoData.likes = interactionData.likes;
+        videoData.comments = interactionData.comments;
+        videoData.shares = interactionData.shares;
+        videoData.favorites = interactionData.favorites;
+        
+    } catch(e) {
+        taskLogError("提取数据时出错：" + e);
+    }
+    
+    return videoData;
+}
+
+// 提取作者信息
+function extractAuthorInfo() {
+    try {
+        // 方法1：通过查找作者昵称的TextView
+        // 通常在视频页面左下角有作者信息
+        var authorElements = className("android.widget.TextView")
+            .clickable(true)
+            .find();
+        
+        if (authorElements && authorElements.size() > 0) {
+            // 遍历查找以@开头的用户ID或昵称
+            for (var i = 0; i < Math.min(authorElements.size(), 10); i++) {
+                var elem = authorElements.get(i);
+                var text = elem.text();
+                if (text && (text.startsWith("@") || text.length > 0)) {
+                    taskLog("找到作者信息：" + text);
+                    return text;
+                }
+            }
+        }
+        
+        // 方法2：通过特定ID查找（需要根据实际UI调整）
+        if (targetPackageName == ASIA_TikTokPackageName) {
+            var authorView = id("com.ss.android.ugc.trill:id/author").findOne(3000);
+            if (authorView && authorView.text()) {
+                return authorView.text();
+            }
+        } else {
+            var authorView = id("com.zhiliaoapp.musically:id/author").findOne(3000);
+            if (authorView && authorView.text()) {
+                return authorView.text();
+            }
+        }
+        
+    } catch(e) {
+        taskLogError("提取作者信息失败：" + e);
+    }
+    
+    return "未获取到作者信息";
+}
+
+// 提取视频描述
+function extractVideoDescription() {
+    try {
+        // 视频描述通常在作者信息下方
+        // 查找包含多行文本的 TextView
+        var descElements = className("android.widget.TextView")
+            .clickable(false)
+            .find();
+        
+        if (descElements && descElements.size() > 0) {
+            for (var i = 0; i < Math.min(descElements.size(), 20); i++) {
+                var elem = descElements.get(i);
+                var text = elem.text();
+                // 描述通常较长，且不是纯数字
+                if (text && text.length > 10 && !/^\d+$/.test(text)) {
+                    // 排除一些明显不是描述的文本
+                    if (!text.includes("Following") && 
+                        !text.includes("Followers") && 
+                        !text.includes("Likes")) {
+                        taskLog("找到视频描述：" + text.substring(0, 50) + "...");
+                        return text;
+                    }
+                }
+            }
+        }
+    } catch(e) {
+        taskLogError("提取视频描述失败：" + e);
+    }
+    
+    return "未获取到描述";
+}
+
+// 提取互动数据（点赞、评论、分享等）
+function extractInteractionData() {
+    var data = {
+        likes: "0",
+        comments: "0",
+        shares: "0",
+        favorites: "0"
+    };
+    
+    try {
+        taskLog("开始提取互动数据...");
+        
+        // 在视频页面右侧有一列互动按钮（点赞、评论、分享、收藏）
+        // 每个按钮下方通常有对应的数字
+        
+        // 查找所有包含数字的 TextView
+        var allTextViews = className("android.widget.TextView").find();
+        var numberTexts = [];
+        
+        if (allTextViews && allTextViews.size() > 0) {
+            taskLog("找到TextView总数：" + allTextViews.size());
+            
+            for (var i = 0; i < allTextViews.size(); i++) {
+                var textView = allTextViews.get(i);
+                if (textView && textView.text()) {
+                    var text = textView.text();
+                    
+                    // 查找包含数字的文本（可能是 123, 1.2K, 1.2M 等格式）
+                    if (/\d/.test(text) && text.length < 10) {
+                        // 获取控件的位置信息，右侧的互动数据Y坐标通常在屏幕中下部
+                        var bounds = textView.bounds();
+                        var screenHeight = device.height;
+                        var screenWidth = device.width;
+                        
+                        // 互动按钮通常在屏幕右侧
+                        if (bounds.centerX() > screenWidth * 0.7) {
+                            numberTexts.push({
+                                text: text,
+                                y: bounds.centerY(),
+                                element: textView
+                            });
+                            taskLog("找到可能的互动数据：" + text + " (Y:" + bounds.centerY() + ")");
+                        }
+                    }
+                }
+            }
+            
+            // 按Y坐标排序（从上到下）
+            numberTexts.sort(function(a, b) {
+                return a.y - b.y;
+            });
+            
+            // 通常顺序是：点赞、评论、收藏/分享
+            if (numberTexts.length >= 1) {
+                data.likes = numberTexts[0].text;
+                taskLog("点赞数：" + data.likes);
+            }
+            if (numberTexts.length >= 2) {
+                data.comments = numberTexts[1].text;
+                taskLog("评论数：" + data.comments);
+            }
+            if (numberTexts.length >= 3) {
+                data.favorites = numberTexts[2].text;
+                taskLog("收藏数：" + data.favorites);
+            }
+            if (numberTexts.length >= 4) {
+                data.shares = numberTexts[3].text;
+                taskLog("分享数：" + data.shares);
+            }
+        }
+        
+        // 方法2：通过查找按钮附近的文本
+        // 尝试找到"Like"按钮，然后找其附近的数字
+        if (data.likes === "0") {
+            data.likes = findNumberNearButton("Like") || "0";
+        }
+        if (data.comments === "0") {
+            data.comments = findNumberNearButton("Comment") || "0";
+        }
+        if (data.shares === "0") {
+            data.shares = findNumberNearButton("Share") || "0";
+        }
+        
+    } catch(e) {
+        taskLogError("提取互动数据失败：" + e);
+    }
+    
+    return data;
+}
+
+// 查找按钮附近的数字
+function findNumberNearButton(buttonDesc) {
+    try {
+        var button = desc(buttonDesc).findOne(2000);
+        if (button) {
+            var bounds = button.bounds();
+            // 在按钮下方查找数字
+            var texts = className("android.widget.TextView")
+                .boundsInside(bounds.left - 50, bounds.top, bounds.right + 50, bounds.bottom + 150)
+                .find();
+            
+            if (texts && texts.size() > 0) {
+                for (var i = 0; i < texts.size(); i++) {
+                    var text = texts.get(i).text();
+                    if (text && /\d/.test(text)) {
+                        taskLog("在" + buttonDesc + "按钮附近找到数字：" + text);
+                        return text;
+                    }
+                }
+            }
+        }
+    } catch(e) {
+        // 忽略错误
+    }
+    return null;
+}
+
+
 
 function getInBoxCountInfoInPage(){
     //className("android.widget.FrameLayout") - fullId("com.ss.android.ugc.trill:id/k6e") : 包含两个Textview，分别是收件匣和99+， 一个Imageview，是收件匣的logo
@@ -805,6 +1100,32 @@ try {
 
                 //打印一下TT_User_Info
                 taskLog("TT_User_Info = " + JSON.stringify(TT_User_Info, null, 2));
+
+
+                // ============ 获取视频信息示例 ============
+                // 如果需要获取特定视频的详细信息，取消下面代码的注释
+                /*
+                taskLog("========== 开始测试视频信息获取功能 ==========");
+                var testVideoUrl = "https://vt.tiktok.com/ZSySrbSTa/";  // 替换为您要获取的视频链接
+                var videoInfo = getVideoInfoInPage(testVideoUrl);
+                
+                if (videoInfo) {
+                    taskLog("成功获取视频信息！");
+                    taskLog("作者：" + videoInfo.author);
+                    taskLog("描述：" + videoInfo.description);
+                    taskLog("点赞数：" + videoInfo.likes);
+                    taskLog("评论数：" + videoInfo.comments);
+                    taskLog("分享数：" + videoInfo.shares);
+                    taskLog("收藏数：" + videoInfo.favorites);
+                    
+                    // 返回个人中心页面
+                    back();
+                    sleep(random(2000, 3000));
+                } else {
+                    taskLogError("获取视频信息失败");
+                }
+                taskLog("========== 视频信息获取测试结束 ==========");
+                */
 
 
     
