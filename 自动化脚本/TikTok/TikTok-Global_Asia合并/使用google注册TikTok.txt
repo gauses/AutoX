@@ -17,6 +17,20 @@ kennedymsamantha@gmail.com----uio123asd345bnm----kennedymsamantha@pwnquer.com - 
 tinnikhanom217@gmail.com--- Yeyu745706@ - tinnikhanom217@pwnquer.com- 12009已经使用
 frankkos39949@gmail.com----FrankK28@@@ - frankkos39949@pwnquer.com - 12010已经使用：
 aarondoa5292729@gmail.com----AaronDoa22aa---aarondoa5292729@pwnquer.com- 12011已经使用
+kylepot35093@gmail.com----KyleP24@@@--kylepot35093@pwnquer.com- 12012已经使用
+justinkod50949@gmail.com----JustinK39@@@ - justinkod50949@pwnquer.com- 12013已经使用
+frankkom64782@gmail.com----Yeyu745706@- frankkom64782@pwnquer.com- 12014已经使用
+kaviveer717@gmail.com --Yeyu745706@ - wufeng411524@gmail.com- 12015已经使用
+metztorrey263816@gmail.com - Yeyu745706@ - metztorrey263816@pwnquer.com - 12016已经使用
+harveyfrank432167@gmail.com----Yeyu745706@----harveyfrank5520@gmail.com- 12017已经使用
+
+hubs - 144 - sruiterakopilure@gmail.com - Yeyu745706@ - sruiterakopilure@pwnquer.com - 还没有开始使用
+
+
+
+
+
+
 
 
 
@@ -49,6 +63,11 @@ shanedao439262@gmail.com----ShaneDao11aa- shanedao439262@pwnquer.com- 已经被�
 
 
 
+
+
+
+
+
 自己账号：
  192.168.0.120:12002 - Redmi-M2003J15SC - 登录三个账号都显示封禁，是不是设备有问题
  192.168.0.120:12009- Xiaomi-M2004J19C - 登录三个账号都显示封禁，是不是设备有问题
@@ -56,9 +75,10 @@ shanedao439262@gmail.com----ShaneDao11aa- shanedao439262@pwnquer.com- 已经被�
  
  
  
- 	
+ 
+ 
+ 
 HONOR-ALA-AN70 - 该设备-打开google商店之后，未通过安全防护，不能登录google账号 （星哥已知）
-
 192.168.0.120:12006  -- Samsung-SM-G975U - 非常容易卡死，稍微一跑脚本就死机
 
 
@@ -74,11 +94,26 @@ HONOR-ALA-AN70 - 该设备-打开google商店之后，未通过安全防护，�
 2.能不能批量安装apk；
 3.导入多张图片的时候，会比较麻烦
 4.不能批量开机，关机
-5.打开设备之后，设备的标题栏那里能不能显示序号，不要显示机型
+5.打开设备之后，设备的标题栏那里能不能显示序号，不显示机型
 6.能不能一个云卡上限制每次开启的最多云机数量，不然超过之后，很容易打开失败，超过最大数量之后，直接提示关闭一些闲置机器
 7.导入图片到设备之后，不会实时刷新媒体库
 8.HONOR-ALA-AN70 - 该设备打开google商店之后，提示未通过安全防护，不能登录google账号 
 9.Samsung-SM-G975U (192.168.0.120:12006) - 该设备非常容易卡死，一跑自动化就直接机器卡死
+
+
+-----------------------
+1103购买：
+tsoondxxd103@gmail.com----mgzfxtoamgt
+mariettamnyw43953@gmail.com----gnuzdximjrg
+mcgaughyoforeunited388@gmail.com----wclmtfreclldso
+
+
+
+申诉：
+Dear Google Team,
+My account was recently restricted following the receipt of routine verification codes from Instagram and Google Ads. I want to clarify that I strictly adhere to all applicable policies, and the use of a VPN was solely for secure access while traveling internationally. I respectfully request a review of my account and hope for its reinstatement at your earliest convenience.
+Thank you for your time and consideration.
+Best regards,
 
 
 

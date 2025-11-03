@@ -26,9 +26,20 @@ var total_success = 0;
 var fail_msg = "";
 
 
+//将需要获取的个人信息
+var TT_User_Info = {
+    "UserId": "",
+    "Nickname": "",
+    "Followers": "",
+    "Fans": "",
+    "Likes": "",
+    "Videos": "",
+}
 
-var ASIA_TikTokPackageName = 'com.ss.android.ugc.trill';
-var GLOBAL_TikTokPackageName = 'com.zhiliaoapp.musically';
+
+
+var ASIA_TikTokPackageName = 'com.ss.android.ugc.trill'; //亚洲版TikTok包名
+var GLOBAL_TikTokPackageName = 'com.zhiliaoapp.musically'; //全球版TikTok包名
 
 
 //定义Follow按钮在不同语言下的文本
@@ -384,116 +395,48 @@ function taskLogError(_log){
 
 
 
-//强制停止TikTok 
-function forceStop_APP(packageName){
-    taskLog("准备强杀:" + packageName + "...")
-    sleep(3000);
-    openAppSettings(packageName)
-    sleep(5000)
+    //强制停止TikTok 
+    function forceStop_APP(packageName){
+        taskLog("准备强杀:" + packageName + "...")
+        sleep(3000);
+        openAppSettings(packageName)
+        sleep(5000)
 
-    // 遍历所有可能的强制停止按钮文本
-    for (let lang in FORCE_STOP_TEXT) {
-        let stopText = FORCE_STOP_TEXT[lang];
-        if (text(stopText).exists()) {
-            let forceStopBtn = text(stopText).findOne();
-            if (forceStopBtn && forceStopBtn.clickable()) {
-                forceStopBtn.click();
-                sleep(1000);
-                
-                // 遍历所有可能的确认按钮文本
-                for (let confirmLang in FORCE_STOP_CONFIRM_TEXT) {
-                    let confirmText = FORCE_STOP_CONFIRM_TEXT[confirmLang];
-                    if (text(confirmText).exists()) {
-                        text(confirmText).findOne().click();
-                        taskLog("成功点击'" + stopText + "'按钮并确认");
-                        sleep(3000);
-                        home();
-                        return;
+        // 遍历所有可能的强制停止按钮文本
+        for (let lang in FORCE_STOP_TEXT) {
+            let stopText = FORCE_STOP_TEXT[lang];
+            if (text(stopText).exists()) {
+                let forceStopBtn = text(stopText).findOne();
+                if (forceStopBtn && forceStopBtn.clickable()) {
+                    forceStopBtn.click();
+                    sleep(1000);
+                    
+                    // 遍历所有可能的确认按钮文本
+                    for (let confirmLang in FORCE_STOP_CONFIRM_TEXT) {
+                        let confirmText = FORCE_STOP_CONFIRM_TEXT[confirmLang];
+                        if (text(confirmText).exists()) {
+                            text(confirmText).findOne().click();
+                            taskLog("成功点击'" + stopText + "'按钮并确认");
+                            sleep(3000);
+                            home();
+                            return;
+                        }
                     }
+                } else {
+                    taskLog("未找到可点击的'" + stopText + "'按钮");
                 }
             } else {
-                taskLog("未找到可点击的'" + stopText + "'按钮");
+                taskLog("未找到'" + stopText + "'按钮");
             }
-        } else {
-            taskLog("未找到'" + stopText + "'按钮");
+            sleep(1000);
         }
-        sleep(1000);
+
+        // 如果所有语言都尝试失败，返回主页
+        home();
     }
 
-    // 如果所有语言都尝试失败，返回主页
-    home();
-}
 
 
-    
-
- //点击首页的右上角Search按钮
-function click_home_search_btn(){
-    var find_search_btn_count = 0
-    if(find_search_btn_count > 5){
-        console.error("首页寻找'搜索'按钮超过5次，抛出异常")
-        throw new error("首页寻找'搜索'按钮超过5次，抛出异常")
-    }
-    sleep(random(2000, 5000))
-
-    var gz5_img_count = 0
-    var targetGz5 = null; // 用于存储第二个gz5按钮
-    
-    var allImages = className("android.widget.ImageView").find();
-    if (allImages && allImages.size() > 0) {
-        taskLog("找到ImageView的总数量：" + allImages.size());
-        
-        for (var i = 0; i < allImages.size(); i++) {
-            var img = allImages.get(i);
-            if (img) {
-                taskLog("第" + (i+1) + "个Image控件-Text：" + img.text() + ";ID = " + img.id());
-                
-                //fullId("com.zhiliaoapp.musically:id/h0i")
-                //fullId("com.ss.android.ugc.trill:id/h0j")
-                if (img.id() == (GLOBAL_TikTokPackageName+":id/h0i") || img.id() == (ASIA_TikTokPackageName+":id/h0j")) {
-                    gz5_img_count++;
-                    taskLog("这是第" + gz5_img_count + "个h0i按钮");
-                    
-                    // 获取父容器信息
-                    var parent = img.parent();
-                    taskLog("父容器类型：" + parent.className());
-                    taskLog("父容器ID：" + parent.id());
-                    
-                    var bounds = img.bounds();
-                    taskLog("元素位置：left=" + bounds.left + 
-                           ", top=" + bounds.top + 
-                           ", right=" + bounds.right + 
-                           ", bottom=" + bounds.bottom);
-                    
-                    // 存储第二个gz5按钮
-                    if(gz5_img_count == 2) {
-                        targetGz5 = img;
-                        break; // 找到第二个后就退出循环
-                    }
-                }
-            }
-        }
-        
-        // 点击第二个gz5按钮
-        if(targetGz5) {
-            taskLog("找到第二个gz5按钮，准备点击");
-            var bounds = targetGz5.bounds();
-            if(targetGz5.clickable()){
-                targetGz5.click();
-            } else {
-                click(bounds.centerX(), bounds.centerY());
-            }
-            return;
-        }
-    }
-    
-    //如果没找到合适的按钮，尝试滑动
-    taskLog("没有找到第二个gz5按钮，准备滑动屏幕");
-    swipe_to_up();
-    find_search_btn_count++;
-    
-    sleep(random(2000, 5000));
-}
 
 
     //屏幕上滑
@@ -511,94 +454,17 @@ function click_home_search_btn(){
         var endY = random(height * 1 / 3, height * 1 / 4);
 
         // 屏幕上滑操作
-        swipe(startX, startY, endX, endY, 500);
-        taskLog("开始滑动位置，x = "+startX+"；y = " + startY)
+        var swipe_time = random(500, 1000);
+        swipe(startX, startY, endX, endY, swipe_time);
+        taskLog("开始滑动位置，x = "+startX+"；y = " + startY + "，滑动时间 = " + swipe_time)
         taskLog("结束滑动位置，x = "+endX+"；y = " + endY)
 
     }
 
-//点击第二页的右上角Search按钮
-function click_Second_search_btn(){
-
-    sleep(random(2000, 5000))
-    var allButtons = className("android.widget.Button").find();
-    if (allButtons && allButtons.size() > 0) {
-        for (var i = 0; i < allButtons.size(); i++) {
-            var btn = allButtons.get(i);
-            if (btn) {
-                // taskLog("找到Button控件-Text：" + btn.text() + ";ID = " + btn.id());
-                
-                // fullId("com.zhiliaoapp.musically:id/tk1")
-                // fullId("com.ss.android.ugc.trill:id/tk4")
-                if (btn.id() == (GLOBAL_TikTokPackageName +":id/tk1") || btn.id() == (ASIA_TikTokPackageName +":id/tk4")) {
-                    // 正确调用bounds()方法并点击
-                    toast("找到Button控件: 第二个页面的搜索框！" );
-
-                    var bounds = btn.bounds();
-                    click(bounds.centerX(), bounds.centerY());
-                    // 找到并点击后可以跳出循环
-                    break;
-                }
-            }
-        }
-    }
-    sleep(random(2000, 5000))
-}
 
 
 
-    // function click_back_btn(){
-    //     // 获取所有相同id的控件（
-    //     //fullId("com.zhiliaoapp.musically:id/ay9")
-    //     let targets = id(GLOBAL_TikTokPackageName+":id/ay9").find();
-    //     // 通过索引获取指定的那个，比如第二个就是[1]
-    //     let target = targets[0];
-    //     if (target) {
-    //         taskLog("已经找到返回按钮 " )
-    //         // 获取控件的坐标信息
-    //         let bounds = target.bounds();
-            
-    //         // 计算控件中心点坐标
-    //         let centerX = bounds.centerX();
-    //         let centerY = bounds.centerY();
-            
-    //         // 使用click函数模拟点击中心点位置
-    //         taskLog("已经找到返回按钮 centerX = " +centerX)
-    //         taskLog("已经找到返回按钮 centerY = " +centerY)
-    //         sleep(1000);  // 点击前等待
-    //         click(centerX, centerY);
-    //         sleep(1000);  // 点击后等待
-            
-    //         // 或者使用press函数来模拟按压
-    //         // press(centerX, centerY, 100); // 100是按压时长(毫秒)
-    //     }else{
-    //         taskLog("没有找到首页搜索确认按钮,所以直接back " )
-    //         back()
-    //     }
 
-    // }
-
-    //点击屏幕左上方
-    function click_left_top_screen(){
-        // 获取屏幕宽度和高度
-        var width = device.width;
-        var height = device.height;
-
-        // 定义左上角区域的边界
-        var left = 200;
-        var top = 200;
-        var right = width / 2; // 左上区域的右边界
-        var bottom = height / 2; // 左上区域的下边界
-
-        // 生成随机坐标
-        var randomX = Math.random() * (right - left) + left; // 随机 x 坐标
-        var randomY = Math.random() * (bottom - top) + top; // 随机 y 坐标
-
-        // 点击随机坐标
-        click(randomX, randomY);
-
-
-    }
 
 
 
@@ -643,90 +509,9 @@ function click_Second_search_btn(){
     }
 
 
-    //点击个人主页
-    function click_Author_Page_Btn(){
-        taskLog("开始准备查看个人主页")
-        clickId("qza")
-        sleep(random(5000,8000))
-
-        // 获取屏幕宽高
-        var width = device.width;
-        var height = device.height;
-        
-        // 生成随机起始点
-        var startX = random(width / 3 , width * 2 / 3);
-        var startY = random(height * 2 / 3, height * 3 / 4);
-
-        // 生成随机结束点
-        var endX = random(width / 3 , width * 2 / 3);
-        var endY = random(height * 1 / 3, height * 1 / 4);
-
-        // 随机选择滑动方向：上滑或下滑
-        for (var i = 0; i < 2; i++) {
-            var direction = random(0, 1) === 0 ? 'up' : 'down';
-
-            if (direction === 'up') {
-                // 从下往上滑动
-                swipe(startX, startY, endX, endY, 500);
-            } else {
-                // 从上往下滑动
-                swipe(startX, startY, endX, endY, 500);
-            }
-            
-            // 暂停一段时间，避免滑动过快
-            sleep(random(3000,5000));
-        }
-
-        taskLog("从视频作者主页返回")
-        sleep(random(3000,5000));
-        back();
-    }
-
-    //点击点赞按钮
-    function click_Like_Btn(){
-        taskLog("开始准备点赞视频")
-        clickId("dh4") 
-    }
 
 
 
-    //点击评论按钮
-    function click_Comment_Btn(commentText){
-        taskLog("开始准备评论视频")
-        clickId("cgq")
-
-        sleep(5000)
-        var autoCompleteTextViews = className("android.widget.EditText").find();
-        for(var i = 0; i < autoCompleteTextViews.size(); i++) {
-            var textView = autoCompleteTextViews.get(i);
-            if(textView) {
-                taskLog("找到TextView控件-Text："+ textView.text());
-                sleep(1000)
-                taskLog("评论控件，设置内容：" +commentText );
-                textView.setText(commentText)
-                sleep(10000)
-
-                var flag = clickId("cik") //发送按钮
-                // if(flag){
-                //     sleep(3000)
-                //     back();
-                // }
-
-                sleep(2000)
-                // clickId("aru") //评论区右上角关闭按钮
-
-                var clickX = device.width  - 100 ; 
-                var clickY = device.width /4; 
-                taskLog("开始准备点击屏幕 clickX = " + clickX)
-                taskLog("开始准备点击屏幕 clickY = " + clickY)
-                click(clickX, clickY);
-                
-                
-            }
-        }
-    
-
-    }
 
 
     
@@ -757,351 +542,143 @@ function click_Second_search_btn(){
 
 
 
-    //获取私信列表
-function get_all_comments(){
-    // 用于存储用户的数组
-    let comments = [];
-    // 户是否存在
-    const file = new java.io.File(TT_Message_GROUP);
-    if (file.exists() && file.isFile()) {
-        try {
-            // 读取文件内容
-            const reader = new java.io.BufferedReader(new java.io.FileReader(file));
-            let line;
-            while ((line = reader.readLine()) !== null) {
-                comments.push(line);
-            }
-            reader.close();
-        } catch (e) {
-            taskLog("读取文件时发生错误：" + e.message);
-        }
-    } else {
-        // 如果文件不存在，将文件名添加到数组中
-        comments.push(TT_Message_GROUP);
-    }
-    
-    return comments
-}
 
 
 
-
-//进进入粉丝页，点击每一个粉丝：className("android.widget.FrameLayout") fullId("com.zhiliaoapp.musically:id/i7w")
-//进入粉丝页，点击每一个粉丝：className("android.widget.FrameLayout") fullId("com.ss.android.ugc.trill:id/i7x")
-function click_FrameLayout_FENSI_SIXIN(){
-    taskLog("=== 开始执行粉丝点击函数 ===");
-    // 使用静态变量记录当前处理到第几个粉丝
-    if (typeof click_FrameLayout_FENSI_SIXIN.currentIndex === 'undefined') {
-        click_FrameLayout_FENSI_SIXIN.currentIndex = 0;
-        taskLog("初始化粉丝索引为0");
-    } else {
-        taskLog("当前正在处理第 " + (click_FrameLayout_FENSI_SIXIN.currentIndex + 1) + " 个粉丝");
-    }
-
-    taskLog("等待2-5秒后开始查找粉丝列表...");
-    sleep(random(2000, 5000));
-    
-    // 获取所有符合条件的粉丝项
-    taskLog("尝试查找全球版TikTok粉丝列表...");
-    var targetFrames = id(GLOBAL_TikTokPackageName +":id/i7w").find();
-    if (!targetFrames.nonEmpty()) {
-        taskLog("未找到全球版粉丝列表，尝试查找亚洲版...");
-        targetFrames = id(ASIA_TikTokPackageName +":id/i7x").find();
-    }
-    
-    if (targetFrames.nonEmpty()) {
-        taskLog("找到粉丝列表，共有 " + targetFrames.size() + " 个粉丝项");
-        
-        // 如果当前索引超出了找到的元素数量，重置索引
-        if (click_FrameLayout_FENSI_SIXIN.currentIndex >= targetFrames.size()) {
-            taskLog("当前索引 " + click_FrameLayout_FENSI_SIXIN.currentIndex + " 超出列表大小 " + targetFrames.size() + "，重置索引");
-            click_FrameLayout_FENSI_SIXIN.currentIndex = 0;
-            return false; // 需要滑动加载更多
-        }
-        
-        // 获取当前需要点击的元素
-        var targetFrame = targetFrames.get(click_FrameLayout_FENSI_SIXIN.currentIndex);
-        if (targetFrame) {
-            taskLog("=== 粉丝项详细信息 ===");
-            taskLog("索引位置：" + click_FrameLayout_FENSI_SIXIN.currentIndex);
-            var bounds = targetFrame.bounds();
-            taskLog("元素位置：left=" + bounds.left + ", top=" + bounds.top + ", right=" + bounds.right + ", bottom=" + bounds.bottom);
-            taskLog("点击坐标：X=" + bounds.centerX() + ", Y=" + bounds.centerY());
-            taskLog("元素属性：可点击=" + targetFrame.clickable() + ", 可见=" + targetFrame.visibleToUser());
-            
-            taskLog("准备点击第 " + (click_FrameLayout_FENSI_SIXIN.currentIndex + 1) + " 个粉丝");
-            click(bounds.centerX(), bounds.centerY());
-            click_FrameLayout_FENSI_SIXIN.currentIndex++;
-            
-            var waitTime = random(2000, 3000);
-            taskLog("等待 " + (waitTime/1000).toFixed(1) + " 秒后继续...");
-            sleep(waitTime);
-            return true;
-        } else {
-            taskLog("警告：虽然找到了粉丝列表，但无法获取当前索引的粉丝项");
-        }
-    } else {
-        taskLog("未找到任何粉丝列表项");
-    }
-    
-    taskLog("重置粉丝索引为0");
-    click_FrameLayout_FENSI_SIXIN.currentIndex = 0;
-    return false;
-}
 
 
 
 
 try {
-    
-    // var all_TT_Comment_TEXT = get_all_comments()
-    // if(all_TT_Comment_TEXT.includes("$${T")){ 
-    //     throw_error_storage_not_enough()
-    // }
-    // taskLog("所有需要私信的文本数量 = " + all_TT_Comment_TEXT.length)
-    // sleep(random(2000,3000))
 
-
-    // if(all_TT_Comment_TEXT.length == 0){
-
-    //     taskLog("没有需要私信的文本内容") 
-    //     stopCurrentTask()
-    // } else{
-
-        taskLog("打开TikTok成功，首页会停留10-15秒...")
-        sleep(random(10000, 15000))
-    
+        taskLog("打开TikTok成功...")    
         taskLog("开始点击首页最右侧Profile按钮")
-        var profile_btn = findTextByLanguages(PROFILE_TEXT)
-        if(profile_btn){
-            sleep(random(2000, 4000))
-    
+
             //开始寻找用户所有的关注用户列表的TextView
             // 循环等待直到找到FOLLOWING_TEXT按钮
             var maxWaitAttempts = 10; // 最大等待尝试次数
             var waitAttempt = 0;
-            var Profile_Fans_text_button = null;
+            var Profile_text_button = null;
             
             while (waitAttempt < maxWaitAttempts) {
-                Profile_Fans_text_button = findTextByLanguages(PROFILE_FANS_TEXT);
-                if (Profile_Fans_text_button) {
-                    taskLog("找到Followers按钮，继续执行");
+                Profile_text_button = findTextByLanguages(PROFILE_TEXT);
+                if (Profile_text_button) {
+                    taskLog("找到个人中心按钮，继续执行");
                     break;
                 } else {
                     waitAttempt++;
-                    taskLog("第" + waitAttempt + "次尝试：未找到Followers按钮，等待后重试...");
+                    taskLog("第" + waitAttempt + "次尝试：未找到个人中心按钮，等待后重试...");
                     sleep(random(3000, 5000)); // 每次等待3-5秒
                 }
             }
             
-            if (Profile_Fans_text_button) {
+            if (Profile_text_button) {
 
-                //先检查当前用户有多少个关注用户,通过检查text("Following 0")，如果存在，则说明没有关注用户，直接返回
-                //text("Following 0")
-                var Fans_text_button = findTextByLanguages(PROFILE_FANS_COUNT_TEXT)
-                if(Fans_text_button){
-                    taskLog("当前用户没有粉丝，直接终止任务")
-                    sleep(random(3000, 5000))
-                    var screenshotPath = Nest_ScreenCapture();
-                    taskLog("已保存完成后的截图：" + screenshotPath);
-                    // 抛出一个特殊的错误来结束脚本
-                    throw new Error("当前用户没有粉丝，直接终止任务");
+                //寻找个人中心的昵称，需要寻找ID来获取对应的昵称
+                //fullId("com.ss.android.ugc.trill:id/n83") - className("android.widget.Button") - text("Jockey0o0") - Global版本
+                //fullId("com.zhiliaoapp.musically:id/n82") - className("android.widget.Button") - text("Karen") - Asia版本
+                // 根据包名判断使用哪个ID
+                var Nickname_button;
+                if (targetPackageName == GLOBAL_TikTokPackageName) {
+                    Nickname_button = id("com.zhiliaoapp.musically:id/n82").find();
+                } else {
+                    Nickname_button = id("com.ss.android.ugc.trill:id/n83").find();
+                }
+                
+                if (Nickname_button && Nickname_button.length > 0) {
+                    taskLog("找到个人中心昵称按钮，继续执行");
+                    var Nickname = Nickname_button.get(0).text();
+                    taskLog("个人中心昵称 = " + Nickname);
+                    TT_User_Info.Nickname = Nickname;
                 }
 
 
-                taskLog("需要私信的用户, 一共有： " + TT_Like_User_FANS_ID_COUNT + "个");
-                total_target = TT_Like_User_FANS_ID_COUNT;
-                sleep(random(8000, 10000))
-                if (TT_Like_User_FANS_ID_COUNT> 0) {
-                    for (var i = 0; i < TT_Like_User_FANS_ID_COUNT; i++) {
-                        
-                        // 尝试查找并点击Following按钮，如果找不到则滑动屏幕
-                        var maxScrollAttempts = 10; // 最大滑动尝试次数
-                        var scrollAttempt = 0;
-                        var foundButton = false;
-                        
-                        while (!foundButton && scrollAttempt < maxScrollAttempts) {
-                            // 循环等待直到找到FOLLOWERS_LIST_TEXT或超时
-                            var maxWaitAttempts = 5; // 最大等待尝试次数
-                            var waitAttempt = 0;
-                            var Follow_text_button = null;
-                            
-                            while (waitAttempt < maxWaitAttempts) {
-                                var foundFanToMessage = false;
-                                var currentPageFansProcessed = 0;
-                                
-                                while (total_success < TT_Like_User_FANS_ID_COUNT) {
-                                    // 尝试点击当前页面的粉丝
-                                    var clickResult = click_FrameLayout_FENSI_SIXIN();
-                                    if (!clickResult) {
-                                        taskLog("当前页面的粉丝都已处理完，需要滑动加载更多");
-                                        swipe_to_up();
-                                        sleep(random(3000, 5000));
-                                        continue; // 跳过后续处理，直接进入下一次循环
-                                    }
-                                    sleep(random(3000, 5000));
-                                    
-                                    // 进入粉丝个人页面后，尝试查找私信按钮
-                                    taskLog("=== 开始查找私信按钮 ===");
-                                    var maxRetry = 3;
-                                    var retryCount = 0;
-                                    var Fans_sixin_message_text = null;
-                                    
-                                    while (retryCount < maxRetry) {
-                                        taskLog("第 " + (retryCount + 1) + "/" + maxRetry + " 次尝试查找私信按钮");
-                                        Fans_sixin_message_text = findTextByLanguages(FANS_SIXIN_MESSAGE_TEXT);
-                                        if (Fans_sixin_message_text) {
-                                            taskLog("成功找到私信按钮！");
-                                            break;
-                                        }
-                                        retryCount++;
-                                        taskLog("未找到私信按钮，等待1秒后重试...");
-                                        sleep(1000);
-                                    }
-                                    
-                                    if (Fans_sixin_message_text) {
-                                        taskLog("=== 准备发送私信 ===");
-                                        var waitTime = random(3000, 5000);
-                                        taskLog("等待 " + (waitTime/1000).toFixed(1) + " 秒后继续...")
-                                        sleep(waitTime);
-                                        
-                                        taskLog("查找私信输入框...");
-                                        var autoCompleteTextViews = className("android.widget.EditText").find();
-                                        taskLog("找到 " + autoCompleteTextViews.size() + " 个输入框控件");
-                                        
-                                        if (autoCompleteTextViews.size() == 0) {
-                                            taskLog("警告：没有找到私信输入框，跳过当前用户");
-                                            taskLog("执行返回操作...");
-                                            back();
-                                            var waitTime1 = random(2000, 4000);
-                                            taskLog("等待 " + (waitTime1/1000).toFixed(1) + " 秒...");
-                                            sleep(waitTime1);
-                                            back();
-                                            var waitTime2 = random(2000, 4000);
-                                            taskLog("等待 " + (waitTime2/1000).toFixed(1) + " 秒...");
-                                            sleep(waitTime2);
-                                            currentPageFansProcessed++;
-                                            taskLog("当前页面已处理粉丝数：" + currentPageFansProcessed);
-                                        } else {
-                                            // 发送私信
-                                            taskLog("=== 开始发送私信 ===");
-                                            for (var i = 0; i < autoCompleteTextViews.size(); i++) {
-                                                taskLog("处理第 " + (i + 1) + "/" + autoCompleteTextViews.size() + " 个输入框");
-                                                var textView = autoCompleteTextViews.get(i);
-                                                if (textView) {
-                                                    var waitTime1 = random(2000, 4000);
-                                                    taskLog("等待 " + (waitTime1/1000).toFixed(1) + " 秒后输入文本...");
-                                                    sleep(waitTime1);
-                                                    
-                                                    var randIdx = random(0, all_TT_Comment_TEXT.length - 1);
-                                                    var messageText = all_TT_Comment_TEXT[randIdx];
-                                                    taskLog("从 " + all_TT_Comment_TEXT.length + " 条文案中随机选择第 " + (randIdx + 1) + " 条");
-                                                    taskLog("准备发送文本：" + messageText);
-                                                    textView.setText(messageText);
-                                                    
-                                                    var waitTime2 = random(2000, 4000);
-                                                    taskLog("等待 " + (waitTime2/1000).toFixed(1) + " 秒后点击发送...");
-                                                    sleep(waitTime2);
-                                                    
-                                                    taskLog("查找发送按钮(ImageView)...");
-                                                    var allImages = className("android.widget.ImageView").find();
-                                                    taskLog("找到 " + allImages.size() + " 个图片控件");
-                                                    
-                                                    if (allImages && allImages.size() > 0) {
-                                                        var lastIndex = allImages.size() - 1;
-                                                        taskLog("准备点击最后一个图片控件(索引: " + lastIndex + ")");
-                                                        var lastImg = allImages.get(lastIndex);
-                                                        if (lastImg) {
-                                                            var bounds = lastImg.bounds();
-                                                            taskLog("发送按钮位置：left=" + bounds.left + ", top=" + bounds.top + ", right=" + bounds.right + ", bottom=" + bounds.bottom);
-                                                            taskLog("点击坐标：X=" + bounds.centerX() + ", Y=" + bounds.centerY());
-                                                            taskLog("按钮属性：可点击=" + lastImg.clickable() + ", 可见=" + lastImg.visibleToUser());
-                                                            
-                                                            if (lastImg.clickable()) {
-                                                                    taskLog("使用控件点击方法");
-                                                                    lastImg.click();
-                                                                    total_success++; // 只有在成功点击后才增加计数
-                                                                } else {
-                                                                    taskLog("使用坐标点击方法");
-                                                                    click(bounds.centerX(), bounds.centerY());
-                                                                    total_success++; // 只有在成功点击后才增加计数
-                                                                }
-                                                            taskLog("发送按钮点击完成");
-                                                            taskLog("准备进行截图...");
-                                                            var screenshotPath = Nest_ScreenCapture();
-                                                            taskLog("已保存完成后的截图：" + screenshotPath);
-                                                        } else {
-                                                            taskLog("警告：无法获取最后一个图片控件");
-                                                        }
-                                                    } else {        
-                                                        taskLog("警告：未找到任何图片控件");
-                                                    }
-                                                    
-                                                    foundFanToMessage = true;
-                                                    taskLog("=== 私信发送完成 ===");
-                                                    taskLog("当前进度：" + total_success + "/" + TT_Like_User_FANS_ID_COUNT + " (" + (total_success/TT_Like_User_FANS_ID_COUNT*100).toFixed(1) + "%)");
-                                                    
-                                                    taskLog("等待3秒后返回...");
-                                                    sleep(3000);
-                                                    taskLog("第一次返回");
-                                                    back();
-                                                    taskLog("等待1秒...");
-                                                    sleep(1000);
-                                                    taskLog("第二次返回");
-                                                    back();
-                                                    taskLog("等待5秒后继续下一个粉丝...");
-                                                    sleep(5000);
-                                                }
-                                            }
-                                            currentPageFansProcessed++;
-                                        }
-                                    } else {
-                                        taskLog("当前粉丝无法私信，尝试下一个");
-                                        back();
-                                        sleep(random(2000, 4000));
-                                        currentPageFansProcessed++;
-                                    }
-                                    
-                                    // 已经在点击函数中处理了滑动加载更多的逻辑
-                                    
-                                    // 如果达到目标数量，退出整个脚本
-                                    if (total_success >= TT_Like_User_FANS_ID_COUNT) {
-                                        taskLog("=== 任务完成 ===");
-                                        taskLog("已达到目标私信数量：" + TT_Like_User_FANS_ID_COUNT);
-                                        taskLog("任务已完成，准备退出脚本...");
-                                        forceStop_APP(targetPackageName);
-                                        // exit();  // 直接退出整个脚本
-                                        // 不要使用exit()，而是抛出一个特殊的错误
-                                        throw new Error("TASK_COMPLETED");  // 这样会触发catch和finally块
-                                    }
-                                }
+                sleep(random(2000, 3000));
 
-                            }
-                            
-                        }
-                        
-                        if (!foundButton) {
-                            taskLog("多次滑动后仍未找到更多Following按钮，可能已经到达列表底部");
-                            break; // 退出主循环
-                        }
-                    }
-    
-                    // 完成所有私信操作后进行截图
-                    taskLog("=== 任务最终完成 ===");
-                    taskLog("成功完成私信，共发送给 " + total_success + " 个粉丝");
-                    taskLog("准备进行最终截图...");
-                    var screenshotPath = Nest_ScreenCapture();
-                    taskLog("已保存完成后的截图：" + screenshotPath);
-    
-                }else{
-                    taskLog("准备进行错误截图...");
-                    var screenshotPath = Nest_ScreenCapture();
-                    taskLog("已保存错误截图：" + screenshotPath);
-                    sleep(random(3000, 5000))
-                    taskLog("设置的私信用户数量是0")
-                    throw new Error("设置的私信用户数量是0，不进行粉丝私信，检查一下参数配置")
+
+
+
+
+                //寻找个人中心的UserId，需要寻找ID来获取对应的UserId
+                //fullId("com.ss.android.ugc.trill:id/n9r") - className("android.widget.Button") - text("@jockey0o0")
+                //fullId("com.zhiliaoapp.musically:id/n9q") - className("android.widget.Button") - text("@user454433939")
+                var UserId_button;
+                if (targetPackageName == ASIA_TikTokPackageName) {
+                    UserId_button = id("com.ss.android.ugc.trill:id/n9r").find();
+                } else {
+                    UserId_button = id("com.zhiliaoapp.musically:id/n9q").find();
                 }
-    
+
+                if (UserId_button && UserId_button.length > 0) {
+                    taskLog("找到个人中心UserId按钮，继续执行");
+                    var UserId = UserId_button.get(0).text();
+                    taskLog("个人中心UserId = " + UserId);
+                    TT_User_Info.UserId = UserId;
+                }
+
+                sleep(random(2000, 3000));
+
+
+                // 寻找用户个人中心的Followers按钮对应的数量
+                //fullId("com.ss.android.ugc.trill:id/n8q") -className("android.widget.TextView") -- text("29")
+                //fullId("com.zhiliaoapp.musically:id/n8p") -className("android.widget.TextView") -- text("0")
+                var Followers_button;
+                if (targetPackageName == ASIA_TikTokPackageName) {
+                    Followers_button = id("com.ss.android.ugc.trill:id/n8q").find();
+                } else {
+                    Followers_button = id("com.zhiliaoapp.musically:id/n8p").find();
+                }
+                if (Followers_button && Followers_button.length > 0) {
+                    taskLog("找到个人中心Followers按钮，继续执行");
+                    taskLog("找到个人中心Followers按钮，继续执行, Followers_button长度 = " + Followers_button.length);
+                    var Followers = Followers_button.get(0).text();
+                    taskLog("个人中心Followers = " + Followers);
+                    TT_User_Info.Followers = Followers;
+                }
+                sleep(random(2000, 3000));
+
+
+
+
+                //寻找用户个人中心的粉丝数 需要寻找ID来获取对应的粉丝数
+                //fullId("com.ss.android.ugc.trill:id/n51") - className("android.widget.TextView") - text("92") 
+                //fullId("com.zhiliaoapp.musically:id/n50") - className("android.widget.TextView") - text("0")
+                var Fans_button;
+                if (targetPackageName == ASIA_TikTokPackageName) {
+                    Fans_button = id("com.ss.android.ugc.trill:id/n51").find();
+                } else {
+                    Fans_button = id("com.zhiliaoapp.musically:id/n50").find();
+                }
+                if (Fans_button && Fans_button.length > 0) {
+                    taskLog("找到个人中心Fans按钮，继续执行");
+                    var Fans = Fans_button.get(0).text();
+                    taskLog("个人中心Fans = " + Fans);
+                    TT_User_Info.Fans = Fans;
+                }
+                sleep(random(2000, 3000));
+
+
+
+
+                //寻找用户个人中心的被赞数量 需要寻找ID来获取对应的被赞数量
+                //fullId("com.ss.android.ugc.trill:id/n8q") - className("android.widget.TextView") - text("306")
+                //fullId("com.zhiliaoapp.musically:id/n8p") - className("android.widget.TextView") - text("0")
+
+                var Likes_button;
+                if (targetPackageName == ASIA_TikTokPackageName) {
+                    Likes_button = id("com.ss.android.ugc.trill:id/n8q").find();
+                } else {
+                    Likes_button = id("com.zhiliaoapp.musically:id/n8p").find();
+                }
+                if (Likes_button && Likes_button.length > 0) {
+                    taskLog("找到个人中心Likes按钮，继续执行");
+                    var Likes = Likes_button.get(1).text();
+                    taskLog("个人中心Likes = " + Likes);
+                    TT_User_Info.Likes = Likes;
+                }
+                sleep(random(2000, 3000));
+
+
     
     
             }else{
@@ -1114,17 +691,7 @@ try {
             }
     
     
-            
-        }else{
-            taskLog("准备进行错误截图...");
-            var screenshotPath = Nest_ScreenCapture();
-            taskLog("已保存错误截图：" + screenshotPath);
-            sleep(random(3000, 5000))
-            taskLog("没有找到首页最右侧Profile按钮")
-            throw new Error("没有找到首页最右侧Profile按钮")
-        }
 
-    // }
 
  
 } catch(e) {
