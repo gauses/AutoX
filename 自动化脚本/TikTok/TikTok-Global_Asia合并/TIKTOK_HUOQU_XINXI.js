@@ -23,13 +23,14 @@ var fail_msg = "";
 
 //将需要获取的个人信息
 var TT_User_Info = {
-    "InBoxCount": "",
-    "UserId": "",
-    "Nickname": "",
-    "Followers": "",
-    "Fans": "",
-    "Likes": "",
-    "Videos": "",
+    "LoginStatus": false, //登录状态
+    "InBoxCount": "", //收件箱数量
+    "UserId": "", //用户ID
+    "Nickname": "", //昵称
+    "Followers": "", //关注者数量
+    "Fans": "", //粉丝数量
+    "Likes": "", //点赞数量
+    "Videos": "", //视频数量
 }
 
 
@@ -182,6 +183,7 @@ function Nest_ScreenCapture(){
     refreshMedia(RPAFilePath)
     return path
 }
+
 // 刷新指定路径的媒体库
 function refreshMedia(path) {
     taskLog("开始刷新媒体库....");
@@ -601,7 +603,7 @@ function extractVideoData() {
     
     try {
         // 1. 提取作者信息
-        videoData.author = extractAuthorInfo();
+        // videoData.author = extractAuthorInfo();
         
         // 2. 提取视频描述
         videoData.description = extractVideoDescription();
@@ -811,7 +813,7 @@ function findNumberNearButton(buttonDesc) {
 }
 
 
-
+//获取收件箱信息页面的收件箱数量
 function getInBoxCountInfoInPage(){
     //className("android.widget.FrameLayout") - fullId("com.ss.android.ugc.trill:id/k6e") : 包含两个Textview，分别是收件匣和99+， 一个Imageview，是收件匣的logo
     //className("android.widget.FrameLayout") - fullId("com.zhiliaoapp.musically:id/k6d") : 包含两个Imageview，分别是一个红点和收件匣的logo， 一个收件匣
@@ -854,6 +856,7 @@ function getInBoxCountInfoInPage(){
 } 
 
 
+//获取收件箱详细信息
 function getInBoxInfo(){
     //fullId("com.zhiliaoapp.musically:id/k6d") - className("android.widget.FrameLayout") - clickable("true")
     //fullId("com.ss.android.ugc.trill:id/k6e") - className("android.widget.FrameLayout") - clickable("true")
@@ -959,190 +962,223 @@ function getInBoxInfo(){
     }
     sleep(random(2000, 3000));
 
-
 }
 
 
 
+//获取个人中心信息
+function getUserInfo(){
+
+    //开始寻找用户所有的关注用户列表的TextView
+    // 循环等待直到找到FOLLOWING_TEXT按钮
+    var maxWaitAttempts = 10; // 最大等待尝试次数
+    var waitAttempt = 0;
+    var Profile_text_button = null;
+    
+    while (waitAttempt < maxWaitAttempts) {
+        Profile_text_button = findTextByLanguages(PROFILE_TEXT);
+        if (Profile_text_button) {
+            taskLog("找到个人中心按钮，继续执行");
+            break;
+        } else {
+            waitAttempt++;
+            taskLog("第" + waitAttempt + "次尝试：未找到个人中心按钮，等待后重试...");
+            sleep(random(3000, 5000)); // 每次等待3-5秒
+        }
+    }
+    
+    if (Profile_text_button) {
+
+        //寻找个人中心的昵称，需要寻找ID来获取对应的昵称
+        //fullId("com.ss.android.ugc.trill:id/n83") - className("android.widget.Button") - text("Jockey0o0") - Global版本
+        //fullId("com.zhiliaoapp.musically:id/n82") - className("android.widget.Button") - text("Karen") - Asia版本
+        // 根据包名判断使用哪个ID
+        var Nickname_button;
+        if (targetPackageName == GLOBAL_TikTokPackageName) {
+            Nickname_button = id("com.zhiliaoapp.musically:id/n82").find();
+        } else {
+            Nickname_button = id("com.ss.android.ugc.trill:id/n83").find();
+        }
+        
+        if (Nickname_button && Nickname_button.length > 0) {
+            taskLog("找到个人中心昵称按钮，继续执行");
+            var Nickname = Nickname_button.get(0).text();
+            taskLog("个人中心昵称 = " + Nickname);
+            TT_User_Info.LoginStatus = true;
+            TT_User_Info.Nickname = Nickname;
+        }else{
+            taskLog("没有找到个人中心昵称按钮，说明当前页面出现异常，直接退出");
+            TT_User_Info.LoginStatus = false;
+
+            taskLog("准备进行错误截图...");
+            var screenshotPath = Nest_ScreenCapture();
+            taskLog("已保存错误截图：" + screenshotPath);
+            sleep(random(3000, 5000))
+            throw new Error("没有找到个人中心昵称按钮，说明当前页面出现异常，直接退出")
+        }
+
+
+        sleep(random(2000, 3000));
+
+
+
+
+
+        //寻找个人中心的UserId，需要寻找ID来获取对应的UserId
+        //fullId("com.ss.android.ugc.trill:id/n9r") - className("android.widget.Button") - text("@jockey0o0")
+        //fullId("com.zhiliaoapp.musically:id/n9q") - className("android.widget.Button") - text("@user454433939")
+        var UserId_button;
+        if (targetPackageName == ASIA_TikTokPackageName) {
+            UserId_button = id("com.ss.android.ugc.trill:id/n9r").find();
+        } else {
+            UserId_button = id("com.zhiliaoapp.musically:id/n9q").find();
+        }
+
+        if (UserId_button && UserId_button.length > 0) {
+            taskLog("找到个人中心UserId按钮，继续执行");
+            var UserId = UserId_button.get(0).text();
+            taskLog("个人中心UserId = " + UserId);
+            TT_User_Info.UserId = UserId;
+        }
+
+        sleep(random(2000, 3000));
+
+
+        // 寻找用户个人中心的Followers按钮对应的数量
+        //fullId("com.ss.android.ugc.trill:id/n8q") -className("android.widget.TextView") -- text("29")
+        //fullId("com.zhiliaoapp.musically:id/n8p") -className("android.widget.TextView") -- text("0")
+        var Followers_button;
+        if (targetPackageName == ASIA_TikTokPackageName) {
+            Followers_button = id("com.ss.android.ugc.trill:id/n8q").find();
+        } else {
+            Followers_button = id("com.zhiliaoapp.musically:id/n8p").find();
+        }
+        if (Followers_button && Followers_button.length > 0) {
+            taskLog("找到个人中心Followers按钮，继续执行");
+            taskLog("找到个人中心Followers按钮，继续执行, Followers_button长度 = " + Followers_button.length);
+            var Followers = Followers_button.get(0).text();
+            taskLog("个人中心Followers = " + Followers);
+            TT_User_Info.Followers = Followers;
+        }
+        sleep(random(2000, 3000));
+
+
+
+
+        //寻找用户个人中心的粉丝数 需要寻找ID来获取对应的粉丝数
+        //fullId("com.ss.android.ugc.trill:id/n51") - className("android.widget.TextView") - text("92") 
+        //fullId("com.zhiliaoapp.musically:id/n50") - className("android.widget.TextView") - text("0")
+        var Fans_button;
+        if (targetPackageName == ASIA_TikTokPackageName) {
+            Fans_button = id("com.ss.android.ugc.trill:id/n51").find();
+        } else {
+            Fans_button = id("com.zhiliaoapp.musically:id/n50").find();
+        }
+        if (Fans_button && Fans_button.length > 0) {
+            taskLog("找到个人中心Fans按钮，继续执行");
+            var Fans = Fans_button.get(0).text();
+            taskLog("个人中心Fans = " + Fans);
+            TT_User_Info.Fans = Fans;
+        }
+        sleep(random(2000, 3000));
+
+
+
+
+        //寻找用户个人中心的被赞数量 需要寻找ID来获取对应的被赞数量
+        //fullId("com.ss.android.ugc.trill:id/n8q") - className("android.widget.TextView") - text("306")
+        //fullId("com.zhiliaoapp.musically:id/n8p") - className("android.widget.TextView") - text("0")
+
+        var Likes_button;
+        if (targetPackageName == ASIA_TikTokPackageName) {
+            Likes_button = id("com.ss.android.ugc.trill:id/n8q").find();
+        } else {
+            Likes_button = id("com.zhiliaoapp.musically:id/n8p").find();
+        }
+        if (Likes_button && Likes_button.length > 0) {
+            taskLog("找到个人中心Likes按钮，继续执行");
+            var Likes = Likes_button.get(1).text();
+            taskLog("个人中心Likes = " + Likes);
+            TT_User_Info.Likes = Likes;
+        }
+        sleep(random(2000, 3000));
+
+    }else{
+        User_Info.LoginStatus = false;
+        taskLog("准备进行错误截图...");
+        var screenshotPath = Nest_ScreenCapture();
+        taskLog("已保存错误截图：" + screenshotPath);
+        sleep(random(3000, 5000))
+        taskLog("没有找到用户个人中心的Follow列表的TextView")
+        throw new Error("没有找到用户个人中心的Follow列表的TextView")
+    }
+   
+}
+
+//获取用户视频信息
+function getUserVideosInfo(){
+
+    //fullId("com.ss.android.ugc.trill:id/d8t") - className("android.widget.FrameLayout")
+    //fullId("com.zhiliaoapp.musically:id/d8s") - className("android.widget.FrameLayout")
+
+    var UserVideosInfo_button;
+    if (targetPackageName == ASIA_TikTokPackageName) {
+        UserVideosInfo_button = id("com.ss.android.ugc.trill:id/d8t").find();
+    } else {
+        UserVideosInfo_button = id("com.zhiliaoapp.musically:id/d8s").find();
+    }
+    
+    if (UserVideosInfo_button && UserVideosInfo_button.length > 0) {
+        taskLog("找到用户视频信息按钮，继续执行");  
+        TT_User_Info.Videos = UserVideosInfo_button.length;
+    }else{
+        taskLog("没有找到用户视频信息按钮");
+        TT_User_Info.Videos = 0;
+    }
+    sleep(random(2000, 3000));
+}
 
 
 try {
 
-        taskLog("打开TikTok成功...")    
-        taskLog("开始点击首页最右侧Profile按钮")
+    taskLog("打开TikTok成功...")    
+    taskLog("开始点击首页最右侧Profile按钮")
 
-            //开始寻找用户所有的关注用户列表的TextView
-            // 循环等待直到找到FOLLOWING_TEXT按钮
-            var maxWaitAttempts = 10; // 最大等待尝试次数
-            var waitAttempt = 0;
-            var Profile_text_button = null;
-            
-            while (waitAttempt < maxWaitAttempts) {
-                Profile_text_button = findTextByLanguages(PROFILE_TEXT);
-                if (Profile_text_button) {
-                    taskLog("找到个人中心按钮，继续执行");
-                    break;
-                } else {
-                    waitAttempt++;
-                    taskLog("第" + waitAttempt + "次尝试：未找到个人中心按钮，等待后重试...");
-                    sleep(random(3000, 5000)); // 每次等待3-5秒
-                }
-            }
-            
-            if (Profile_text_button) {
+    getUserInfo() //获取个人中心信息
+    getUserVideosInfo() //获取用户视频信息
+    getInBoxCountInfoInPage() //获取收件箱信息页面的收件箱数量
 
-                //寻找个人中心的昵称，需要寻找ID来获取对应的昵称
-                //fullId("com.ss.android.ugc.trill:id/n83") - className("android.widget.Button") - text("Jockey0o0") - Global版本
-                //fullId("com.zhiliaoapp.musically:id/n82") - className("android.widget.Button") - text("Karen") - Asia版本
-                // 根据包名判断使用哪个ID
-                var Nickname_button;
-                if (targetPackageName == GLOBAL_TikTokPackageName) {
-                    Nickname_button = id("com.zhiliaoapp.musically:id/n82").find();
-                } else {
-                    Nickname_button = id("com.ss.android.ugc.trill:id/n83").find();
-                }
-                
-                if (Nickname_button && Nickname_button.length > 0) {
-                    taskLog("找到个人中心昵称按钮，继续执行");
-                    var Nickname = Nickname_button.get(0).text();
-                    taskLog("个人中心昵称 = " + Nickname);
-                    TT_User_Info.Nickname = Nickname;
-                }
+    //打印一下TT_User_Info
+    taskLog("TT_User_Info = " + JSON.stringify(TT_User_Info, null, 2));
 
 
-                sleep(random(2000, 3000));
-
-
-
-
-
-                //寻找个人中心的UserId，需要寻找ID来获取对应的UserId
-                //fullId("com.ss.android.ugc.trill:id/n9r") - className("android.widget.Button") - text("@jockey0o0")
-                //fullId("com.zhiliaoapp.musically:id/n9q") - className("android.widget.Button") - text("@user454433939")
-                var UserId_button;
-                if (targetPackageName == ASIA_TikTokPackageName) {
-                    UserId_button = id("com.ss.android.ugc.trill:id/n9r").find();
-                } else {
-                    UserId_button = id("com.zhiliaoapp.musically:id/n9q").find();
-                }
-
-                if (UserId_button && UserId_button.length > 0) {
-                    taskLog("找到个人中心UserId按钮，继续执行");
-                    var UserId = UserId_button.get(0).text();
-                    taskLog("个人中心UserId = " + UserId);
-                    TT_User_Info.UserId = UserId;
-                }
-
-                sleep(random(2000, 3000));
-
-
-                // 寻找用户个人中心的Followers按钮对应的数量
-                //fullId("com.ss.android.ugc.trill:id/n8q") -className("android.widget.TextView") -- text("29")
-                //fullId("com.zhiliaoapp.musically:id/n8p") -className("android.widget.TextView") -- text("0")
-                var Followers_button;
-                if (targetPackageName == ASIA_TikTokPackageName) {
-                    Followers_button = id("com.ss.android.ugc.trill:id/n8q").find();
-                } else {
-                    Followers_button = id("com.zhiliaoapp.musically:id/n8p").find();
-                }
-                if (Followers_button && Followers_button.length > 0) {
-                    taskLog("找到个人中心Followers按钮，继续执行");
-                    taskLog("找到个人中心Followers按钮，继续执行, Followers_button长度 = " + Followers_button.length);
-                    var Followers = Followers_button.get(0).text();
-                    taskLog("个人中心Followers = " + Followers);
-                    TT_User_Info.Followers = Followers;
-                }
-                sleep(random(2000, 3000));
-
-
-
-
-                //寻找用户个人中心的粉丝数 需要寻找ID来获取对应的粉丝数
-                //fullId("com.ss.android.ugc.trill:id/n51") - className("android.widget.TextView") - text("92") 
-                //fullId("com.zhiliaoapp.musically:id/n50") - className("android.widget.TextView") - text("0")
-                var Fans_button;
-                if (targetPackageName == ASIA_TikTokPackageName) {
-                    Fans_button = id("com.ss.android.ugc.trill:id/n51").find();
-                } else {
-                    Fans_button = id("com.zhiliaoapp.musically:id/n50").find();
-                }
-                if (Fans_button && Fans_button.length > 0) {
-                    taskLog("找到个人中心Fans按钮，继续执行");
-                    var Fans = Fans_button.get(0).text();
-                    taskLog("个人中心Fans = " + Fans);
-                    TT_User_Info.Fans = Fans;
-                }
-                sleep(random(2000, 3000));
-
-
-
-
-                //寻找用户个人中心的被赞数量 需要寻找ID来获取对应的被赞数量
-                //fullId("com.ss.android.ugc.trill:id/n8q") - className("android.widget.TextView") - text("306")
-                //fullId("com.zhiliaoapp.musically:id/n8p") - className("android.widget.TextView") - text("0")
-
-                var Likes_button;
-                if (targetPackageName == ASIA_TikTokPackageName) {
-                    Likes_button = id("com.ss.android.ugc.trill:id/n8q").find();
-                } else {
-                    Likes_button = id("com.zhiliaoapp.musically:id/n8p").find();
-                }
-                if (Likes_button && Likes_button.length > 0) {
-                    taskLog("找到个人中心Likes按钮，继续执行");
-                    var Likes = Likes_button.get(1).text();
-                    taskLog("个人中心Likes = " + Likes);
-                    TT_User_Info.Likes = Likes;
-                }
-                sleep(random(2000, 3000));
-
-
-                getInBoxCountInfoInPage()
-
-                //打印一下TT_User_Info
-                taskLog("TT_User_Info = " + JSON.stringify(TT_User_Info, null, 2));
-
-
-                // ============ 获取视频信息示例 ============
-                // 如果需要获取特定视频的详细信息，取消下面代码的注释
-                /*
-                taskLog("========== 开始测试视频信息获取功能 ==========");
-                var testVideoUrl = "https://vt.tiktok.com/ZSySrbSTa/";  // 替换为您要获取的视频链接
-                var videoInfo = getVideoInfoInPage(testVideoUrl);
-                
-                if (videoInfo) {
-                    taskLog("成功获取视频信息！");
-                    taskLog("作者：" + videoInfo.author);
-                    taskLog("描述：" + videoInfo.description);
-                    taskLog("点赞数：" + videoInfo.likes);
-                    taskLog("评论数：" + videoInfo.comments);
-                    taskLog("分享数：" + videoInfo.shares);
-                    taskLog("收藏数：" + videoInfo.favorites);
-                    
-                    // 返回个人中心页面
-                    back();
-                    sleep(random(2000, 3000));
-                } else {
-                    taskLogError("获取视频信息失败");
-                }
-                taskLog("========== 视频信息获取测试结束 ==========");
-                */
-
-
+    // ============ 获取视频信息示例 ============
+    // 如果需要获取特定视频的详细信息，取消下面代码的注释
+    /*
+    taskLog("========== 开始测试视频信息获取功能 ==========");
+    var testVideoUrl = "https://vt.tiktok.com/ZSySrbSTa/";  // 替换为您要获取的视频链接
+    var videoInfo = getVideoInfoInPage(testVideoUrl);
     
-    
-            }else{
-                taskLog("准备进行错误截图...");
-                var screenshotPath = Nest_ScreenCapture();
-                taskLog("已保存错误截图：" + screenshotPath);
-                sleep(random(3000, 5000))
-                taskLog("没有找到用户个人中心的Follow列表的TextView")
-                throw new Error("没有找到用户个人中心的Follow列表的TextView")
-            }
-    
-    
+    if (videoInfo) {
+        taskLog("成功获取视频信息！");
+        taskLog("作者：" + videoInfo.author);
+        taskLog("描述：" + videoInfo.description);
+        taskLog("点赞数：" + videoInfo.likes);
+        taskLog("评论数：" + videoInfo.comments);
+        taskLog("分享数：" + videoInfo.shares);
+        taskLog("收藏数：" + videoInfo.favorites);
+        
+        // 返回个人中心页面
+        back();
+        sleep(random(2000, 3000));
+    } else {
+        taskLogError("获取视频信息失败");
+    }
+    taskLog("========== 视频信息获取测试结束 ==========");
+    */
 
 
- 
+
 } catch(e) {
     if (e.message === "TASK_COMPLETED") {
         taskLog("任务正常完成");
@@ -1151,22 +1187,19 @@ try {
     }
 }finally{
     taskLog("保存统计结果到备用路径..." );
-    try {
-        var result = {
-            total_target: total_target,
-            total_success: total_success,
-            fail_msg: fail_msg
-        };
-        // 打印统计结果
-        taskLog("统计结果：" + JSON.stringify(result, null, 2));
-        // 使用JSON.stringify将对象转换为JSON字符串，第三个参数2是为了美化输出格式
-        files.write(resultPath, JSON.stringify(result, null, 2));
-        taskLog("已保存统计结果到：" + resultPath);
-    } catch(e) {
-        console.error("保存统计结果失败：" + e.message);
-    }
-    // 刷新媒体库
-    refreshMedia(RPAFilePath);
-    sleep(random(3000, 5000))
-}
+        try {
+            var result = {
+                total_target: total_target,
+                total_success: total_success,
+                fail_msg: fail_msg
+            };
+            // 打印统计结果
+            taskLog("统计结果：" + JSON.stringify(result, null, 2));
+            // 使用JSON.stringify将对象转换为JSON字符串，第三个参数2是为了美化输出格式
+            files.write(resultPath, JSON.stringify(result, null, 2));
+            taskLog("已保存统计结果到：" + resultPath);
+        } catch(e) {
+            console.error("保存统计结果失败：" + e.message);
+        }
+}     
 
