@@ -31,6 +31,21 @@ var TT_User_Info = {
     "Fans": "", //粉丝数量
     "Likes": "", //点赞数量
     "Videos": "", //视频数量
+    "Last_Video_Url": "", //最后一个视频的URL
+    "Last_Video_Description": "", //最后一个视频的描述
+    "Last_PlayCount": "", //最后一个视频的播放数
+    "Last_ViewCount": "", //最后一个视频的观看数
+    "Last_LikeCount": "", //最后一个视频的点赞数
+    "Last_CommentCount": "", //最后一个视频的评论数
+    "Last_FavoriteCount": "", //最后一个视频的收藏数
+
+    // "Last_Video_Thumbnail": "", //最后一个视频的缩略图
+    // "Last_Video_Title": "", //最后一个视频的标题
+    // "Last_Video_Description": "", //最后一个视频的描述
+    // "Last_Video_Tags": "", //最后一个视频的标签
+    // "Last_Video_Duration": "", //最后一个视频的时长
+    // "Last_Video_UploadTime": "", //最后一个视频的上传时间
+    // "Last_Video_Uploader": "", //最后一个视频的上传者
 }
 
 
@@ -72,6 +87,14 @@ const INBOX_PAGE_TEXT = {
     ZH_CN: "收件箱",    // 简体中文
     ZH_TW: "收信匣",    // 繁体中文 text("收信匣")
     EN_US: "Inbox"   // 英文 text("Inbox")
+};
+
+
+//Tiktok视频的URL的按钮文字
+const VIDEO_URL_TEXT = {
+    ZH_CN: "复制链接",    // 简体中文:text("复制链接")
+    ZH_TW: "複製連結",    // 繁体中文:text("複製連結")
+    EN_US: "Copy link"   // 英文:text("Copy link")
 };
 
 
@@ -518,8 +541,11 @@ function taskLogError(_log){
     }
 
 
+
+
 //获取该用户所有的video信息，包含视频数量，视频播放量，视频点赞量，视频评论量，视频分享量，视频收藏量
 //参数：videoUrl - 视频链接，如：https://vt.tiktok.com/ZSySrbSTa/
+/*
 function getVideoInfoInPage(videoUrl){
     try {
         taskLog("=== 开始获取视频信息 ===");
@@ -811,6 +837,8 @@ function findNumberNearButton(buttonDesc) {
     }
     return null;
 }
+
+*/
 
 
 //获取收件箱信息页面的收件箱数量
@@ -1115,6 +1143,90 @@ function getUserInfo(){
    
 }
 
+
+function getclipText(){
+    // 注意：Android 10+ (API 29) 需要应用在前台才能读取剪贴板
+    
+    // // 尝试使用 AutoJS 的方式申请权限（虽然通常不需要）
+    // try {
+    //     // 确保应用有存储权限（某些情况下可能有关）
+    //     if (device.sdkInt >= 23) {
+    //         // Android 6.0+ 动态申请权限
+    //         var hasPermission = runtime.requestPermissions([
+    //             "android.permission.READ_CLIPBOARD"
+    //         ]);
+            
+    //         if (!hasPermission) {
+    //             taskLog("剪贴板权限未授予，可能影响某些功能");
+    //         }
+    //     }
+    // } catch(e) {
+    //     taskLog("权限检查异常：" + e);
+    // }
+
+    try {
+        // 动态申请读取剪贴板权限 (Android 10+ 不需要权限申请，但保留兼容旧版本)
+        if (device.sdkInt >= 23 && device.sdkInt < 29) {
+            runtime.requestPermissions(["android.permission.READ_CLIPBOARD"]);
+        }
+    } catch(e) {
+        taskLog("权限申请异常（可忽略）：" + e);
+    }
+    
+    sleep(1000); // 等待权限弹窗出现（部分系统需要）
+    taskLog("当前剪贴板：" + getClip());
+    
+    // 等待一下，确保权限生效
+    sleep(500);
+
+    var text = "";
+    try {
+
+        var cm = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE);
+        if (!cm || !cm.hasPrimaryClip()) return "";
+
+        var clipData = cm.getPrimaryClip();
+        if (!clipData || clipData.getItemCount() <= 0) return "";
+
+        var item = clipData.getItemAt(0);
+
+        // 先 coerceToText
+        var coerced = item.coerceToText(context);
+        if (coerced != null) {
+            text = String(coerced);
+            taskLog("剪贴板内容：" + text);
+            return text;
+        }
+
+        // 再 getText
+        var clipText = item.getText();
+        if (clipText != null) {
+            text = clipText.toString();
+            taskLog("剪贴板内容：" + text);
+            return text;
+        }
+
+        // 再尝试 URI
+        var uri = item.getUri && item.getUri();
+        if (uri) {
+            var cr = context.getContentResolver();
+            var ins = cr.openInputStream(uri);
+            if (ins) {
+                var scanner = new java.util.Scanner(ins, "UTF-8").useDelimiter("\\A");
+                text = scanner.hasNext() ? String(scanner.next()) : "";
+                ins.close();
+                taskLog("剪贴板(URI)内容：" + text);
+                return text;
+            }
+        }
+        taskLog("剪贴板文本为null/不可读");
+    } catch(e) {
+        taskLogError("获取剪贴板失败：" + e);
+    }
+    return text;
+}
+
+
 //获取用户视频信息
 function getUserVideosInfo(){
 
@@ -1131,6 +1243,209 @@ function getUserVideosInfo(){
     if (UserVideosInfo_button && UserVideosInfo_button.length > 0) {
         taskLog("找到用户视频信息按钮，继续执行");  
         TT_User_Info.Videos = UserVideosInfo_button.length;
+
+        //找到第一个视频，然后获取到它的信息 ： 播放数 - 点赞数 - 评论数 - 分享数 - 收藏数
+        //1.获取播放数 
+        // fullId("com.ss.android.ugc.trill:id/tdi") - fullId("com.ss.android.ugc.trill:id/tdi") - text("227")
+        // fullId("com.zhiliaoapp.musically:id/tdg") - fullId("com.zhiliaoapp.musically:id/tdg") - text("23")
+        var PlayCount_button;
+        if (targetPackageName == ASIA_TikTokPackageName) {
+            PlayCount_button = id("com.ss.android.ugc.trill:id/tdi").find();
+        } else {
+            PlayCount_button = id("com.zhiliaoapp.musically:id/tdg").find();
+        }
+        if (PlayCount_button && PlayCount_button.length > 0) {
+            taskLog("找到播放数按钮，继续执行");
+            var PlayCount = PlayCount_button.get(0).text();
+            taskLog("播放数 = " + PlayCount);
+        }else{
+            taskLog("没有找到播放数按钮");
+            PlayCount = 0;
+        }
+        TT_User_Info.Last_PlayCount = PlayCount;
+        sleep(random(2000, 3000));
+
+
+
+        //2.点击视频，然后获取到它的信息 ： 播放数 - 点赞数 - 评论数 - 分享数 - 收藏数
+        UserVideosInfo_button.get(0).click();
+        sleep(random(2000, 3000));
+
+        //3.获取视频的点赞数
+        //fullId("com.ss.android.ugc.trill:id/e2r") - className("android.widget.Button") - text("17")
+        //fullId("com.zhiliaoapp.musically:id/e2q") - className("android.widget.Button") - text("0")
+        var LikeCount_button;
+        if (targetPackageName == ASIA_TikTokPackageName) {
+            LikeCount_button = id("com.ss.android.ugc.trill:id/e2r").find();
+        } else {
+            LikeCount_button = id("com.zhiliaoapp.musically:id/e2q").find();
+        }
+        if (LikeCount_button && LikeCount_button.length > 0) {
+            taskLog("找到点赞数按钮，继续执行");
+            var LikeCount = LikeCount_button.get(0).text();
+            taskLog("点赞数 = " + LikeCount);
+        }else{
+            taskLog("没有找到点赞数按钮");
+            LikeCount = 0;
+        }
+        TT_User_Info.Last_LikeCount = LikeCount;
+        sleep(random(2000, 3000));
+
+
+
+        //4.获取视频的评论数
+        //fullId("com.ss.android.ugc.trill:id/cww") - className("android.widget.Button") - text("2")
+        //fullId("com.zhiliaoapp.musically:id/cwv") - className("android.widget.Button") - text("0")
+        var CommentCount_button;
+        if (targetPackageName == ASIA_TikTokPackageName) {
+            CommentCount_button = id("com.ss.android.ugc.trill:id/cww").find();
+        } else {
+            CommentCount_button = id("com.zhiliaoapp.musically:id/cwv").find();
+        }
+        if (CommentCount_button && CommentCount_button.length > 0) {
+            taskLog("找到评论数按钮，继续执行");
+            var CommentCount = CommentCount_button.get(0).text();
+            taskLog("评论数 = " + CommentCount);
+        }else{
+            taskLog("没有找到评论数按钮");
+            CommentCount = 0;
+        }
+        TT_User_Info.Last_CommentCount = CommentCount;
+        sleep(random(2000, 3000));
+
+
+
+
+
+        //5.获取视频的收藏数
+        //fullId("com.ss.android.ugc.trill:id/fdo") - className("android.widget.TextView") - text("0")
+        //fullId("com.zhiliaoapp.musically:id/fdn") - className("android.widget.TextView") - text("0")
+        var FavoriteCount_button;
+        if (targetPackageName == ASIA_TikTokPackageName) {
+            FavoriteCount_button = id("com.ss.android.ugc.trill:id/fdo").find();
+        } else {
+            FavoriteCount_button = id("com.zhiliaoapp.musically:id/fdn").find();
+        }
+        if (FavoriteCount_button && FavoriteCount_button.length > 0) {
+            taskLog("找到收藏数按钮，继续执行");
+            var FavoriteCount = FavoriteCount_button.get(0).text();
+            taskLog("收藏数 = " + FavoriteCount);
+        }else{
+            taskLog("没有找到收藏数按钮");
+            FavoriteCount = 0;
+        }
+        TT_User_Info.Last_FavoriteCount = FavoriteCount;
+        sleep(random(2000, 3000));
+
+
+
+        //6.获取视频的具体观看数
+        //fullId("com.ss.android.ugc.trill:id/unn") - className("android.widget.TextView") - text("227 次觀看")
+        //fullId("com.zhiliaoapp.musically:id/unk") - className("android.widget.TextView") - text("23 views")
+        var ViewCount_button;
+        if (targetPackageName == ASIA_TikTokPackageName) {
+            ViewCount_button = id("com.ss.android.ugc.trill:id/unn").find();
+        } else {
+            ViewCount_button = id("com.zhiliaoapp.musically:id/unk").find();
+        }
+        if (ViewCount_button && ViewCount_button.length > 0) {
+            taskLog("找到观看数按钮，继续执行");
+            var ViewCount = ViewCount_button.get(0).text();
+            taskLog("观看数 = " + ViewCount);
+        }else{
+            taskLog("没有找到观看数按钮");
+            ViewCount = 0;
+        }
+        TT_User_Info.Last_ViewCount = ViewCount;
+        sleep(random(2000, 3000));
+
+
+        //7.获取视频的描述
+        //fullId("com.zhiliaoapp.musically:id/dx5") - className("android.widget.TextView") - text("150小个子lo娘的一周穿搭合集分享,Look")
+        //fullId("com.ss.android.ugc.trill:id/dx6") - className("android.widget.TextView") - text("咯咯咯咯咯")
+        var Description_button;
+        if (targetPackageName == ASIA_TikTokPackageName) {
+            Description_button = id("com.ss.android.ugc.trill:id/dx6").find();
+        } else {
+            Description_button = id("com.zhiliaoapp.musically:id/dx5").find();
+        }
+        if (Description_button && Description_button.length > 0) {
+            taskLog("找到描述按钮，继续执行");
+            var Description = Description_button.get(0).text();
+            taskLog("描述 = " + Description);
+        }else{
+            taskLog("没有找到描述按钮");
+            Description = "";
+        }
+        TT_User_Info.Last_Video_Description = Description;
+        sleep(random(2000, 3000));  
+
+
+
+
+
+        //7.获取视频的URL：不能使用点击点击复制链接的logo按钮，因为下面一排的按钮的logo都一样，且顺序不固定
+        //点击省略号：fullId("com.ss.android.ugc.trill:id/pkl") - className("android.widget.ImageView") - clickable("true")
+        //点击复制链接的logo：fullId("com.ss.android.ugc.trill:id/pk3") - className("android.widget.ImageView") - clickable("false")
+        
+
+
+        //fullId("com.zhiliaoapp.musically:id/pkk") - className("android.widget.ImageView") - clickable("true")
+        //fullId("com.zhiliaoapp.musically:id/pk2") - className("android.widget.ImageView") - clickable("false")
+        var More_button;
+        if (targetPackageName == ASIA_TikTokPackageName) {
+            More_button = id("com.ss.android.ugc.trill:id/pkl").find();
+        } else {
+            More_button = id("com.zhiliaoapp.musically:id/pkk").find();
+        }
+
+        if (More_button && More_button.length > 0) {
+            taskLog("找到省略号按钮和复制链接按钮，继续执行");
+            More_button.get(0).click();
+            sleep(random(3000, 5000));
+
+            
+            // 先获取当前剪贴板内容，用于对比
+            var oldClip = getclipText();
+            taskLog("点击前的剪贴板内容: " + oldClip);
+            
+            var CopyLink_button = findTextByLanguages(VIDEO_URL_TEXT);
+            if (CopyLink_button) {
+                taskLog("成功点击复制链接按钮，等待复制操作完成...");
+                sleep(random(3000, 5000)); // 等待复制操作完成
+                
+                // 从剪贴板获取复制的视频链接（使用AutoJS内置方法）
+                var Video_Url = getclipText();
+                taskLog("点击后的剪贴板内容: " + Video_Url);
+                
+                // 如果剪贴板内容没有变化或为空，说明复制可能失败
+                if (Video_Url === oldClip || !Video_Url) {
+                    taskLogError("剪贴板内容未更新或为空，可能复制失败");
+                    taskLogError("旧剪贴板: " + oldClip);
+                    taskLogError("新剪贴板: " + Video_Url);
+                    // 重试一次
+                    sleep(3000);
+                    Video_Url = getclipText();
+                    taskLog("重试获取剪贴板: " + Video_Url);
+                }
+                
+                TT_User_Info.Last_Video_Url = Video_Url;
+            }else{
+                taskLog("没有找到复制链接按钮");
+                throw new Error("没有找到复制链接按钮");
+            }
+        }else{
+            taskLog("没有找到省略号按钮和复制链接按钮");
+            throw new Error("没有找到省略号按钮和复制链接按钮");
+        }
+
+
+        sleep(random(2000, 3000));
+        back()
+
+
+
+
     }else{
         taskLog("没有找到用户视频信息按钮");
         TT_User_Info.Videos = 0;
