@@ -34,18 +34,10 @@ var TT_User_Info = {
     "Last_Video_Url": "", //最后一个视频的URL
     "Last_Video_Description": "", //最后一个视频的描述
     "Last_PlayCount": "", //最后一个视频的播放数
-    "Last_ViewCount": "", //最后一个视频的观看数
+    // "Last_ViewCount": "", //最后一个视频的观看数
     "Last_LikeCount": "", //最后一个视频的点赞数
     "Last_CommentCount": "", //最后一个视频的评论数
     "Last_FavoriteCount": "", //最后一个视频的收藏数
-
-    // "Last_Video_Thumbnail": "", //最后一个视频的缩略图
-    // "Last_Video_Title": "", //最后一个视频的标题
-    // "Last_Video_Description": "", //最后一个视频的描述
-    // "Last_Video_Tags": "", //最后一个视频的标签
-    // "Last_Video_Duration": "", //最后一个视频的时长
-    // "Last_Video_UploadTime": "", //最后一个视频的上传时间
-    // "Last_Video_Uploader": "", //最后一个视频的上传者
 }
 
 
@@ -1339,25 +1331,25 @@ function getUserVideosInfo(){
 
 
 
-        //6.获取视频的具体观看数
-        //fullId("com.ss.android.ugc.trill:id/unn") - className("android.widget.TextView") - text("227 次觀看")
-        //fullId("com.zhiliaoapp.musically:id/unk") - className("android.widget.TextView") - text("23 views")
-        var ViewCount_button;
-        if (targetPackageName == ASIA_TikTokPackageName) {
-            ViewCount_button = id("com.ss.android.ugc.trill:id/unn").find();
-        } else {
-            ViewCount_button = id("com.zhiliaoapp.musically:id/unk").find();
-        }
-        if (ViewCount_button && ViewCount_button.length > 0) {
-            taskLog("找到观看数按钮，继续执行");
-            var ViewCount = ViewCount_button.get(0).text();
-            taskLog("观看数 = " + ViewCount);
-        }else{
-            taskLog("没有找到观看数按钮");
-            ViewCount = 0;
-        }
-        TT_User_Info.Last_ViewCount = ViewCount;
-        sleep(random(2000, 3000));
+        //6.获取视频的具体观看数（暂停该方法，可能获取不到）
+        // //fullId("com.ss.android.ugc.trill:id/unn") - className("android.widget.TextView") - text("227 次觀看")
+        // //fullId("com.zhiliaoapp.musically:id/unk") - className("android.widget.TextView") - text("23 views")
+        // var ViewCount_button;
+        // if (targetPackageName == ASIA_TikTokPackageName) {
+        //     ViewCount_button = id("com.ss.android.ugc.trill:id/unn").find();
+        // } else {
+        //     ViewCount_button = id("com.zhiliaoapp.musically:id/unk").find();
+        // }
+        // if (ViewCount_button && ViewCount_button.length > 0) {
+        //     taskLog("找到观看数按钮，继续执行");
+        //     var ViewCount = ViewCount_button.get(0).text();
+        //     taskLog("观看数 = " + ViewCount);
+        // }else{
+        //     taskLog("没有找到观看数按钮");
+        //     ViewCount = 0;
+        // }
+        // TT_User_Info.Last_ViewCount = ViewCount;
+        // sleep(random(2000, 3000));
 
 
         //7.获取视频的描述
@@ -1503,6 +1495,13 @@ try {
 }finally{
     taskLog("保存统计结果到备用路径..." );
         try {
+
+            if (TT_User_Info.LoginStatus) {
+                fail_msg = TT_User_Info;
+            } else{
+                fail_msg = "未登录";
+            }
+
             var result = {
                 total_target: total_target,
                 total_success: total_success,
