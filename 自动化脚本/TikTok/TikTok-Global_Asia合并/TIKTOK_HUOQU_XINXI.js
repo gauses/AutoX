@@ -27,10 +27,11 @@ var TT_User_Info = {
     "TikTok_InBoxCount": "", //收件箱数量
     "TikTok_UserId": "", //用户ID
     "TikTok_Nickname": "", //昵称
+    "TikTok_BIO": "", //签名
     "TikTok_Followers": "", //关注者数量
     "TikTok_Fans": "", //粉丝数量
     "TikTok_Likes": "", //点赞数量
-    "TikTok_Videos": "", //视频数量
+    "TikTok_VideosCount": "", //视频数量
     "TikTok_Last_Video_Url": "", //最后一个视频的URL
     "TikTok_Last_Video_Description": "", //最后一个视频的描述
     "TikTok_Last_PlayCount": "", //最后一个视频的播放数
@@ -1123,6 +1124,18 @@ function getUserInfo(){
         }
         sleep(random(2000, 3000));
 
+
+
+        //寻找用户个人中心的签名 需要寻找ID来获取对应的签名
+        //编辑：fullId("com.ss.android.ugc.trill:id/n9q") - className("android.widget.LinearLayout") - clickable("false")
+        //fullId("com.ss.android.ugc.trill:id/iv0") - className("android.widget.TextView") - text("lolo")
+
+
+        //编辑：fullId("com.zhiliaoapp.musically:id/n9p") - className("android.widget.LinearLayout") - clickable("false")
+        //fullId("com.zhiliaoapp.musically:id/iuz") - className("android.widget.TextView") - text("Add a bio")
+
+
+
     }else{
         TT_User_Info.TikTok_LoginStatus = false;
         taskLog("准备进行错误截图...");
@@ -1216,6 +1229,95 @@ function getclipText(){
         taskLogError("获取剪贴板失败：" + e);
     }
     return text;
+}
+
+
+
+//获取用户多少个视频总数,通过查找girdview内有多少个framelayout来查找
+function getUserVideosCountByGirdview(){
+    //fullId("com.zhiliaoapp.musically:id/fh3") - className("android.widget.GridView")
+    //fullId("com.zhiliaoapp.musically:id/d8s") - fullId("com.zhiliaoapp.musically:id/d8s")
+
+
+    //fullId("com.ss.android.ugc.trill:id/fh4") - className("android.widget.FrameLayout")
+    //fullId("com.ss.android.ugc.trill:id/d8t") - className("android.widget.FrameLayout")
+
+    var gridViewId, frameLayoutId;
+    
+    if (targetPackageName == ASIA_TikTokPackageName) {
+        gridViewId = "com.ss.android.ugc.trill:id/fh4";
+        frameLayoutId = "com.ss.android.ugc.trill:id/d8t";
+    } else {
+        gridViewId = "com.zhiliaoapp.musically:id/fh3";
+        frameLayoutId = "com.zhiliaoapp.musically:id/d8s";
+    }
+    
+    // 查找 GridView
+    var gridView = id(gridViewId).className("android.widget.GridView").findOne(3000);
+    
+    if (gridView) {
+        taskLog("找到 GridView");
+        
+        // 获取 GridView 的直接子元素个数
+        var childCount = gridView.childCount();
+        taskLog("GridView 内找到 FrameLayout 个数: " + childCount);
+        TT_User_Info.TikTok_VideosCount = childCount;
+    } else {
+        taskLog("没有找到 GridView");
+        TT_User_Info.TikTok_VideosCount = 0;
+    }
+    
+    sleep(random(2000, 3000));
+}
+
+
+//获取用户多少个视频
+function getUserVideosCount(){
+    // fullId("com.ss.android.ugc.trill:id/tdi") - fullId("com.ss.android.ugc.trill:id/tdi") - text("227")
+    // fullId("com.zhiliaoapp.musically:id/tdg") - fullId("com.zhiliaoapp.musically:id/tdg") - text("23")
+    
+    // 使用对象来存储已经遇到的视频text（用于去重）
+    var uniqueVideos = {};
+    var videoCount = 0;
+    
+    // 滑动3次来获取所有视频
+    for (var i = 0; i < 3; i++) {
+        taskLog("第 " + (i + 1) + " 次获取视频数据");
+        
+        var PlayCount_button;
+        if (targetPackageName == ASIA_TikTokPackageName) {
+            PlayCount_button = id("com.ss.android.ugc.trill:id/tdi").find();
+        } else {
+            PlayCount_button = id("com.zhiliaoapp.musically:id/tdg").find();
+        }
+        
+        if (PlayCount_button && PlayCount_button.length > 0) {
+            taskLog("找到 " + PlayCount_button.length + " 个播放数按钮");
+            
+            // 遍历所有找到的按钮，通过text去重
+            for (var j = 0; j < PlayCount_button.length; j++) {
+                var textContent = PlayCount_button[j].text();
+                if (textContent && !uniqueVideos[textContent]) {
+                    uniqueVideos[textContent] = true;
+                    videoCount++;
+                    taskLog("找到新视频，播放数: " + textContent + ", 当前累计: " + videoCount);
+                }
+            }
+        } else {
+            taskLog("没有找到播放数按钮");
+        }
+        
+        // 如果不是最后一次，则往下滑动加载更多视频
+        if (i < 2) {
+            taskLog("往下滑动加载更多视频");
+            swipe(device.width / 2, device.height * 0.7, device.width / 2, device.height * 0.3, 500);
+            sleep(random(1500, 2500));
+        }
+    }
+    
+    TT_User_Info.TikTok_VideosCount = videoCount;
+    taskLog("视频总数（去重后）: " + videoCount);
+    sleep(random(2000, 3000));
 }
 
 
@@ -1452,7 +1554,9 @@ try {
     taskLog("开始点击首页最右侧Profile按钮")
 
     getUserInfo() //获取个人中心信息
-    getUserVideosInfo() //获取用户视频信息
+    // getUserVideosInfo() //获取用户视频信息
+    // getUserVideosCount() //获取用户多少个视频 
+    getUserVideosCountByGirdview() //获取用户多少个视频总数
     getInBoxCountInfoInPage() //获取收件箱信息页面的收件箱数量
 
     //打印一下TT_User_Info
@@ -1513,6 +1617,7 @@ try {
                 TikTok_Followers: TT_User_Info.TikTok_Followers,
                 TikTok_Fans: TT_User_Info.TikTok_Fans,
                 TikTok_Likes: TT_User_Info.TikTok_Likes,
+                TikTok_VideosCount: TT_User_Info.TikTok_VideosCount,
             };
             // 打印统计结果
             taskLog("统计结果：" + JSON.stringify(result, null, 2));
