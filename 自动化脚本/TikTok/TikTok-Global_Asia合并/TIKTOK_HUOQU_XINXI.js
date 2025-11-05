@@ -23,21 +23,21 @@ var fail_msg = "";
 
 //将需要获取的个人信息
 var TT_User_Info = {
-    "LoginStatus": false, //登录状态
-    "InBoxCount": "", //收件箱数量
-    "UserId": "", //用户ID
-    "Nickname": "", //昵称
-    "Followers": "", //关注者数量
-    "Fans": "", //粉丝数量
-    "Likes": "", //点赞数量
-    "Videos": "", //视频数量
-    "Last_Video_Url": "", //最后一个视频的URL
-    "Last_Video_Description": "", //最后一个视频的描述
-    "Last_PlayCount": "", //最后一个视频的播放数
-    // "Last_ViewCount": "", //最后一个视频的观看数
-    "Last_LikeCount": "", //最后一个视频的点赞数
-    "Last_CommentCount": "", //最后一个视频的评论数
-    "Last_FavoriteCount": "", //最后一个视频的收藏数
+    "TikTok_LoginStatus": false, //登录状态
+    "TikTok_InBoxCount": "", //收件箱数量
+    "TikTok_UserId": "", //用户ID
+    "TikTok_Nickname": "", //昵称
+    "TikTok_Followers": "", //关注者数量
+    "TikTok_Fans": "", //粉丝数量
+    "TikTok_Likes": "", //点赞数量
+    "TikTok_Videos": "", //视频数量
+    "TikTok_Last_Video_Url": "", //最后一个视频的URL
+    "TikTok_Last_Video_Description": "", //最后一个视频的描述
+    "TikTok_Last_PlayCount": "", //最后一个视频的播放数
+    // "TikTok_Last_ViewCount": "", //最后一个视频的观看数
+    "TikTok_Last_LikeCount": "", //最后一个视频的点赞数
+    "TikTok_Last_CommentCount": "", //最后一个视频的评论数
+    "TikTok_Last_FavoriteCount": "", //最后一个视频的收藏数
 }
 
 
@@ -862,7 +862,7 @@ function getInBoxCountInfoInPage(){
                     if (/\d/.test(textView.text())) {
                         taskLog("  └─ 包含数字！记录：" + textView.text());
                         // 这里可以将数据保存到变量中
-                        TT_User_Info.InBoxCount = textView.text();
+                        TT_User_Info.TikTok_InBoxCount = textView.text();
                     }
                 }
             }
@@ -1024,11 +1024,11 @@ function getUserInfo(){
             taskLog("找到个人中心昵称按钮，继续执行");
             var Nickname = Nickname_button.get(0).text();
             taskLog("个人中心昵称 = " + Nickname);
-            TT_User_Info.LoginStatus = true;
-            TT_User_Info.Nickname = Nickname;
+            TT_User_Info.TikTok_LoginStatus = true; 
+            TT_User_Info.TikTok_Nickname = Nickname;
         }else{
             taskLog("没有找到个人中心昵称按钮，说明当前页面出现异常，直接退出");
-            TT_User_Info.LoginStatus = false;
+            TT_User_Info.TikTok_LoginStatus = false;
 
             taskLog("准备进行错误截图...");
             var screenshotPath = Nest_ScreenCapture();
@@ -1058,7 +1058,7 @@ function getUserInfo(){
             taskLog("找到个人中心UserId按钮，继续执行");
             var UserId = UserId_button.get(0).text();
             taskLog("个人中心UserId = " + UserId);
-            TT_User_Info.UserId = UserId;
+            TT_User_Info.TikTok_UserId = UserId;
         }
 
         sleep(random(2000, 3000));
@@ -1078,7 +1078,7 @@ function getUserInfo(){
             taskLog("找到个人中心Followers按钮，继续执行, Followers_button长度 = " + Followers_button.length);
             var Followers = Followers_button.get(0).text();
             taskLog("个人中心Followers = " + Followers);
-            TT_User_Info.Followers = Followers;
+            TT_User_Info.TikTok_Followers = Followers;
         }
         sleep(random(2000, 3000));
 
@@ -1098,7 +1098,7 @@ function getUserInfo(){
             taskLog("找到个人中心Fans按钮，继续执行");
             var Fans = Fans_button.get(0).text();
             taskLog("个人中心Fans = " + Fans);
-            TT_User_Info.Fans = Fans;
+            TT_User_Info.TikTok_Fans = Fans;
         }
         sleep(random(2000, 3000));
 
@@ -1119,12 +1119,12 @@ function getUserInfo(){
             taskLog("找到个人中心Likes按钮，继续执行");
             var Likes = Likes_button.get(1).text();
             taskLog("个人中心Likes = " + Likes);
-            TT_User_Info.Likes = Likes;
+            TT_User_Info.TikTok_Likes = Likes;
         }
         sleep(random(2000, 3000));
 
     }else{
-        User_Info.LoginStatus = false;
+        TT_User_Info.TikTok_LoginStatus = false;
         taskLog("准备进行错误截图...");
         var screenshotPath = Nest_ScreenCapture();
         taskLog("已保存错误截图：" + screenshotPath);
@@ -1234,7 +1234,7 @@ function getUserVideosInfo(){
     
     if (UserVideosInfo_button && UserVideosInfo_button.length > 0) {
         taskLog("找到用户视频信息按钮，继续执行");  
-        TT_User_Info.Videos = UserVideosInfo_button.length;
+        TT_User_Info.TikTok_Videos = UserVideosInfo_button.length;
 
         //找到第一个视频，然后获取到它的信息 ： 播放数 - 点赞数 - 评论数 - 分享数 - 收藏数
         //1.获取播放数 
@@ -1254,7 +1254,7 @@ function getUserVideosInfo(){
             taskLog("没有找到播放数按钮");
             PlayCount = 0;
         }
-        TT_User_Info.Last_PlayCount = PlayCount;
+        TT_User_Info.TikTok_Last_PlayCount = PlayCount;
         sleep(random(2000, 3000));
 
 
@@ -1280,7 +1280,7 @@ function getUserVideosInfo(){
             taskLog("没有找到点赞数按钮");
             LikeCount = 0;
         }
-        TT_User_Info.Last_LikeCount = LikeCount;
+        TT_User_Info.TikTok_Last_LikeCount = LikeCount;
         sleep(random(2000, 3000));
 
 
@@ -1302,7 +1302,7 @@ function getUserVideosInfo(){
             taskLog("没有找到评论数按钮");
             CommentCount = 0;
         }
-        TT_User_Info.Last_CommentCount = CommentCount;
+        TT_User_Info.TikTok_Last_CommentCount = CommentCount;
         sleep(random(2000, 3000));
 
 
@@ -1326,7 +1326,7 @@ function getUserVideosInfo(){
             taskLog("没有找到收藏数按钮");
             FavoriteCount = 0;
         }
-        TT_User_Info.Last_FavoriteCount = FavoriteCount;
+        TT_User_Info.TikTok_Last_FavoriteCount = FavoriteCount;
         sleep(random(2000, 3000));
 
 
@@ -1369,7 +1369,7 @@ function getUserVideosInfo(){
             taskLog("没有找到描述按钮");
             Description = "";
         }
-        TT_User_Info.Last_Video_Description = Description;
+        TT_User_Info.TikTok_Last_Video_Description = Description;
         sleep(random(2000, 3000));  
 
 
@@ -1421,7 +1421,7 @@ function getUserVideosInfo(){
                     taskLog("重试获取剪贴板: " + Video_Url);
                 }
                 
-                TT_User_Info.Last_Video_Url = Video_Url;
+                TT_User_Info.TikTok_Last_Video_Url = Video_Url;
             }else{
                 taskLog("没有找到复制链接按钮");
                 throw new Error("没有找到复制链接按钮");
@@ -1440,7 +1440,7 @@ function getUserVideosInfo(){
 
     }else{
         taskLog("没有找到用户视频信息按钮");
-        TT_User_Info.Videos = 0;
+        TT_User_Info.TikTok_Videos = 0;    
     }
     sleep(random(2000, 3000));
 }
@@ -1496,16 +1496,23 @@ try {
     taskLog("保存统计结果到备用路径..." );
         try {
 
-            if (TT_User_Info.LoginStatus) {
-                fail_msg = TT_User_Info;
-            } else{
-                fail_msg = "未登录";
-            }
+            // if (TT_User_Info.TikTok_LoginStatus) {
+            //     fail_msg = TT_User_Info;
+            // } else{
+            //     fail_msg = "未登录";
+            // }
 
             var result = {
                 total_target: total_target,
                 total_success: total_success,
-                fail_msg: fail_msg
+                fail_msg: fail_msg,
+                TikTok_LoginStatus: TT_User_Info.TikTok_LoginStatus,
+                TikTok_InBoxCount: TT_User_Info.TikTok_InBoxCount,
+                TikTok_UserId: TT_User_Info.TikTok_UserId,
+                TikTok_Nickname: TT_User_Info.TikTok_Nickname,
+                TikTok_Followers: TT_User_Info.TikTok_Followers,
+                TikTok_Fans: TT_User_Info.TikTok_Fans,
+                TikTok_Likes: TT_User_Info.TikTok_Likes,
             };
             // 打印统计结果
             taskLog("统计结果：" + JSON.stringify(result, null, 2));
