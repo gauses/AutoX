@@ -1,0 +1,89 @@
+{
+  "metadataVersion": 2,
+  "version": 2,
+  "metadata": {
+    "instant": false
+  },
+  "modules": [
+    {
+      "id": 1,
+      "name": "Scheduler",
+      "type": "cron",
+      "schedule": "*/1 * * * *",
+      "description": "每1分钟执行一次"
+    },
+    {
+      "id": 2,
+      "name": "Get Latest Tweet",
+      "type": "http:get",
+      "options": {
+        "url": "https://api.x.com/2/users/1765132304375435264/tweets?max_results=5",
+        "headers": {
+          "Authorization": "Bearer AAAAAAAAAAAAAAAAAAAAADizUAAAAAAA%2Firm1O3FuJ%2FxjRSHrM7ZnWSP52s%3DTIAtflRy2taDZOImnzrkz0kPyewbi04BtgmnnXZmFzD7tt5vTa"
+        }
+      }
+    },
+    {
+      "id": 3,
+      "name": "Filter New Tweets",
+      "type": "filter",
+      "conditions": [
+        {
+          "type": "or",
+          "conditions": [
+            {
+              "type": "not_equals",
+              "left": "{{2.output.data[0].id}}",
+              "right": "{{memory.last_tweet_id}}"
+            },
+            {
+              "type": "is_empty",
+              "value": "{{memory.last_tweet_id}}"
+            }
+          ]
+        }
+      ],
+      "on_pass": 4,
+      "on_fail": null
+    },
+    {
+      "id": 4,
+      "name": "Send to WeChat (Server酱)",
+      "type": "http:post",
+      "options": {
+        "url": "https://sctapi.ftqq.com/SCT97518TfJr8sOzqeWfjHyVTvnM2uTWr.send",
+        "headers": {
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        "body": "title=新推文提醒&desp=📢 用户@BWEtradFi 发了新推文：%0A%0A{{2.output.data[0].text}}%0A%0A🔗 https://x.com/BWEtradFi/status/{{2.output.data[0].id}}"
+      }
+    },
+    {
+      "id": 5,
+      "name": "Save Last Tweet ID",
+      "type": "memory:set",
+      "options": {
+        "key": "last_tweet_id",
+        "value": "{{2.output.data[0].id}}"
+      }
+    }
+  ],
+  "connections": [
+    {
+      "from_module": 1,
+      "to_module": 2
+    },
+    {
+      "from_module": 2,
+      "to_module": 3
+    },
+    {
+      "from_module": 3,
+      "to_module": 4
+    },
+    {
+      "from_module": 4,
+      "to_module": 5
+    }
+  ]
+}

@@ -12,6 +12,7 @@ import org.json.JSONObject
 import java.io.File
 import java.io.IOException
 import java.util.UUID
+import java.util.concurrent.TimeUnit
 
 object LogFileUtils {
 
@@ -304,32 +305,69 @@ object LogFileUtils {
         Log.d("LogFileUtils", "==================\n")
 
         val client = OkHttpClient.Builder()
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
             .build()
-        client.newCall(request).execute().use { response ->
-            // 打印完整的响应信息
-            Log.d("LogFileUtils", "\n=== 响应信息 ===")
-            Log.d("LogFileUtils", "Status Code: ${response.code}")
-            Log.d("LogFileUtils", "Headers:")
-            response.headers.forEach { header ->
-                Log.d("LogFileUtils", "  ${header.first}: ${header.second}")
-            }
-            
-            // 读取响应体
-            val responseBody = response.body?.string()
-            Log.d("LogFileUtils", "Response Body:")
-            if (responseBody != null) {
-                try {
-                    // 尝试格式化JSON响应
-                    val responseJson = JSONObject(responseBody)
-                    Log.d("LogFileUtils", responseJson.toString(2))
-                } catch (e: Exception) {
-                    // 如果不是JSON，直接打印原始内容
-                    Log.d("LogFileUtils", responseBody)
+
+        // 添加重试机制
+        val maxRetries = 5
+        var currentRetry = 0
+        var lastError: Exception? = null
+
+        while (currentRetry < maxRetries) {
+            try {
+                client.newCall(request).execute().use { response ->
+                    // 打印完整的响应信息
+                    Log.d("LogFileUtils", "\n=== 第${currentRetry + 1}次尝试响应信息 ===")
+                    Log.d("LogFileUtils", "Status Code: ${response.code}")
+                    Log.d("LogFileUtils", "Headers:")
+                    response.headers.forEach { header ->
+                        Log.d("LogFileUtils", "  ${header.first}: ${header.second}")
+                    }
+                    
+                    // 读取响应体
+                    val responseBody = response.body?.string()
+                    Log.d("LogFileUtils", "Response Body:")
+                    
+                    if (responseBody != null) {
+                        try {
+                            // 尝试格式化JSON响应
+                            val responseJson = JSONObject(responseBody)
+                            Log.d("LogFileUtils", responseJson.toString(2))
+                            
+                            // 检查响应状态
+                            if (response.isSuccessful && responseJson.optBoolean("success", false)) {
+                                Log.d("LogFileUtils", "上报成功")
+                                return // 成功则直接返回
+                            } else {
+                                throw IOException("上报失败: ${responseJson.optString("msg", "未知错误")}")
+                            }
+                        } catch (e: Exception) {
+                            Log.e("LogFileUtils", "响应解析失败", e)
+                            throw e
+                        }
+                    } else {
+                        throw IOException("空响应")
+                    }
                 }
-            } else {
-                Log.d("LogFileUtils", "  <empty response>")
+            } catch (e: Exception) {
+                lastError = e
+                currentRetry++
+                
+                if (currentRetry < maxRetries) {
+                    val waitTime = 3000L * (currentRetry) // 3秒, 6秒, 9秒
+                    Log.e("LogFileUtils", "第${currentRetry}次上报失败，${waitTime/1000}秒后重试: ${e.message}")
+                    Thread.sleep(waitTime)
+                } else {
+                    Log.e("LogFileUtils", "上报失败，已达到最大重试次数", e)
+                }
             }
-            Log.d("LogFileUtils", "==================\n")
+        }
+
+        // 如果所有重试都失败了，抛出最后一个错误
+        lastError?.let {
+            Log.e("LogFileUtils", "所有重试都失败了，最后的错误: ${it.message}")
         }
 
     }

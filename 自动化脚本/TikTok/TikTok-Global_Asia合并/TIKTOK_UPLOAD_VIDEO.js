@@ -1042,7 +1042,8 @@ function click_Video_desc(){
                 //短描述：fullId("com.zhiliaoapp.musically:id/eqw")
                 //fullId("com.ss.android.ugc.trill:id/eqx")
                 if(textView.id() == CONFIG.APP.GLOBAL_PACKAGE + ":id/eqw" || textView.id() == CONFIG.APP.ASIA_PACKAGE + ":id/eqx"){
-                    textView.setText(titleText)
+                    // textView.setText(titleText)
+                    textView.setText(all_TT_TITLE_text.join("\n"))
                     sleep(random(3000,5000))
                 } 
 
@@ -1060,7 +1061,8 @@ function click_Video_desc(){
                 //长描述：fullId("com.zhiliaoapp.musically:id/eqv")
                 //fullId("com.ss.android.ugc.trill:id/eqw")
                 if(textView.id() == CONFIG.APP.GLOBAL_PACKAGE + ":id/eqv" || textView.id() == CONFIG.APP.ASIA_PACKAGE + ":id/eqw"){
-                    textView.setText(descText)
+                    // textView.setText(descText)
+                    textView.setText(all_TT_DESC_text.join("\n"))
                     sleep(random(5000,10000))
                 }   
             }
