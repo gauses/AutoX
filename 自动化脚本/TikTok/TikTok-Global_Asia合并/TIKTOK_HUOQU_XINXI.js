@@ -14,7 +14,7 @@ var taskLogImgName = "nest_task_log.png"
 
 
 // 需要私信的粉丝总数
-var total_target = 0;
+var total_target = 1;
 // 成功私信的粉丝数量
 var total_success = 0;
 // 错误信息
@@ -1134,7 +1134,7 @@ function getUserInfo(){
         //编辑：fullId("com.zhiliaoapp.musically:id/n9p") - className("android.widget.LinearLayout") - clickable("false")
         //fullId("com.zhiliaoapp.musically:id/iuz") - className("android.widget.TextView") - text("Add a bio")
 
-
+        total_success = 1
 
     }else{
         TT_User_Info.TikTok_LoginStatus = false;
