@@ -17,6 +17,11 @@ var total_success = 0;
 // 错误信息
 var fail_msg = "";
 
+//任何开始和结束时间
+var taskStartTime = "";
+var taskEndTime = "";
+
+
 
 
 //保证Java层和JS代码两边的日志文件一致
@@ -68,6 +73,7 @@ var handleErrorFlag = false //默认没有错误，如果出现异常，那么�
 events.on('exit', function(){
     console.hide()
     sleep(1000)
+
 
     if(handleErrorFlag){
         taskLogError("-----------------脚本执行出现异常---------------");
@@ -830,6 +836,9 @@ function get_all_TT_comment_text(){
 try {
 
 
+    taskStartTime = new Date().getTime();
+    taskLog("任务开始时间：" + taskStartTime);
+
     
     var all_TT_comment_text = []
 
@@ -937,11 +946,19 @@ try {
     }
 }finally{
     taskLog("保存统计结果到备用路径..." );
+    
+    taskEndTime = new Date().getTime();
+    taskLog("任务结束时间：" + taskEndTime);
+    taskLog("任务执行时间：" + (taskEndTime - taskStartTime) + "毫秒");
+
+
     try {
         var result = {
             total_target: total_target,
             total_success: total_success,
-            fail_msg: fail_msg
+            fail_msg: fail_msg,
+            taskStartTime: taskStartTime,
+            taskEndTime: taskEndTime
         };
         // 打印统计结果
         taskLog("统计结果：" + JSON.stringify(result, null, 2));
