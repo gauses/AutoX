@@ -87,6 +87,8 @@ object LogFileUtils {
 
     //上传服务器，告诉服务器可以下拉日志
     fun uploadLogFileToServer(result: String) {
+
+        var doJsResult = result //可能执行出现异常，但是走到onSuccess，因为在js脚本里面将异常进行了处理
         Log.d("ScriptExecutionGlobal", "uploadLogFileToServer start ======================= ")
 
         var nestScript = readJsonFromFile(GlobalAppContext.get().applicationContext, "net_script_name")
@@ -231,9 +233,6 @@ object LogFileUtils {
         reportJson.put("report", report_oss_path) //上传oss的执行记录txt地址
         reportJson.put("screenshot", screenshot_oss_path)//上传oss的截图记录txt地址
 
-
-        reportJson.put("success", result)
-        
         // 读取 nest_result_rpa.txt 的内容
         try {
             val logDir = getScreenCaptureDirectory()
@@ -265,6 +264,10 @@ object LogFileUtils {
                     try {
                         val contentJson = JSONObject(jsonContent)
                         Log.d("LogFileUtils", "添加fail_msg后的内容: $contentJson")
+                        var fail_msg = contentJson.optString("fail_msg")
+                        if (fail_msg.contains("Exception", false)){
+                            doJsResult = "fail"
+                        }
                         reportJson.put("msg", contentJson)
                     } catch (e: Exception) {
                         Log.e("LogFileUtils", "JSON解析失败，使用原始内容", e)
@@ -282,6 +285,9 @@ object LogFileUtils {
             Log.e("LogFileUtils", "nest_result_rpa.txt失败", e)
             reportJson.put("msg", "")
         }
+
+        reportJson.put("success", doJsResult)
+
 
         // 构建请求体
         val requestBody = RequestBody.create("application/json; charset=utf-8".toMediaType(), reportJson.toString())

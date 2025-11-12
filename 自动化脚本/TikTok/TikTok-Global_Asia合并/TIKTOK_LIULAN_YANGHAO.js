@@ -136,7 +136,8 @@ function taskLogError(_log){
 
 function handleError(e) {
     handleErrorFlag = true
-    forceStop_APP(targetPackageName)
+    
+    // 先记录错误信息，确保即使后续操作失败也能保存错误信息
     taskLogError("===错误报告开始===");
     fail_msg += "错误信息：" + e + "\n"; 
     taskLogError("错误信息：" + e);
@@ -146,6 +147,14 @@ function handleError(e) {
     taskLogError("===错误报告结束===");
     fail_msg += "===错误报告结束===" + "\n";
     taskLog("脚本执行Error时间：" + new Date().toLocaleString());
+    
+    // 尝试强制停止应用，但即使失败也不影响错误信息的记录
+    try {
+        forceStop_APP(targetPackageName)
+    } catch(forceStopError) {
+        taskLogError("强制停止应用时发生错误：" + forceStopError);
+        fail_msg += "强制停止应用时发生错误：" + forceStopError + "\n";
+    }
 }
 
 //开始录屏截图到本地
@@ -505,89 +514,100 @@ function stopCurrentTask(){
 
 //强制停止TikTok 
 function forceStop_APP(packageName){
-    taskLog("准备强杀:" + packageName + "...")
-    sleep(1000);
-    app.openAppSetting(packageName)
-    sleep(5000)
+    try {
+        taskLog("准备强杀:" + packageName + "...")
+        sleep(1000);
+        app.openAppSetting(packageName)
+        sleep(5000)
 
-    //繁体
-    if (text("強制停止").exists()) {
-        let forceStopBtn = text("強制停止").findOne();
-        if (forceStopBtn && forceStopBtn.clickable()) {
-            forceStopBtn.click();
-            sleep(1000);
-            // 确认操作
-            if (text("確定").exists()) {
-                taskLog("已经找到可点击的'強制停止'按钮！！！！！！！！！！");
-                text("確定").findOne().click();
+        //繁体
+        if (text("強制停止").exists()) {
+            let forceStopBtn = text("強制停止").findOne();
+            if (forceStopBtn && forceStopBtn.clickable()) {
+                forceStopBtn.click();
+                sleep(1000);
+                // 确认操作
+                if (text("確定").exists()) {
+                    taskLog("已经找到可点击的'強制停止'按钮！！！！！！！！！！");
+                    text("確定").findOne().click();
+                }
+            } else {
+                taskLog("未找到可点击的'強制停止'按钮");
             }
         } else {
-            taskLog("未找到可点击的'強制停止'按钮");
+            taskLog("未找到'強制停止'按钮");
         }
-    } else {
-        taskLog("未找到'強制停止'按钮");
-    }
-    sleep(3000)
+        sleep(3000)
 
-    //简体
-    if (text("强行停止").exists()) {
-        let forceStopBtn = text("强行停止").findOne();
-        if (forceStopBtn && forceStopBtn.clickable()) {
-            forceStopBtn.click();
-            sleep(1000);
-            // 确认操作
-            if (text("确定").exists()) {
-                text("确定").findOne().click();
+        //简体
+        if (text("强行停止").exists()) {
+            let forceStopBtn = text("强行停止").findOne();
+            if (forceStopBtn && forceStopBtn.clickable()) {
+                forceStopBtn.click();
+                sleep(1000);
+                // 确认操作
+                if (text("确定").exists()) {
+                    text("确定").findOne().click();
+                }
+            } else {
+                taskLog("未找到可点击的'强行停止'按钮");
             }
         } else {
-            taskLog("未找到可点击的'强行停止'按钮");
+            taskLog("未找到'强行停止'按钮");
         }
-    } else {
-        taskLog("未找到'强行停止'按钮");
-    }
 
-    sleep(3000)
+        sleep(3000)
 
 
-    //英语
-    if (text("Force stop").exists()) {
-        let forceStopBtn = text("Force stop").findOne();
-        if (forceStopBtn && forceStopBtn.clickable()) {
-            forceStopBtn.click();
-            sleep(1000);
-            // 确认操作
-            if (text("OK").exists()) {
-                text("OK").findOne().click();
+        //英语
+        if (text("Force stop").exists()) {
+            let forceStopBtn = text("Force stop").findOne();
+            if (forceStopBtn && forceStopBtn.clickable()) {
+                forceStopBtn.click();
+                sleep(1000);
+                // 确认操作
+                if (text("OK").exists()) {
+                    text("OK").findOne().click();
+                }
+            } else {
+                taskLog("未找到可点击的'Force stop'按钮");
             }
         } else {
-            taskLog("未找到可点击的'Force stop'按钮");
+            taskLog("未找到'Force stop'按钮");
         }
-    } else {
-        taskLog("未找到'Force stop'按钮");
-    }
-    sleep(3000)
+        sleep(3000)
 
-    //英语
-    if (text("FORCE STOP").exists()) {
-        let forceStopBtn = text("FORCE STOP").findOne();
-        if (forceStopBtn && forceStopBtn.clickable()) {
-            forceStopBtn.click();
-            sleep(1000);
-            // 确认操作
-            if (text("OK").exists()) {
-                text("OK").findOne().click();
+        //英语
+        if (text("FORCE STOP").exists()) {
+            let forceStopBtn = text("FORCE STOP").findOne();
+            if (forceStopBtn && forceStopBtn.clickable()) {
+                forceStopBtn.click();
+                sleep(1000);
+                // 确认操作
+                if (text("OK").exists()) {
+                    text("OK").findOne().click();
+                }
+            } else {
+                taskLog("未找到可点击的'FORCE STOP'按钮");
             }
         } else {
-            taskLog("未找到可点击的'FORCE STOP'按钮");
+            taskLog("未找到'FORCE STOP'按钮");
         }
-    } else {
-        taskLog("未找到'FORCE STOP'按钮");
+        sleep(3000)
+
+
+        home()
+    } catch(e) {
+        taskLogError("强制停止应用失败：" + e);
+        // 即使失败也尝试返回主屏幕
+        try {
+            home();
+        } catch(homeError) {
+            taskLogError("返回主屏幕也失败：" + homeError);
+        }
+        // 重新抛出异常，让调用者知道失败了
+        throw e;
     }
-    sleep(3000)
-
-
-    home()
-
 }
 
 
@@ -621,6 +641,13 @@ function get_all_TT_comment_text(){
 
 
 try {
+
+    if(TT_Watch_Count <=0){
+        throw new Error("TT_Watch_Count 不能小于等于0");
+    }else{
+        taskLog("需要观看的视频总数： = " + TT_Watch_Count);
+        total_target = TT_Watch_Count;
+    }
 
 
 
@@ -708,13 +735,6 @@ try {
         taskLog("没有找到评论文案，所以将只会执行点赞")
     }
 
-
-    if(TT_Watch_Count <=0){
-        throw new Error("TT_Watch_Count 不能小于等于0");
-    }else{
-        taskLog("需要观看的视频总数： = " + TT_Watch_Count);
-        total_target = TT_Watch_Count;
-    }
 
 
 
