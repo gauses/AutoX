@@ -234,10 +234,6 @@ if (runningEngines.length > 1) {
 
 
 
-sleep(3000)
-taskLog("准备检查TikTok是否已安装...")
-
-
 
 function isAppInstalled(packageName) {
     var pm = context.getPackageManager();
@@ -248,63 +244,6 @@ function isAppInstalled(packageName) {
         return false;
     }
 }
-
-if (isAppInstalled(GLOBAL_TikTokPackageName)) {
-    targetPackageName = GLOBAL_TikTokPackageName;
-    targetClassName = "com.ss.android.ugc.aweme.main.MainActivity";
-    taskLog("检测到已安装全球版TikTok，准备启动...");
-
-
-    sleep(random(3000, 5000))
-    taskLog("准备启动全球版TikTok...");
-    app.startActivity({
-        action: "android.intent.action.VIEW",
-        packageName: GLOBAL_TikTokPackageName,
-        className: "com.ss.android.ugc.aweme.main.MainActivity"
-    });
-
-
-    sleep(random(5000, 8000))
-    openAppSettings(GLOBAL_TikTokPackageName)
-    sleep(random(3000, 5000))
-
-    forceStop_APP(GLOBAL_TikTokPackageName)
-    sleep(3000)
-
-} else if (isAppInstalled(ASIA_TikTokPackageName)) {
-    targetPackageName = ASIA_TikTokPackageName;
-    targetClassName = "com.ss.android.ugc.aweme.main.MainActivity";
-    taskLog("检测到已安装亚洲版TikTok，准备启动...");
-
-    sleep(random(3000, 5000))
-    taskLog("准备启动亚洲版TikTok...");
-    app.startActivity({
-        action: "android.intent.action.VIEW",
-        packageName: ASIA_TikTokPackageName,
-        className: "com.ss.android.ugc.aweme.main.MainActivity"
-    });
-
-
-    sleep(random(5000, 8000))
-    openAppSettings(ASIA_TikTokPackageName)
-    sleep(random(3000, 5000))
-
-    forceStop_APP(ASIA_TikTokPackageName)
-    sleep(3000)
-
-} else {
-    toast("未检测到TikTok已安装，请先安装TikTok！");
-    taskLog("未检测到TikTok已安装，脚本终止。");
-    throw new Error("未检测到TikTok安装，脚本终止。");
-    
-}
-
-
-app.startActivity({
-    action: "android.intent.action.VIEW",
-    packageName: targetPackageName,
-    className: targetClassName
-});
 
 
 
@@ -562,158 +501,6 @@ function stopCurrentTask(){
 }
 
 
-//通过Button的Text
-function find_btn_Text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US, findText_EN_UK){
-
-
-        var loopCount  = 0
-
-         while (true) {
-             taskLog(findText_ZH_CN + " - 循环寻找执行：" + (++loopCount));
-             // 检查计数器是否达到3
-             if (loopCount >= 3) {
-                 // 打印一条消息并退出循环
-                 taskLog("循环已执行3次，即将退出循环。");
-
-                 //不能抛出异常，因为可能Facebook记忆功能，自动跳转到输入页面
-//                 throw new Error(findText_ZH_CN +"按钮没有找到");
-                break;
-             }
-
-             // 查找控件
-             var button1 = className("android.widget.Button").text(findText_ZH_CN).findOne(1000);
-             var button2 = className("android.widget.Button").text(findText_ZH_TW).findOne(1000);
-             var button3 = className("android.widget.Button").text(findText_EN_US).findOne(1000);
-             var button4 = className("android.widget.Button").text(findText_EN_UK).findOne(1000);
-
-             if (button1) {
-                 taskLog("找到" + findText_ZH_CN);
-                 button1.click();
-                 break; // 跳出循环
-             }else if(button2){
-                 taskLog("找到" + findText_ZH_TW);
-                 button2.click();
-                 break; // 跳出循环
-             }else if(button3){
-                 taskLog("找到" + findText_EN_US);
-                 button3.click();
-                 break; // 跳出循环
-             }else if(button4){
-                taskLog("找到" + findText_EN_UK);
-                button4.click();
-                break; // 跳出循环
-            }
-
-             sleep(1000)
-
-         }
-}
-
-
-
-//通过Button的Desc
-function find_btn_desc_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
-
-    var loopCount  = 0
-
-     while (true) {
-         taskLog(findText_ZH_CN + " - 循环寻找执行：" + (++loopCount));
-         // 检查计数器是否达到5
-         if (loopCount >= 5) {
-             // 打印一条消息并退出循环
-             taskLog("循环已执行5次，即将退出循环。");
-
-             //不能抛出异常，因为可能Facebook记忆功能，自动跳转到输入页面
-//                 throw new Error(findText_ZH_CN +"按钮没有找到");
-            break;
-         }
-
-
-         // 查找控件
-        //  var button1 = className("android.widget.Button").desc(findText_ZH_CN).findOne(1000);
-        //  var button2 = className("android.widget.Button").desc(findText_ZH_TW).findOne(1000);
-        //  var button3 = className("android.widget.Button").desc(findText_EN_US).findOne(1000);
-        var button1 = desc(findText_ZH_CN).findOne(1000);
-        var button2 = desc(findText_ZH_TW).findOne(1000);
-        var button3 = desc(findText_EN_US).findOne(1000);
-
-
-         if (button1) {
-             taskLog("找到" + findText_ZH_CN);
-             taskLog("找到button1 = " + button1.clickable() );
-             if(button1.clickable()) {
-                button1.click()
-                break; // 跳出循环
-             }else{
-                taskLog("找到button1 ，但是button1不可点击,所以根据坐标点击 " );
-
-                var X1 = button1.bounds().centerX();
-                var Y1 = button1.bounds().centerY();
-                // 验证 X 和 Y 是否为正数
-                if (X1 < 0 || Y1 < 0) {
-                    taskLog("坐标无效，中心点X或Y为负值: X=" + X + ", Y=" + Y);
-                    return
-                }
-                // 生成随机偏差
-                var _X1 = X1 - random(-2, 2);
-                var _Y1 = Y1 - random(-2, 2);
-                click(Math.max(0, _X1) , Math.max(0, _Y1))// 防止偏差导致负值
-
-                break; // 跳出循环
-
-
-             }
-         }else if(button2){
-             taskLog("找到" + findText_ZH_TW);
-             taskLog("找到button2 = " + button2.clickable() );
-             if(button2.clickable()) {
-                button2.click()
-             }else{
-                taskLog("找到button2 ，但是button2不可点击,所以根据坐标点击 " );
-
-                var X2 = button2.bounds().centerX();
-                var Y2 = button2.bounds().centerY();
-                // 验证 X 和 Y 是否为正数
-                if (X2 < 0 || Y2 < 0) {
-                    taskLog("坐标无效，中心点X或Y为负值: X=" + X2 + ", Y=" + Y2);
-                    return
-                }
-                // 生成随机偏差
-                var _X2 = X2 - random(-2, 2);
-                var _Y2 = Y2 - random(-2, 2);
-                click(Math.max(0, _X2) , Math.max(0, _Y2))// 防止偏差导致负值
-
-                break; // 跳出循环
-             }
-             break; // 跳出循环
-         }else if(button3){
-             taskLog("找到" + findText_EN_US);
-             taskLog("找到button3 = " + button3.clickable() );
-             if(button3.clickable()) {
-                button3.click()
-             }else{
-                taskLog("找到button3 ，但是button3不可点击,所以根据坐标点击 " );
-
-                var X3 = button3.bounds().centerX();
-                var Y3 = button3.bounds().centerY();
-                // 验证 X 和 Y 是否为正数
-                if (X3 < 0 || Y3 < 0) {
-                    taskLog("坐标无效，中心点X或Y为负值: X=" + X3 + ", Y=" + Y3);
-                    return
-                }
-                // 生成随机偏差
-                var _X3 = X3 - random(-2, 2);
-                var _Y3 = Y3 - random(-2, 2);
-                click(Math.max(0, _X3) , Math.max(0, _Y3))// 防止偏差导致负值
-
-             }
-             break; // 跳出循环
-         }
-
-         sleep(1000)
-
-     }
-}
 
 
 //强制停止TikTok 
@@ -836,9 +623,70 @@ function get_all_TT_comment_text(){
 try {
 
 
+
+    sleep(3000)
+    taskLog("准备检查TikTok是否已安装...")
+
+    if (isAppInstalled(GLOBAL_TikTokPackageName)) {
+        targetPackageName = GLOBAL_TikTokPackageName;
+        targetClassName = "com.ss.android.ugc.aweme.main.MainActivity";
+        taskLog("检测到已安装全球版TikTok，准备启动...");
+
+
+        sleep(random(3000, 5000))
+        taskLog("准备启动全球版TikTok...");
+        app.startActivity({
+            action: "android.intent.action.VIEW",
+            packageName: GLOBAL_TikTokPackageName,
+            className: "com.ss.android.ugc.aweme.main.MainActivity"
+        });
+
+
+        sleep(random(5000, 8000))
+        openAppSettings(GLOBAL_TikTokPackageName)
+        sleep(random(3000, 5000))
+
+        forceStop_APP(GLOBAL_TikTokPackageName)
+        sleep(3000)
+
+    } else if (isAppInstalled(ASIA_TikTokPackageName)) {
+        targetPackageName = ASIA_TikTokPackageName;
+        targetClassName = "com.ss.android.ugc.aweme.main.MainActivity";
+        taskLog("检测到已安装亚洲版TikTok，准备启动...");
+
+        sleep(random(3000, 5000))
+        taskLog("准备启动亚洲版TikTok...");
+        app.startActivity({
+            action: "android.intent.action.VIEW",
+            packageName: ASIA_TikTokPackageName,
+            className: "com.ss.android.ugc.aweme.main.MainActivity"
+        });
+
+
+        sleep(random(5000, 8000))
+        openAppSettings(ASIA_TikTokPackageName)
+        sleep(random(3000, 5000))
+
+        forceStop_APP(ASIA_TikTokPackageName)
+        sleep(3000)
+
+    } else {
+        toast("未检测到TikTok已安装，请先安装TikTok！");
+        taskLog("未检测到TikTok已安装，脚本终止。");
+        throw new Error("未检测到TikTok安装，脚本终止。");
+        
+    }
+
+
+    app.startActivity({
+        action: "android.intent.action.VIEW",
+        packageName: targetPackageName,
+        className: targetClassName
+    });
+
+
     taskStartTime = new Date().getTime();
     taskLog("任务开始时间：" + taskStartTime);
-
     
     var all_TT_comment_text = []
 
