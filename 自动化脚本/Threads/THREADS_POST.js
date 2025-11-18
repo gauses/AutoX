@@ -155,7 +155,13 @@ var CONFIG = {
             ZH_CN: "添加主题",//text("feeeeeeg �添加主题 ")
             ZH_TW: "新增主題", //text("feeeeeeg �新增主題 ")
             EN_US: "Add a topic" //text("feeeeeeg �Add a topic ")
-        }
+        },
+
+        POST_BUTTON: {
+            ZH_CN: "发布", //text("发布")
+            ZH_TW: "發佈", //text("發佈")
+            EN_US: "Post" //text("Post")
+        },
 
 
     },
@@ -1334,11 +1340,14 @@ try {
                                     sleep(random(3000, 5000))
 
                                     //选中图片之后，点击done ：className("android.widget.Button") text("Done") clickable("true")
+                                    //className("android.widget.TextView") text("完成") clickable("true")
                                     //繁体中文：text("完成")
-                                    var autoDoneButtonList = className("android.widget.Button").find();
-                                    taskLog("当前页面找到 " + autoButtonList.length + " 个Button按钮");
-                                    if(autoButtonList.length > 0){
-                                        for (let i = 0; i < autoButtonList.length; i++) {
+                                    var autoButtonList = className("android.widget.Button").find();
+                                    var autoTextViewList = className("android.widget.TextView").find();
+                                    var autoDoneButtonList = autoButtonList.concat(autoTextViewList);
+                                    taskLog("当前页面找到 " + autoButtonList.length + " 个Button按钮和 " + autoTextViewList.length + " 个TextView");
+                                    if(autoDoneButtonList.length > 0){
+                                        for (let i = 0; i < autoDoneButtonList.length; i++) {
                                             if(autoDoneButtonList[i].text() == "Done" || autoDoneButtonList[i].text() == "完成"){ 
                                                 taskLog("找到Done按钮，开始点击")
                                                 autoDoneButtonList[i].click()
@@ -1409,20 +1418,29 @@ try {
     sleep(random(5000, 8000))
 
 
-    //最后点击POST
+    //最后点击POST ,直接使用view，点击之后，直接回退到了整个home界面，所以换成语言
     //className("android.view.View")  fullId("new_thread_screen_post_button") clickable("false")
     var autoViewList = className("android.view.View").find();
     taskLog("当前页面找到 " + autoViewList.length + " 个View");
+
+    var foundPostButton = false
     if(autoViewList.length > 0){
         for (let i = 0; i < autoViewList.length; i++) {
-            if(autoViewList[i].id() == "new_thread_screen_post_button"){
+            var viewId = autoViewList[i].id();
+            taskLog("autoViewList[" + i + "] id = " + viewId);
+            if(viewId != null && viewId == "new_thread_screen_post_button"){
                 taskLog("找到POST按钮，开始点击")
                 click(autoViewList[i].bounds().centerX(), autoViewList[i].bounds().centerY())   
-                sleep(random(15000, 20000))
+                foundPostButton = true;
+                sleep(random(15000, 18000))
                 break;
             }
         }
     }
+
+
+    // findTextByLanguages(CONFIG.UI_TEXT.POST_BUTTON)
+    // sleep(random(30000, 35000))
 
 
     //最最后，删除整个临时文件夹
