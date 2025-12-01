@@ -68,145 +68,32 @@ function openFacebookLink_test(fbUrl){
     var openUrlFlag = false
 
     taskLog("准备打开链接 = " + fbUrl)
+    var intent = new android.content.Intent(android.content.Intent.ACTION_VIEW);
+    // intent.setData(android.net.Uri.parse("https://www.facebook.com/watch/huacemedia/")); //不行
+    // intent.setData(android.net.Uri.parse("https://www.facebook.com/samsul.ujex"));  //加好友，异常
+    // intent.setData(android.net.Uri.parse("https://www.facebook.com/share/r/1CdK7F3fRp/"));  //Reels -OK
+    // intent.setData(android.net.Uri.parse("https://www.facebook.com/groups/850798899131453/"));  //Group -OK
+    // intent.setData(android.net.Uri.parse("https://www.facebook.com/share/v/16cLEnDJoT/"));   //Live - OK
+    // intent.setData(android.net.Uri.parse("https://www.facebook.com/profile.php?id=100079449592509"));  //Friend - OK
+    // intent.setData(android.net.Uri.parse("https://www.facebook.com/share/v/14Dj3UQ6q2b/"));  //watch - OK（https://www.facebook.com/watch/?v=689492360538949&rdid=PU3MOv69wqSgVeh5）
     
-    // 优先处理：如果是 profile.php 格式，直接使用标准 Intent 方式
-    if(fbUrl.includes("profile.php")) {
-        taskLog("检测到 profile.php 格式链接，使用标准Intent方式")
-        var intent = new android.content.Intent(android.content.Intent.ACTION_VIEW);
-        intent.setData(android.net.Uri.parse(fbUrl));
-        intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
-        intent.setPackage("com.facebook.katana");
-        
-        try {
-            app.startActivity(intent);
-            sleep(3000) // 等待页面加载
-            // 验证是否真的打开了用户页面
-            if(checkUserPageLoaded()) {
-                openUrlFlag = true;
-                taskLog("profile.php链接打开成功并验证页面加载完成");
-                return openUrlFlag;
-            } else {
-                taskLog("profile.php链接打开但页面未正确加载");
-            }
-        } catch (e) {
-            taskLog("profile.php链接打开失败: " + e);
-        }
-        
-        return openUrlFlag;
+    intent.setData(android.net.Uri.parse(fbUrl));
+    intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+    intent.setPackage("com.facebook.katana");
+    try {
+        app.startActivity(intent);
+        openUrlFlag = true
+    } catch (e) {
+
+        // 如果 Facebook App 无法处理，则用浏览器打开
+        taskLog("Facebook无法处理该链接，所以跳过 = " + fbUrl);
+        // var browserIntent = new android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(fbUrl));
+        // browserIntent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+        // app.startActivity(browserIntent);
+        // openUrlFlag = true
     }
-    
-    // 检测是否为用户名格式的链接（不包含特殊路径）
-    if(fbUrl.includes("facebook.com/") && 
-       !fbUrl.includes("profile.php") && 
-       !fbUrl.includes("share/") && 
-       !fbUrl.includes("groups/") &&
-       !fbUrl.includes("watch/")) {
-        
-        // 提取用户名
-        var username = fbUrl.split("facebook.com/")[1].split("?")[0].replace(/\//g, "");
-        taskLog("检测到用户名格式链接，用户名: " + username)
-        
-        // 方法1：尝试使用深度链接
-        taskLog("尝试方法1: 使用深度链接 fb://profile")
-        var deepLinkIntent = new android.content.Intent(android.content.Intent.ACTION_VIEW);
-        deepLinkIntent.setData(android.net.Uri.parse("fb://profile/" + username));
-        deepLinkIntent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
-        deepLinkIntent.setPackage("com.facebook.katana");
-        
-        try {
-            app.startActivity(deepLinkIntent);
-            sleep(3000) // 等待页面加载
-            // 验证是否真的打开了用户页面
-            if(checkUserPageLoaded()) {
-                openUrlFlag = true;
-                taskLog("深度链接打开成功并验证页面加载完成");
-                return openUrlFlag;
-            } else {
-                taskLog("深度链接打开但页面未正确加载");
-            }
-        } catch (e) {
-            taskLog("深度链接方法失败: " + e);
-        }
-        
-        // 方法2：尝试使用 fb://facewebmodal 打开
-        taskLog("尝试方法2: 使用 fb://facewebmodal")
-        var webModalIntent = new android.content.Intent(android.content.Intent.ACTION_VIEW);
-        webModalIntent.setData(android.net.Uri.parse("fb://facewebmodal/f?href=" + encodeURIComponent(fbUrl)));
-        webModalIntent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
-        webModalIntent.setPackage("com.facebook.katana");
-        
-        try {
-            app.startActivity(webModalIntent);
-            sleep(3000)
-            if(checkUserPageLoaded()) {
-                openUrlFlag = true;
-                taskLog("WebModal方法打开成功");
-                return openUrlFlag;
-            } else {
-                taskLog("WebModal方法打开但页面未正确加载");
-            }
-        } catch (e) {
-            taskLog("WebModal方法失败: " + e);
-        }
-        
-        // 方法3：尝试使用标准 Intent 打开
-        taskLog("尝试方法3: 使用标准Intent方式")
-        var intent = new android.content.Intent(android.content.Intent.ACTION_VIEW);
-        intent.setData(android.net.Uri.parse(fbUrl));
-        intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
-        intent.setPackage("com.facebook.katana");
-        
-        try {
-            app.startActivity(intent);
-            sleep(3000) // 等待页面加载
-            // 验证是否真的打开了用户页面
-            if(checkUserPageLoaded()) {
-                openUrlFlag = true;
-                taskLog("标准Intent打开成功并验证页面加载完成");
-                return openUrlFlag;
-            } else {
-                taskLog("标准Intent打开但页面未正确加载");
-            }
-        } catch (e) {
-            taskLog("标准Intent方法失败: " + e);
-        }
-    }
-    
-    // 所有方法都失败
-    taskLog("所有方法都失败，跳过链接 = " + fbUrl);
+
     return openUrlFlag
-}
-
-
-// 验证用户页面是否正确加载
-function checkUserPageLoaded() {
-    taskLog("验证页面是否正确加载...")
-    sleep(2000)
-    
-    // 检查是否存在关注/追蹤/讚按钮（说明是用户页面）
-    var followBtn = className("android.widget.Button").desc("追蹤").exists() ||
-                    className("android.widget.Button").desc("Follow").exists() ||
-                    className("android.widget.Button").desc("讚").exists() ||
-                    className("android.widget.Button").desc("Like").exists() ||
-                    className("android.view.View").desc("追蹤").exists() ||
-                    className("android.view.View").desc("Follow").exists() ||
-                    className("android.view.View").desc("Like").exists() ||
-                    //text("Add friend") 
-                    className("android.view.View").desc("Add friend").exists() ||
-                    className("android.widget.Button").desc("Add friend").exists() ||
-                    // desc("加朋友")
-                    className("android.view.View").desc("加朋友").exists() ||
-                    className("android.widget.Button").desc("加朋友").exists()
-                    
-
-    
-    if(followBtn) {
-        taskLog("页面验证成功：找到追蹤/讚按钮")
-        return true
-    }
-    
-    taskLog("页面验证失败：未找到追蹤/讚按钮")
-    return false
 }
 
 
@@ -277,19 +164,6 @@ app.startActivity({
                 //测试：https://www.facebook.com/profile.php?id=100070600397434
                 //className("android.view.View").text("Add friend").findOne().click()
                 //className("android.widget.Button") desc("Add friend")
-
-
-                var add_friend = find_btn_desc_base("加朋友","Add friend","Add friend")
-                if(add_friend){
-                    taskLog("已经点击加朋友")
-                    sleep(random(3000, 5000))
-                    taskLog("开始模拟滑动")
-                    swipe_up()
-                }else{
-                    taskLog("没有找到加朋友按钮")
-                }
-                sleep(random(3000, 5000))
-
 
                 var follow = find_btn_desc_base("追蹤","Follow","Follow")
                 if(follow){
