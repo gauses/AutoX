@@ -61,120 +61,140 @@ function throw_error_storage_not_enough(){
     throw new Error("当前设备的存储空间不可用，请关机重启一次设备，然后重新执行一次脚本")
 }
 
+
+const FORCE_STOP_TEXT = {
+    ZH_CN: "强行停止",    // 简体中文
+    ZH_TW: "強制停止",    // 繁体中文
+    EN_US: "FORCE STOP"   // 英文
+};
+
+// 定义确认按钮文本
+const FORCE_STOP_CONFIRM_TEXT = {
+    ZH_CN: "确定",      // 简体中文
+    ZH_TW: "確定",      // 繁体中文
+    EN_US: "OK"         // 英文
+};
+
+const ADD_FRIEND_TEXT = {
+    ZH_CN: "加朋友",    // 简体中文
+    ZH_TW: "加朋友",    // 繁体中文
+    EN_US: "Add friend"   // 英文
+};
+
+const FOLLOW_TEXT = {
+    ZH_CN: "追蹤",    // 简体中文
+    ZH_TW: "追蹤",    // 繁体中文
+    EN_US: "Follow"   // 英文
+};
+
+const LIKE_TEXT = {
+    ZH_CN: "讚",    // 简体中文
+    ZH_TW: "讚",    // 繁体中文
+    EN_US: "Like"   // 英文
+};
+
+// 通过语言对象查找文本
+function findTextByLanguages(languageObject) {
+    for (let lang in languageObject) {
+        let targetText = languageObject[lang];
+        // 如果targetText是数组，遍历数组中的每个文本
+        if (Array.isArray(targetText)) {
+            for (let text_item of targetText) {
+                if (text(text_item).exists()) {
+                    taskLog("找到文本：" + text_item);
+                    let element = text(text_item).findOne();
+                    if (element && element.clickable()) {
+                        element.click();
+                        return true;
+                    } else if (element) {
+                        // 如果元素存在但不可点击，尝试点击其坐标
+                        let bounds = element.bounds();
+                        click(bounds.centerX(), bounds.centerY());
+                        return true;
+                    }
+                }
+            }
+        } else {
+            // 原来的单个文本处理逻辑
+            if (text(targetText).exists()) {
+                taskLog("找到文本：" + targetText);
+                let element = text(targetText).findOne();
+                if (element && element.clickable()) {
+                    element.click();
+                    return true;
+                } else if (element) {
+                    // 如果元素存在但不可点击，尝试点击其坐标
+                    let bounds = element.bounds();
+                    click(bounds.centerX(), bounds.centerY());
+                    return true;
+                }
+            }
+        }
+    }
+    taskLog("未找到任何匹配的文本");
+    return false;
+}
+
 function openFacebookLink_test(fbUrl){
-
-
-    //是否打开成功，如果打开失败，那么直接进行下一个任务
-    var openUrlFlag = false
-
     taskLog("准备打开链接 = " + fbUrl)
     
-    // 优先处理：如果是 profile.php 格式，直接使用标准 Intent 方式
-    if(fbUrl.includes("profile.php")) {
-        taskLog("检测到 profile.php 格式链接，使用标准Intent方式")
-        var intent = new android.content.Intent(android.content.Intent.ACTION_VIEW);
-        intent.setData(android.net.Uri.parse(fbUrl));
-        intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
-        intent.setPackage("com.facebook.katana");
-        
+    // 通用的打开方法
+    function tryOpenUrl(uri, methodName) {
+        taskLog("尝试方法: " + methodName)
         try {
+            var intent = new android.content.Intent(android.content.Intent.ACTION_VIEW);
+            intent.setData(android.net.Uri.parse(uri));
+            intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+            intent.setPackage("com.facebook.katana");
+            
             app.startActivity(intent);
             sleep(3000) // 等待页面加载
-            // 验证是否真的打开了用户页面
+            
             if(checkUserPageLoaded()) {
-                openUrlFlag = true;
-                taskLog("profile.php链接打开成功并验证页面加载完成");
-                return openUrlFlag;
+                taskLog(methodName + "打开成功并验证页面加载完成");
+                return true;
             } else {
-                taskLog("profile.php链接打开但页面未正确加载");
+                taskLog(methodName + "打开但页面未正确加载");
             }
         } catch (e) {
-            taskLog("profile.php链接打开失败: " + e);
+            taskLog(methodName + "失败: " + e);
         }
-        
-        return openUrlFlag;
+        return false;
     }
     
-    // 检测是否为用户名格式的链接（不包含特殊路径）
+    // profile.php 格式，直接使用标准 Intent
+    if(fbUrl.includes("profile.php")) {
+        taskLog("检测到 profile.php 格式链接")
+        return tryOpenUrl(fbUrl, "标准Intent");
+    }
+    
+    // 用户名格式链接（不包含特殊路径）
     if(fbUrl.includes("facebook.com/") && 
        !fbUrl.includes("profile.php") && 
        !fbUrl.includes("share/") && 
        !fbUrl.includes("groups/") &&
        !fbUrl.includes("watch/")) {
         
-        // 提取用户名
         var username = fbUrl.split("facebook.com/")[1].split("?")[0].replace(/\//g, "");
         taskLog("检测到用户名格式链接，用户名: " + username)
         
-        // 方法1：尝试使用深度链接
-        taskLog("尝试方法1: 使用深度链接 fb://profile")
-        var deepLinkIntent = new android.content.Intent(android.content.Intent.ACTION_VIEW);
-        deepLinkIntent.setData(android.net.Uri.parse("fb://profile/" + username));
-        deepLinkIntent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
-        deepLinkIntent.setPackage("com.facebook.katana");
+        // 依次尝试3种方法
+        var methods = [
+            { uri: "fb://profile/" + username, name: "深度链接" },
+            { uri: "fb://facewebmodal/f?href=" + encodeURIComponent(fbUrl), name: "WebModal" },
+            { uri: fbUrl, name: "标准Intent" }
+        ];
         
-        try {
-            app.startActivity(deepLinkIntent);
-            sleep(3000) // 等待页面加载
-            // 验证是否真的打开了用户页面
-            if(checkUserPageLoaded()) {
-                openUrlFlag = true;
-                taskLog("深度链接打开成功并验证页面加载完成");
-                return openUrlFlag;
-            } else {
-                taskLog("深度链接打开但页面未正确加载");
+        for(var i = 0; i < methods.length; i++) {
+            if(tryOpenUrl(methods[i].uri, methods[i].name)) {
+                return true;
             }
-        } catch (e) {
-            taskLog("深度链接方法失败: " + e);
-        }
-        
-        // 方法2：尝试使用 fb://facewebmodal 打开
-        taskLog("尝试方法2: 使用 fb://facewebmodal")
-        var webModalIntent = new android.content.Intent(android.content.Intent.ACTION_VIEW);
-        webModalIntent.setData(android.net.Uri.parse("fb://facewebmodal/f?href=" + encodeURIComponent(fbUrl)));
-        webModalIntent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
-        webModalIntent.setPackage("com.facebook.katana");
-        
-        try {
-            app.startActivity(webModalIntent);
-            sleep(3000)
-            if(checkUserPageLoaded()) {
-                openUrlFlag = true;
-                taskLog("WebModal方法打开成功");
-                return openUrlFlag;
-            } else {
-                taskLog("WebModal方法打开但页面未正确加载");
-            }
-        } catch (e) {
-            taskLog("WebModal方法失败: " + e);
-        }
-        
-        // 方法3：尝试使用标准 Intent 打开
-        taskLog("尝试方法3: 使用标准Intent方式")
-        var intent = new android.content.Intent(android.content.Intent.ACTION_VIEW);
-        intent.setData(android.net.Uri.parse(fbUrl));
-        intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
-        intent.setPackage("com.facebook.katana");
-        
-        try {
-            app.startActivity(intent);
-            sleep(3000) // 等待页面加载
-            // 验证是否真的打开了用户页面
-            if(checkUserPageLoaded()) {
-                openUrlFlag = true;
-                taskLog("标准Intent打开成功并验证页面加载完成");
-                return openUrlFlag;
-            } else {
-                taskLog("标准Intent打开但页面未正确加载");
-            }
-        } catch (e) {
-            taskLog("标准Intent方法失败: " + e);
         }
     }
     
     // 所有方法都失败
     taskLog("所有方法都失败，跳过链接 = " + fbUrl);
-    return openUrlFlag
+    return false;
 }
 
 
@@ -251,7 +271,6 @@ app.startActivity({
 });
 
 
-
     var all_friends = get_all_friedns()
     if(all_friends.includes("$${T")){ 
         throw_error_storage_not_enough()
@@ -279,43 +298,38 @@ app.startActivity({
                 //className("android.widget.Button") desc("Add friend")
 
 
-                var add_friend = find_btn_desc_base("加朋友","Add friend","Add friend")
+                var add_friend = findTextByLanguages(ADD_FRIEND_TEXT)
                 if(add_friend){
-                    taskLog("已经点击加朋友")
-                    sleep(random(3000, 5000))
-                    taskLog("开始模拟滑动")
-                    swipe_up()
+                    taskLog("已点击加朋友按钮")
                 }else{
                     taskLog("没有找到加朋友按钮")
                 }
-                sleep(random(3000, 5000))
 
-
-                var follow = find_btn_desc_base("追蹤","Follow","Follow")
+                var follow = findTextByLanguages(FOLLOW_TEXT)
                 if(follow){
-                    taskLog("已经点击追蹤好友")    
-                    sleep(random(3000, 5000))
-                    taskLog("开始模拟滑动")
-                    swipe_up()
+                    taskLog("已点击追蹤按钮")    
                 }else{
                     taskLog("没有找到追蹤按钮")
+                }
 
-                    //测试：https://www.facebook.com/profile.php?id=100083184186096
-                    //className("android.view.View").text("Follow").findOne().click()
-                    //desc("追蹤")
-                    var like = find_btn_desc_base("讚","Like","Like") 
-                    if(like){
-                        taskLog("已经点击讚好友")
-                        sleep(random(3000, 5000))
-                        taskLog("开始模拟滑动")
-                        swipe_up()
-                    }else{
-                        taskLog("没有找到讚按钮") 
-                        sleep(random(3000, 5000))
-                    }   
-                    sleep(random(3000, 5000))
 
-                } 
+                var like = findTextByLanguages(LIKE_TEXT) 
+                if(like){
+                    taskLog("已点击讚按钮")
+                }else{
+                    taskLog("没有找到讚按钮") 
+                }   
+
+
+                sleep(random(3000, 5000))
+                taskLog("开始模拟滑动")
+                swipe_up()
+                sleep(random(5000, 8000))
+
+
+
+
+
             }else{
                 taskLog("打开链接失败，跳过 = " + friend_info_link)
             }
@@ -416,132 +430,7 @@ function stopCurrentTask(){
 }
 
 
-//通过Button的Text
-function find_btn_Text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
 
-        var loopCount  = 0
-
-         while (true) {
-             taskLog(findText_ZH_CN + " - 循环寻找执行：" + (++loopCount));
-             // 检查计数器是否达到3
-             if (loopCount >= 3) {
-                 // 打印一条消息并退出循环
-                 taskLog("寻找" + findText_ZH_CN + "按钮失败");
-                 taskLog("循环已执行3次，即将退出循环。");
-
-                 //不能抛出异常，因为可能Facebook记忆功能，自动跳转到输入页面
-//                 throw new Error(findText_ZH_CN +"按钮没有找到");
-                break;
-             }
-
-
-             // 查找控件
-             var button1 = className("android.widget.Button").text(findText_ZH_CN).findOne(1000);
-             var button2 = className("android.widget.Button").text(findText_ZH_TW).findOne(1000);
-             var button3 = className("android.widget.Button").text(findText_EN_US).findOne(1000);
-             if (button1) {
-                 taskLog("找到" + findText_ZH_CN);
-                 button1.click();
-                 break; // 跳出循环
-             }else if(button2){
-                 taskLog("找到" + findText_ZH_TW);
-                 button2.click();
-                 break; // 跳出循环
-             }else if(button3){
-                 taskLog("找到" + findText_EN_US);
-                 button3.click();
-                 break; // 跳出循环
-             }
-
-             sleep(1000)
-
-         }
-}
-
-
-
-//通过Button的Desc
-function find_btn_desc_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
-
-        var findBtn = false
-
-        var loopCount  = 0
-
-         while (true) {
-             taskLog(findText_ZH_CN + " - 循环寻找执行：" + (++loopCount));
-             // 检查计数器是否达到3
-             if (loopCount >= 3) {
-                 // 打印一条消息并退出循环
-                 taskLog("寻找" + findText_ZH_CN + "按钮失败");
-                 taskLog("循环已执行3次，即将退出循环。");
-
-                 //不能抛出异常，因为可能Facebook记忆功能，自动跳转到输入页面
-//                 throw new Error(findText_ZH_CN +"按钮没有找到");
-                break;
-             }
-
-
-             // 查找控件
-             var button1 = className("android.widget.Button").desc(findText_ZH_CN).findOne(1000);
-             var button2 = className("android.widget.Button").desc(findText_ZH_TW).findOne(1000);
-             var button3 = className("android.widget.Button").desc(findText_EN_US).findOne(1000);
-             if (button1) {
-                 findBtn = true
-                 taskLog("找到" + findText_ZH_CN);
-                 button1.click();
-                 break; // 跳出循环
-             }else if(button2){
-                 findBtn = true
-                 taskLog("找到" + findText_ZH_TW);
-                 button2.click();
-                 break; // 跳出循环
-             }else if(button3){
-                 findBtn = true
-                 taskLog("找到" + findText_EN_US);
-                 button3.click();
-                 break; // 跳出循环
-             }
-
-             sleep(1000)
-
-         }
-
-         return findBtn
-
-}
-
-
-//从好友列表数组中，顺序挑选一条内容
-function get_post_text(){
-    // 用于存储私信用户的数组
-    let comments = [];
-    // 私信用户是否存在
-    taskLog("私信用户地址 =  " + FB_input_Page_text)
-    const file = new java.io.File(FB_input_Page_text);
-    if (file.exists() && file.isFile()) {
-        try {
-            // 读取文件内容
-            const reader = new java.io.BufferedReader(new java.io.FileReader(file));
-            let line;
-            while ((line = reader.readLine()) !== null) {
-                comments.push(line);
-            }
-            reader.close();
-        } catch (e) {
-            taskLog("读取文件时发生错误：" + e.message);
-        }
-    } else {
-        // 如果文件不存在，将文件名添加到数组中
-        comments.push(FB_input_Page_text);
-    }
-    
-    // 使用顺序索引获取消息
-    var messageText = comments[commentIndex % comments.length];
-    // 增加索引计数
-    commentIndex++;
-    
-    return messageText
-}
 
 
 
@@ -578,284 +467,46 @@ function get_all_friedns(){
 
 
 
-function openBrowser(url){
-
-    app.startActivity({
-        action: "android.intent.action.VIEW",
-        data: url,
-        packageName: chromePackageName,
-        className: "org.chromium.chrome.browser.ChromeTabbedActivity",
-        flags: [
-          "activity_new_task",
-          "activity_clear_top"
-          ],
-      extras: {
-          // 设置打开方式偏好
-          "browser.application_id": FacebookPackageName,  
-          "create_new_tab": true,
-          "open_in_external_app": true
-      }
-      });
-}
 
 
-//通过TextView的text
-function find_textview_text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
-
-    //是否找到该TextView，找到：true / 未找到：false
-    var findText_result = false
-
-
-    var loopCount  = 0
-
-     while (true) {
-         taskLog(findText_ZH_CN + " - 循环寻找执行：" + (++loopCount));
-         // 检查计数器是否达到3
-         if (loopCount >= 3) {
-             // 打印一条消息并退出循环
-             taskLog("循环已执行3次，即将退出循环。");
-
-             //不能抛出异常，因为可能Facebook记忆功能，自动跳转到输入页面
-//                 throw new Error(findText_ZH_CN +"按钮没有找到");
-            break;
-         }
-
-         // 查找控件
-        var button1 = className("android.widget.TextView").text(findText_ZH_CN).findOne(1000);
-        var button2 = className("android.widget.TextView").text(findText_ZH_TW).findOne(1000);
-        var button3 = className("android.widget.TextView").text(findText_EN_US).findOne(1000);
-
-        if (button1) {
-            taskLog("找到" + findText_ZH_CN);
-            taskLog("找到button1 = " + button1.clickable() );
-            if(button1.clickable()) {
-               button1.click()
-               break; // 跳出循环
-            }else{
-               taskLog("找到button1 ，但是button1不可点击,所以根据坐标点击 " );
-
-               var X1 = button1.bounds().centerX();
-               var Y1 = button1.bounds().centerY();
-               // 验证 X 和 Y 是否为正数
-               if (X1 < 0 || Y1 < 0) {
-                   taskLog("坐标无效，中心点X或Y为负值: X=" + X + ", Y=" + Y);
-                   return
-               }
-               // 生成随机偏差
-               var _X1 = X1 - random(-2, 2);
-               var _Y1 = Y1 - random(-2, 2);
-               click(Math.max(0, _X1) , Math.max(0, _Y1))// 防止偏差导致负值
-
-               break; // 跳出循环
-
-
-            }
-        }else if(button2){
-            taskLog("找到" + findText_ZH_TW);
-            taskLog("找到button2 = " + button2.clickable() );
-            if(button2.clickable()) {
-               button2.click()
-            }else{
-               taskLog("找到button2 ，但是button2不可点击,所以根据坐标点击 " );
-
-               var X2 = button2.bounds().centerX();
-               var Y2 = button2.bounds().centerY();
-               // 验证 X 和 Y 是否为正数
-               if (X2 < 0 || Y2 < 0) {
-                   taskLog("坐标无效，中心点X或Y为负值: X=" + X2 + ", Y=" + Y2);
-                   return
-               }
-               // 生成随机偏差
-               var _X2 = X2 - random(-2, 2);
-               var _Y2 = Y2 - random(-2, 2);
-               click(Math.max(0, _X2) , Math.max(0, _Y2))// 防止偏差导致负值
-
-               break; // 跳出循环
-            }
-            break; // 跳出循环
-        }else if(button3){
-            taskLog("找到" + findText_EN_US);
-            taskLog("找到button3 = " + button3.clickable() );
-            if(button3.clickable()) {
-               button3.click()
-            }else{
-               taskLog("找到button3 ，但是button3不可点击,所以根据坐标点击 " );
-
-               var X3 = button3.bounds().centerX();
-               var Y3 = button3.bounds().centerY();
-               // 验证 X 和 Y 是否为正数
-               if (X3 < 0 || Y3 < 0) {
-                   taskLog("坐标无效，中心点X或Y为负值: X=" + X3 + ", Y=" + Y3);
-                   return
-               }
-               // 生成随机偏差
-               var _X3 = X3 - random(-2, 2);
-               var _Y3 = Y3 - random(-2, 2);
-               click(Math.max(0, _X3) , Math.max(0, _Y3))// 防止偏差导致负值
-
-            }
-            break; // 跳出循环
-        }
-         sleep(1000)
-
-     }
-     return findText_result
-}
-
-
-//通过Button的Desc
-function find_view_desc_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
-
-    var findBtn = false
-
-    var loopCount  = 0
-
-     while (true) {
-         taskLog(findText_ZH_CN + " - 循环寻找执行：" + (++loopCount));
-         // 检查计数器是否达到3
-         if (loopCount >= 3) {
-             // 打印一条消息并退出循环
-             taskLog("寻找" + findText_ZH_CN + "按钮失败");
-             taskLog("循环已执行3次，即将退出循环。");
-
-             //不能抛出异常，因为可能Facebook记忆功能，自动跳转到输入页面
-//                 throw new Error(findText_ZH_CN +"按钮没有找到");
-            break;
-         }
-
-
-         // 查找控件
-         var button1 = className("android.view.View").desc(findText_ZH_CN).findOne(1000);
-         var button2 = className("android.view.View").desc(findText_ZH_TW).findOne(1000);
-         var button3 = className("android.view.View").desc(findText_EN_US).findOne(1000);
-         if (button1) {
-             findBtn = true
-             taskLog("找到" + findText_ZH_CN);
-             click(button1.bounds().centerX() , button1.bounds().centerY())
-             break; // 跳出循环
-         }else if(button2){
-             findBtn = true
-             taskLog("找到" + findText_ZH_TW);
-             click(button2.bounds().centerX() , button2.bounds().centerY())
-             break; // 跳出循环
-         }else if(button3){
-             findBtn = true
-             taskLog("找到" + findText_EN_US);
-             click(button3.bounds().centerX() , button3.bounds().centerY())
-             break; // 跳出循环
-         }
-
-         sleep(1000)
-
-     }
-
-     return findBtn
-
-}
-
-//在加好友之后，可能会跳转到一个新页面，这个页面是推荐你add friend，需要点击back返回
-function check_add_friend_page(){
-    //检查页面是否存在“Add friend”按钮 :desc("Add friend")
-    var add_friends_viewGroup = className("android.view.ViewGroup").desc("Add friend").find()
-    taskLog("当前页面所有viewGroup = " + add_friends_viewGroup.length)
-
-    if(add_friends_viewGroup.length > 1){
-        taskLog("当前页面存在add_friends_viewGroup")
-        back()
-    }else{
-        taskLog("当前页面不存在add_friends_viewGroup")
-    }
-
-}
-
-
-
-
-//强制停止TikTok 
+//强制停止 
 function forceStop_APP(packageName){
     taskLog("准备强杀:" + packageName + "...")
-    sleep(1000);
+    sleep(3000);
     openAppSettings(packageName)
     sleep(5000)
 
-    //繁体
-    if (text("強行停止").exists()) {
-        let forceStopBtn = text("強行停止").findOne();
-        if (forceStopBtn && forceStopBtn.clickable()) {
-            forceStopBtn.click();
-            sleep(1000);
-            // 确认操作
-            if (text("確定").exists()) {
-                taskLog("已经找到可点击的‘強行停止’按钮！！！！！！！！！！");
-                text("確定").findOne().click();
+    // 遍历所有可能的强制停止按钮文本
+    for (let lang in FORCE_STOP_TEXT) {
+        let stopText = FORCE_STOP_TEXT[lang];
+        if (text(stopText).exists()) {
+            let forceStopBtn = text(stopText).findOne();
+            if (forceStopBtn && forceStopBtn.clickable()) {
+                forceStopBtn.click();
+                sleep(1000);
+                
+                // 遍历所有可能的确认按钮文本
+                for (let confirmLang in FORCE_STOP_CONFIRM_TEXT) {
+                    let confirmText = FORCE_STOP_CONFIRM_TEXT[confirmLang];
+                    if (text(confirmText).exists()) {
+                        text(confirmText).findOne().click();
+                        taskLog("成功点击'" + stopText + "'按钮并确认");
+                        sleep(3000);
+                        home();
+                        return;
+                    }
+                }
+            } else {
+                taskLog("未找到可点击的'" + stopText + "'按钮");
             }
         } else {
-            taskLog("未找到可点击的‘強制停止’按钮");
+            taskLog("未找到'" + stopText + "'按钮");
         }
-    } else {
-        taskLog("未找到‘強制停止’按钮");
-    }
-    sleep(3000)
-
-    //简体
-    if (text("强行停止").exists()) {
-        let forceStopBtn = text("强行停止").findOne();
-        if (forceStopBtn && forceStopBtn.clickable()) {
-            forceStopBtn.click();
-            sleep(1000);
-            // 确认操作
-            if (text("确定").exists()) {
-                text("确定").findOne().click();
-            }
-        } else {
-            taskLog("未找到可点击的‘强行停止’按钮");
-        }
-    } else {
-        taskLog("未找到‘强行停止’按钮");
+        sleep(1000);
     }
 
-    sleep(3000)
-
-
-    //英语
-    if (text("Force stop").exists()) {
-        let forceStopBtn = text("Force stop").findOne();
-        if (forceStopBtn && forceStopBtn.clickable()) {
-            forceStopBtn.click();
-            sleep(1000);
-            // 确认操作
-            if (text("OK").exists()) {
-                text("OK").findOne().click();
-            }
-        } else {
-            taskLog("未找到可点击的‘Force stop’按钮");
-        }
-    } else {
-        taskLog("未找到‘Force stop’按钮");
-    }
-    sleep(3000)
-
-    //英语
-    if (text("FORCE STOP").exists()) {
-        let forceStopBtn = text("FORCE STOP").findOne();
-        if (forceStopBtn && forceStopBtn.clickable()) {
-            forceStopBtn.click();
-            sleep(1000);
-            // 确认操作
-            if (text("OK").exists()) {
-                text("OK").findOne().click();
-            }
-        } else {
-            taskLog("未找到可点击的‘FORCE STOP’按钮");
-        }
-    } else {
-        taskLog("未找到‘FORCE STOP’按钮");
-    }
-    sleep(3000)
-
-
-    home()
-
+    // 如果所有语言都尝试失败，返回主页
+    home();
 }
 
 
