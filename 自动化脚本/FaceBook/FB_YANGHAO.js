@@ -579,46 +579,42 @@ try{
 
     for(let currentLoop = 1; currentLoop <= loopTimes; currentLoop++) {
         toast("开始第 " + currentLoop + "/" + loopTimes + " 次执行");    
-        sleep(random(3000, 5000))
+        // sleep(random(3000, 5000))
     
         
         // if(currentLoop % 5 == 0){
         //     random_jump_pages()
         // }
-        jump_to_home_page()
+        // jump_to_home_page()
     
     
         toast("开始模拟滑动")
         swipe_up()
     
     
-        sleep(5000)
+        // sleep(5000)
     
         //检查是不是有点赞按钮
-        var likeBtnList = className("android.view.ViewGroup").find();
+        var likeBtnList = className("android.widget.Button").find();
         if(likeBtnList.size() > 0){
             for(var i = 0; i < likeBtnList.size(); i++) {
                 var likeBtn = likeBtnList.get(i);
                 if(likeBtn){
-                    if (likeBtn.desc() == "Like" || likeBtn.desc() == "讚" || likeBtn.desc() == "Like" )  {
-    
+                    var descText = likeBtn.desc() || "";
+                    if (Object.values(LIKE_TEXT).some(text => descText.startsWith(text)))  {
+
+
+                        total_success++
                         if (Math.random() * 100 < FB_Like_Count)  {
                             taskLog("开始触发点赞概率")
                             click(likeBtn.bounds().centerX() , likeBtn.bounds().centerY())  
-                            sleep(random(3000, 5000))
+                            sleep(random(2000, 4000))
                         }else{
                             taskLog("虽然找到点赞按钮，没有触发点赞概率")
                         }
 
-
-                        total_success++
-                        toast("成功点赞次数：" + total_success + "/" + total_target)
-                        Nest_ScreenCapture()
-                        sleep(random(3000, 5000))
-                                    
     
-    
-                    }else if(likeBtn.desc() == "Comment" || likeBtn.desc() == "留言" || likeBtn.desc() == "Comment"){
+                    }else if(Object.values(COMMENT_TEXT).some(text => descText.startsWith(text))){
     
                         if (Math.random() * 100 < FB_Comment_Count)  { 
     
@@ -635,7 +631,7 @@ try{
                                         var messageText = commentTextArrays[randIdx];
                             
                                         toast("评论文案：" + messageText)
-                                        sleep(random(5000, 8000))
+                                        sleep(random(2000, 3000))
                             
                                         var autoCompleteTextViews = className("android.widget.AutoCompleteTextView").find();
                                         if(autoCompleteTextViews.size() > 0 ){
@@ -643,27 +639,27 @@ try{
                                                 var textView = autoCompleteTextViews.get(i);
                                                 if(textView) {
                                                     taskLog("找到AutoCompleteTextView控件-Text："+ textView.text());
-                                                    sleep(2000)
+                                                    sleep(random(1000, 2000))
                                                     textView.setText(messageText)
                                                 }
                                             }
                                         }
                                 
                                         //发送
-                                        sleep(5000)
+                                        sleep(random(2000, 3000))
                                         findTextByLanguages(SEND_TEXT)
             
-                                        sleep(5000)
+                                        sleep(random(3000, 5000))
                                         back() //键盘收起
-                                        sleep(1000)
+                                        sleep(random(2000, 3000))
                                         back() //返回上一个页面
             
                                     }else{
-                                        toast("评论文案为空，所以不点击评论按钮");
+                                        taskLog("评论文案为空，所以不点击评论按钮");
                                     }
     
                                 }else{
-                                    toast("没有填写输入内容或者输入内容有误，所以跳过输入内容")
+                                    taskLog("没有填写输入内容或者输入内容有误，所以跳过输入内容")
                                 }
     
     
@@ -687,12 +683,14 @@ try{
     
         if(currentLoop < loopTimes) {
             taskLog("等待5秒后开始下一次循环...");
-            toast("等待5秒后开始下一次循环...");
             sleep(5000);
         }
+        
     }
     
     taskLog("所有循环执行完毕，准备结束任务...");
+    Nest_ScreenCapture()
+    sleep(random(3000, 5000))
 
 
 } catch(e) {
