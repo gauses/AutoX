@@ -603,8 +603,9 @@ try{
                     var descText = likeBtn.desc() || "";
                     if (Object.values(LIKE_TEXT).some(text => descText.startsWith(text)))  {
 
-
                         total_success++
+                        taskLog("通过点赞按钮，检查total_success = " + total_success )
+
                         if (Math.random() * 100 < FB_Like_Count)  {
                             taskLog("开始触发点赞概率")
                             click(likeBtn.bounds().centerX() , likeBtn.bounds().centerY())  
