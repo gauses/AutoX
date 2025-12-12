@@ -15,6 +15,7 @@ var taskLogFileName = "nest_task_log.txt"
 var taskLogImgName = "nest_task_log.png"
 
 
+
 //用户需要输入的评论内容
 const FB_Like_Count = "$${點讚概率}" //点赞概率
 const FB_Comment_Count = "$${留言概率}" //评论概率
@@ -132,23 +133,36 @@ function throw_error_storage_not_enough(){
 //出现异常错误时，打印的日志错误信息
 var handleErrorFlag = false //默认没有错误，如果出现异常，那么该值是true
 
-// 注册退出事件监听器
-// 注册退出事件监听器
-events.on('exit', function(){
-    console.hide()
-    sleep(1000)
+// // 注册退出事件监听器
+// events.on('exit', function(){
 
-    if(handleErrorFlag){
-        taskLogError("-----------------脚本执行出现异常---------------");
-        taskLogError("Facebook首页点赞 + 留言---------------");
-        taskLogError("脚本执行时间：" + new Date().toLocaleString());
-    }else{
-        taskLog("-----------------脚本功能执行结束：---------------");
-        taskLog("Facebook首页点赞 + 留言---------------");
-        taskLog("脚本执行时间：" + new Date().toLocaleString());
-    }
-    openLogActivity();
-});
+//     taskLog("脚本执行结束，准备关闭日志窗口...");
+//     // openLogActivity();
+    
+//     console.hide()
+//     sleep(1000)
+
+//     if(handleErrorFlag){
+//         taskLogError("-----------------脚本执行出现异常---------------");
+//         taskLogError("Facebook首页点赞 + 留言---------------");
+//         taskLogError("脚本执行时间：" + new Date().toLocaleString());
+//     }else{
+//         taskLog("-----------------脚本功能执行结束：---------------");
+//         taskLog("Facebook首页点赞 + 留言---------------");
+//         taskLog("脚本执行时间：" + new Date().toLocaleString());
+//     }
+//     openLogActivity();
+// });
+
+//打开Autojs的Log activity
+function openLogActivity() {
+    var intent = {
+        action: "android.intent.action.MAIN",
+        packageName: "org.autojs.autoxjs",
+        className: "org.autojs.autojs.ui.log.LogActivityKt"
+    };
+    app.startActivity(intent);
+}
 
 
 function handleError(e) {
@@ -201,7 +215,7 @@ function taskLogError(_log){
         var logContent = getSystemDate("df") + ":" + "【!!!ERROR!!!】" + _log + "\n";
         // var logContent = "【!!!ERROR!!!】" + _log + "\n";
         files.append(logFilePath, logContent);
-        
+
     } catch(e) {
         console.error("写入日志文件失败：" + e);
     }
@@ -346,6 +360,37 @@ function openFacebookLink_test(fbUrl){
     // 所有方法都失败
     taskLog("所有方法都失败，跳过链接 = " + fbUrl);
     return false;
+}
+
+// 验证用户页面是否正确加载
+function checkUserPageLoaded() {
+    taskLog("验证页面是否正确加载...")
+    sleep(2000)
+    
+    // 检查是否存在关注/追蹤/讚按钮（说明是用户页面）
+    var followBtn = className("android.widget.Button").desc("追蹤").exists() ||
+                    className("android.widget.Button").desc("Follow").exists() ||
+                    className("android.widget.Button").desc("讚").exists() ||
+                    className("android.widget.Button").desc("Like").exists() ||
+                    className("android.view.View").desc("追蹤").exists() ||
+                    className("android.view.View").desc("Follow").exists() ||
+                    className("android.view.View").desc("Like").exists() ||
+                    //text("Add friend") 
+                    className("android.view.View").desc("Add friend").exists() ||
+                    className("android.widget.Button").desc("Add friend").exists() ||
+                    // desc("加朋友")
+                    className("android.view.View").desc("加朋友").exists() ||
+                    className("android.widget.Button").desc("加朋友").exists()
+                    
+
+    
+    if(followBtn) {
+        taskLog("页面验证成功：找到追蹤/讚按钮")
+        return true
+    }
+    
+    taskLog("页面验证失败：未找到追蹤/讚按钮")
+    return false
 }
 
 function isAppInstalled(packageName) {
@@ -532,206 +577,6 @@ function random_jump_pages(options) {
 }
 
 
-try{
-
-    if (isAppInstalled(FacebookPackageName)) {
-        targetPackageName = FacebookPackageName;
-        targetClassName = "com.facebook.katana.activity.FbMainTabActivity";
-        taskLog("检测到已安装Facebook，准备启动...");
-    } else {
-        toast("未检测到Facebook已安装，请先安装Facebook！");
-        taskLog("未检测到Facebook已安装，脚本终止。");
-        exit();
-    }
-    
-    sleep(random(3000, 5000))
-    forceStop_APP(targetPackageName)
-    sleep(3000)
-    
-    app.startActivity({
-        action: "android.intent.action.VIEW",
-        packageName: targetPackageName,
-        className: targetClassName
-    });
-    
-    
-    // 开始主循环
-    var commentTextArrays = get_post_text()
-    
-    if(commentTextArrays.includes("$${T")){ 
-        throw_error_storage_not_enough()
-    }
-    toast("评论文案个数：" + commentTextArrays.length)
-    
-    
-    // 执行随机跳转（默认跳转3个页面）
-    // random_jump_pages()
-    
-    jump_to_home_page()
-    sleep(random(3000, 5000))
-    // swipe_up()
-    // sleep(random(5000, 8000))
-    // random_jump_pages()
-    // sleep(random(5000, 8000))
-    // jump_to_home_page()
-    // sleep(random(3000, 5000))
-
-
-    for(let currentLoop = 1; currentLoop <= loopTimes; currentLoop++) {
-        toast("开始第 " + currentLoop + "/" + loopTimes + " 次执行");    
-        // sleep(random(3000, 5000))
-    
-        
-        // if(currentLoop % 5 == 0){
-        //     random_jump_pages()
-        // }
-        // jump_to_home_page()
-    
-    
-        toast("开始模拟滑动")
-        swipe_up()
-    
-    
-        // sleep(5000)
-    
-        //检查是不是有点赞按钮
-        var likeBtnList = className("android.widget.Button").find();
-        if(likeBtnList.size() > 0){
-            for(var i = 0; i < likeBtnList.size(); i++) {
-                var likeBtn = likeBtnList.get(i);
-                if(likeBtn){
-                    var descText = likeBtn.desc() || "";
-                    if (Object.values(LIKE_TEXT).some(text => descText.startsWith(text)))  {
-
-                        total_success++
-                        taskLog("通过点赞按钮，检查total_success = " + total_success )
-
-                        if (Math.random() * 100 < FB_Like_Count)  {
-                            taskLog("开始触发点赞概率")
-                            click(likeBtn.bounds().centerX() , likeBtn.bounds().centerY())  
-                            sleep(random(2000, 4000))
-                        }else{
-                            taskLog("虽然找到点赞按钮，没有触发点赞概率")
-                        }
-
-    
-                    }else if(Object.values(COMMENT_TEXT).some(text => descText.startsWith(text))){
-    
-                        if (Math.random() * 100 < FB_Comment_Count)  { 
-    
-                            if(FB_input_text && 
-                                FB_input_text.trim() !== "" && 
-                                FB_input_text.trim().toLowerCase() !== "off" && 
-                                !FB_input_text.includes("$${")){
-    
-                                    if(commentTextArrays.length > 0){
-    
-                                        click(likeBtn.bounds().centerX() , likeBtn.bounds().centerY())  
-            
-                                        var randIdx = random(0, commentTextArrays.length - 1)
-                                        var messageText = commentTextArrays[randIdx];
-                            
-                                        toast("评论文案：" + messageText)
-                                        sleep(random(2000, 3000))
-                            
-                                        var autoCompleteTextViews = className("android.widget.AutoCompleteTextView").find();
-                                        if(autoCompleteTextViews.size() > 0 ){
-                                            for(var i = 0; i < autoCompleteTextViews.size(); i++) {
-                                                var textView = autoCompleteTextViews.get(i);
-                                                if(textView) {
-                                                    taskLog("找到AutoCompleteTextView控件-Text："+ textView.text());
-                                                    sleep(random(1000, 2000))
-                                                    textView.setText(messageText)
-                                                }
-                                            }
-                                        }
-                                
-                                        //发送
-                                        sleep(random(2000, 3000))
-                                        findTextByLanguages(SEND_TEXT)
-            
-                                        sleep(random(3000, 5000))
-                                        back() //键盘收起
-                                        sleep(random(2000, 3000))
-                                        back() //返回上一个页面
-            
-                                    }else{
-                                        taskLog("评论文案为空，所以不点击评论按钮");
-                                    }
-    
-                                }else{
-                                    taskLog("没有填写输入内容或者输入内容有误，所以跳过输入内容")
-                                }
-    
-    
-    
-    
-                        }else{
-                            taskLog("虽然找到评论按钮，没有触发评论概率")
-                        }
-                        break;
-    
-                    }else{
-                        taskLog("没有找到点赞或者评论按钮，直接下一个循环页面")
-                    }
-                }
-            }
-    
-    
-        }else{
-            taskLog("没有找到任何ViewGroup，直接下一个循环页面")
-        }
-    
-        if(currentLoop < loopTimes) {
-            taskLog("等待5秒后开始下一次循环...");
-            sleep(5000);
-        }
-        
-    }
-    
-    taskLog("所有循环执行完毕，准备结束任务...");
-    Nest_ScreenCapture()
-    sleep(random(3000, 5000))
-
-
-} catch(e) {
-    if (e.message === "TASK_COMPLETED") {
-        taskLog("任务正常完成");
-    } else {
-        handleError(e);
-    }
-}finally{
-    taskLog("保存统计结果到备用路径..." );
-    try {
-        var result = {
-            total_target: total_target,
-            total_success: total_success,
-            fail_msg: fail_msg
-        };
-        // 打印统计结果
-        taskLog("统计结果：" + JSON.stringify(result, null, 2));
-        // 使用JSON.stringify将对象转换为JSON字符串，第三个参数2是为了美化输出格式
-        files.write(resultPath, JSON.stringify(result, null, 2));
-        taskLog("已保存统计结果到：" + resultPath);
-    } catch(e) {
-        console.error("保存统计结果失败：" + e.message);
-    }
-    // 刷新媒体库
-    refreshMedia(RPAFilePath);
-    sleep(random(3000, 5000))
-}
-
-
-
-
-
-
-
-
-//打印日志
-function taskLog(_log){
-    console.log(getSystemDate("df") +":" +_log)
-}
 
 
 
@@ -926,3 +771,228 @@ function forceStop_APP(packageName){
     // 如果所有语言都尝试失败，返回主页
     home();
 }
+
+
+
+function click_send_button(){
+
+    var isSuccess = false
+    //发送
+    sleep(random(2000, 3000))
+    var clickSendTextBtn = findTextByLanguages(SEND_TEXT)
+    sleep(random(2000, 3000))
+
+    if(!clickSendTextBtn){
+
+        //直接点击最后一个按钮
+        var nextBtnList = className("android.widget.Button").find();
+            if(nextBtnList && nextBtnList.size() > 0){
+                nextBtnList.get(nextBtnList.size() - 1).click(); //直接点击最后一个按钮
+                sleep(random(3000, 5000))
+            }else{
+                isSuccess = false
+            }
+
+    }else{
+        isSuccess = false
+    }
+
+    return isSuccess
+
+}
+
+
+
+
+try{
+
+    if (isAppInstalled(FacebookPackageName)) {
+        targetPackageName = FacebookPackageName;
+        targetClassName = "com.facebook.katana.activity.FbMainTabActivity";
+        taskLog("检测到已安装Facebook，准备启动...");
+    } else {
+        toast("未检测到Facebook已安装，请先安装Facebook！");
+        taskLog("未检测到Facebook已安装，脚本终止。");
+        exit();
+    }
+    
+    sleep(random(3000, 5000))
+    forceStop_APP(targetPackageName)
+    sleep(3000)
+    
+    app.startActivity({
+        action: "android.intent.action.VIEW",
+        packageName: targetPackageName,
+        className: targetClassName
+    });
+    
+    
+    // 开始主循环
+    var commentTextArrays = get_post_text()
+    
+    if(commentTextArrays.includes("$${T")){ 
+        throw_error_storage_not_enough()
+    }
+    toast("评论文案个数：" + commentTextArrays.length)
+    
+    
+    // 执行随机跳转（默认跳转3个页面）
+    // random_jump_pages()
+    
+    jump_to_home_page()
+    sleep(random(3000, 5000))
+    // swipe_up()
+    // sleep(random(5000, 8000))
+    // random_jump_pages()
+    // sleep(random(5000, 8000))
+    // jump_to_home_page()
+    // sleep(random(3000, 5000))
+
+
+    for(let currentLoop = 1; currentLoop <= loopTimes; currentLoop++) {
+        toast("开始第 " + currentLoop + "/" + loopTimes + " 次执行");    
+        // sleep(random(3000, 5000))
+    
+        
+        // if(currentLoop % 5 == 0){
+        //     random_jump_pages()
+        // }
+        // jump_to_home_page()
+    
+    
+        toast("开始模拟滑动")
+        swipe_up()
+    
+    
+        // sleep(5000)
+    
+        //检查是不是有点赞按钮
+        var likeBtnList = className("android.widget.Button").find();
+        if(likeBtnList.size() > 0){
+            for(var i = 0; i < likeBtnList.size(); i++) {
+                var likeBtn = likeBtnList.get(i);
+                if(likeBtn){
+                    var descText = likeBtn.desc() || "";
+                    if (Object.values(LIKE_TEXT).some(text => descText.startsWith(text)))  {
+
+                        total_success++
+                        taskLog("通过点赞按钮，检查total_success = " + total_success )
+
+                        if (Math.random() * 100 < FB_Like_Count)  {
+                            taskLog("开始触发点赞概率")
+                            click(likeBtn.bounds().centerX() , likeBtn.bounds().centerY())  
+                            sleep(random(2000, 4000))
+                        }else{
+                            taskLog("虽然找到点赞按钮，没有触发点赞概率")
+                        }
+
+    
+                    }else if(Object.values(COMMENT_TEXT).some(text => descText.startsWith(text))){
+    
+                        if (Math.random() * 100 < FB_Comment_Count)  { 
+    
+                            if(FB_input_text && 
+                                FB_input_text.trim() !== "" && 
+                                FB_input_text.trim().toLowerCase() !== "off" && 
+                                !FB_input_text.includes("$${")){
+    
+                                    if(commentTextArrays.length > 0){
+    
+                                        click(likeBtn.bounds().centerX() , likeBtn.bounds().centerY())  
+            
+                                        var randIdx = random(0, commentTextArrays.length - 1)
+                                        var messageText = commentTextArrays[randIdx];
+                            
+                                        toast("评论文案：" + messageText)
+                                        sleep(random(2000, 3000))
+                            
+                                        var autoCompleteTextViews = className("android.widget.AutoCompleteTextView").find();
+                                        if(autoCompleteTextViews.size() > 0 ){
+                                            for(var j = 0; j < autoCompleteTextViews.size(); j++) {
+                                                var textView = autoCompleteTextViews.get(j);
+                                                if(textView) {
+                                                    taskLog("找到AutoCompleteTextView控件-Text："+ textView.text());
+                                                    sleep(random(1000, 2000))
+                                                    textView.setText(messageText)
+                                                }
+                                            }
+                                        }
+                                
+                                        //发送
+                                        click_send_button()
+                                        
+                                        sleep(random(3000, 5000))
+                                        back() //键盘收起
+
+                                        sleep(random(2000, 3000))
+                                        back() //返回上一个页面
+            
+                                    }else{
+                                        taskLog("评论文案为空，所以不点击评论按钮");
+                                    }
+    
+                                }else{
+                                    taskLog("没有填写输入内容或者输入内容有误，所以跳过输入内容")
+                                }
+    
+    
+    
+    
+                        }else{
+                            taskLog("虽然找到评论按钮，没有触发评论概率")
+                        }
+                        break;
+    
+                    }else{
+                        taskLog("没有找到点赞或者评论按钮，直接下一个循环页面")
+                    }
+                }
+            }
+    
+    
+        }else{
+            taskLog("没有找到任何ViewGroup，直接下一个循环页面")
+        }
+    
+        if(currentLoop < loopTimes) {
+            taskLog("等待5秒后开始下一次循环...");
+            sleep(5000);
+        }
+        
+    }
+    
+    taskLog("所有循环执行完毕，准备结束任务...");
+    Nest_ScreenCapture()
+    sleep(random(3000, 5000))
+
+
+} catch(e) {
+    if (e.message === "TASK_COMPLETED") {
+        taskLog("任务正常完成");
+    } else {
+        handleError(e);
+    }
+}finally{
+    taskLog("保存统计结果到备用路径..." );
+    try {
+        var result = {
+            total_target: total_target,
+            total_success: total_success,
+            fail_msg: fail_msg
+        };
+        // 打印统计结果
+        taskLog("统计结果：" + JSON.stringify(result, null, 2));
+        // 使用JSON.stringify将对象转换为JSON字符串，第三个参数2是为了美化输出格式
+        files.write(resultPath, JSON.stringify(result, null, 2));
+        taskLog("已保存统计结果到：" + resultPath);
+    } catch(e) {
+        console.error("保存统计结果失败：" + e.message);
+    }
+    // 刷新媒体库
+    refreshMedia(RPAFilePath);
+    sleep(random(3000, 5000))
+    
+    // 显式退出脚本，触发 exit 事件
+    // taskLog("准备退出脚本...");
+}
+
