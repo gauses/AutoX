@@ -58,7 +58,7 @@ var fail_msg = "";
 
 
 //保证Java层和JS代码两边的日志文件一致
-var taskLogFileName = "nest_task_log_" + getSystemDate("df").replace(/:/g, "-").replace(" ", "_") + ".txt"
+// var taskLogFileName = "nest_task_log_" + getSystemDate("df").replace(/:/g, "-").replace(" ", "_") + ".txt"
 var RPAFilePath = "/sdcard/Download/log/";
 // 如果目录存在且有内容就删除
 if (files.exists(RPAFilePath)) {
@@ -67,7 +67,7 @@ if (files.exists(RPAFilePath)) {
 //日志文件路径
 var logFilePath = RPAFilePath + taskLogFileName;
 //确保日志目录存在
-files.ensureDir(RPAFilePath);
+files.ensureDir(logFilePath);
 
 
 //日志文件路径
@@ -94,6 +94,80 @@ var containVideoCount  = 0
 
 //会在在无障碍服务启动后继续运行。
 auto.waitFor();
+// 工具函数库
+var Utils = {
+    // 重试装饰器
+    withRetry: function(fn, maxRetries, delay) {
+        maxRetries = maxRetries || CONFIG.RETRY.MAX_ATTEMPTS;
+        delay = delay || CONFIG.RETRY.DELAY;
+        
+        return function() {
+            var args = Array.prototype.slice.call(arguments);
+            for (var i = 0; i < maxRetries; i++) {
+                try {
+                    return fn.apply(this, args);
+                } catch (error) {
+                    if (i === maxRetries - 1) throw error;
+                    taskLog("重试第" + (i + 1) + "次: " + error.message);
+                    sleep(delay * (i + 1));
+                }
+            }
+        };
+    },
+
+    // 智能等待元素
+    waitForElement: function(selector, timeout, interval) {
+        timeout = timeout || CONFIG.TIMEOUTS.LONG;
+        interval = interval || 500;
+        
+        var startTime = Date.now();
+        while (Date.now() - startTime < timeout) {
+            var element = selector.findOne(interval);
+            if (element) return element;
+        }
+        throw new Error("元素未找到，超时" + timeout + "ms");
+    },
+
+    // 统一的多语言点击函数
+    clickByText: function(texts, elementType) {
+        elementType = elementType || "Button";
+        // 使用新的findTextByLanguages函数
+        return findTextByLanguages(texts);
+    },
+
+    // 安全的坐标点击
+    safeClick: function(x, y, deviation) {
+        deviation = deviation || 2;
+        var finalX = Math.max(0, x + random(-deviation, deviation));
+        var finalY = Math.max(0, y + random(-deviation, deviation));
+        
+        try {
+            device.sdkInt < 24 ? ra.tap(finalX, finalY) : click(finalX, finalY);
+            return true;
+        } catch (e) {
+            taskLog("点击操作失败：" + e.message);
+            return false;
+        }
+    },
+
+    // 清理资源
+    cleanup: function() {
+        // 清理临时文件
+        var tempFolder = CONFIG.PATHS.DOWNLOAD + CONFIG.PATHS.TEMP_MEDIA;
+        if (files.exists(tempFolder)) {
+            files.removeDir(tempFolder);
+            taskLog("清理临时文件夹完成");
+        }
+        
+        // 清理缓存
+        elementCache.clear();
+        
+        // 强制垃圾回收
+        if (typeof gc === 'function') {
+            gc();
+        }
+    }
+};
 
 //出现异常错误时，打印的日志错误信息
 var handleErrorFlag = false //默认没有错误，如果出现异常，那么该值是true
@@ -117,17 +191,45 @@ var handleErrorFlag = false //默认没有错误，如果出现异常，那么�
 });
 
 function handleError(e) {
-    handleErrorFlag = true
-    forceStop_APP(targetPackageName)
-    taskLogError("===错误报告开始===");
-    fail_msg += "错误信息：" + e + "\n"; 
-    taskLogError("错误信息：" + e);
-    fail_msg += "错误堆栈：" + e.stack + "\n";
-    taskLogError("错误堆栈：" + e.stack);
-    fail_msg += "===错误报告结束===" + "\n";
-    taskLogError("===错误报告结束===");
-    fail_msg += "===错误报告结束===" + "\n";
-    taskLog("脚本执行Error时间：" + new Date().toLocaleString());
+    handleErrorFlag = true;
+
+    // 记录失败信息（只记录一次）
+    var errorInfo = "错误信息：" + e.message + " | 错误堆栈：" + e.stack;
+    fail_msg += (fail_msg ? "; " : "") + errorInfo;
+
+    // 在出现异常时进行截图
+    try {
+        taskLog("检测到异常，开始截图记录错误状态...");
+        var errorScreenshotPath = Nest_ScreenCapture();
+        taskLog("异常截图已保存：" + errorScreenshotPath);
+        fail_msg += "异常截图路径：" + errorScreenshotPath;
+    } catch (screenshotError) {
+        taskLog("异常截图失败：" + screenshotError.message);
+        fail_msg += "异常截图失败：" + screenshotError.message;
+    }
+
+    forceStop_APP(targetPackageName);
+    Logger.error("===错误报告开始===");
+    Logger.error("错误信息：" + e.message);
+    Logger.error("错误堆栈：" + e.stack);
+    Logger.error("===错误报告结束===");
+    Logger.error("脚本执行Error时间：" + new Date().toLocaleString());
+
+    // 在异常退出前保存统计结果
+    try {
+        var result = {
+            total_target: total_target,
+            total_success: total_success,
+            fail_msg: fail_msg
+        };
+        taskLog("异常情况统计结果：" + JSON.stringify(result, null, 2));
+        files.write(resultPath, JSON.stringify(result, null, 2));
+        taskLog("已保存异常统计结果到：" + resultPath);
+    } catch(saveError) {
+        console.error("保存异常统计结果失败：" + saveError.message);
+    }
+
+    Utils.cleanup();
 }
 
 //打印日志
@@ -1200,6 +1302,8 @@ function getSafeClickPoint(bounds) {
 
 
 try {
+
+    total_target = 1
     
     if (isAppInstalled(FacebookPackageName)) {
         targetPackageName = FacebookPackageName;
@@ -1263,6 +1367,8 @@ try {
     sleep(5000)
     find_viewGroup_text_base("POST", "發佈" , "發布")
 
+    total_success = 1
+
 
     taskLog("等待分享结果，大约60s左右....");
     sleep(random(50000,60000))
@@ -1277,9 +1383,12 @@ try {
     }
     sleep(sleepVideoTime)
 
+    Nest_ScreenCapture()
+    sleep(random(12000, 15000))
+
 
     //删除临时图片库 :A_NEST_FaceBook_MEDIA
-    // delete_temp_image("/storage/emulated/0/Download/" + A_NEST_FaceBook_MEDIA)
+    delete_temp_image("/storage/emulated/0/Download/" + A_NEST_FaceBook_MEDIA)
 
 
     sleep(random(3000, 5000))
