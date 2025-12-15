@@ -12,15 +12,71 @@ importClass(java.io.FileWriter);
 
 
 
-
 //保证Java层和JS代码两边的日志文件一致
 var taskLogFileName = "nest_task_log.txt"
 var taskLogImgName = "nest_task_log.png"
 
 
+
 //用户需要输入的评论内容
-const FB_input_text = '$${T_FB_输入文案}';
-const FB_input_IMAGE = '$${T_FB_图片地址}';
+const FB_input_text = '$${T_FB_输入文案}'; //用户需要输入的评论内容，就是T开头
+const FB_input_IMAGE = '$${M_FB_图片地址}'; //用户需要输入的图片地址，就是M开头
+
+
+// 配置对象
+var CONFIG = {
+    // 超时配置
+    TIMEOUTS: {
+        SHORT: 3000,
+        MEDIUM: 5000,
+        LONG: 10000,
+        UPLOAD: 120000
+    }
+
+}
+
+
+const FORCE_STOP_TEXT = {
+    ZH_CN: "强行停止",    // 简体中文
+    ZH_TW: "強制停止",    // 繁体中文
+    EN_US: "FORCE STOP"   // 英文
+};
+
+// 定义确认按钮文本
+const FORCE_STOP_CONFIRM_TEXT = {
+    ZH_CN: "确定",      // 简体中文
+    ZH_TW: "確定",      // 繁体中文
+    EN_US: "OK"         // 英文
+};
+
+// 需要的执行次数总数
+var total_target = 0;
+// 成功的数量
+var total_success = 0;
+// 错误信息
+var fail_msg = "";
+
+
+//保证Java层和JS代码两边的日志文件一致
+var taskLogFileName = "nest_task_log_" + getSystemDate("df").replace(/:/g, "-").replace(" ", "_") + ".txt"
+var RPAFilePath = "/sdcard/Download/log/";
+// 如果目录存在且有内容就删除
+if (files.exists(RPAFilePath)) {
+    files.removeDir(RPAFilePath);
+}
+//日志文件路径
+var logFilePath = RPAFilePath + taskLogFileName;
+//确保日志目录存在
+files.ensureDir(RPAFilePath);
+
+
+//日志文件路径
+var resultPath = RPAFilePath + "nest_result_rpa.txt";
+//确保日志目录存在
+files.ensureDir(resultPath);
+
+
+
 
 var FacebookPackageName = 'com.facebook.katana';
 //将需要处理的多媒体图片，单独copy一份放到这个文件夹里面，后面处理完成之后，再删除这个文件夹
@@ -63,12 +119,347 @@ var handleErrorFlag = false //默认没有错误，如果出现异常，那么�
 function handleError(e) {
     handleErrorFlag = true
     forceStop_APP(targetPackageName)
-    console.error("===错误报告开始===");
-    console.error("错误信息：" + e);
-    console.error("错误堆栈：" + e.stack);
-    console.error("===错误报告结束===");
-    exit()
+    taskLogError("===错误报告开始===");
+    fail_msg += "错误信息：" + e + "\n"; 
+    taskLogError("错误信息：" + e);
+    fail_msg += "错误堆栈：" + e.stack + "\n";
+    taskLogError("错误堆栈：" + e.stack);
+    fail_msg += "===错误报告结束===" + "\n";
+    taskLogError("===错误报告结束===");
+    fail_msg += "===错误报告结束===" + "\n";
+    taskLog("脚本执行Error时间：" + new Date().toLocaleString());
 }
+
+//打印日志
+function taskLog(_log){
+    toast(_log)
+    console.log(getSystemDate("df") +":" +_log)
+    console.log(_log)
+
+
+    try {
+        //确保目录存在
+        files.ensureDir(RPAFilePath);
+        
+        //将日志写入文件
+        var logContent = getSystemDate("df") + ":" + _log + "\n";
+        // var logContent = _log + "\n";
+        files.append(logFilePath, logContent);
+        
+    } catch(e) {
+        console.error("写入日志文件失败：" + e);
+    }
+}
+
+
+function taskLogError(_log){
+    toast(_log);
+    
+    console.error(getSystemDate("df") +":" +_log)
+    // console.error(_log)
+
+    try {
+        //确保目录存在
+        files.ensureDir(RPAFilePath);
+        
+        //将日志写入文件
+        var logContent = getSystemDate("df") + ":" + "【!!!ERROR!!!】" + _log + "\n";
+        // var logContent = "【!!!ERROR!!!】" + _log + "\n";
+        files.append(logFilePath, logContent);
+
+    } catch(e) {
+        console.error("写入日志文件失败：" + e);
+    }
+}
+
+//可能会出现权限弹窗，如果弹出，那么允许
+function click_permission_allow(){
+    taskLog("开始处理权限问题.....");
+    
+    // 定义权限相关的文本配置
+    var PERMISSION_TEXTS = {
+        // 简体中文权限文本
+        ZH_CN: {
+            ALLOW: ["仅在使用该应用时允许", "仅限这一次", "允许"],
+            DENY: ["不允许"]
+        },
+        // 繁体中文权限文本
+        TW: {
+            ALLOW: ["使用應用程式時", "僅允許這一次", "允許"],
+            DENY: ["不允許"]
+        },
+        // 英文权限文本
+        EN: {
+            ALLOW: ["WHILE USING THE APP", "ONLY THIS TIME", "ALLOW"],
+            DENY: ["DON'T ALLOW"]
+        }
+    };
+    
+    // 快速检查并点击权限按钮
+    function quickClickPermission() {
+        // 查找所有可能的权限按钮
+        var allButtons = className("android.widget.Button").find();
+        var allTextViews = className("android.widget.TextView").find();
+        
+        // 合并所有文本元素
+        var allElements = [];
+        for (var i = 0; i < allButtons.size(); i++) {
+            allElements.push(allButtons.get(i));
+        }
+        for (var i = 0; i < allTextViews.size(); i++) {
+            allElements.push(allTextViews.get(i));
+        }
+        
+        // 快速遍历查找权限相关按钮
+        for (var k = 0; k < allElements.length; k++) {
+            var element = allElements[k];
+            if (!element || !element.clickable()) continue;
+            
+            var text = element.text();
+            if (!text) continue;
+            
+            // 检查是否包含允许相关的文本
+            var isAllowText = false;
+            // 检查简体中文
+            for (var m = 0; m < PERMISSION_TEXTS.ZH_CN.ALLOW.length; m++) {
+                if (text.includes(PERMISSION_TEXTS.ZH_CN.ALLOW[m])) {
+                    isAllowText = true;
+                    break;
+                }
+            }
+            // 检查繁体中文
+            if (!isAllowText) {
+                for (var n = 0; n < PERMISSION_TEXTS.TW.ALLOW.length; n++) {
+                    if (text.includes(PERMISSION_TEXTS.TW.ALLOW[n])) {
+                        isAllowText = true;
+                        break;
+                    }
+                }
+            }
+            // 检查英文
+            if (!isAllowText) {
+                for (var o = 0; o < PERMISSION_TEXTS.EN.ALLOW.length; o++) {
+                    if (text.includes(PERMISSION_TEXTS.EN.ALLOW[o])) {
+                        isAllowText = true;
+                        break;
+                    }
+                }
+            }
+            
+            // 检查是否包含拒绝相关的文本
+            var isDenyText = false;
+            // 检查简体中文
+            for (var p = 0; p < PERMISSION_TEXTS.ZH_CN.DENY.length; p++) {
+                if (text.includes(PERMISSION_TEXTS.ZH_CN.DENY[p])) {
+                    isDenyText = true;
+                    break;
+                }
+            }
+            // 检查繁体中文
+            if (!isDenyText) {
+                for (var q = 0; q < PERMISSION_TEXTS.TW.DENY.length; q++) {
+                    if (text.includes(PERMISSION_TEXTS.TW.DENY[q])) {
+                        isDenyText = true;
+                        break;
+                    }
+                }
+            }
+            // 检查英文
+            if (!isDenyText) {
+                for (var r = 0; r < PERMISSION_TEXTS.EN.DENY.length; r++) {
+                    if (text.includes(PERMISSION_TEXTS.EN.DENY[r])) {
+                        isDenyText = true;
+                        break;
+                    }
+                }
+            }
+            
+            // 如果是允许按钮且不是拒绝按钮，则点击
+            if (isAllowText && !isDenyText) {
+                taskLog("找到权限按钮: " + text);
+                element.click();
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    // 使用快速检查方法，最多尝试3次
+    for (var i = 0; i < 5; i++) {
+        if (quickClickPermission()) {
+            taskLog("权限处理成功");
+            return;
+        }
+        sleep(random(1000, 2000)); // 短暂等待后重试
+    }
+    
+    taskLog("未找到权限弹窗，继续执行");
+}
+
+
+//开始录屏截图到本地
+function Nest_ScreenCapture(){
+    // 申请截图权限（会弹系统录屏权限框）
+    if (!requestScreenCapture()) {
+        taskLog("自动化任务-申请截图权限失败");
+    }
+
+    // 申请截图权限（会弹系统录屏权限框）
+    if (!requestScreenCapture()) {
+        taskLog("自动化任务-申请截图权限失败");
+    }
+
+    // 截一张整屏
+    var img = captureScreen();           // 返回 Image 对象
+    if (!img) {
+        taskLog("自动化任务-截图失败");
+    }
+
+    // 保存到相册/文件夹
+    // var dir = "/sdcard/Pictures";
+    // files.ensureDir(dir);
+    // var path = dir + "/nestshot_" + Date.now() + ".png";
+    var path = RPAFilePath + "/nestshot_" + Date.now() + ".png";
+    img.saveTo(path);                    // 保存
+    img.recycle();                       // 回收内存
+    taskLog("自动化任务已经完成-已保存截图："+ path);
+
+
+    //刷新媒体库
+    sleep(3000)
+    toast("开始刷新媒体库....");
+    refreshMedia(RPAFilePath)
+    return path
+}
+// 刷新指定路径的媒体库
+function refreshMedia(path) {
+    taskLog("开始刷新媒体库....");
+    // 发送媒体扫描广播
+    media.scanFile(path);
+    // 等待扫描完成
+    sleep(5000);
+    taskLog("媒体库刷新完成.");
+}
+
+
+// 通过语言对象查找文本
+function findTextByLanguages(languageObject) {
+    for (let lang in languageObject) {
+        let targetText = languageObject[lang];
+        if (text(targetText).exists()) {
+            taskLog("找到文本：" + targetText);
+            let element = text(targetText).findOne();
+            if (element && element.clickable()) {
+                element.click();
+                return true;
+            } else if (element) {
+                // 如果元素存在但不可点击，尝试点击其坐标
+                let bounds = element.bounds();
+                click(bounds.centerX(), bounds.centerY());
+                return true;
+            }
+        }
+    }
+    taskLog("未找到任何匹配的文本");
+    return false;
+}
+
+
+function openFacebookLink_test(fbUrl){
+    taskLog("准备打开链接 = " + fbUrl)
+    
+    // 通用的打开方法
+    function tryOpenUrl(uri, methodName) {
+        taskLog("尝试方法: " + methodName)
+        try {
+            var intent = new android.content.Intent(android.content.Intent.ACTION_VIEW);
+            intent.setData(android.net.Uri.parse(uri));
+            intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+            intent.setPackage("com.facebook.katana");
+            
+            app.startActivity(intent);
+            sleep(3000) // 等待页面加载
+            
+            if(checkUserPageLoaded()) {
+                taskLog(methodName + "打开成功并验证页面加载完成");
+                return true;
+            } else {
+                taskLog(methodName + "打开但页面未正确加载");
+            }
+        } catch (e) {
+            taskLog(methodName + "失败: " + e);
+        }
+        return false;
+    }
+    
+    // profile.php 格式，直接使用标准 Intent
+    if(fbUrl.includes("profile.php")) {
+        taskLog("检测到 profile.php 格式链接")
+        return tryOpenUrl(fbUrl, "标准Intent");
+    }
+    
+    // 用户名格式链接（不包含特殊路径）
+    if(fbUrl.includes("facebook.com/") && 
+       !fbUrl.includes("profile.php") && 
+       !fbUrl.includes("share/") && 
+       !fbUrl.includes("groups/") &&
+       !fbUrl.includes("watch/")) {
+        
+        var username = fbUrl.split("facebook.com/")[1].split("?")[0].replace(/\//g, "");
+        taskLog("检测到用户名格式链接，用户名: " + username)
+        
+        // 依次尝试3种方法
+        var methods = [
+            { uri: "fb://profile/" + username, name: "深度链接" },
+            { uri: "fb://facewebmodal/f?href=" + encodeURIComponent(fbUrl), name: "WebModal" },
+            { uri: fbUrl, name: "标准Intent" }
+        ];
+        
+        for(var i = 0; i < methods.length; i++) {
+            if(tryOpenUrl(methods[i].uri, methods[i].name)) {
+                return true;
+            }
+        }
+    }
+    
+    // 所有方法都失败
+    taskLog("所有方法都失败，跳过链接 = " + fbUrl);
+    return false;
+}
+
+// 验证用户页面是否正确加载
+function checkUserPageLoaded() {
+    taskLog("验证页面是否正确加载...")
+    sleep(2000)
+    
+    // 检查是否存在关注/追蹤/讚按钮（说明是用户页面）
+    var followBtn = className("android.widget.Button").desc("追蹤").exists() ||
+                    className("android.widget.Button").desc("Follow").exists() ||
+                    className("android.widget.Button").desc("讚").exists() ||
+                    className("android.widget.Button").desc("Like").exists() ||
+                    className("android.view.View").desc("追蹤").exists() ||
+                    className("android.view.View").desc("Follow").exists() ||
+                    className("android.view.View").desc("Like").exists() ||
+                    //text("Add friend") 
+                    className("android.view.View").desc("Add friend").exists() ||
+                    className("android.widget.Button").desc("Add friend").exists() ||
+                    // desc("加朋友")
+                    className("android.view.View").desc("加朋友").exists() ||
+                    className("android.widget.Button").desc("加朋友").exists()
+                    
+
+    
+    if(followBtn) {
+        taskLog("页面验证成功：找到追蹤/讚按钮")
+        return true
+    }
+    
+    taskLog("页面验证失败：未找到追蹤/讚按钮")
+    return false
+}
+
+
 
 //显示控制窗：https://github.com/kkevsekk1/AutoX/issues/868
 // console.show()
@@ -117,94 +508,6 @@ function openAppSettings(packageName) {
     app.startActivity(intent);
 }
 
-if (isAppInstalled(FacebookPackageName)) {
-    targetPackageName = FacebookPackageName;
-    targetClassName = "com.facebook.katana.activity.FbMainTabActivity";
-    taskLog("检测到已安装Facebook，准备启动...");
-} else {
-    toast("未检测到Facebook已安装，请先安装Facebook！");
-    taskLog("未检测到Facebook已安装，脚本终止。");
-    exit();
-}
-
-sleep(random(3000, 5000))
-forceStop_APP(targetPackageName)
-sleep(3000)
-
-app.startActivity({
-    action: "android.intent.action.VIEW",
-    packageName: targetPackageName,
-    className: targetClassName
-});
-
-sleep(random(3000, 5000))
-
-
-
-    taskLog("打开Facebook成功...")
- 
-    //desc("在 Facebook 撰寫貼文")
-    find_btn_desc_base("Make a post on Facebook", "在 Facebook 撰寫貼文")
-    sleep(random(5000, 6000))
-
-    var postContent = read_FB_input_text()
-    if(postContent.includes("$${T")){ 
-        throw_error_storage_not_enough()
-    }
-
-    if(postContent && 
-        postContent.trim() !== "" && 
-        postContent.trim().toLowerCase() !== "off" && 
-        !postContent.includes("$${")){
-            taskLog("准备输入分享内容....");
-            className("android.widget.AutoCompleteTextView").findOne().click()
-            sleep(5000)
-            className("android.widget.AutoCompleteTextView").findOne().setText("")
-            sleep(5000)
-            className("android.widget.AutoCompleteTextView").findOne().setText(postContent)
-            sleep(random(5000, 10000))
-    }else{
-        taskLog("输入PO文内容是空，所以不需要输入文本")
-    }
-    
-
-    //检查是否需要发图片
-    post_Image()
-
-    taskLog("准备点击下一步....");
-    sleep(5000)
-    //desc("下一步")
-    find_btn_desc_base("繼續", "NEXT", "下一步")
-
-
-    //className("android.widget.Button").desc("POST").findOne().click()
-    taskLog("准备点击POST....");
-    sleep(5000)
-    //className("android.view.ViewGroup").text("POST").findOne().click()
-    //desc("發佈")
-    find_viewGroup_text_base("POST", "發佈" , "發布")
-
-
-    taskLog("等待分享结果，大约60s左右....");
-    sleep(random(50000,60000))
-
-    taskLog("包含视频的个数：" + containVideoCount)
-    var sleepVideoTime = 1000
-    if(containVideoCount > 0){
-        taskLog("包含视频的个数：" + containVideoCount + "，所以需要sleep多长时间")
-        sleepVideoTime = containVideoCount * 50000
-    }else{
-        taskLog("包含视频的个数：" + containVideoCount + "，所以不需要sleep多长时间")
-    }
-    sleep(sleepVideoTime)
-
-
-    //删除临时图片库 :A_NEST_FaceBook_MEDIA
-    delete_temp_image("/storage/emulated/0/Download/" + A_NEST_FaceBook_MEDIA)
-
-
-
-
 
 function post_Image(){
     taskLog("FB_input_IMAGE的实际值: " + FB_input_IMAGE)
@@ -227,20 +530,19 @@ function post_Image(){
                 sleep(random(3000, 5000))
 
                 //点击权限
-                //className("android.widget.Button").desc("Allow access").findOne().click()
+
                 taskLog("准备检查权限....")
                 find_btn_desc_base("Allow access", "允許存取")
-                // sleep(3000)
 
                 //再次点击权限
                 // className("android.widget.Button") text("允許") clickable("true")
                 find_btn_Text_base( "允許", "ALLOW")
                 sleep(3000)
 
-                //系统弹窗
-                find_btn_Text_base("允許", "Allow")
-                sleep(3000)
-
+                sleep(random(1000, 2000))
+                taskLog("开始处理权限问题，系统弹窗.....");
+                click_permission_allow();
+                sleep(CONFIG.TIMEOUTS.SHORT);
 
 
                 className("android.widget.GridView").findOne().children().forEach(child => {
@@ -380,19 +682,42 @@ function refreshMedia(path) {
     sleep(5000);
 }
 
-//转移头像图片到Nest临时文件夹（支持文件夹批量处理，不判断扩展名，返回true/false）
-function transferHeadImageToNest(folderPath){
-    //folderPath: /sdcard/Download/01
+//转移头像图片到Nest临时文件夹（支持文件夹批量处理或单个文件，返回true/false）
+function transferHeadImageToNest(inputPath){
+    //inputPath: /sdcard/Download/01 (文件夹) 或 /sdcard/Download/xxx.jpg (单个文件)
+    
+    // 统一路径格式，去除末尾斜杠
+    if (inputPath.endsWith("/")) {
+        inputPath = inputPath.slice(0, -1);
+    }
+    // 兼容 /sdcard 和 /storage/emulated/0
+    if (inputPath.startsWith("/sdcard/")) {
+        inputPath = inputPath.replace("/sdcard/", "/storage/emulated/0/");
+    }
+
     function getParentDir(path) {
-        if (path.endsWith("/")) path = path.slice(0, -1);
         let idx = path.lastIndexOf("/");
         if (idx === -1) return "";
         return path.substring(0, idx);
     }
+    
+    function getFileName(path) {
+        let idx = path.lastIndexOf("/");
+        if (idx === -1) return path;
+        return path.substring(idx + 1);
+    }
 
     function copyDir(src, dest) {
-        files.ensureDir(dest);
+        // 确保目录存在（路径需要以/结尾）
+        files.ensureDir(dest + "/");
+        
         let filesList = files.listDir(src);
+        // 空值检查
+        if (!filesList || filesList.length === 0) {
+            taskLog("源文件夹为空或无法读取: " + src);
+            return true; // 空文件夹也算复制成功
+        }
+        
         for (let i = 0; i < filesList.length; i++) {
             let name = filesList[i];
             let srcPath = src + "/" + name;
@@ -411,15 +736,22 @@ function transferHeadImageToNest(folderPath){
         return true;
     }
 
-    const parentDir = getParentDir(folderPath); // /sdcard/Download
+    const parentDir = getParentDir(inputPath); // /storage/emulated/0/Download
     const newFolder = parentDir + "/A_NEST_FaceBook_MEDIA";
 
-    taskLog("准备复制文件夹: " + folderPath + " -> " + newFolder);
+    taskLog("准备复制: " + inputPath + " -> " + newFolder);
+    taskLog("files.exists结果: " + files.exists(inputPath));
+    taskLog("files.isDir结果: " + files.isDir(inputPath));
 
-    // 判断原文件夹是否存在
-    if (!files.exists(folderPath) || !files.isDir(folderPath)) {
-        console.error("原文件夹不存在: " + folderPath);
-        toast("原文件夹不存在: " + folderPath);
+    // 判断原路径是否存在
+    if (!files.exists(inputPath)) {
+        // 检查目标文件夹是否已存在（可能是上次运行的结果）
+        if (files.exists(newFolder) && files.isDir(newFolder)) {
+            taskLog("原路径不存在，但目标文件夹已存在，可能是上次运行的结果，继续执行");
+            return true;
+        }
+        console.error("原路径不存在: " + inputPath);
+        toast("原路径不存在: " + inputPath);
         return false;
     }
 
@@ -433,21 +765,47 @@ function transferHeadImageToNest(folderPath){
             return false;
         }
     }
+    
+    // 确保目标文件夹存在
+    files.ensureDir(newFolder + "/");
 
-    // 递归复制文件夹
-    if (!copyDir(folderPath, newFolder)) {
-        console.error("递归复制文件夹失败");
-        return false;
-    }
-    taskLog("复制文件夹成功: " + newFolder);
+    // 判断是文件还是文件夹
+    if (files.isDir(inputPath)) {
+        // 是文件夹，递归复制
+        taskLog("检测到文件夹，开始递归复制...");
+        if (!copyDir(inputPath, newFolder)) {
+            console.error("递归复制文件夹失败");
+            return false;
+        }
+        taskLog("复制文件夹成功: " + newFolder);
 
-    // 删除原文件夹
-    try {
-        files.removeDir(folderPath);
-        taskLog("删除原文件夹成功: " + folderPath);
-    } catch(e) {
-        console.error("删除原文件夹失败: " + e);
-        // 复制成功但删除失败，也算部分成功
+        // 删除原文件夹
+        try {
+            files.removeDir(inputPath);
+            taskLog("删除原文件夹成功: " + inputPath);
+        } catch(e) {
+            console.error("删除原文件夹失败: " + e);
+        }
+    } else {
+        // 是单个文件，复制单个文件
+        taskLog("检测到单个文件，开始复制...");
+        let fileName = getFileName(inputPath);
+        let destPath = newFolder + "/" + fileName;
+        try {
+            files.copy(inputPath, destPath);
+            taskLog("复制文件成功: " + destPath);
+        } catch(e) {
+            console.error("复制文件失败: " + inputPath + " -> " + destPath + "，错误：" + e);
+            return false;
+        }
+
+        // 删除原文件
+        try {
+            files.remove(inputPath);
+            taskLog("删除原文件成功: " + inputPath);
+        } catch(e) {
+            console.error("删除原文件失败: " + e);
+        }
     }
 
     // 刷新媒体库
@@ -589,7 +947,7 @@ function find_btn_desc_base(findText_ZH_TW, findText_EN_US, findText_ZH_CN){
              taskLog(findText_ZH_TW + " - 循环寻找执行：" + (++loopCount));
              // 检查计数器是否达到3
              if (loopCount >= 3) {
-                taskLog("循环已执行3次，即将退出循环。");
+                taskLog("循环查找" + findText_ZH_TW + "按钮已执行3次，即将退出循环。");
                 break;
              }
 
@@ -619,7 +977,50 @@ function find_btn_desc_base(findText_ZH_TW, findText_EN_US, findText_ZH_CN){
 
 
 
-//读取本地txt的文本内容
+
+//从评论列表数组中，随机挑选一条内容
+function get_post_text(){
+    // 用于存储用户的数组
+    let comments = [];
+    // 户是否存在
+    taskLog("用户地址 =  " + FB_input_text)
+    const file = new java.io.File(FB_input_text);
+    if (file.exists() && file.isFile()) {
+        try {
+            // 读取文件内容
+            const reader = new java.io.BufferedReader(new java.io.FileReader(file));
+            let line;
+            while ((line = reader.readLine()) !== null) {
+                // 去除首尾空格后判断是否为空行
+                if (line.trim() !== "") {
+                    comments.push(line);
+                }
+            }
+            reader.close();
+        } catch (e) {
+            taskLog("读取文件时发生错误：" + e.message);
+        }
+    } else {
+        // 如果文件不存在，将文件名添加到数组中
+        comments.push(FB_input_text);
+    }    
+
+
+    if(comments.length > 0){
+        var randIdx = random(0, comments.length - 1)
+        var messageText = comments[randIdx];
+        taskLog("随机挑选的评论内容：" + messageText)
+        return messageText
+    }else{
+        taskLog("评论列表数组为空，所以不需要输入文本")
+        return ""
+    }
+
+
+}
+
+
+//从评论列表数组中，随机挑选一条内容, 读取txt的全部文本内容
 function read_FB_input_text(){
 
     //输入文案
@@ -645,98 +1046,48 @@ function read_FB_input_text(){
     }
 
     return postContent
-
-
-
 }
 
-
-//强制停止TikTok 
+//强制停止
 function forceStop_APP(packageName){
     taskLog("准备强杀:" + packageName + "...")
     sleep(1000);
     openAppSettings(packageName)
-    sleep(random(3000, 5000))
+    sleep(5000)
 
-    //繁体
-    if (text("強制停止").exists()) {
-        let forceStopBtn = text("強制停止").findOne();
-        if (forceStopBtn && forceStopBtn.clickable()) {
-            forceStopBtn.click();
-            sleep(1000);
-            // 确认操作
-            if (text("確定").exists()) {
-                taskLog("已经找到可点击的'強制停止'按钮！！！！！！！！！！");
-                text("確定").findOne().click();
+    // 遍历所有可能的强制停止按钮文本
+    for (let lang in FORCE_STOP_TEXT) {
+        let stopText = FORCE_STOP_TEXT[lang];
+        if (text(stopText).exists()) {
+            let forceStopBtn = text(stopText).findOne();
+            if (forceStopBtn && forceStopBtn.clickable()) {
+                forceStopBtn.click();
+                sleep(1000);
+                
+                // 遍历所有可能的确认按钮文本
+                for (let confirmLang in FORCE_STOP_CONFIRM_TEXT) {
+                    let confirmText = FORCE_STOP_CONFIRM_TEXT[confirmLang];
+                    if (text(confirmText).exists()) {
+                        text(confirmText).findOne().click();
+                        taskLog("成功点击'" + stopText + "'按钮并确认");
+                        sleep(3000);
+                        home();
+                        return;
+                    }
+                }
+            } else {
+                taskLog("未找到可点击的'" + stopText + "'按钮");
             }
         } else {
-            taskLog("未找到可点击的'強制停止'按钮");
+            taskLog("未找到'" + stopText + "'按钮");
         }
-    } else {
-        taskLog("未找到'強制停止'按钮");
-    }
-    sleep(3000)
-
-    //简体
-    if (text("强行停止").exists()) {
-        let forceStopBtn = text("强行停止").findOne();
-        if (forceStopBtn && forceStopBtn.clickable()) {
-            forceStopBtn.click();
-            sleep(1000);
-            // 确认操作
-            if (text("确定").exists()) {
-                text("确定").findOne().click();
-            }
-        } else {
-            taskLog("未找到可点击的'强行停止'按钮");
-        }
-    } else {
-        taskLog("未找到'强行停止'按钮");
+        sleep(1000);
     }
 
-    sleep(3000)
-
-
-    //英语
-    if (text("Force stop").exists()) {
-        let forceStopBtn = text("Force stop").findOne();
-        if (forceStopBtn && forceStopBtn.clickable()) {
-            forceStopBtn.click();
-            sleep(1000);
-            // 确认操作
-            if (text("OK").exists()) {
-                text("OK").findOne().click();
-            }
-        } else {
-            taskLog("未找到可点击的'Force stop'按钮");
-        }
-    } else {
-        taskLog("未找到'Force stop'按钮");
-    }
-    sleep(3000)
-
-    //英语
-    if (text("FORCE STOP").exists()) {
-        let forceStopBtn = text("FORCE STOP").findOne();
-        if (forceStopBtn && forceStopBtn.clickable()) {
-            forceStopBtn.click();
-            sleep(1000);
-            // 确认操作
-            if (text("OK").exists()) {
-                text("OK").findOne().click();
-            }
-        } else {
-            taskLog("未找到可点击的'FORCE STOP'按钮");
-        }
-    } else {
-        taskLog("未找到'FORCE STOP'按钮");
-    }
-    sleep(3000)
-
-
-    home()
-
+    // 如果所有语言都尝试失败，返回主页
+    home();
 }
+
 
 //删除临时图片文件夹
 function delete_temp_image(folderPath) {
@@ -844,4 +1195,120 @@ function getSafeClickPoint(bounds) {
     if ((bottom - top) < 20) y = top + 2;
 
     return { x, y };
+}
+
+
+
+try {
+    
+    if (isAppInstalled(FacebookPackageName)) {
+        targetPackageName = FacebookPackageName;
+        targetClassName = "com.facebook.katana.activity.FbMainTabActivity";
+        taskLog("检测到已安装Facebook，准备启动...");
+    } else {
+        toast("未检测到Facebook已安装，请先安装Facebook！");
+        taskLog("未检测到Facebook已安装，脚本终止。");
+        exit();
+    }
+
+    sleep(random(3000, 5000))
+    forceStop_APP(targetPackageName)
+    sleep(3000)
+
+    app.startActivity({
+        action: "android.intent.action.VIEW",
+        packageName: targetPackageName,
+        className: targetClassName
+    });
+
+    sleep(random(3000, 5000))
+    taskLog("打开Facebook成功...")
+ 
+    //desc("在 Facebook 撰寫貼文")
+    find_btn_desc_base("Make a post on Facebook", "在 Facebook 撰寫貼文")
+    sleep(random(5000, 6000))
+
+
+    var postContent = get_post_text()
+    if(postContent.includes("$${T")){ 
+        throw_error_storage_not_enough()
+    }
+
+    if(postContent && 
+        postContent.trim() !== "" && 
+        postContent.trim().toLowerCase() !== "off" && 
+        !postContent.includes("$${")){
+            taskLog("准备输入分享内容....");
+            className("android.widget.AutoCompleteTextView").findOne().click()
+            sleep(5000)
+            className("android.widget.AutoCompleteTextView").findOne().setText("")
+            sleep(5000)
+            className("android.widget.AutoCompleteTextView").findOne().setText(postContent)
+            sleep(random(5000, 10000))
+    }else{
+        taskLog("输入PO文内容是空，所以不需要输入文本")
+    }
+
+
+    //检查是否需要发图片
+    post_Image()
+
+    taskLog("准备点击下一步....");
+    sleep(5000)
+    //desc("下一步")
+    find_btn_desc_base("繼續", "NEXT", "下一步")
+
+
+    taskLog("准备点击POST....");
+    sleep(5000)
+    find_viewGroup_text_base("POST", "發佈" , "發布")
+
+
+    taskLog("等待分享结果，大约60s左右....");
+    sleep(random(50000,60000))
+
+    taskLog("包含视频的个数：" + containVideoCount)
+    var sleepVideoTime = 1000
+    if(containVideoCount > 0){
+        taskLog("包含视频的个数：" + containVideoCount + "，所以需要sleep多长时间")
+        sleepVideoTime = containVideoCount * 50000
+    }else{
+        taskLog("包含视频的个数：" + containVideoCount + "，所以不需要sleep多长时间")
+    }
+    sleep(sleepVideoTime)
+
+
+    //删除临时图片库 :A_NEST_FaceBook_MEDIA
+    // delete_temp_image("/storage/emulated/0/Download/" + A_NEST_FaceBook_MEDIA)
+
+
+    sleep(random(3000, 5000))
+
+} catch(e) {
+    if (e.message === "TASK_COMPLETED") {
+        taskLog("任务正常完成");
+    } else {
+        handleError(e);
+    }
+}finally{
+    taskLog("保存统计结果到备用路径..." );
+    try {
+        var result = {
+            total_target: total_target,
+            total_success: total_success,
+            fail_msg: fail_msg
+        };
+        // 打印统计结果
+        taskLog("统计结果：" + JSON.stringify(result, null, 2));
+        // 使用JSON.stringify将对象转换为JSON字符串，第三个参数2是为了美化输出格式
+        files.write(resultPath, JSON.stringify(result, null, 2));
+        taskLog("已保存统计结果到：" + resultPath);
+    } catch(e) {
+        console.error("保存统计结果失败：" + e.message);
+    }
+    // 刷新媒体库
+    refreshMedia(RPAFilePath);
+    sleep(random(3000, 5000))
+    
+    taskLog("准备退出脚本...");
 }
