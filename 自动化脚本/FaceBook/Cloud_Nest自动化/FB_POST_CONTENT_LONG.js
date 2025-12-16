@@ -58,7 +58,7 @@ var fail_msg = "";
 
 
 //保证Java层和JS代码两边的日志文件一致
-// var taskLogFileName = "nest_task_log_" + getSystemDate("df").replace(/:/g, "-").replace(" ", "_") + ".txt"
+var taskLogFileName = "nest_task_log_" + getSystemDate("df").replace(/:/g, "-").replace(" ", "_") + ".txt"
 var RPAFilePath = "/sdcard/Download/log/";
 // 如果目录存在且有内容就删除
 if (files.exists(RPAFilePath)) {
@@ -67,7 +67,7 @@ if (files.exists(RPAFilePath)) {
 //日志文件路径
 var logFilePath = RPAFilePath + taskLogFileName;
 //确保日志目录存在
-files.ensureDir(logFilePath);
+files.ensureDir(RPAFilePath);
 
 
 //日志文件路径
@@ -261,8 +261,8 @@ function taskLogError(_log){
     // console.error(_log)
 
     try {
-        //确保目录存在
-        files.ensureDir(RPAFilePath);
+        //确保目录存在（使用文件路径，ensureDir会自动创建其父目录）
+        files.ensureDir(logFilePath);
         
         //将日志写入文件
         var logContent = getSystemDate("df") + ":" + "【!!!ERROR!!!】" + _log + "\n";
@@ -1383,6 +1383,7 @@ try {
     }
     sleep(sleepVideoTime)
 
+    taskLog("准备截图...");
     Nest_ScreenCapture()
     sleep(random(12000, 15000))
 
