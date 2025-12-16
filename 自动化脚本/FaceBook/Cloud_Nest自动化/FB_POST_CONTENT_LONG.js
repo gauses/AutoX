@@ -918,14 +918,6 @@ function transferHeadImageToNest(inputPath){
 
 
 
-//打印日志
-function taskLog(_log){
-    toast(_log)
-    console.log(getSystemDate("df") +":" +_log)
-}
-
-
-
 //无论成功或者失败，最后截图一张
 function saveImg(){
     taskLog("开始截图...");
