@@ -49,6 +49,14 @@ const FORCE_STOP_CONFIRM_TEXT = {
     EN_US: "OK"         // 英文
 };
 
+
+// 定义发布按钮文本
+const SEND_TEXT = {
+    ZH_CN: "发布",      // 简体中文
+    ZH_TW: "發佈",      // 繁体中文
+    EN_US: "POST"         // 英文
+}
+
 // 需要的执行次数总数
 var total_target = 0;
 // 成功的数量
@@ -1206,54 +1214,54 @@ function delete_temp_image(folderPath) {
 
 
 //通过Button的Desc
-function find_viewGroup_text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
+// function find_viewGroup_text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
 
-    var findBtn = false
+//     var findBtn = false
 
-    var loopCount  = 0
+//     var loopCount  = 0
 
-     while (true) {
-         taskLog(findText_ZH_CN + " - 循环寻找执行：" + (++loopCount));
-         // 检查计数器是否达到3
-         if (loopCount >= 3) {
-             // 打印一条消息并退出循环
-             taskLog("寻找" + findText_ZH_CN + "按钮失败");
-             taskLog("循环已执行3次，即将退出循环。");
+//      while (true) {
+//          taskLog(findText_ZH_CN + " - 循环寻找执行：" + (++loopCount));
+//          // 检查计数器是否达到3
+//          if (loopCount >= 3) {
+//              // 打印一条消息并退出循环
+//              taskLog("寻找" + findText_ZH_CN + "按钮失败");
+//              taskLog("循环已执行3次，即将退出循环。");
 
-             //不能抛出异常，因为可能Facebook记忆功能，自动跳转到输入页面
-//                 throw new Error(findText_ZH_CN +"按钮没有找到");
-            break;
-         }
+//              //不能抛出异常，因为可能Facebook记忆功能，自动跳转到输入页面
+// //                 throw new Error(findText_ZH_CN +"按钮没有找到");
+//             break;
+//          }
 
 
-         // 查找控件
-         var button1 = className("android.view.ViewGroup").text(findText_ZH_CN).findOne(1000);
-         var button2 = className("android.view.ViewGroup").text(findText_ZH_TW).findOne(1000);
-         var button3 = className("android.view.ViewGroup").text(findText_EN_US).findOne(1000);
-         if (button1) {
-             findBtn = true
-             taskLog("找到" + findText_ZH_CN);
-             click(button1.bounds().centerX() , button1.bounds().centerY())
-             break; // 跳出循环
-         }else if(button2){
-             findBtn = true
-             taskLog("找到" + findText_ZH_TW);
-             click(button2.bounds().centerX() , button2.bounds().centerY())
-             break; // 跳出循环
-         }else if(button3){
-             findBtn = true
-             taskLog("找到" + findText_EN_US);
-             click(button3.bounds().centerX() , button3.bounds().centerY())
-             break; // 跳出循环
-         }
+//          // 查找控件
+//          var button1 = className("android.view.ViewGroup").text(findText_ZH_CN).findOne(1000);
+//          var button2 = className("android.view.ViewGroup").text(findText_ZH_TW).findOne(1000);
+//          var button3 = className("android.view.ViewGroup").text(findText_EN_US).findOne(1000);
+//          if (button1) {
+//              findBtn = true
+//              taskLog("找到" + findText_ZH_CN);
+//              click(button1.bounds().centerX() , button1.bounds().centerY())
+//              break; // 跳出循环
+//          }else if(button2){
+//              findBtn = true
+//              taskLog("找到" + findText_ZH_TW);
+//              click(button2.bounds().centerX() , button2.bounds().centerY())
+//              break; // 跳出循环
+//          }else if(button3){
+//              findBtn = true
+//              taskLog("找到" + findText_EN_US);
+//              click(button3.bounds().centerX() , button3.bounds().centerY())
+//              break; // 跳出循环
+//          }
 
-         sleep(1000)
+//          sleep(1000)
 
-     }
+//      }
 
-     return findBtn
+//      return findBtn
 
-}
+// }
 
 
 function swipe_up(){
@@ -1357,13 +1365,18 @@ try {
 
     taskLog("准备点击POST....");
     sleep(5000)
-    find_viewGroup_text_base("POST", "發佈" , "發布")
+    //find_viewGroup_text_base("POST", "發佈" , "發布")
+    var sendBtn = findTextByLanguages(SEND_TEXT)
+    if(!sendBtn){
+        throw new Error("未找到发布按钮");
+    }
 
+
+    
+    
     total_success = 1
-
-
-    taskLog("等待分享结果，大约60s左右....");
-    sleep(random(50000,60000))
+    taskLog("等待分享结果，大约30s左右....");
+    sleep(random(30000,50000))
 
     taskLog("包含视频的个数：" + containVideoCount)
     var sleepVideoTime = 1000
