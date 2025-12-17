@@ -57,6 +57,29 @@ const SEND_TEXT = {
     EN_US: "POST"         // 英文
 }
 
+
+
+const POST_TO_EVERYONE_NEXT = {
+    ZH_CN: "下一步",      // 简体中文
+    ZH_TW: "繼續",      // 繁体中文
+    EN_US: "NEXT"         // 英文
+}
+
+// 定义分享對象文本
+const POST_TO_EVERYONE_TEXT = {
+    ZH_CN: "所有人",      // 简体中文
+    ZH_TW: "所有人",      // 繁体中文
+    EN_US: "Public"         // 英文
+}
+
+// 定义分享對象文本
+const POST_TO_EVERYONE_TEXT_DONE = {
+    ZH_CN: "完成",      // 简体中文
+    ZH_TW: "完成",      // 繁体中文
+    EN_US: "Done"         // 英文
+}
+
+
 // 需要的执行次数总数
 var total_target = 0;
 // 成功的数量
@@ -217,11 +240,15 @@ function handleError(e) {
     }
 
     forceStop_APP(targetPackageName);
-    Logger.error("===错误报告开始===");
-    Logger.error("错误信息：" + e.message);
-    Logger.error("错误堆栈：" + e.stack);
-    Logger.error("===错误报告结束===");
-    Logger.error("脚本执行Error时间：" + new Date().toLocaleString());
+    taskLogError("===错误报告开始===");
+    fail_msg += "错误信息：" + e + "\n"; 
+    taskLogError("错误信息：" + e);
+    fail_msg += "错误堆栈：" + e.stack + "\n";
+    taskLogError("错误堆栈：" + e.stack);
+    fail_msg += "===错误报告结束===" + "\n";
+    taskLogError("===错误报告结束===");
+    fail_msg += "===错误报告结束===" + "\n";
+    taskLogError("脚本执行Error时间：" + new Date().toLocaleString());
 
     // 在异常退出前保存统计结果
     try {
@@ -1275,6 +1302,26 @@ try {
     }
     sleep(random(5000, 6000))
 
+
+    //新用戶可能会弹出一个新页面：查看分享對象
+    //desc("繼續") - android.widget.Button
+    var continueBtn = findTextByLanguages(POST_TO_EVERYONE_NEXT) 
+    if(continueBtn){
+        sleep(random(5000, 6000))
+        //選擇所有人
+        //desc("所有人") - android.view.View
+        var postToEveryoneBtn = findTextByLanguages(POST_TO_EVERYONE_TEXT)
+        if(!postToEveryoneBtn){
+            throw new Error("查看分享對象,未找到所有人分享按钮");
+        }
+        sleep(random(5000, 6000))
+        var postToEveryoneBtnDone = findTextByLanguages(POST_TO_EVERYONE_TEXT_DONE)
+        if(!postToEveryoneBtnDone){
+            throw new Error("找到完成按钮，但是沒有找到完成按鈕");
+        }
+        sleep(random(5000, 6000))    
+    }
+    
 
     var postContent = get_post_text()
     if(postContent.includes("$${T")){ 
