@@ -761,16 +761,6 @@ function post_Image(){
 
                 });
 
-
-
-
-
-
-
-            
-
-                
-
             }else{
                 taskLog("转移图片失败，停止上传图片")
             }
@@ -985,140 +975,87 @@ function clickDesc(a) {
 //========================================================================================================================
 
 
-//结束当前任务
-function stopCurrentTask(){
-    // saveImg()
 
-    sleep(3000)
-    // //将task的截图上报
-    // var res = http.postMultipart(url, {
-    //     taskId: "xxxxxxxxxxx",
-    //     file: open("/sdcard/Download/" + taskLogImgName)
-    // });
-    // log(res.body.string());
-
-    console.hide()
-
+//通过Button的Text（支持多语言）
+function find_btn_Text_base(findText_ZH_TW, findText_EN_US, findText_ZH_CN) {
+    var texts = [findText_ZH_TW, findText_EN_US, findText_ZH_CN].filter(Boolean);
+    
+    for (var loopCount = 1; loopCount <= 3; loopCount++) {
+        taskLog(texts[0] + " - 循环寻找执行：" + loopCount);
+        
+        for (var i = 0; i < texts.length; i++) {
+            var btn = className("android.widget.Button").text(texts[i]).findOne(1000);
+            if (btn) {
+                taskLog("找到按钮: " + texts[i] + "，clickable=" + btn.clickable());
+                btn.click();
+                return true;
+            }
+        }
+        sleep(1000);
+    }
+    
+    taskLog("循环查找按钮已执行3次，未找到目标按钮");
+    return false;
 }
 
 
 
-
-//通过Button的Text
-function find_btn_Text_base(findText_ZH_TW, findText_EN_US){
-
-
-        var loopCount  = 0
-
-         while (true) {
-             taskLog(findText_ZH_TW + " - 循环寻找执行：" + (++loopCount));
-             // 检查计数器是否达到3
-             if (loopCount >= 3) {
-                // 打印一条消息并退出循环
-                taskLog("循环已执行3次，即将退出循环。");
-                break;
-             }
-
-             // 查找控件
-             var button1 = className("android.widget.Button").text(findText_ZH_TW).findOne(1000);
-             var button2 = className("android.widget.Button").text(findText_EN_US).findOne(1000);
-
-             if (button1) {
-                 taskLog("找到" + findText_ZH_TW + "，点击 = "+button1.clickable() );
-                 button1.click();
-                 break; // 跳出循环
-             }else if(button2){
-                 taskLog("找到" + findText_EN_US + "，点击 = "+button2.clickable() );
-                 button2.click();
-                 break; // 跳出循环
-             }
-
-             sleep(1000)
-
-         }
-}
-
-
-
-//通过Button的Desc
-function find_btn_desc_base(findText_ZH_TW, findText_EN_US, findText_ZH_CN){
-
-        var loopCount  = 0
-
-         while (true) {
-             taskLog(findText_ZH_TW + " - 循环寻找执行：" + (++loopCount));
-             // 检查计数器是否达到3
-             if (loopCount >= 3) {
-                taskLog("循环查找" + findText_ZH_TW + "按钮已执行3次，即将退出循环。");
-                break;
-             }
-
-
-             // 查找控件
-             var button1 = className("android.widget.Button").desc(findText_ZH_TW).findOne(1000);
-             var button2 = className("android.widget.Button").desc(findText_EN_US).findOne(1000);
-             var button3 = className("android.widget.Button").desc(findText_ZH_CN).findOne(1000);
-             if (button1) {
-                 taskLog("找到" + findText_ZH_TW);
-                 button1.click();
-                 break; // 跳出循环
-             }else if(button2){
-                 taskLog("找到" + findText_EN_US);
-                 button2.click();
-                 break; // 跳出循环
-             }else if(button3){
-                 taskLog("找到" + findText_ZH_CN);
-                 button3.click();
-                 break; // 跳出循环
-             }
-
-             sleep(1000)
-
-         }
+//通过Button的Desc（支持多语言）
+function find_btn_desc_base(findText_EN_US, findText_ZH_TW, findText_ZH_CN) {
+    var texts = [findText_EN_US, findText_ZH_TW, findText_ZH_CN].filter(Boolean); // 过滤空值
+    
+    for (var loopCount = 1; loopCount <= 3; loopCount++) {
+        taskLog(texts[0] + " - 循环寻找执行：" + loopCount);
+        
+        for (var i = 0; i < texts.length; i++) {
+            var btn = className("android.widget.Button").desc(texts[i]).findOne(1000);
+            if (btn) {
+                taskLog("找到按钮: " + texts[i]);
+                btn.click();
+                return true;
+            }
+        }
+        sleep(1000);
+    }
+    
+    taskLog("循环查找按钮已执行3次，未找到目标按钮");
+    return false;
 }
 
 
 
 
 //从评论列表数组中，随机挑选一条内容
-function get_post_text(){
-    // 用于存储用户的数组
-    let comments = [];
-    // 户是否存在
-    taskLog("用户地址 =  " + FB_input_text)
-    const file = new java.io.File(FB_input_text);
-    if (file.exists() && file.isFile()) {
-        try {
-            // 读取文件内容
-            const reader = new java.io.BufferedReader(new java.io.FileReader(file));
-            let line;
-            while ((line = reader.readLine()) !== null) {
-                // 去除首尾空格后判断是否为空行
-                if (line.trim() !== "") {
-                    comments.push(line);
-                }
-            }
-            reader.close();
-        } catch (e) {
-            taskLog("读取文件时发生错误：" + e.message);
-        }
-    } else {
-        // 如果文件不存在，将文件名添加到数组中
-        comments.push(FB_input_text);
-    }    
-
-
-    if(comments.length > 0){
-        var randIdx = random(0, comments.length - 1)
-        var messageText = comments[randIdx];
-        taskLog("随机挑选的评论内容：" + messageText)
-        return messageText
-    }else{
-        taskLog("评论列表数组为空，所以不需要输入文本")
-        return ""
+function get_post_text() {
+    taskLog("文案路径 = " + FB_input_text);
+    
+    // 如果变量未被替换（以 $${T_ 开头），说明配置有问题
+    if (FB_input_text.startsWith("$${T_")) {
+        throw new Error("文案变量未被正确替换，请检查配置：" + FB_input_text);
     }
-
-
+    
+    // 如果文件不存在，直接返回空
+    if (!files.exists(FB_input_text) || !files.isFile(FB_input_text)) {
+        taskLog("文件不存在，不输入内容");
+        return "";
+    }
+    
+    try {
+        var comments = files.read(FB_input_text)
+            .split('\n')
+            .filter(function(line) { return line.trim() !== ""; });
+        
+        if (comments.length > 0) {
+            var messageText = comments[random(0, comments.length - 1)];
+            taskLog("随机挑选的评论内容：" + messageText);
+            return messageText;
+        }
+    } catch (e) {
+        taskLog("读取文件时发生错误：" + e.message);
+    }
+    
+    taskLog("文案内容为空");
+    return "";
 }
 
 
