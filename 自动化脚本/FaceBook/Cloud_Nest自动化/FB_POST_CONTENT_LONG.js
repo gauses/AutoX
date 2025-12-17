@@ -899,13 +899,14 @@ function transferHeadImageToNest(inputPath){
             return false;
         }
 
-        // 删除原文件
-        try {
-            files.remove(inputPath);
-            taskLog("删除原文件成功: " + inputPath);
-        } catch(e) {
-            console.error("删除原文件失败: " + e);
-        }
+        // 删除原文件，暂时先不删除，测试用//
+        // try {
+        //     files.remove(inputPath);
+        //     taskLog("删除原文件成功: " + inputPath);
+        // } catch(e) {
+        //     console.error("删除原文件失败: " + e);
+        // }
+
     }
 
     // 刷新媒体库
@@ -1008,9 +1009,9 @@ function find_btn_desc_base(findText_EN_US, findText_ZH_TW, findText_ZH_CN) {
         taskLog(texts[0] + " - 循环寻找执行：" + loopCount);
         
         for (var i = 0; i < texts.length; i++) {
-            var btn = className("android.widget.Button").desc(texts[i]).findOne(1000);
+            var btn = className("android.widget.Button").descContains(texts[i]).findOne(1000);
             if (btn) {
-                taskLog("找到按钮: " + texts[i]);
+                taskLog("找到按钮(包含): " + texts[i] + " | 实际desc: " + btn.desc());
                 btn.click();
                 return true;
             }
@@ -1266,7 +1267,12 @@ try {
     taskLog("打开Facebook成功...")
  
     //desc("在 Facebook 撰寫貼文")
-    find_btn_desc_base("Make a post on Facebook", "在 Facebook 撰寫貼文")
+    //desc("在想些什麽?建立貼文")
+    //desc("Make a post on Facebook")
+    var makePostBtn = find_btn_desc_base("Make a post", "貼文")
+    if(!makePostBtn){
+        throw new Error("未找到Facebook建立貼文按钮");
+    }
     sleep(random(5000, 6000))
 
 
