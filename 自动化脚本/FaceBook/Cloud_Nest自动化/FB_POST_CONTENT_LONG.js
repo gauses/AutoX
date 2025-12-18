@@ -11,6 +11,52 @@ importClass(java.io.FileWriter);
 // adb shell am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d file:///sdcard/Download
 
 
+//******************************************************************
+//***********************全局日志拦截器*************************
+//******************************************************************
+
+// 保存原始的console.log方法
+var originalConsoleLog = console.log;
+
+// 全局日志配置（稍后会在文件路径定义后更新）
+var GLOBAL_LOG_CONFIG = {
+    enabled: true,
+    logToFile: true,
+    logToConsole: true,
+    logFilePath: "/sdcard/Download/log/temp_global.log"  // 临时路径，稍后会更新
+};
+
+// // 重写console.log方法，使其同时输出到控制台和文件
+// console.log = function() {
+//     // 调用原始的console.log方法
+//     if (GLOBAL_LOG_CONFIG.logToConsole) {
+//         originalConsoleLog.apply(console, arguments);
+//     }
+    
+//     // 将日志写入文件
+//     if (GLOBAL_LOG_CONFIG.logToFile && GLOBAL_LOG_CONFIG.enabled) {
+//         try {
+//             // 确保日志目录存在
+//             files.ensureDir("/sdcard/Download/log/");
+            
+//             // 将参数转换为字符串
+//             var logMessage = Array.prototype.slice.call(arguments).map(function(arg) {
+//                 return typeof arg === 'object' ? JSON.stringify(arg) : String(arg);
+//             }).join(' ');
+            
+//             // 添加时间戳
+//             var timestamp = getSystemDate("df");
+//             var logContent = timestamp + ": " + logMessage + "\n";
+            
+//             // 写入文件
+//             files.append(GLOBAL_LOG_CONFIG.logFilePath, logContent);
+            
+//         } catch(e) {
+//             // 如果写入失败，至少输出到控制台
+//             originalConsoleLog("日志写入文件失败：" + e);
+//         }
+//     }
+// };
 
 //保证Java层和JS代码两边的日志文件一致
 var taskLogFileName = "nest_task_log.txt"
@@ -25,12 +71,26 @@ const FB_input_IMAGE = '$${M_FB_图片地址}'; //用户需要输入的图片地
 
 // 配置对象
 var CONFIG = {
+
+    // 路径配置
+    PATHS: {
+        DOWNLOAD: "/storage/emulated/0/Download/",
+        TEMP_MEDIA: "A_NEST_TikTok_MEDIA",
+        LOG_DIR: "/sdcard/Download/log/"
+    },
+
     // 超时配置
     TIMEOUTS: {
         SHORT: 3000,
         MEDIUM: 5000,
         LONG: 10000,
         UPLOAD: 120000
+    },
+
+    // 日志配置
+    LOG: {
+        FILENAME: "nest_task_log.txt",
+        IMG_NAME: "nest_task_log.png"
     }
 
 }
@@ -79,6 +139,12 @@ const POST_TO_EVERYONE_TEXT_DONE = {
     EN_US: "Done"         // 英文
 }
 
+//POST_TO_EVERYONE_TEXT_FINISHED
+const POST_TO_EVERYONE_TEXT_FINISHED = {
+    ZH_CN: "完成",      // 简体中文
+    ZH_TW: "完成",      // 繁体中文
+    EN_US: "Done"         // 英文
+}
 
 // 需要的执行次数总数
 var total_target = 0;
@@ -89,7 +155,7 @@ var fail_msg = "";
 
 
 //保证Java层和JS代码两边的日志文件一致
-var taskLogFileName = "nest_task_log_" + getSystemDate("df").replace(/:/g, "-").replace(" ", "_") + ".txt"
+var taskLogFileName = "nest_task_log.txt"
 var RPAFilePath = "/sdcard/Download/log/";
 // 如果目录存在且有内容就删除
 if (files.exists(RPAFilePath)) {
@@ -100,8 +166,10 @@ var logFilePath = RPAFilePath + taskLogFileName;
 //确保日志目录存在
 files.ensureDir(RPAFilePath);
 
+// 更新全局日志配置，使用与taskLog相同的日志文件路径
+GLOBAL_LOG_CONFIG.logFilePath = logFilePath;
 
-//日志文件路径
+//执行结果文件路径
 var resultPath = RPAFilePath + "nest_result_rpa.txt";
 //确保日志目录存在
 files.ensureDir(resultPath);
@@ -204,19 +272,21 @@ var Utils = {
 var handleErrorFlag = false //默认没有错误，如果出现异常，那么该值是true
 
 // 注册退出事件监听器
- events.on('exit', function(){
+events.on('exit', function () {
     console.hide()
     sleep(1000)
+    taskLog("-----------------脚本执行结束：---------------");
+    taskLog("Facebook個人發文以及图片---------------");
+    taskLog("脚本执行时间：" + new Date().toLocaleString());
 
-    if(handleErrorFlag){
-        console.error("-----------------脚本执行出现异常---------------");
-        console.error("Facebook個人發文以及图片---------------");
-        console.error("脚本执行时间：" + new Date().toLocaleString());
-    }else{
-        forceStop_APP(targetPackageName)
-        console.log("-----------------脚本功能执行结束：---------------");
-        console.log("Facebook個人發文以及图片---------------");
-        console.log("脚本执行时间：" + new Date().toLocaleString());
+    if (handleErrorFlag) {
+        taskLogError("-----------------脚本执行出现异常---------------");
+        taskLogError("Facebook個人發文以及图片---------------");
+        taskLogError("脚本执行时间：" + new Date().toLocaleString());
+    } else {
+        taskLog("-----------------脚本功能执行结束：---------------");
+        taskLog("Facebook個人發文以及图片---------------");
+        taskLog("脚本执行时间：" + new Date().toLocaleString());
     }
     openLogActivity();
 });
@@ -457,7 +527,7 @@ function Nest_ScreenCapture(){
     // var dir = "/sdcard/Pictures";
     // files.ensureDir(dir);
     // var path = dir + "/nestshot_" + Date.now() + ".png";
-    var path = RPAFilePath + "/nestshot_" + Date.now() + ".png";
+    var path = RPAFilePath + "/nestshot_rpa.png" ;
     img.saveTo(path);                    // 保存
     img.recycle();                       // 回收内存
     taskLog("自动化任务已经完成-已保存截图："+ path);
@@ -663,7 +733,7 @@ function post_Image(){
 
                 //className("android.widget.Button").desc("Photo/video").findOne().click()
                 taskLog("准备点击 - 相片／影片....")
-                find_btn_desc_base("Photo/video", "相片／影片")
+                find_btn_desc_base("Photo/video", "相片／影片", "圖庫")
                 sleep(random(3000, 5000))
 
                 //点击权限
@@ -926,13 +996,13 @@ function transferHeadImageToNest(inputPath){
             return false;
         }
 
-        // 删除原文件，暂时先不删除，测试用//
-        // try {
-        //     files.remove(inputPath);
-        //     taskLog("删除原文件成功: " + inputPath);
-        // } catch(e) {
-        //     console.error("删除原文件失败: " + e);
-        // }
+        // 删除原文件
+        try {
+            files.remove(inputPath);
+            taskLog("删除原文件成功: " + inputPath);
+        } catch(e) {
+            console.error("删除原文件失败: " + e);
+        }
 
     }
 
@@ -1178,55 +1248,6 @@ function delete_temp_image(folderPath) {
 }
 
 
-//通过Button的Desc
-// function find_viewGroup_text_base(findText_ZH_CN, findText_ZH_TW, findText_EN_US){
-
-//     var findBtn = false
-
-//     var loopCount  = 0
-
-//      while (true) {
-//          taskLog(findText_ZH_CN + " - 循环寻找执行：" + (++loopCount));
-//          // 检查计数器是否达到3
-//          if (loopCount >= 3) {
-//              // 打印一条消息并退出循环
-//              taskLog("寻找" + findText_ZH_CN + "按钮失败");
-//              taskLog("循环已执行3次，即将退出循环。");
-
-//              //不能抛出异常，因为可能Facebook记忆功能，自动跳转到输入页面
-// //                 throw new Error(findText_ZH_CN +"按钮没有找到");
-//             break;
-//          }
-
-
-//          // 查找控件
-//          var button1 = className("android.view.ViewGroup").text(findText_ZH_CN).findOne(1000);
-//          var button2 = className("android.view.ViewGroup").text(findText_ZH_TW).findOne(1000);
-//          var button3 = className("android.view.ViewGroup").text(findText_EN_US).findOne(1000);
-//          if (button1) {
-//              findBtn = true
-//              taskLog("找到" + findText_ZH_CN);
-//              click(button1.bounds().centerX() , button1.bounds().centerY())
-//              break; // 跳出循环
-//          }else if(button2){
-//              findBtn = true
-//              taskLog("找到" + findText_ZH_TW);
-//              click(button2.bounds().centerX() , button2.bounds().centerY())
-//              break; // 跳出循环
-//          }else if(button3){
-//              findBtn = true
-//              taskLog("找到" + findText_EN_US);
-//              click(button3.bounds().centerX() , button3.bounds().centerY())
-//              break; // 跳出循环
-//          }
-
-//          sleep(1000)
-
-//      }
-
-//      return findBtn
-
-// }
 
 
 function swipe_up(){
@@ -1342,6 +1363,12 @@ try {
     }else{
         taskLog("输入PO文内容是空，所以不需要输入文本")
     }
+
+    //部分版本在輸入文本後，右上角會有一個提示按鈕：完成
+    //需要點擊一下
+    var completeBtn = findTextByLanguages(POST_TO_EVERYONE_TEXT_FINISHED)
+    sleep(random(5000, 6000))
+
 
 
     //检查是否需要发图片

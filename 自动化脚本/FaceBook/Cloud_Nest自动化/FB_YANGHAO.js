@@ -8,6 +8,54 @@ importClass(java.io.FileWriter);
 //******************************************************************
 
 
+//******************************************************************
+//***********************全局日志拦截器*************************
+//******************************************************************
+
+// 保存原始的console.log方法
+var originalConsoleLog = console.log;
+
+// 全局日志配置（稍后会在文件路径定义后更新）
+var GLOBAL_LOG_CONFIG = {
+    enabled: true,
+    logToFile: true,
+    logToConsole: true,
+    logFilePath: "/sdcard/Download/log/temp_global.log"  // 临时路径，稍后会更新
+};
+
+// // 重写console.log方法，使其同时输出到控制台和文件
+// console.log = function() {
+//     // 调用原始的console.log方法
+//     if (GLOBAL_LOG_CONFIG.logToConsole) {
+//         originalConsoleLog.apply(console, arguments);
+//     }
+    
+//     // 将日志写入文件
+//     if (GLOBAL_LOG_CONFIG.logToFile && GLOBAL_LOG_CONFIG.enabled) {
+//         try {
+//             // 确保日志目录存在
+//             files.ensureDir("/sdcard/Download/log/");
+            
+//             // 将参数转换为字符串
+//             var logMessage = Array.prototype.slice.call(arguments).map(function(arg) {
+//                 return typeof arg === 'object' ? JSON.stringify(arg) : String(arg);
+//             }).join(' ');
+            
+//             // 添加时间戳
+//             var timestamp = getSystemDate("df");
+//             var logContent = timestamp + ": " + logMessage + "\n";
+            
+//             // 写入文件
+//             files.append(GLOBAL_LOG_CONFIG.logFilePath, logContent);
+            
+//         } catch(e) {
+//             // 如果写入失败，至少输出到控制台
+//             originalConsoleLog("日志写入文件失败：" + e);
+//         }
+//     }
+// };
+
+
 
 
 //保证Java层和JS代码两边的日志文件一致
@@ -73,7 +121,8 @@ var FacebookPackageName = 'com.facebook.katana';
 
 
 //保证Java层和JS代码两边的日志文件一致
-var taskLogFileName = "nest_task_log_" + getSystemDate("df").replace(/:/g, "-").replace(" ", "_") + ".txt"
+//保证Java层和JS代码两边的日志文件一致
+var taskLogFileName = "nest_task_log.txt"
 var RPAFilePath = "/sdcard/Download/log/";
 // 如果目录存在且有内容就删除
 if (files.exists(RPAFilePath)) {
@@ -84,8 +133,10 @@ var logFilePath = RPAFilePath + taskLogFileName;
 //确保日志目录存在
 files.ensureDir(RPAFilePath);
 
+// 更新全局日志配置，使用与taskLog相同的日志文件路径
+GLOBAL_LOG_CONFIG.logFilePath = logFilePath;
 
-//日志文件路径
+//执行结果文件路径
 var resultPath = RPAFilePath + "nest_result_rpa.txt";
 //确保日志目录存在
 files.ensureDir(resultPath);
@@ -244,7 +295,7 @@ function Nest_ScreenCapture(){
     // var dir = "/sdcard/Pictures";
     // files.ensureDir(dir);
     // var path = dir + "/nestshot_" + Date.now() + ".png";
-    var path = RPAFilePath + "/nestshot_" + Date.now() + ".png";
+    var path = RPAFilePath + "/nestshot_rpa.png" ;
     img.saveTo(path);                    // 保存
     img.recycle();                       // 回收内存
     taskLog("自动化任务已经完成-已保存截图："+ path);
