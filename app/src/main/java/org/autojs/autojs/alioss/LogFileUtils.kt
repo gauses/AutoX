@@ -11,6 +11,11 @@ import okhttp3.RequestBody
 import org.json.JSONObject
 import java.io.File
 import java.io.IOException
+import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.util.Date
+import java.util.Locale
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 
@@ -85,8 +90,17 @@ object LogFileUtils {
         return files
     }
 
+
+    fun getTaskDate(): String {
+        val date = Date()
+        val formatter = SimpleDateFormat("yyyyMM", Locale.getDefault())
+        val formattedDate = formatter.format(date)
+        return formattedDate
+    }
+
     //上传服务器，告诉服务器可以下拉日志
-    fun uploadLogFileToServer(result: String) {
+    //taskSeconds : 本次任务执行的时间，秒
+    fun uploadLogFileToServer(result: String, taskSeconds: Double) {
 
         var doJsResult = result //可能执行出现异常，但是走到onSuccess，因为在js脚本里面将异常进行了处理
         Log.d("ScriptExecutionGlobal", "uploadLogFileToServer start ======================= ")
@@ -108,8 +122,9 @@ object LogFileUtils {
 
         // 生成OSS路径
         val uuid = UUID.randomUUID().toString()
-        val report_oss_path = "template-store/rpa-report/$uuid.txt"
-        val screenshot_oss_path = "template-store/rpa-report/$uuid.png"
+        var oss_date = getTaskDate()
+        val report_oss_path = "template-store/rpa-report/$oss_date/$uuid.txt"
+        val screenshot_oss_path = "template-store/rpa-report/$oss_date/$uuid.png"
         
         // 记录生成的路径
         Log.d("LogFileUtils", "生成上传路径:")
@@ -207,13 +222,6 @@ object LogFileUtils {
             Log.d("LogFileUtils", "文件上传流程已完成，准备执行上报...")
 
 
-//        // 更新result状态
-//        var updatedResult = result
-//
-//        if (uploadError) {
-//            updatedResult = "fail"
-//        }
-
         // 确保上传流程完全结束后再继续
         if (uploadInProgress) {
             Log.d("LogFileUtils", "等待上传完成...")
@@ -232,6 +240,9 @@ object LogFileUtils {
 
         reportJson.put("report", report_oss_path) //上传oss的执行记录txt地址
         reportJson.put("screenshot", screenshot_oss_path)//上传oss的截图记录txt地址
+
+        reportJson.put("taskSeconds", taskSeconds)//任务执行的总时长，单位：秒
+
 
         // 读取 nest_result_rpa.txt 的内容
         try {
@@ -292,7 +303,7 @@ object LogFileUtils {
         // 构建请求体
         val requestBody = RequestBody.create("application/json; charset=utf-8".toMediaType(), reportJson.toString())
         val request: Request = Request.Builder()
-            .url("https://cs.nestbrowser.com/cm/v1/tk-report")
+            .url("https://res.nestbrowser.com/cm/v1/tk-report")
             .method("POST", requestBody)
             .addHeader("X-Token", nestScriptJson.get("xToken").toString())
             .addHeader("Content-Type", "application/json")

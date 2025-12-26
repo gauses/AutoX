@@ -96,6 +96,11 @@ const LIKE_TEXT = {
     EN_US: "Like"         // 英文 
 };
 
+const LIKE_TEXT_END = {
+    ZH_TW: "按住即可對留言傳達心情", // 繁体中文
+};
+
+
 const COMMENT_TEXT = {
     ZH_CN: "Comment",      // 简体中文
     ZH_TW: "留言",      // 繁体中文
@@ -924,7 +929,8 @@ try{
                 var likeBtn = likeBtnList.get(i);
                 if(likeBtn){
                     var descText = likeBtn.desc() || "";
-                    if (Object.values(LIKE_TEXT).some(text => descText.startsWith(text)))  {
+                    if (Object.values(LIKE_TEXT).some(text => descText.startsWith(text)) 
+                        || Object.values(LIKE_TEXT_END).some(text => descText.includes(text)))  {
 
                         total_success++
                         taskLog("通过点赞按钮，检查total_success = " + total_success )

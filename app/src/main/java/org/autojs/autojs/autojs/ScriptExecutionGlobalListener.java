@@ -42,8 +42,15 @@ public class ScriptExecutionGlobalListener implements ScriptExecutionListener {
 //        2025-08-15 14:55:50.447 17154-17250 ScriptExecutionGlobal  D  onSuccess result =======================
 
 
+
+        Long millis = (Long) execution.getEngine().getTag(ENGINE_TAG_START_TIME);
+        if (millis == null)
+            return;
+        double taskSeconds = (System.currentTimeMillis() - millis) / 1000.0;
+
+
         //上传文件
-        LogFileUtils.INSTANCE.uploadLogFileToServer("success");
+        LogFileUtils.INSTANCE.uploadLogFileToServer("success", taskSeconds);
 
         try {
             Thread.sleep(3000);
@@ -97,9 +104,15 @@ public class ScriptExecutionGlobalListener implements ScriptExecutionListener {
 //        2025-08-18 15:11:51.642 14477-14562 ScriptExecutionGlobal   org.autojs.autoxjs                   D  onException result =======================
 
 
+        Long millis = (Long) execution.getEngine().getTag(ENGINE_TAG_START_TIME);
+        if (millis == null)
+            return;
+        double taskSeconds = (System.currentTimeMillis() - millis) / 1000.0;
+
 
         //上传失败文件
-        LogFileUtils.INSTANCE.uploadLogFileToServer("fail");
+        LogFileUtils.INSTANCE.uploadLogFileToServer("fail", taskSeconds);
+
         try {
             Thread.sleep(3000);
         } catch (InterruptedException ex) {

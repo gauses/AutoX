@@ -166,7 +166,7 @@ function openAppSettings(packageName) {
 
 
 //开始录屏截图到本地
-function Nest_ScreenCapture(){
+function Nest_ScreenCapture() {
     // 申请截图权限（会弹系统录屏权限框）
     if (!requestScreenCapture()) {
         taskLog("自动化任务-申请截图权限失败");
@@ -187,10 +187,10 @@ function Nest_ScreenCapture(){
     // var dir = "/sdcard/Pictures";
     // files.ensureDir(dir);
     // var path = dir + "/nestshot_" + Date.now() + ".png";
-    var path = RPAFilePath + "/nestshot_rpa.png" ;
+    var path = RPAFilePath + "/nestshot_rpa.png";
     img.saveTo(path);                    // 保存
     img.recycle();                       // 回收内存
-    taskLog("自动化任务已经完成-已保存截图："+ path);
+    taskLog("自动化任务已经完成-已保存截图：" + path);
 
 
     //刷新媒体库
@@ -231,15 +231,15 @@ auto.waitFor();
 var handleErrorFlag = false //默认没有错误，如果出现异常，那么该值是true
 
 // 注册退出事件监听器
- events.on('exit', function(){
+events.on('exit', function () {
     console.hide()
     sleep(1000)
 
-    if(handleErrorFlag){
+    if (handleErrorFlag) {
         taskLogError("-----------------脚本执行出现异常---------------");
         taskLogError("Tiktok私信：根據私訊列表UID的順序，去私訊​​用戶---------------");
         taskLogError("脚本执行时间：" + new Date().toLocaleString());
-    }else{
+    } else {
         taskLog("-----------------脚本功能执行结束：---------------");
         taskLog("Tiktok私信：根據私訊列表UID的順序，去私訊​​用戶---------------");
         taskLog("脚本执行时间：" + new Date().toLocaleString());
@@ -251,7 +251,7 @@ function handleError(e) {
     handleErrorFlag = true
     forceStop_APP(targetPackageName)
     taskLogError("===错误报告开始===");
-    fail_msg += "错误信息：" + e + "\n"; 
+    fail_msg += "错误信息：" + e + "\n";
     taskLogError("错误信息：" + e);
     fail_msg += "错误堆栈：" + e.stack + "\n";
     taskLogError("错误堆栈：" + e.stack);
@@ -273,7 +273,7 @@ function openLogActivity() {
     app.startActivity(intent);
 }
 
-function throw_error_storage_not_enough(){
+function throw_error_storage_not_enough() {
     throw new Error("当前设备的存储空间不可用，请关机重启一次设备，然后重新执行一次脚本")
 }
 
@@ -282,13 +282,13 @@ let currentEngine = engines.myEngine()
 let runningEngines = engines.all()
 let currentSource = currentEngine.getSource() + ''
 if (runningEngines.length > 1) {
-  runningEngines.forEach(compareEngine => {
-    let compareSource = compareEngine.getSource() + ''
-    if (currentEngine.id !== compareEngine.id && compareSource === currentSource) {
-      // 强制关闭同名的脚本
-      compareEngine.forceStop()
-    }
-  })
+    runningEngines.forEach(compareEngine => {
+        let compareSource = compareEngine.getSource() + ''
+        if (currentEngine.id !== compareEngine.id && compareSource === currentSource) {
+            // 强制关闭同名的脚本
+            compareEngine.forceStop()
+        }
+    })
 }
 
 
@@ -319,7 +319,7 @@ if (isAppInstalled(GLOBAL_TikTokPackageName)) {
 } else {
     toast("未检测到TikTok已安装，请先安装TikTok！");
     taskLog("未检测到TikTok已安装，脚本终止。");
-    throw new Error("未检测到TikTok安装，请先安装TikTok！"); 
+    throw new Error("未检测到TikTok安装，请先安装TikTok！");
 }
 
 sleep(random(3000, 5000))
@@ -338,47 +338,47 @@ sleep(random(3000, 5000))
 
 function getSystemDate(a) {
     var b = new SimpleDateFormat("HH:mm:ss"), c = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
-    return "tf" == a ? b.format(new java.util.Date()) :"df" == a ? c.format(new java.util.Date()) :void 0;
+    return "tf" == a ? b.format(new java.util.Date()) : "df" == a ? c.format(new java.util.Date()) : void 0;
 }
 
 //打印日志
-function taskLog(_log){
+function taskLog(_log) {
     toast(_log)
-    console.log(getSystemDate("df") +":" +_log)
+    console.log(getSystemDate("df") + ":" + _log)
     console.log(_log)
 
 
     try {
         //确保目录存在
         files.ensureDir(RPAFilePath);
-        
+
         //将日志写入文件
         var logContent = getSystemDate("df") + ":" + _log + "\n";
         // var logContent = _log + "\n";
         files.append(logFilePath, logContent);
-        
-    } catch(e) {
+
+    } catch (e) {
         console.error("写入日志文件失败：" + e);
     }
 }
 
 
-function taskLogError(_log){
+function taskLogError(_log) {
     toast(_log);
-    
-    console.error(getSystemDate("df") +":" +_log)
+
+    console.error(getSystemDate("df") + ":" + _log)
     // console.error(_log)
 
     try {
         //确保目录存在
         files.ensureDir(RPAFilePath);
-        
+
         //将日志写入文件
         var logContent = getSystemDate("df") + ":" + "【!!!ERROR!!!】" + _log + "\n";
         // var logContent = "【!!!ERROR!!!】" + _log + "\n";
         files.append(logFilePath, logContent);
-        
-    } catch(e) {
+
+    } catch (e) {
         console.error("写入日志文件失败：" + e);
     }
 }
@@ -388,150 +388,150 @@ function taskLogError(_log){
 
 
 
-    //强制停止TikTok 
-    function forceStop_APP(packageName){
-        taskLog("准备强杀:" + packageName + "...")
-        sleep(3000);
-        openAppSettings(packageName)
-        sleep(5000)
+//强制停止TikTok 
+function forceStop_APP(packageName) {
+    taskLog("准备强杀:" + packageName + "...")
+    sleep(3000);
+    openAppSettings(packageName)
+    sleep(5000)
 
-        // 遍历所有可能的强制停止按钮文本
-        for (let lang in FORCE_STOP_TEXT) {
-            let stopText = FORCE_STOP_TEXT[lang];
-            if (text(stopText).exists()) {
-                let forceStopBtn = text(stopText).findOne();
-                if (forceStopBtn && forceStopBtn.clickable()) {
-                    forceStopBtn.click();
-                    sleep(1000);
-                    
-                    // 遍历所有可能的确认按钮文本
-                    for (let confirmLang in FORCE_STOP_CONFIRM_TEXT) {
-                        let confirmText = FORCE_STOP_CONFIRM_TEXT[confirmLang];
-                        if (text(confirmText).exists()) {
-                            text(confirmText).findOne().click();
-                            taskLog("成功点击'" + stopText + "'按钮并确认");
-                            sleep(3000);
-                            home();
-                            return;
-                        }
+    // 遍历所有可能的强制停止按钮文本
+    for (let lang in FORCE_STOP_TEXT) {
+        let stopText = FORCE_STOP_TEXT[lang];
+        if (text(stopText).exists()) {
+            let forceStopBtn = text(stopText).findOne();
+            if (forceStopBtn && forceStopBtn.clickable()) {
+                forceStopBtn.click();
+                sleep(1000);
+
+                // 遍历所有可能的确认按钮文本
+                for (let confirmLang in FORCE_STOP_CONFIRM_TEXT) {
+                    let confirmText = FORCE_STOP_CONFIRM_TEXT[confirmLang];
+                    if (text(confirmText).exists()) {
+                        text(confirmText).findOne().click();
+                        taskLog("成功点击'" + stopText + "'按钮并确认");
+                        sleep(3000);
+                        home();
+                        return;
                     }
-                } else {
-                    taskLog("未找到可点击的'" + stopText + "'按钮");
                 }
             } else {
-                taskLog("未找到'" + stopText + "'按钮");
+                taskLog("未找到可点击的'" + stopText + "'按钮");
             }
-            sleep(1000);
+        } else {
+            taskLog("未找到'" + stopText + "'按钮");
         }
-
-        // 如果所有语言都尝试失败，返回主页
-        home();
+        sleep(1000);
     }
 
+    // 如果所有语言都尝试失败，返回主页
+    home();
+}
 
 
 
 
-    //屏幕上滑
-    function swipe_to_up(){
-        // 获取设备屏幕的宽高
-        var width = device.width;
-        var height = device.height;
 
-        // 生成随机起始点
-        var startX = random(width / 3 , width * 2 / 3);
-        var startY = random(height * 2 / 3, height * 3 / 4);
+//屏幕上滑
+function swipe_to_up() {
+    // 获取设备屏幕的宽高
+    var width = device.width;
+    var height = device.height;
 
-        // 生成随机结束点
-        var endX = random(width / 3 , width * 2 / 3);
-        var endY = random(height * 1 / 3, height * 1 / 4);
+    // 生成随机起始点
+    var startX = random(width / 3, width * 2 / 3);
+    var startY = random(height * 2 / 3, height * 3 / 4);
 
-        // 屏幕上滑操作
-        var swipe_time = random(500, 1000);
-        swipe(startX, startY, endX, endY, swipe_time);
-        taskLog("开始滑动位置，x = "+startX+"；y = " + startY + "，滑动时间 = " + swipe_time)
-        taskLog("结束滑动位置，x = "+endX+"；y = " + endY)
+    // 生成随机结束点
+    var endX = random(width / 3, width * 2 / 3);
+    var endY = random(height * 1 / 3, height * 1 / 4);
 
+    // 屏幕上滑操作
+    var swipe_time = random(500, 1000);
+    swipe(startX, startY, endX, endY, swipe_time);
+    taskLog("开始滑动位置，x = " + startX + "；y = " + startY + "，滑动时间 = " + swipe_time)
+    taskLog("结束滑动位置，x = " + endX + "；y = " + endY)
+
+}
+
+
+
+
+
+
+
+
+
+function clickId(a) {
+    taskLog("开始点击元素ID ：" + a);
+
+    let obj_ID = id(a).boundsInside(5, 5, device.width - 5, device.height - 5);
+
+    // 检查是否找到元素
+    let elements = obj_ID.find();
+    if (elements.empty()) {
+        taskLog("没有找到元素ID ：" + a);
+        return false;
     }
 
+    // 获取第一个匹配的元素
+    let element = elements.get(0);
+    let X = element.bounds().centerX();
+    let Y = element.bounds().centerY();
 
-
-
-
-
-
-
-
-    function clickId(a) {
-        taskLog("开始点击元素ID ：" + a);
-
-        let obj_ID = id(a).boundsInside(5, 5, device.width - 5, device.height - 5);
-        
-        // 检查是否找到元素
-        let elements = obj_ID.find();
-        if (elements.empty()) {
-            taskLog("没有找到元素ID ：" + a);
-            return false;
-        }
-        
-        // 获取第一个匹配的元素
-        let element = elements.get(0);
-        let X = element.bounds().centerX();
-        let Y = element.bounds().centerY();
-        
-        // 验证 X 和 Y 是否为正数
-        if (X < 0 || Y < 0) {
-            taskLog("坐标无效，中心点X或Y为负值: X=" + X + ", Y=" + Y);
-            return false;
-        }
-
-        // 生成随机偏差
-        let Deviation = random(-2, 2);
-        let X1 = X - Deviation;
-        let Y1 = Y - Deviation;
-
-        // 防止偏差导致负值
-        X1 = Math.max(0, X1);
-        Y1 = Math.max(0, Y1);
-
-        try {
-            device.sdkInt < 24 ? ra.tap(X1, Y1) : click(X1, Y1);
-        } catch (e) {
-            taskLog("点击操作失败：" + e.message);
-        }
+    // 验证 X 和 Y 是否为正数
+    if (X < 0 || Y < 0) {
+        taskLog("坐标无效，中心点X或Y为负值: X=" + X + ", Y=" + Y);
+        return false;
     }
 
+    // 生成随机偏差
+    let Deviation = random(-2, 2);
+    let X1 = X - Deviation;
+    let Y1 = Y - Deviation;
+
+    // 防止偏差导致负值
+    X1 = Math.max(0, X1);
+    Y1 = Math.max(0, Y1);
+
+    try {
+        device.sdkInt < 24 ? ra.tap(X1, Y1) : click(X1, Y1);
+    } catch (e) {
+        taskLog("点击操作失败：" + e.message);
+    }
+}
 
 
 
 
 
 
-    
 
-    function writeLog(a) {
-        var c, b = "/sdcard/Download/log/Info_" + getSystemDate("df") + ".log";
-        files.ensureDir("/sdcard/Download/log/"), files.exists(b) || files.create(b);
-        try {
-            c = new PrintWriter(new FileWriter(b, !0)), c.println("[" + getSystemDate("tf") + "] " + a),
+
+
+function writeLog(a) {
+    var c, b = "/sdcard/Download/log/Info_" + getSystemDate("df") + ".log";
+    files.ensureDir("/sdcard/Download/log/"), files.exists(b) || files.create(b);
+    try {
+        c = new PrintWriter(new FileWriter(b, !0)), c.println("[" + getSystemDate("tf") + "] " + a),
             c.flush(), c.close();
-        } catch (d) {
-            log(d);
-        }
+    } catch (d) {
+        log(d);
     }
+}
 
 
-    function clickText(a) {
-        for (obj_Text = text(a).boundsInside(5, 5, device.width-5, device.height-5); obj_Text.find().empty(); ) sleep(1e3);
-        X = obj_Text.find().get(0).bounds().centerX(), Y = obj_Text.find().get(0).bounds().centerY(),
-        Deviation = random(-5, 5), X1 = X - Deviation, Y1 = Y - Deviation, device.sdkInt<24?ra.tap(X1,Y1):click(X1,Y1);
-    }
+function clickText(a) {
+    for (obj_Text = text(a).boundsInside(5, 5, device.width - 5, device.height - 5); obj_Text.find().empty();) sleep(1e3);
+    X = obj_Text.find().get(0).bounds().centerX(), Y = obj_Text.find().get(0).bounds().centerY(),
+        Deviation = random(-5, 5), X1 = X - Deviation, Y1 = Y - Deviation, device.sdkInt < 24 ? ra.tap(X1, Y1) : click(X1, Y1);
+}
 
-    function clickDesc(a) {
-        for (obj_Desc = desc(a).boundsInside(5, 5, device.width-5, device.height-5); obj_Desc.find().empty(); ) sleep(1e3);
-        X = obj_Desc.find().get(0).bounds().centerX(), Y = obj_Desc.find().get(0).bounds().centerY(),
-        Deviation = random(-5, 5), X1 = X - Deviation, Y1 = Y - Deviation, device.sdkInt<24?ra.tap(X1,Y1):click(X1,Y1);
-    }
+function clickDesc(a) {
+    for (obj_Desc = desc(a).boundsInside(5, 5, device.width - 5, device.height - 5); obj_Desc.find().empty();) sleep(1e3);
+    X = obj_Desc.find().get(0).bounds().centerX(), Y = obj_Desc.find().get(0).bounds().centerY(),
+        Deviation = random(-5, 5), X1 = X - Deviation, Y1 = Y - Deviation, device.sdkInt < 24 ? ra.tap(X1, Y1) : click(X1, Y1);
+}
 
 
 
@@ -835,7 +835,7 @@ function findNumberNearButton(buttonDesc) {
 
 
 //获取收件箱信息页面的收件箱数量
-function getInBoxCountInfoInPage(){
+function getInBoxCountInfoInPage() {
     //className("android.widget.FrameLayout") - fullId("com.ss.android.ugc.trill:id/k6e") : 包含两个Textview，分别是收件匣和99+， 一个Imageview，是收件匣的logo
     //className("android.widget.FrameLayout") - fullId("com.zhiliaoapp.musically:id/k6d") : 包含两个Imageview，分别是一个红点和收件匣的logo， 一个收件匣
 
@@ -845,20 +845,20 @@ function getInBoxCountInfoInPage(){
     } else {
         InBoxCountInfoInPage_button = id("com.zhiliaoapp.musically:id/k6d").find();
     }
-    
+
     if (InBoxCountInfoInPage_button && InBoxCountInfoInPage_button.length > 0) {
         taskLog("找到收件箱信息页面按钮，继续执行");
 
         //遍历InBoxCountInfoInPage_button布局内部，找到所有的Textview，查看text是否包含数字
         var container = InBoxCountInfoInPage_button.get(0);
         var allTextViews = container.find(className("android.widget.TextView"));
-        
+
         if (allTextViews && allTextViews.size() > 0) {
             taskLog("在InBoxCountInfoInPage_button容器内找到TextView数量：" + allTextViews.size());
             for (var i = 0; i < allTextViews.size(); i++) {
                 var textView = allTextViews.get(i);
                 if (textView && textView.text()) {
-                    taskLog("第" + (i+1) + "个TextView - text = " + textView.text());
+                    taskLog("第" + (i + 1) + "个TextView - text = " + textView.text());
                     // 检查是否包含数字（比如99+或者1都算是包含数字）
                     if (/\d/.test(textView.text())) {
                         taskLog("  └─ 包含数字！记录：" + textView.text());
@@ -872,13 +872,13 @@ function getInBoxCountInfoInPage(){
         }
 
     }
-    sleep(random(2000, 3000));
+    sleep(random(10000, 15000));
 
-} 
+}
 
 
 //获取收件箱详细信息
-function getInBoxInfo(){
+function getInBoxInfo() {
     //fullId("com.zhiliaoapp.musically:id/k6d") - className("android.widget.FrameLayout") - clickable("true")
     //fullId("com.ss.android.ugc.trill:id/k6e") - className("android.widget.FrameLayout") - clickable("true")
 
@@ -889,94 +889,94 @@ function getInBoxInfo(){
     } else {
         InBox_button = id("com.zhiliaoapp.musically:id/k6d").find();
     }
-    
+
     if (InBox_button && InBox_button.length > 0) {
         taskLog("找到收件箱按钮，继续执行");
         InBox_button.click();
         sleep(random(2000, 3000));
 
 
-       //新粉丝人数的布局：fullId("com.ss.android.ugc.trill:id/ol5") - 24
-       //新活动的布局：fullId("com.ss.android.ugc.trill:id/ol5") - 99+
-       //新讯息的布局：fullId("com.ss.android.ugc.trill:id/pg0") - 4
-       
-       // 遍历所有控件，查找包含数字的控件
-       taskLog("开始遍历收件箱页面的所有控件...");
-       
-       // 方法1：查找所有TextView控件
-       var allTextViews = className("android.widget.TextView").find();
-       if (allTextViews && allTextViews.size() > 0) {
-           taskLog("找到TextView控件总数：" + allTextViews.size());
-           for (var i = 0; i < allTextViews.size(); i++) {
-               var textView = allTextViews.get(i);
-               if (textView && textView.text()) {
-                   var text = textView.text();
-                   // 只输出包含数字的控件
-                   if (/\d/.test(text)) {
-                       taskLog("第" + (i+1) + "个TextView - Text: " + text + 
-                              " | ID: " + textView.id() + 
-                              " | ClassName: " + textView.className() +
-                              " | Clickable: " + textView.clickable());
-                       
-                       // 获取父容器信息
-                       var parent = textView.parent();
-                       if (parent) {
-                           taskLog("  父容器 - ID: " + parent.id() + 
-                                  " | ClassName: " + parent.className());
-                       }
-                   }
-               }
-           }
-       }
-       
-       taskLog("---分隔线---");
-       
-       // 方法2：根据已知ID查找控件
-       taskLog("开始根据ID查找控件...");
-       
-       // 查找新粉丝/新活动的控件 (ol5)
-       var ol5_controls;
-       if (targetPackageName == ASIA_TikTokPackageName) {
-           ol5_controls = id("com.ss.android.ugc.trill:id/ol5").find();
-       } else {
-           ol5_controls = id("com.zhiliaoapp.musically:id/ol5").find();
-       }
-       
-       if (ol5_controls && ol5_controls.size() > 0) {
-           taskLog("找到ol5控件数量：" + ol5_controls.size());
-           for (var j = 0; j < ol5_controls.size(); j++) {
-               var control = ol5_controls.get(j);
-               if (control) {
-                   taskLog("第" + (j+1) + "个ol5控件 - Text: " + control.text() + 
-                          " | ID: " + control.id() + 
-                          " | ClassName: " + control.className());
-               }
-           }
-       } else {
-           taskLog("未找到ol5控件");
-       }
-       
-       // 查找新讯息的控件 (pg0)
-       var pg0_controls;
-       if (targetPackageName == ASIA_TikTokPackageName) {
-           pg0_controls = id("com.ss.android.ugc.trill:id/pg0").find();
-       } else {
-           pg0_controls = id("com.zhiliaoapp.musically:id/pg0").find();
-       }
-       
-       if (pg0_controls && pg0_controls.size() > 0) {
-           taskLog("找到pg0控件数量：" + pg0_controls.size());
-           for (var k = 0; k < pg0_controls.size(); k++) {
-               var control = pg0_controls.get(k);
-               if (control) {
-                   taskLog("第" + (k+1) + "个pg0控件 - Text: " + control.text() + 
-                          " | ID: " + control.id() + 
-                          " | ClassName: " + control.className());
-               }
-           }
-       } else {
-           taskLog("未找到pg0控件");
-       }
+        //新粉丝人数的布局：fullId("com.ss.android.ugc.trill:id/ol5") - 24
+        //新活动的布局：fullId("com.ss.android.ugc.trill:id/ol5") - 99+
+        //新讯息的布局：fullId("com.ss.android.ugc.trill:id/pg0") - 4
+
+        // 遍历所有控件，查找包含数字的控件
+        taskLog("开始遍历收件箱页面的所有控件...");
+
+        // 方法1：查找所有TextView控件
+        var allTextViews = className("android.widget.TextView").find();
+        if (allTextViews && allTextViews.size() > 0) {
+            taskLog("找到TextView控件总数：" + allTextViews.size());
+            for (var i = 0; i < allTextViews.size(); i++) {
+                var textView = allTextViews.get(i);
+                if (textView && textView.text()) {
+                    var text = textView.text();
+                    // 只输出包含数字的控件
+                    if (/\d/.test(text)) {
+                        taskLog("第" + (i + 1) + "个TextView - Text: " + text +
+                            " | ID: " + textView.id() +
+                            " | ClassName: " + textView.className() +
+                            " | Clickable: " + textView.clickable());
+
+                        // 获取父容器信息
+                        var parent = textView.parent();
+                        if (parent) {
+                            taskLog("  父容器 - ID: " + parent.id() +
+                                " | ClassName: " + parent.className());
+                        }
+                    }
+                }
+            }
+        }
+
+        taskLog("---分隔线---");
+
+        // 方法2：根据已知ID查找控件
+        taskLog("开始根据ID查找控件...");
+
+        // 查找新粉丝/新活动的控件 (ol5)
+        var ol5_controls;
+        if (targetPackageName == ASIA_TikTokPackageName) {
+            ol5_controls = id("com.ss.android.ugc.trill:id/ol5").find();
+        } else {
+            ol5_controls = id("com.zhiliaoapp.musically:id/ol5").find();
+        }
+
+        if (ol5_controls && ol5_controls.size() > 0) {
+            taskLog("找到ol5控件数量：" + ol5_controls.size());
+            for (var j = 0; j < ol5_controls.size(); j++) {
+                var control = ol5_controls.get(j);
+                if (control) {
+                    taskLog("第" + (j + 1) + "个ol5控件 - Text: " + control.text() +
+                        " | ID: " + control.id() +
+                        " | ClassName: " + control.className());
+                }
+            }
+        } else {
+            taskLog("未找到ol5控件");
+        }
+
+        // 查找新讯息的控件 (pg0)
+        var pg0_controls;
+        if (targetPackageName == ASIA_TikTokPackageName) {
+            pg0_controls = id("com.ss.android.ugc.trill:id/pg0").find();
+        } else {
+            pg0_controls = id("com.zhiliaoapp.musically:id/pg0").find();
+        }
+
+        if (pg0_controls && pg0_controls.size() > 0) {
+            taskLog("找到pg0控件数量：" + pg0_controls.size());
+            for (var k = 0; k < pg0_controls.size(); k++) {
+                var control = pg0_controls.get(k);
+                if (control) {
+                    taskLog("第" + (k + 1) + "个pg0控件 - Text: " + control.text() +
+                        " | ID: " + control.id() +
+                        " | ClassName: " + control.className());
+                }
+            }
+        } else {
+            taskLog("未找到pg0控件");
+        }
 
 
 
@@ -988,14 +988,14 @@ function getInBoxInfo(){
 
 
 //获取个人中心信息
-function getUserInfo(){
+function getUserInfo() {
 
     //开始寻找用户所有的关注用户列表的TextView
     // 循环等待直到找到FOLLOWING_TEXT按钮
     var maxWaitAttempts = 10; // 最大等待尝试次数
     var waitAttempt = 0;
     var Profile_text_button = null;
-    
+
     while (waitAttempt < maxWaitAttempts) {
         Profile_text_button = findTextByLanguages(PROFILE_TEXT);
         if (Profile_text_button) {
@@ -1007,7 +1007,7 @@ function getUserInfo(){
             sleep(random(3000, 5000)); // 每次等待3-5秒
         }
     }
-    
+
     if (Profile_text_button) {
 
         //寻找个人中心的昵称，需要寻找ID来获取对应的昵称
@@ -1020,24 +1020,14 @@ function getUserInfo(){
         } else {
             Nickname_button = id("com.ss.android.ugc.trill:id/n83").find();
         }
-        
+
         if (Nickname_button && Nickname_button.length > 0) {
             taskLog("找到个人中心昵称按钮，继续执行");
             var Nickname = Nickname_button.get(0).text();
             taskLog("个人中心昵称 = " + Nickname);
-            TT_User_Info.TikTok_LoginStatus = true; 
+            TT_User_Info.TikTok_LoginStatus = true;
             TT_User_Info.TikTok_Nickname = Nickname;
-        }else{
-            taskLog("没有找到个人中心昵称按钮，说明当前页面出现异常，直接退出");
-            TT_User_Info.TikTok_LoginStatus = false;
-
-            taskLog("准备进行错误截图...");
-            var screenshotPath = Nest_ScreenCapture();
-            taskLog("已保存错误截图：" + screenshotPath);
-            sleep(random(3000, 5000))
-            throw new Error("没有找到个人中心昵称按钮，说明当前页面出现异常，直接退出")
         }
-
 
         sleep(random(2000, 3000));
 
@@ -1060,6 +1050,15 @@ function getUserInfo(){
             var UserId = UserId_button.get(0).text();
             taskLog("个人中心UserId = " + UserId);
             TT_User_Info.TikTok_UserId = UserId;
+        } else {
+            taskLog("没有找到个人中心UserId按钮，说明当前页面出现异常，直接退出");
+            TT_User_Info.TikTok_LoginStatus = false;
+
+            taskLog("准备进行错误截图...");
+            var screenshotPath = Nest_ScreenCapture();
+            taskLog("已保存错误截图：" + screenshotPath);
+            sleep(random(3000, 5000))
+            throw new Error("没有找到个人中心UserId按钮，说明当前页面出现异常，直接退出")
         }
 
         sleep(random(2000, 3000));
@@ -1122,7 +1121,7 @@ function getUserInfo(){
             taskLog("个人中心Likes = " + Likes);
             TT_User_Info.TikTok_Likes = Likes;
         }
-        sleep(random(2000, 3000));
+        sleep(random(10000, 15000));
 
 
 
@@ -1136,7 +1135,7 @@ function getUserInfo(){
 
         total_success = 1
 
-    }else{
+    } else {
         TT_User_Info.TikTok_LoginStatus = false;
         taskLog("准备进行错误截图...");
         var screenshotPath = Nest_ScreenCapture();
@@ -1145,13 +1144,13 @@ function getUserInfo(){
         taskLog("没有找到用户个人中心的Follow列表的TextView")
         throw new Error("没有找到用户个人中心的Follow列表的TextView")
     }
-   
+
 }
 
 
-function getclipText(){
+function getclipText() {
     // 注意：Android 10+ (API 29) 需要应用在前台才能读取剪贴板
-    
+
     // // 尝试使用 AutoJS 的方式申请权限（虽然通常不需要）
     // try {
     //     // 确保应用有存储权限（某些情况下可能有关）
@@ -1160,7 +1159,7 @@ function getclipText(){
     //         var hasPermission = runtime.requestPermissions([
     //             "android.permission.READ_CLIPBOARD"
     //         ]);
-            
+
     //         if (!hasPermission) {
     //             taskLog("剪贴板权限未授予，可能影响某些功能");
     //         }
@@ -1174,13 +1173,13 @@ function getclipText(){
         if (device.sdkInt >= 23 && device.sdkInt < 29) {
             runtime.requestPermissions(["android.permission.READ_CLIPBOARD"]);
         }
-    } catch(e) {
+    } catch (e) {
         taskLog("权限申请异常（可忽略）：" + e);
     }
-    
+
     sleep(1000); // 等待权限弹窗出现（部分系统需要）
     taskLog("当前剪贴板：" + getClip());
-    
+
     // 等待一下，确保权限生效
     sleep(500);
 
@@ -1225,7 +1224,7 @@ function getclipText(){
             }
         }
         taskLog("剪贴板文本为null/不可读");
-    } catch(e) {
+    } catch (e) {
         taskLogError("获取剪贴板失败：" + e);
     }
     return text;
@@ -1234,7 +1233,7 @@ function getclipText(){
 
 
 //获取用户多少个视频总数,通过查找girdview内有多少个framelayout来查找
-function getUserVideosCountByGirdview(){
+function getUserVideosCountByGirdview() {
     //fullId("com.zhiliaoapp.musically:id/fh3") - className("android.widget.GridView")
     //fullId("com.zhiliaoapp.musically:id/d8s") - fullId("com.zhiliaoapp.musically:id/d8s")
 
@@ -1243,7 +1242,7 @@ function getUserVideosCountByGirdview(){
     //fullId("com.ss.android.ugc.trill:id/d8t") - className("android.widget.FrameLayout")
 
     var gridViewId, frameLayoutId;
-    
+
     if (targetPackageName == ASIA_TikTokPackageName) {
         gridViewId = "com.ss.android.ugc.trill:id/fh4";
         frameLayoutId = "com.ss.android.ugc.trill:id/d8t";
@@ -1251,13 +1250,13 @@ function getUserVideosCountByGirdview(){
         gridViewId = "com.zhiliaoapp.musically:id/fh3";
         frameLayoutId = "com.zhiliaoapp.musically:id/d8s";
     }
-    
+
     // 查找 GridView
     var gridView = id(gridViewId).className("android.widget.GridView").findOne(3000);
-    
+
     if (gridView) {
         taskLog("找到 GridView");
-        
+
         // 获取 GridView 的直接子元素个数
         var childCount = gridView.childCount();
         taskLog("GridView 内找到 FrameLayout 个数: " + childCount);
@@ -1266,34 +1265,34 @@ function getUserVideosCountByGirdview(){
         taskLog("没有找到 GridView");
         TT_User_Info.TikTok_VideosCount = 0;
     }
-    
+
     sleep(random(2000, 3000));
 }
 
 
 //获取用户多少个视频
-function getUserVideosCount(){
+function getUserVideosCount() {
     // fullId("com.ss.android.ugc.trill:id/tdi") - fullId("com.ss.android.ugc.trill:id/tdi") - text("227")
     // fullId("com.zhiliaoapp.musically:id/tdg") - fullId("com.zhiliaoapp.musically:id/tdg") - text("23")
-    
+
     // 使用对象来存储已经遇到的视频text（用于去重）
     var uniqueVideos = {};
     var videoCount = 0;
-    
+
     // 滑动3次来获取所有视频
     for (var i = 0; i < 3; i++) {
         taskLog("第 " + (i + 1) + " 次获取视频数据");
-        
+
         var PlayCount_button;
         if (targetPackageName == ASIA_TikTokPackageName) {
             PlayCount_button = id("com.ss.android.ugc.trill:id/tdi").find();
         } else {
             PlayCount_button = id("com.zhiliaoapp.musically:id/tdg").find();
         }
-        
+
         if (PlayCount_button && PlayCount_button.length > 0) {
             taskLog("找到 " + PlayCount_button.length + " 个播放数按钮");
-            
+
             // 遍历所有找到的按钮，通过text去重
             for (var j = 0; j < PlayCount_button.length; j++) {
                 var textContent = PlayCount_button[j].text();
@@ -1306,7 +1305,7 @@ function getUserVideosCount(){
         } else {
             taskLog("没有找到播放数按钮");
         }
-        
+
         // 如果不是最后一次，则往下滑动加载更多视频
         if (i < 2) {
             taskLog("往下滑动加载更多视频");
@@ -1314,7 +1313,7 @@ function getUserVideosCount(){
             sleep(random(1500, 2500));
         }
     }
-    
+
     TT_User_Info.TikTok_VideosCount = videoCount;
     taskLog("视频总数（去重后）: " + videoCount);
     sleep(random(2000, 3000));
@@ -1322,7 +1321,7 @@ function getUserVideosCount(){
 
 
 //获取用户视频信息
-function getUserVideosInfo(){
+function getUserVideosInfo() {
 
     //fullId("com.ss.android.ugc.trill:id/d8t") - className("android.widget.FrameLayout")
     //fullId("com.zhiliaoapp.musically:id/d8s") - className("android.widget.FrameLayout")
@@ -1333,9 +1332,9 @@ function getUserVideosInfo(){
     } else {
         UserVideosInfo_button = id("com.zhiliaoapp.musically:id/d8s").find();
     }
-    
+
     if (UserVideosInfo_button && UserVideosInfo_button.length > 0) {
-        taskLog("找到用户视频信息按钮，继续执行");  
+        taskLog("找到用户视频信息按钮，继续执行");
         TT_User_Info.TikTok_Videos = UserVideosInfo_button.length;
 
         //找到第一个视频，然后获取到它的信息 ： 播放数 - 点赞数 - 评论数 - 分享数 - 收藏数
@@ -1352,7 +1351,7 @@ function getUserVideosInfo(){
             taskLog("找到播放数按钮，继续执行");
             var PlayCount = PlayCount_button.get(0).text();
             taskLog("播放数 = " + PlayCount);
-        }else{
+        } else {
             taskLog("没有找到播放数按钮");
             PlayCount = 0;
         }
@@ -1378,7 +1377,7 @@ function getUserVideosInfo(){
             taskLog("找到点赞数按钮，继续执行");
             var LikeCount = LikeCount_button.get(0).text();
             taskLog("点赞数 = " + LikeCount);
-        }else{
+        } else {
             taskLog("没有找到点赞数按钮");
             LikeCount = 0;
         }
@@ -1400,7 +1399,7 @@ function getUserVideosInfo(){
             taskLog("找到评论数按钮，继续执行");
             var CommentCount = CommentCount_button.get(0).text();
             taskLog("评论数 = " + CommentCount);
-        }else{
+        } else {
             taskLog("没有找到评论数按钮");
             CommentCount = 0;
         }
@@ -1424,7 +1423,7 @@ function getUserVideosInfo(){
             taskLog("找到收藏数按钮，继续执行");
             var FavoriteCount = FavoriteCount_button.get(0).text();
             taskLog("收藏数 = " + FavoriteCount);
-        }else{
+        } else {
             taskLog("没有找到收藏数按钮");
             FavoriteCount = 0;
         }
@@ -1467,12 +1466,12 @@ function getUserVideosInfo(){
             taskLog("找到描述按钮，继续执行");
             var Description = Description_button.get(0).text();
             taskLog("描述 = " + Description);
-        }else{
+        } else {
             taskLog("没有找到描述按钮");
             Description = "";
         }
         TT_User_Info.TikTok_Last_Video_Description = Description;
-        sleep(random(2000, 3000));  
+        sleep(random(2000, 3000));
 
 
 
@@ -1481,7 +1480,7 @@ function getUserVideosInfo(){
         //7.获取视频的URL：不能使用点击点击复制链接的logo按钮，因为下面一排的按钮的logo都一样，且顺序不固定
         //点击省略号：fullId("com.ss.android.ugc.trill:id/pkl") - className("android.widget.ImageView") - clickable("true")
         //点击复制链接的logo：fullId("com.ss.android.ugc.trill:id/pk3") - className("android.widget.ImageView") - clickable("false")
-        
+
 
 
         //fullId("com.zhiliaoapp.musically:id/pkk") - className("android.widget.ImageView") - clickable("true")
@@ -1498,20 +1497,20 @@ function getUserVideosInfo(){
             More_button.get(0).click();
             sleep(random(3000, 5000));
 
-            
+
             // 先获取当前剪贴板内容，用于对比
             var oldClip = getclipText();
             taskLog("点击前的剪贴板内容: " + oldClip);
-            
+
             var CopyLink_button = findTextByLanguages(VIDEO_URL_TEXT);
             if (CopyLink_button) {
                 taskLog("成功点击复制链接按钮，等待复制操作完成...");
                 sleep(random(3000, 5000)); // 等待复制操作完成
-                
+
                 // 从剪贴板获取复制的视频链接（使用AutoJS内置方法）
                 var Video_Url = getclipText();
                 taskLog("点击后的剪贴板内容: " + Video_Url);
-                
+
                 // 如果剪贴板内容没有变化或为空，说明复制可能失败
                 if (Video_Url === oldClip || !Video_Url) {
                     taskLogError("剪贴板内容未更新或为空，可能复制失败");
@@ -1522,27 +1521,27 @@ function getUserVideosInfo(){
                     Video_Url = getclipText();
                     taskLog("重试获取剪贴板: " + Video_Url);
                 }
-                
+
                 TT_User_Info.TikTok_Last_Video_Url = Video_Url;
-            }else{
+            } else {
                 taskLog("没有找到复制链接按钮");
                 throw new Error("没有找到复制链接按钮");
             }
-        }else{
+        } else {
             taskLog("没有找到省略号按钮和复制链接按钮");
             throw new Error("没有找到省略号按钮和复制链接按钮");
         }
 
 
-        sleep(random(2000, 3000));
+        sleep(random(10000, 15000));
         back()
 
 
 
 
-    }else{
+    } else {
         taskLog("没有找到用户视频信息按钮");
-        TT_User_Info.TikTok_Videos = 0;    
+        TT_User_Info.TikTok_Videos = 0;
     }
     sleep(random(2000, 3000));
 }
@@ -1550,13 +1549,13 @@ function getUserVideosInfo(){
 
 try {
 
-    taskLog("打开TikTok成功...")    
+    taskLog("打开TikTok成功...")
     taskLog("开始点击首页最右侧Profile按钮")
 
     getUserInfo() //获取个人中心信息
     // getUserVideosInfo() //获取用户视频信息
     // getUserVideosCount() //获取用户多少个视频 
-    getUserVideosCountByGirdview() //获取用户多少个视频总数
+    // getUserVideosCountByGirdview() //获取用户多少个视频总数
     getInBoxCountInfoInPage() //获取收件箱信息页面的收件箱数量
 
     //打印一下TT_User_Info
@@ -1590,42 +1589,42 @@ try {
 
 
 
-} catch(e) {
+} catch (e) {
     if (e.message === "TASK_COMPLETED") {
         taskLog("任务正常完成");
     } else {
         handleError(e);
     }
-}finally{
-    taskLog("保存统计结果到备用路径..." );
-        try {
+} finally {
+    taskLog("保存统计结果到备用路径...");
+    try {
 
-            // if (TT_User_Info.TikTok_LoginStatus) {
-            //     fail_msg = TT_User_Info;
-            // } else{
-            //     fail_msg = "未登录";
-            // }
+        // if (TT_User_Info.TikTok_LoginStatus) {
+        //     fail_msg = TT_User_Info;
+        // } else{
+        //     fail_msg = "未登录";
+        // }
 
-            var result = {
-                total_target: total_target,
-                total_success: total_success,
-                fail_msg: fail_msg,
-                TikTok_LoginStatus: TT_User_Info.TikTok_LoginStatus,
-                TikTok_InBoxCount: TT_User_Info.TikTok_InBoxCount,
-                TikTok_UserId: TT_User_Info.TikTok_UserId,
-                TikTok_Nickname: TT_User_Info.TikTok_Nickname,
-                TikTok_Followers: TT_User_Info.TikTok_Followers,
-                TikTok_Fans: TT_User_Info.TikTok_Fans,
-                TikTok_Likes: TT_User_Info.TikTok_Likes,
-                TikTok_VideosCount: TT_User_Info.TikTok_VideosCount,
-            };
-            // 打印统计结果
-            taskLog("统计结果：" + JSON.stringify(result, null, 2));
-            // 使用JSON.stringify将对象转换为JSON字符串，第三个参数2是为了美化输出格式
-            files.write(resultPath, JSON.stringify(result, null, 2));
-            taskLog("已保存统计结果到：" + resultPath);
-        } catch(e) {
-            console.error("保存统计结果失败：" + e.message);
-        }
-}     
+        var result = {
+            total_target: total_target,
+            total_success: total_success,
+            fail_msg: fail_msg,
+            TikTok_LoginStatus: TT_User_Info.TikTok_LoginStatus,
+            TikTok_InBoxCount: TT_User_Info.TikTok_InBoxCount,
+            TikTok_UserId: TT_User_Info.TikTok_UserId,
+            TikTok_Nickname: TT_User_Info.TikTok_Nickname,
+            TikTok_Followers: TT_User_Info.TikTok_Followers,
+            TikTok_Fans: TT_User_Info.TikTok_Fans,
+            TikTok_Likes: TT_User_Info.TikTok_Likes,
+            TikTok_VideosCount: TT_User_Info.TikTok_VideosCount,
+        };
+        // 打印统计结果
+        taskLog("统计结果：" + JSON.stringify(result, null, 2));
+        // 使用JSON.stringify将对象转换为JSON字符串，第三个参数2是为了美化输出格式
+        files.write(resultPath, JSON.stringify(result, null, 2));
+        taskLog("已保存统计结果到：" + resultPath);
+    } catch (e) {
+        console.error("保存统计结果失败：" + e.message);
+    }
+}
 

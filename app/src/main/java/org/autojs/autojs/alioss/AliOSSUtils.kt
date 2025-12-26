@@ -40,7 +40,7 @@ object AliOSSUtils {
 
         val request = Request.Builder()
 //            .url("https://cloud.nestbrowser.com/cm/v1/sts")
-            .url("https://cs.nestbrowser.com/cm/v1/sts")
+            .url("https://res.nestbrowser.com/cm/v1/sts")
             .get()
             .addHeader("X-Token", XToken)
             .build()

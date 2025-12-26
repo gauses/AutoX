@@ -4,7 +4,7 @@ importClass(java.io.PrintWriter);
 importClass(java.io.FileWriter);
 
 //******************************************************************
-//***********************Facebook個人發文*************************
+//***********************Facebook個人發文（长文本，直接将txt文本内容发出去，不分段）*************************
 //******************************************************************
 
 // 刷新媒体库：
@@ -66,7 +66,7 @@ var taskLogImgName = "nest_task_log.png"
 
 //用户需要输入的评论内容
 const FB_input_text = '$${T_FB_输入文案}'; //用户需要输入的评论内容，就是T开头
-const FB_input_IMAGE = '$${M_FB_图片地址}'; //用户需要输入的图片地址，就是M开头
+const FB_input_IMAGE = '$${T_FB_图片地址}'; //用户需要输入的图片地址，就是M开头
 
 
 // 配置对象
@@ -114,7 +114,7 @@ const FORCE_STOP_CONFIRM_TEXT = {
 const SEND_TEXT = {
     ZH_CN: "发布",      // 简体中文
     ZH_TW: "發佈",      // 繁体中文
-    EN_US: "POST"         // 英文
+    EN_US: "Post"         // 英文
 }
 
 
@@ -290,6 +290,16 @@ events.on('exit', function () {
     }
     openLogActivity();
 });
+
+//打开Autojs的Log activity
+function openLogActivity() {
+    var intent = {
+        action: "android.intent.action.MAIN",
+        packageName: "org.autojs.autoxjs",
+        className: "org.autojs.autojs.ui.log.LogActivityKt"
+    };
+    app.startActivity(intent);
+}
 
 function handleError(e) {
     handleErrorFlag = true;
@@ -554,13 +564,27 @@ function refreshMedia(path) {
 function findTextByLanguages(languageObject) {
     for (let lang in languageObject) {
         let targetText = languageObject[lang];
-        if (text(targetText).exists()) {
+        
+        // 先尝试精确匹配
+        let element = text(targetText).findOne(500);
+        
+        // 如果精确匹配不到，尝试忽略大小写匹配
+        if (!element) {
+            // 使用正则表达式进行大小写不敏感匹配
+            let regexPattern = "(?i)^" + targetText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + "$";
+            element = textMatches(regexPattern).findOne(500);
+            if (element) {
+                taskLog("通过忽略大小写找到文本：" + targetText + " | 实际文本：" + element.text());
+            }
+        } else {
             taskLog("找到文本：" + targetText);
-            let element = text(targetText).findOne();
-            if (element && element.clickable()) {
+        }
+        
+        if (element) {
+            if (element.clickable()) {
                 element.click();
                 return true;
-            } else if (element) {
+            } else {
                 // 如果元素存在但不可点击，尝试点击其坐标
                 let bounds = element.bounds();
                 click(bounds.centerX(), bounds.centerY());
@@ -944,6 +968,14 @@ function transferHeadImageToNest(inputPath){
     if (!files.exists(inputPath)) {
         // 检查目标文件夹是否已存在（可能是上次运行的结果）
         if (files.exists(newFolder) && files.isDir(newFolder)) {
+            // 如果原路径看起来像单个文件（有扩展名），检查目标文件夹里是否有这个文件
+            var fileName = getFileName(inputPath);
+            var destFilePath = newFolder + "/" + fileName;
+            if (fileName.indexOf(".") > 0 && files.exists(destFilePath)) {
+                taskLog("原文件不存在，但目标文件已存在，可能是上次运行的结果：" + destFilePath);
+                return true;
+            }
+            // 目标文件夹存在但没有对应文件，也认为是上次运行的结果（可能是文件夹复制的情况）
             taskLog("原路径不存在，但目标文件夹已存在，可能是上次运行的结果，继续执行");
             return true;
         }
@@ -996,13 +1028,13 @@ function transferHeadImageToNest(inputPath){
             return false;
         }
 
-        // 删除原文件
-        try {
-            files.remove(inputPath);
-            taskLog("删除原文件成功: " + inputPath);
-        } catch(e) {
-            console.error("删除原文件失败: " + e);
-        }
+        // // 删除原文件
+        // try {
+        //     files.remove(inputPath);
+        //     taskLog("删除原文件成功: " + inputPath);
+        // } catch(e) {
+        //     console.error("删除原文件失败: " + e);
+        // }
 
     }
 
@@ -1096,20 +1128,45 @@ function find_btn_Text_base(findText_ZH_TW, findText_EN_US, findText_ZH_CN) {
     return false;
 }
 
-
+// 调试：打印界面上所有按钮的信息
+function debugButtons() {
+    var buttons = className("android.widget.Button").find();
+    taskLog("界面上共有 " + buttons.length + " 个Button");
+    buttons.forEach(function(btn, index) {
+        taskLog("按钮[" + index + "] text=" + btn.text() + " | desc=" + btn.desc());
+    });
+    
+    // 也检查一下 TextView（很多"按钮"实际上是 TextView）
+    var textViews = className("android.widget.TextView").find();
+    taskLog("界面上共有 " + textViews.length + " 个TextView");
+    textViews.forEach(function(tv, index) {
+        var t = tv.text();
+        if (t && (t.indexOf("post") >= 0 || t.indexOf("贴文") >= 0 || t.indexOf("Post") >= 0)) {
+            taskLog("TextView[" + index + "] text=" + t + " | desc=" + tv.desc());
+        }
+    });
+}
 
 //通过Button的Desc（支持多语言）
-function find_btn_desc_base(findText_EN_US, findText_ZH_TW, findText_ZH_CN) {
+function find_btn_desc_base(findText_EN_US, findText_ZH_TW, findText_ZH_CN, waitAfterClick) {
+    // debugButtons();
     var texts = [findText_EN_US, findText_ZH_TW, findText_ZH_CN].filter(Boolean); // 过滤空值
+    taskLog("待查找的语言文本数量: " + texts.length + " | 内容: " + JSON.stringify(texts));
+    
+    // 默认点击后等待2秒
+    var clickWait = (waitAfterClick !== undefined) ? waitAfterClick : 2000;
     
     for (var loopCount = 1; loopCount <= 3; loopCount++) {
-        taskLog(texts[0] + " - 循环寻找执行：" + loopCount);
+        taskLog("第 " + loopCount + " 轮查找开始");
         
         for (var i = 0; i < texts.length; i++) {
+            taskLog("  正在查找[" + i + "]: " + texts[i]);
             var btn = className("android.widget.Button").descContains(texts[i]).findOne(1000);
             if (btn) {
                 taskLog("找到按钮(包含): " + texts[i] + " | 实际desc: " + btn.desc());
                 btn.click();
+                taskLog("已点击，等待页面跳转 " + clickWait + "ms");
+                sleep(clickWait);
                 return true;
             }
         }
@@ -1123,38 +1180,90 @@ function find_btn_desc_base(findText_EN_US, findText_ZH_TW, findText_ZH_CN) {
 
 
 
-//从评论列表数组中，随机挑选一条内容
+//从评论列表数组中，随机挑选一条内容（支持文件路径或直接文本）
 function get_post_text() {
-    taskLog("文案路径 = " + FB_input_text);
+    taskLog("文案内容 = " + FB_input_text);
     
     // 如果变量未被替换（以 $${T_ 开头），说明配置有问题
     if (FB_input_text.startsWith("$${T_")) {
         throw new Error("文案变量未被正确替换，请检查配置：" + FB_input_text);
     }
     
-    // 如果文件不存在，直接返回空
-    if (!files.exists(FB_input_text) || !files.isFile(FB_input_text)) {
-        taskLog("文件不存在，不输入内容");
+    // 如果为空，直接返回
+    if (!FB_input_text || FB_input_text.trim() === "") {
+        taskLog("文案内容为空");
         return "";
     }
     
-    try {
-        var comments = files.read(FB_input_text)
-            .split('\n')
-            .filter(function(line) { return line.trim() !== ""; });
-        
-        if (comments.length > 0) {
-            var messageText = comments[random(0, comments.length - 1)];
-            taskLog("随机挑选的评论内容：" + messageText);
-            return messageText;
+    // 判断是否是文件路径（文件存在则读取，否则当作普通文本）
+    if (files.exists(FB_input_text) && files.isFile(FB_input_text)) {
+        try {
+            var comments = files.read(FB_input_text)
+                .split('\n')
+                .filter(function(line) { return line.trim() !== ""; });
+            
+            if (comments.length > 0) {
+                var messageText = comments[random(0, comments.length - 1)];
+                taskLog("从文件随机挑选的内容：" + messageText);
+                return messageText;
+            }
+            taskLog("文件内容为空");
+            return "";
+        } catch (e) {
+            taskLog("读取文件时发生错误：" + e.message);
+            return "";
         }
-    } catch (e) {
-        taskLog("读取文件时发生错误：" + e.message);
     }
     
-    taskLog("文案内容为空");
-    return "";
+    // 不是文件路径，直接返回文本内容
+    taskLog("直接使用文本内容：" + FB_input_text);
+    return FB_input_text;
 }
+
+
+
+//获取text文件的全部内容
+function get_all_Txt_post_text() {
+    taskLog("文案内容 = " + FB_input_text);
+    
+    // 如果变量未被替换（以 $${T_ 开头），说明配置有问题
+    if (FB_input_text.startsWith("$${T_")) {
+        throw new Error("文案变量未被正确替换，请检查配置：" + FB_input_text);
+    }
+    
+    // 如果为空，直接返回
+    if (!FB_input_text || FB_input_text.trim() === "") {
+        taskLog("文案内容为空");
+        return "";
+    }
+    
+    // 处理换行符：将字符串形式的 \n 转换为真正的换行符
+    function processLineBreaks(text) {
+        return text.replace(/\\n/g, "\n");
+    }
+    
+    // 判断是否是文件路径（文件存在则读取，否则当作普通文本）
+    if (files.exists(FB_input_text) && files.isFile(FB_input_text)) {
+        try {
+            var content = files.read(FB_input_text);
+            if (content && content.trim() !== "") {
+                taskLog("读取文件全部内容，长度：" + content.length);
+                return content; // 文件读取的内容已经包含真正的换行符
+            }
+            taskLog("文件内容为空");
+            return "";
+        } catch (e) {
+            taskLog("读取文件时发生错误：" + e.message);
+            return "";
+        }
+    }
+    
+    // 不是文件路径，处理换行符后返回文本内容
+    var processedText = processLineBreaks(FB_input_text);
+    taskLog("直接使用文本内容：" + processedText);
+    return processedText;
+}
+
 
 
 //从评论列表数组中，随机挑选一条内容, 读取txt的全部文本内容
@@ -1317,10 +1426,10 @@ try {
     //desc("在 Facebook 撰寫貼文")
     //desc("在想些什麽?建立貼文")
     //desc("Make a post on Facebook")
-    var makePostBtn = find_btn_desc_base("Make a post", "貼文")
-    if(!makePostBtn){
-        throw new Error("未找到Facebook建立貼文按钮");
-    }
+    var makePostBtn = find_btn_desc_base("Make a post", "貼文", "Create a post")
+    // if(!makePostBtn){
+    //     throw new Error("未找到Facebook建立貼文按钮");
+    // }
     sleep(random(5000, 6000))
 
 
@@ -1344,7 +1453,7 @@ try {
     }
     
 
-    var postContent = get_post_text()
+    var postContent = get_all_Txt_post_text()
     if(postContent.includes("$${T")){ 
         throw_error_storage_not_enough()
     }
@@ -1423,24 +1532,31 @@ try {
         handleError(e);
     }
 }finally{
-    taskLog("保存统计结果到备用路径..." );
     try {
-        var result = {
-            total_target: total_target,
-            total_success: total_success,
-            fail_msg: fail_msg
-        };
-        // 打印统计结果
-        taskLog("统计结果：" + JSON.stringify(result, null, 2));
-        // 使用JSON.stringify将对象转换为JSON字符串，第三个参数2是为了美化输出格式
-        files.write(resultPath, JSON.stringify(result, null, 2));
-        taskLog("已保存统计结果到：" + resultPath);
-    } catch(e) {
-        console.error("保存统计结果失败：" + e.message);
+        taskLog("保存统计结果到备用路径..." );
+        try {
+            var result = {
+                total_target: total_target,
+                total_success: total_success,
+                fail_msg: fail_msg
+            };
+            // 打印统计结果
+            taskLog("统计结果：" + JSON.stringify(result, null, 2));
+            // 使用JSON.stringify将对象转换为JSON字符串，第三个参数2是为了美化输出格式
+            files.write(resultPath, JSON.stringify(result, null, 2));
+            taskLog("已保存统计结果到：" + resultPath);
+        } catch(e) {
+            console.error("保存统计结果失败：" + e.message);
+        }
+        // 刷新媒体库
+        refreshMedia(RPAFilePath);
+        sleep(random(3000, 5000))
+        
+        taskLog("准备退出脚本...");
+    } catch(finallyError) {
+        console.error("finally块执行异常：" + finallyError.message);
+    } finally {
+        // 无论如何都要调用 exit() 以确保触发 events.on('exit') 回调
+        exit();
     }
-    // 刷新媒体库
-    refreshMedia(RPAFilePath);
-    sleep(random(3000, 5000))
-    
-    taskLog("准备退出脚本...");
 }
