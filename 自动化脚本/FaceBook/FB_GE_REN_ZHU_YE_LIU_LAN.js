@@ -4,10 +4,7 @@ importClass(java.io.PrintWriter);
 importClass(java.io.FileWriter);
 
 //******************************************************************
-//***********************指定貼文留言點讚************************
-// 1 如遇到是私密社團文章無法留言,就自動加入該社團,在留言,如需要等待審核直接視同完成
-// 2 點讚需要可選擇表情,如不須點讚或表情為off
-// 3 可留言文字or圖片 不需要發的為off
+//***********************個人主頁留言點讚************************
 //******************************************************************
 
 
@@ -19,8 +16,15 @@ var taskLogImgName = "nest_task_log.png"
 
 
 //需要添加的用户好友
-const FB_Group_links = '$${T_FB_输入需要留言點讚的所有指定貼文Link}';
+const FB_Group_links = '$${T_FB_输入需要留言點讚的所有個人主頁Link}'; //https://www.facebook.com/liao.fu.da.573941
 const FB_group_comment_text = '$${T_FB_输入動態留言的所有文本}';
+
+const FB_Like_Count = "$${點讚概率}" //点赞概率
+const FB_Comment_Count = "$${留言概率}" //评论概率
+const FB_Share_Count = "$${分享概率}" //分享概率
+
+const FB_Watch_Count = "$${个人主页浏览查看次数}" //个人主页浏览查看次数 ，比如5-10次，那么就是刷5-10个帖子
+
 // const FB_input_IMAGE = '$${T_FB_图片地址}';
 
 
@@ -218,24 +222,58 @@ try {
         toast("当前Group信息 = " + friend_info_link)
         sleep(5000)
 
-        openFacebookLink_test(friend_info_link)
+        var openFacebookLink_result = openFacebookLink_test(friend_info_link)
         sleep(10000)
-
-        //点赞
-        find_like_button()
-        sleep(random(1000, 3000))   
-
-        if(FB_group_comment_text && FB_group_comment_text.trim() !== "" 
-        && FB_group_comment_text.trim().toLowerCase() !== "off"){
-            find_comment_button()
-            //评论
-            find_post_button()
-
+        if(!openFacebookLink_result){
+            taskLog("打开个人主页失败，跳过当前Link: " + friend_info_link)
+            continue
         }else{
-            taskLog("当前Group没有评论，跳过评论功能")
-        }
-        sleep(random(1000, 3000))
+            taskLog("打开个人主页成功，开始浏览个人主页")
 
+            var watchCount = parseInt(FB_Watch_Count) || 1; // 转换为数字，默认为1
+            taskLog("个人主页浏览查看次数: " + watchCount)
+            for(var j = 0; j < watchCount; j++){
+    
+                //点赞
+                var likeProbability = parseFloat(FB_Like_Count) || 0; // 转换为数字，默认为0
+                var shouldLike = Math.random() * 100 < likeProbability;
+                if (shouldLike)  {
+                    taskLog("开始触发点赞概率 (" + likeProbability + "%)，将点击点赞按钮")
+                } else {
+                    taskLog("未触发点赞概率 (" + likeProbability + "%)，将查找但不点击点赞按钮")
+                }
+                find_like_button(shouldLike)
+                sleep(random(1000, 3000))   
+    
+    
+                //评论
+                var commentProbability = parseFloat(FB_Comment_Count) || 0; // 转换为数字，默认为0
+                if (Math.random() * 100 < commentProbability)  {
+                    taskLog("开始触发评论概率 (" + commentProbability + "%)")
+                    if(FB_group_comment_text && FB_group_comment_text.trim() !== "" 
+                    && FB_group_comment_text.trim().toLowerCase() !== "off"){
+                        var commentButton = find_btn_desc_base("Comment", "留言")
+                        if(commentButton){
+                            //评论
+                            find_post_button()
+                        }else{
+                            taskLog("当前Group没有评论，跳过评论功能")
+                        }
+                    }
+                }else{
+                    taskLog("未触发评论概率 (" + commentProbability + "%)")
+                }
+    
+                sleep(random(1000, 3000))
+                swipe_up()
+                sleep(random(1000, 3000))
+            }
+
+        }
+
+
+
+        
 
     }
 
@@ -514,10 +552,10 @@ function getRedirectUrl(originalUrl) {
         
         // 获取最终的重定向 URL
         // response.url 应该包含最终的重定向 URL
-        var finalUrl = originalUrl;
+        var finalUrl = String(originalUrl); // 确保是 JavaScript 字符串
         
         if(response && response.url) {
-            finalUrl = response.url;
+            finalUrl = String(response.url); // 转换为 JavaScript 字符串
         } else if(response && response.statusCode >= 300 && response.statusCode < 400) {
             // 如果状态码是 3xx，尝试从响应头获取 Location
             var location = null;
@@ -526,6 +564,9 @@ function getRedirectUrl(originalUrl) {
             }
             
             if(location) {
+                // 转换为 JavaScript 字符串
+                location = String(location);
+                
                 // 如果是相对路径，需要拼接完整 URL
                 if(location.startsWith('/')) {
                     try {
@@ -541,6 +582,9 @@ function getRedirectUrl(originalUrl) {
                 }
             }
         }
+        
+        // 确保 finalUrl 是 JavaScript 字符串
+        finalUrl = String(finalUrl);
         
         taskLog("原始 URL: " + originalUrl)
         taskLog("重定向后的真实 URL: " + finalUrl)
@@ -561,7 +605,7 @@ function getRedirectUrl(originalUrl) {
 }
 
 
-// function openFacebookLink_test(fbUrl){
+// function openFacebookLink_test_02(fbUrl){
 //     taskLog("准备打开链接 = " + fbUrl)
 //     var intent = new android.content.Intent(android.content.Intent.ACTION_VIEW);
 //     // intent.setData(android.net.Uri.parse("https://www.facebook.com/watch/huacemedia/")); //不行
@@ -604,16 +648,6 @@ function findTextByLanguages(languageObject) {
 
 function openFacebookLink_test(fbUrl){
     taskLog("准备打开链接 = " + fbUrl)
-
-    
-    // 先获取 302 重定向后的真实 URL（如果有重定向）
-    // 这样可以确保打开的是链接指向的真实页面，而不是被错误跳转
-    var realUrl = getRedirectUrl(fbUrl);
-    if(realUrl !== fbUrl) {
-        taskLog("检测到重定向，原始 URL: " + fbUrl)
-        taskLog("重定向后的真实 URL: " + realUrl)
-        fbUrl = realUrl; // 使用重定向后的真实 URL
-    }
     
     // 通用的打开方法
     function tryOpenUrl(uri, methodName) {
@@ -625,7 +659,7 @@ function openFacebookLink_test(fbUrl){
             intent.setPackage("com.facebook.katana");
             
             app.startActivity(intent);
-            sleep(5000) // 等待页面加载
+            sleep(6000) // 增加等待时间到 6 秒，给页面更多加载时间
             
             // 简单验证：检查页面是否加载（通过检查是否存在常见的 Facebook 页面元素）
             // 不关心页面类型，只关心能否正常打开
@@ -647,6 +681,68 @@ function openFacebookLink_test(fbUrl){
         return false;
     }
     
+    // 用户名格式链接（尝试多种方式）
+    if(fbUrl.includes("facebook.com/") && 
+       !fbUrl.includes("profile.php") && 
+       !fbUrl.includes("share/") && 
+       !fbUrl.includes("groups/") &&
+       !fbUrl.includes("watch/")) {
+        
+        var username = fbUrl.split("facebook.com/")[1].split("?")[0].replace(/\//g, "");
+        taskLog("检测到用户名格式链接，用户名: " + username)
+        
+        // 尝试多种方式打开，按优先级排序
+        var methods = [
+            // 方法1: WebModal（Facebook 推荐的方式，最可靠）
+            { uri: "fb://facewebmodal/f?href=" + encodeURIComponent(fbUrl), name: "WebModal" },
+            // 方法2: 深度链接（可能对某些用户名无效）
+            { uri: "fb://profile/" + username, name: "深度链接" },
+            // 方法3: 标准 Intent（最后尝试）
+            { uri: fbUrl, name: "标准Intent" }
+        ];
+        
+        for(var i = 0; i < methods.length; i++) {
+            taskLog("尝试方法 " + (i + 1) + "/" + methods.length + ": " + methods[i].name)
+            if(tryOpenUrl(methods[i].uri, methods[i].name)) {
+                // 等待更长时间让页面完全加载（特别是头像元素）
+                taskLog("等待页面完全加载...")
+                sleep(8000) // 增加到 8 秒
+                
+                // 多次验证，给页面更多时间加载
+                var pageLoaded = false;
+                var maxRetries = 3; // 最多重试 3 次
+                for(var retry = 0; retry < maxRetries; retry++) {
+                    pageLoaded = checkUserPageLoaded();
+                    if(pageLoaded) {
+                        taskLog("成功打开用户页面（第 " + (retry + 1) + " 次验证成功）");
+                        return true;
+                    } else {
+                        if(retry < maxRetries - 1) {
+                            taskLog("验证失败，等待 " + (3 + retry * 2) + " 秒后重试验证...");
+                            sleep(3000 + retry * 2000); // 每次重试等待时间递增
+                        }
+                    }
+                }
+                
+                // 如果第一个方法（WebModal）验证失败，但页面可能已经打开，不要立即尝试下一个方法
+                // 因为再次调用 startActivity 会覆盖当前页面，导致返回主界面
+                if(i === 0) {
+                    taskLog("WebModal 方法已打开页面，但验证失败。为避免覆盖当前页面，不再尝试其他方法");
+                    taskLog("页面可能正在加载中，继续执行后续操作");
+                    return true; // 即使验证失败也返回 true，避免覆盖当前页面
+                } else {
+                    taskLog("页面已打开但验证失败，继续尝试下一个方法");
+                    // 如果验证失败，尝试下一个方法
+                    continue;
+                }
+            }
+            sleep(2000) // 在尝试下一个方法前等待
+        }
+        
+        taskLog("所有方法都尝试过了，但未能成功打开用户页面")
+        return false;
+    }
+    
     // profile.php 格式，直接使用标准 Intent
     if(fbUrl.includes("profile.php")) {
         taskLog("检测到 profile.php 格式链接")
@@ -654,7 +750,6 @@ function openFacebookLink_test(fbUrl){
     }
     
     // share/ 格式链接（Post、Reels、Live、Watch等）
-    // 注意：重定向已在函数开始处处理，这里的 fbUrl 已经是重定向后的真实 URL（如果有重定向）
     if(fbUrl.includes("share/")) {
         taskLog("检测到 share/ 格式链接")
         
@@ -690,142 +785,41 @@ function openFacebookLink_test(fbUrl){
         return tryOpenUrl(fbUrl, "标准Intent");
     }
     
-    // 用户名格式链接（不包含特殊路径）
-    if(fbUrl.includes("facebook.com/") && 
-       !fbUrl.includes("profile.php") && 
-       !fbUrl.includes("share/") && 
-       !fbUrl.includes("groups/") &&
-       !fbUrl.includes("watch/")) {
-        
-        var username = fbUrl.split("facebook.com/")[1].split("?")[0].replace(/\//g, "");
-        taskLog("检测到用户名格式链接，用户名: " + username)
-        
-        // 依次尝试3种方法
-        var methods = [
-            { uri: "fb://profile/" + username, name: "深度链接" },
-            { uri: "fb://facewebmodal/f?href=" + encodeURIComponent(fbUrl), name: "WebModal" },
-            { uri: fbUrl, name: "标准Intent" }
-        ];
-        
-        for(var i = 0; i < methods.length; i++) {
-            if(tryOpenUrl(methods[i].uri, methods[i].name)) {
-                return true;
-            }
-        }
-    }
-    
     // 所有方法都失败
     taskLog("所有方法都失败，跳过链接 = " + fbUrl);
     return false;
 }
 
 
-// 验证用户页面是否正确加载
+// 验证用户页面是否正确加载：通过检查头像来判断
+//className("android.widget.ImageView") desc("Profile picture") clickable("false")
 function checkUserPageLoaded() {
-    taskLog("验证页面是否正确加载...")
-    sleep(2000)
+    taskLog("验证页面是否正确加载（检查头像）...")
     
-    // 检查是否存在关注/追蹤/讚按钮（说明是用户页面）
-    var followBtn = className("android.widget.Button").desc("追蹤").exists() ||
-                    className("android.widget.Button").desc("Follow").exists() ||
-                    className("android.widget.Button").desc("讚").exists() ||
-                    className("android.widget.Button").desc("Like").exists() ||
-                    className("android.view.View").desc("追蹤").exists() ||
-                    className("android.view.View").desc("Follow").exists() ||
-                    className("android.view.View").desc("Like").exists() ||
-                    //text("Add friend") 
-                    className("android.view.View").desc("Add friend").exists() ||
-                    className("android.widget.Button").desc("Add friend").exists() ||
-                    // desc("加朋友")
-                    className("android.view.View").desc("加朋友").exists() ||
-                    className("android.widget.Button").desc("加朋友").exists()
-                    
-
+    // 等待页面加载，给头像元素更多时间出现
+    sleep(3000)
     
-    if(followBtn) {
-        taskLog("页面验证成功：找到追蹤/讚按钮")
+    // 通过检查头像来判断页面是否加载成功
+    // 尝试多种可能的描述文本（不同语言版本）
+    var profilePicture = className("android.widget.ImageView")
+                        .desc("Profile picture")
+                        .clickable(false)
+                        .exists() ||
+                        className("android.widget.ImageView")
+                        .descMatches(".*[Pp]rofile.*[Pp]icture.*")
+                        .clickable(false)
+                        .exists() ||
+                        className("android.widget.ImageView")
+                        .descMatches(".*头像.*")
+                        .clickable(false)
+                        .exists()
+    
+    if(profilePicture) {
+        taskLog("页面验证成功：找到用户头像（Profile picture）")
         return true
     }
     
-    taskLog("页面验证失败：未找到追蹤/讚按钮")
-    return false
-}
-
-// 检测当前页面是否是 Reels 页面
-function isReelsPage() {
-    taskLog("检测当前页面类型...")
-    sleep(2000)
-    
-    // 检测 Reels 页面的特征：存在"讚」按鈕"或"Like button"的描述（Reels 特有的点赞按钮描述）
-    var all_Buttons = className("android.widget.Button").find()
-    if(all_Buttons.length > 0) {
-        for(var i = 0; i < all_Buttons.length; i++) {
-            var button = all_Buttons[i]
-            var buttonDesc = button.desc()
-            if(buttonDesc && button.visibleToUser()) {
-                // Reels 页面的点赞按钮有特殊描述
-                if(buttonDesc.indexOf("讚」按鈕") !== -1 || 
-                   buttonDesc.indexOf("Like button") !== -1 ||
-                   buttonDesc.indexOf("點按兩下並按住") !== -1 ||
-                   buttonDesc.indexOf("Double tap and hold") !== -1) {
-                    taskLog("检测到 Reels 页面特征")
-                    return true
-                }
-            }
-        }
-    }
-    
-    // 检测页面标题是否包含 Reels
-    var pageTitle = className("android.view.View").descMatches(".*[Rr]eels.*").findOne(1000)
-    if(pageTitle) {
-        taskLog("检测到 Reels 页面标题")
-        return true
-    }
-    
-    taskLog("未检测到 Reels 页面特征")
-    return false
-}
-
-// 检测当前页面是否是 Post 页面
-function isPostPage() {
-    taskLog("检测当前页面是否是 Post 页面...")
-    sleep(2000)
-    
-    // 检测 Post 页面的特征：
-    // 1. 页面标题包含"帖子"或"Post"
-    var postTitle = className("android.view.View").descMatches(".*帖子.*").findOne(1000) ||
-                    className("android.view.View").descMatches(".*Post.*").findOne(1000) ||
-                    textMatches(".*帖子.*").findOne(1000) ||
-                    textMatches(".*Post.*").findOne(1000)
-    
-    if(postTitle) {
-        taskLog("检测到 Post 页面标题")
-        return true
-    }
-    
-    // 2. 存在评论按钮（Post 页面通常有评论按钮）
-    var commentBtn = className("android.widget.Button").desc("Comment").exists() ||
-                     className("android.widget.Button").desc("留言").exists() ||
-                     className("android.view.View").desc("Comment").exists() ||
-                     className("android.view.View").desc("留言").exists()
-    
-    if(commentBtn) {
-        taskLog("检测到 Post 页面评论按钮")
-        return true
-    }
-    
-    // 3. 存在分享按钮（Post 页面通常有分享按钮）
-    var shareBtn = className("android.widget.Button").desc("Share").exists() ||
-                   className("android.widget.Button").desc("分享").exists() ||
-                   className("android.view.View").desc("Share").exists() ||
-                   className("android.view.View").desc("分享").exists()
-    
-    if(shareBtn) {
-        taskLog("检测到 Post 页面分享按钮")
-        return true
-    }
-    
-    taskLog("未检测到 Post 页面特征")
+    taskLog("页面验证失败：未找到用户头像（Profile picture）")
     return false
 }
 
@@ -1027,15 +1021,6 @@ function forceStop_APP(packageName){
 
 
 
-//可能是reels视频，所以要先点击评论按钮
-function find_comment_button(){
-    //desc("Comment") className("android.widget.Button") clickable("true")
-    var commentButton = find_btn_desc_base("Comment", "留言")
-    toastLog("commentButton = " + commentButton)
-    
-    
-}
-
 //通过Button的Desc
 function find_viewGroup_desc_base(findText_ZH_TW, findText_EN_US){
 
@@ -1080,8 +1065,14 @@ function find_viewGroup_desc_base(findText_ZH_TW, findText_EN_US){
 
 }
 
-function find_like_button(){
-    taskLog("开始寻找点赞按钮...")
+function find_like_button(shouldClick){
+    // shouldClick: true 表示找到按钮后点击，false 表示找到按钮但不点击
+    // 默认值为 true，保持向后兼容
+    if(shouldClick === undefined) {
+        shouldClick = true;
+    }
+    
+    taskLog("开始寻找点赞按钮... (是否点击: " + shouldClick + ")")
     
     var loopCount = 0
     var maxLoops = 5
@@ -1119,9 +1110,14 @@ function find_like_button(){
                     
                     if(isLikeButtonMatch(descText)) {
                         taskLog("找到点赞按钮: " + descText)
-                        click(btn.bounds().centerX(), btn.bounds().centerY())
-                        sleep(random(2000, 3000))
-                        return // 找到并点击后直接返回
+                        if(shouldClick) {
+                            click(btn.bounds().centerX(), btn.bounds().centerY())
+                            sleep(random(2000, 3000))
+                            taskLog("已点击点赞按钮")
+                        } else {
+                            taskLog("找到点赞按钮但未点击（shouldClick=false）")
+                        }
+                        return true // 找到按钮后返回 true
                     }
                 }
             }
@@ -1137,9 +1133,14 @@ function find_like_button(){
                     
                     if(isLikeButtonMatch(descText)) {
                         taskLog("找到点赞ViewGroup: " + descText)
-                        click(viewGroup.bounds().centerX(), viewGroup.bounds().centerY())
-                        sleep(random(2000, 3000))
-                        return // 找到并点击后直接返回
+                        if(shouldClick) {
+                            click(viewGroup.bounds().centerX(), viewGroup.bounds().centerY())
+                            sleep(random(2000, 3000))
+                            taskLog("已点击点赞按钮")
+                        } else {
+                            taskLog("找到点赞按钮但未点击（shouldClick=false）")
+                        }
+                        return true // 找到按钮后返回 true
                     }
                 }
             }
@@ -1154,6 +1155,7 @@ function find_like_button(){
     }
     
     taskLog("循环 " + maxLoops + " 次后仍未找到点赞按钮，退出点赞功能")
+    return false // 未找到按钮返回 false
 }
 
 
@@ -1226,6 +1228,11 @@ function click_send_button(){
             taskLog("找到 " + nextBtnList.length + " 个按钮，点击最后一个（索引 " + lastIndex + "）")
             nextBtnList[lastIndex].click(); // 使用 JavaScript 数组访问方式
             sleep(random(3000, 5000))
+            //此时已经到达具体的评论页面，需要回退到个人主页
+            back() //1.收回键盘
+            back() //2.回退到个人主页
+
+            sleep(random(3000, 5000))
         }else{
             taskLog("未找到任何按钮")
             isSuccess = false
@@ -1234,6 +1241,12 @@ function click_send_button(){
     }else{
         taskLog("找到发送按钮，已经点击发送按钮....")
         isSuccess = false
+
+        //此时已经到达具体的评论页面，需要回退到个人主页
+        back() //1.收回键盘
+        back() //2.回退到个人主页
+        
+        sleep(random(3000, 5000))
     }
 
     return isSuccess
