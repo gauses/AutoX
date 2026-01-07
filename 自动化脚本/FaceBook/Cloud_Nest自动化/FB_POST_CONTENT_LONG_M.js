@@ -757,13 +757,13 @@ function post_Image(){
 
                 //className("android.widget.Button").desc("Photo/video").findOne().click()
                 taskLog("准备点击 - 相片／影片....")
-                find_btn_desc_base("Photo/video", "相片／影片", "圖庫")
+                find_btn_desc_base({ texts: ["Photo/video", "相片／影片", "圖庫", "Gallery"] })
                 sleep(random(3000, 5000))
 
                 //点击权限
 
                 taskLog("准备检查权限....")
-                find_btn_desc_base("Allow access", "允許存取")
+                find_btn_desc_base({ texts: ["Allow access", "允許存取"] })
 
                 //再次点击权限
                 // className("android.widget.Button") text("允許") clickable("true")
@@ -821,7 +821,7 @@ function post_Image(){
 
 
                     //选择图片 - desc("選擇多個")
-                    find_btn_desc_base("Select multiple", "選擇多個")
+                    find_btn_desc_base({ texts: ["Select multiple", "選擇多個"] })
                     sleep(random(3000, 5000))
 
                     //选中所有图片（支持滑动选取，使用 bounds 唯一标识）
@@ -877,7 +877,7 @@ function post_Image(){
                     //点击Nest
                     //className("android.widget.Button").desc("Next").findOne().click()
                     //desc("繼續")
-                    find_btn_desc_base("Next", "繼續")
+                    find_btn_desc_base({ texts: ["Next", "繼續"] })
                     sleep(random(3000, 5000))
 
                 });
@@ -1147,14 +1147,15 @@ function debugButtons() {
     });
 }
 
-//通过Button的Desc（支持多语言）
-function find_btn_desc_base(findText_EN_US, findText_ZH_TW, findText_ZH_CN, waitAfterClick) {
+//通过Button的Desc（支持多语言，动态参数）
+// 参数: options = { texts: ["English", "繁體中文", "简体中文", ...] }
+function find_btn_desc_base(options) {
     // debugButtons();
-    var texts = [findText_EN_US, findText_ZH_TW, findText_ZH_CN].filter(Boolean); // 过滤空值
+    var texts = (options.texts || []).filter(Boolean); // 过滤空值
     taskLog("待查找的语言文本数量: " + texts.length + " | 内容: " + JSON.stringify(texts));
     
-    // 默认点击后等待2秒
-    var clickWait = (waitAfterClick !== undefined) ? waitAfterClick : 2000;
+    // 点击后等待2秒
+    var clickWait = 2000;
     
     for (var loopCount = 1; loopCount <= 3; loopCount++) {
         taskLog("第 " + loopCount + " 轮查找开始");
@@ -1426,7 +1427,7 @@ try {
     //desc("在 Facebook 撰寫貼文")
     //desc("在想些什麽?建立貼文")
     //desc("Make a post on Facebook")
-    var makePostBtn = find_btn_desc_base("Make a post", "貼文", "Create a post")
+    var makePostBtn = find_btn_desc_base({ texts: ["Make a post", "貼文", "Create a post", "on your mind?"] })
     // if(!makePostBtn){
     //     throw new Error("未找到Facebook建立貼文按钮");
     // }
@@ -1486,7 +1487,7 @@ try {
     taskLog("准备点击下一步....");
     sleep(5000)
     //desc("下一步")
-    find_btn_desc_base("繼續", "NEXT", "下一步")
+    find_btn_desc_base({ texts: ["繼續", "NEXT", "下一步"] })
 
 
     taskLog("准备点击POST....");
