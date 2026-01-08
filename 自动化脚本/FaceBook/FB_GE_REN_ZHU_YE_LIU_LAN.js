@@ -312,8 +312,12 @@ try {
                             var checkBoxList = className("android.widget.CheckBox").find()
                             if(checkBoxList && checkBoxList.length > 0){
                                 for(var k = 0; k < checkBoxList.length; k++){
-                                    checkBoxList[k].click()
-                                    sleep(random(1000, 3000))
+                                    var checkBox = checkBoxList[k]
+                                    if(checkBox && checkBox.visibleToUser()){
+                                        // 由于复选框的clickable属性为false，使用坐标点击
+                                        click(checkBox.bounds().centerX(), checkBox.bounds().centerY())
+                                        sleep(random(1000, 3000))
+                                    }
                                 }
                             }
 
@@ -323,9 +327,10 @@ try {
                             var findContinueButtonResult = findTextByLanguages(SHARE_GROUP_DESC_TEXT)
                             if(findContinueButtonResult){
                                 taskLog("找到继续按钮，点击继续按钮")
-                                sleep(random(1000, 3000))
+                                sleep(random(3000, 5000))
 
                                 //点击右上角发布按钮
+                                //className("android.widget.Button") desc("POST") clickable("true")
                                 var findPostButtonResult = findTextByLanguages(SHARE_GROUP_POST_TEXT)
                                 if(findPostButtonResult){
                                     taskLog("找到发布按钮，点击发布按钮")
@@ -1259,9 +1264,6 @@ function find_like_button(shouldClick){
     
     taskLog("开始寻找点赞按钮... (是否点击: " + shouldClick + ")")
     
-    var loopCount = 0
-    var maxLoops = 5
-    
     // 统一的匹配函数：检查描述文本是否匹配 LIKE_TEXT 中的任何值
     function isLikeButtonMatch(descText) {
         if(!descText || descText.trim() === "") {
@@ -1277,69 +1279,57 @@ function find_like_button(shouldClick){
         })
     }
     
-    while(loopCount < maxLoops) {
-        loopCount++
-        taskLog("循环寻找点赞按钮 - 第 " + loopCount + " 次")
-        
-        // 等待页面加载
-        sleep(random(1000, 3000))
-        
-        // 先尝试查找 Button 类型的点赞按钮
-        var buttonList = className("android.widget.Button").find()
-        if(buttonList && buttonList.length > 0) {
-            for(var i = 0; i < buttonList.length; i++) {
-                var btn = buttonList[i]
-                if(btn && btn.visibleToUser()) {
-                    var descText = btn.desc() || ""
-                    taskLog("检查按钮描述: " + descText)
-                    
-                    if(isLikeButtonMatch(descText)) {
-                        taskLog("找到点赞按钮: " + descText)
-                        if(shouldClick) {
-                            click(btn.bounds().centerX(), btn.bounds().centerY())
-                            sleep(random(2000, 3000))
-                            taskLog("已点击点赞按钮")
-                        } else {
-                            taskLog("找到点赞按钮但未点击（shouldClick=false）")
-                        }
-                        return true // 找到按钮后返回 true
+    // 等待页面加载
+    sleep(random(1000, 3000))
+    
+    // 先尝试查找 Button 类型的点赞按钮
+    var buttonList = className("android.widget.Button").find()
+    if(buttonList && buttonList.length > 0) {
+        for(var i = 0; i < buttonList.length; i++) {
+            var btn = buttonList[i]
+            if(btn && btn.visibleToUser()) {
+                var descText = btn.desc() || ""
+                taskLog("检查按钮描述: " + descText)
+                
+                if(isLikeButtonMatch(descText)) {
+                    taskLog("找到点赞按钮: " + descText)
+                    if(shouldClick) {
+                        click(btn.bounds().centerX(), btn.bounds().centerY())
+                        sleep(random(2000, 3000))
+                        taskLog("已点击点赞按钮")
+                    } else {
+                        taskLog("找到点赞按钮但未点击（shouldClick=false）")
                     }
+                    return true // 找到按钮后返回 true
                 }
             }
-        }
-        
-        // 如果 Button 中没找到，尝试查找 ViewGroup 类型的点赞按钮
-        var viewGroupList = className("android.view.ViewGroup").find()
-        if(viewGroupList && viewGroupList.length > 0) {
-            for(var i = 0; i < viewGroupList.length; i++) {
-                var viewGroup = viewGroupList[i]
-                if(viewGroup && viewGroup.visibleToUser()) {
-                    var descText = viewGroup.desc() || ""
-                    
-                    if(isLikeButtonMatch(descText)) {
-                        taskLog("找到点赞ViewGroup: " + descText)
-                        if(shouldClick) {
-                            click(viewGroup.bounds().centerX(), viewGroup.bounds().centerY())
-                            sleep(random(2000, 3000))
-                            taskLog("已点击点赞按钮")
-                        } else {
-                            taskLog("找到点赞按钮但未点击（shouldClick=false）")
-                        }
-                        return true // 找到按钮后返回 true
-                    }
-                }
-            }
-        }
-        
-        // 如果没找到，向上滑动尝试加载更多内容
-        if(loopCount < maxLoops) {
-            taskLog("未找到点赞按钮，向上滑动尝试加载更多内容")
-            swipe_up()
-            sleep(random(2000, 3000))
         }
     }
     
-    taskLog("循环 " + maxLoops + " 次后仍未找到点赞按钮，退出点赞功能")
+    // 如果 Button 中没找到，尝试查找 ViewGroup 类型的点赞按钮
+    var viewGroupList = className("android.view.ViewGroup").find()
+    if(viewGroupList && viewGroupList.length > 0) {
+        for(var i = 0; i < viewGroupList.length; i++) {
+            var viewGroup = viewGroupList[i]
+            if(viewGroup && viewGroup.visibleToUser()) {
+                var descText = viewGroup.desc() || ""
+                
+                if(isLikeButtonMatch(descText)) {
+                    taskLog("找到点赞ViewGroup: " + descText)
+                    if(shouldClick) {
+                        click(viewGroup.bounds().centerX(), viewGroup.bounds().centerY())
+                        sleep(random(2000, 3000))
+                        taskLog("已点击点赞按钮")
+                    } else {
+                        taskLog("找到点赞按钮但未点击（shouldClick=false）")
+                    }
+                    return true // 找到按钮后返回 true
+                }
+            }
+        }
+    }
+    
+    taskLog("未找到点赞按钮，退出点赞功能")
     return false // 未找到按钮返回 false
 }
 
