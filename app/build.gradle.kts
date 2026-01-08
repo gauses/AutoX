@@ -10,13 +10,13 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
-val propFile: File = File("E:/资料/jks/autojs-app/sign.properties")
-val properties = Properties()
-if (propFile.exists()) {
-    propFile.inputStream().reader().use {
-        properties.load(it)
-    }
-}
+//val propFile: File = File("E:/资料/jks/autojs-app/sign.properties")
+//val properties = Properties()
+//if (propFile.exists()) {
+//    propFile.inputStream().reader().use {
+//        properties.load(it)
+//    }
+//}
 
 android {
     defaultConfig {
@@ -41,14 +41,14 @@ android {
         disable += listOf("MissingTranslation", "ExtraTranslation")
     }
     signingConfigs {
-        if (propFile.exists()) {
-            getByName("release") {
-                storeFile = file(properties.getProperty("storeFile"))
-                storePassword = properties.getProperty("storePassword")
-                keyAlias = properties.getProperty("keyAlias")
-                keyPassword = properties.getProperty("keyPassword")
-            }
-        }
+//        if (propFile.exists()) {
+//            getByName("release") {
+//                storeFile = file(properties.getProperty("storeFile"))
+//                storePassword = properties.getProperty("storePassword")
+//                keyAlias = properties.getProperty("keyAlias")
+//                keyPassword = properties.getProperty("keyPassword")
+//            }
+//        }
     }
     splits {
         // Configures multiple APKs based on ABI.
@@ -78,9 +78,9 @@ android {
                     "proguard-rules.pro"
                 )
             )
-            if (propFile.exists()) {
-                signingConfig = signingConfigs.getByName("release")
-            }
+//            if (propFile.exists()) {
+//                signingConfig = signingConfigs.getByName("release")
+//            }
         }
         named("release") {
             isShrinkResources = false
@@ -91,9 +91,9 @@ android {
                     "proguard-rules.pro"
                 )
             )
-            if (propFile.exists()) {
-                signingConfig = signingConfigs.getByName("release")
-            }
+//            if (propFile.exists()) {
+//                signingConfig = signingConfigs.getByName("release")
+//            }
         }
     }
 
@@ -120,6 +120,13 @@ android {
         getByName("main") {
             res.srcDirs("src/main/res", "src/main/res-i18n")
             jniLibs.srcDirs("/libs")
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/CMakeLists.txt")
+            version = "3.22.1"
         }
     }
 

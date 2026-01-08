@@ -5,6 +5,7 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
 import android.net.Uri
+import android.util.Log
 import android.view.View
 import android.widget.ImageView
 import androidx.core.content.ContextCompat
@@ -30,6 +31,7 @@ import org.autojs.autojs.timing.TimedTaskScheduler
 import org.autojs.autojs.tool.CrashHandler
 import org.autojs.autojs.ui.error.ErrorReportActivity
 import org.autojs.autoxjs.BuildConfig
+import org.autojs.autoxjs.CpuInfoDetector
 import org.autojs.autoxjs.R
 import java.lang.ref.WeakReference
 
@@ -50,6 +52,8 @@ class App : MultiDexApplication(), Configuration.Provider {
         setUpStaticsTool()
         setUpDebugEnvironment()
         init()
+
+
     }
 
     private fun setUpStaticsTool() {

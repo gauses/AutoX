@@ -145,6 +145,10 @@ tasks.register("cp2APP") {
 tasks.register("cp2APPDebug") {
 }
 
+// 禁用签名验证任务，避免找不到签名文件时报错
+tasks.matching { it.name.contains("validateSigning") }.configureEach {
+    enabled = propFile.exists()
+}
 
 dependencies {
     implementation(projects.automator)

@@ -64,6 +64,7 @@ import org.autojs.autoxjs.R
 import org.joda.time.DateTimeZone
 import org.joda.time.Instant
 import org.autojs.autojs.core.network.socket.State
+import org.autojs.autoxjs.NativeUtils
 
 private const val TAG = "DrawerPage"
 private const val URL_DEV_PLUGIN = "https://github.com/kkevsekk1/Auto.js-VSCode-Extension"
@@ -145,8 +146,27 @@ private fun AppDetailsSettings() {
 @Composable
 private fun Feedback() {
     val context = LocalContext.current
-    TextButton(onClick = { IntentUtil.browse(context, FEEDBACK_ADDRESS) }) {
-        Text(text = stringResource(R.string.text_issue_report))
+    val scope = rememberCoroutineScope()
+    TextButton(onClick = { 
+        //IntentUtil.browse(context, FEEDBACK_ADDRESS) 
+        scope.launch {
+            try {
+                val result = NativeUtils.shutdownContainer()
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, result, Toast.LENGTH_LONG).show()
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(
+                        context, 
+                        "Shutdown failed: ${e.message}", 
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
+        }
+    }) {
+        Text(text = "关机")
     }
 }
 

@@ -52,6 +52,35 @@ const LIKE_TEXT = {
 };
 
 
+const SHARE_TEXT = {
+    ZH_CN: "Share",      // 简体中文
+    ZH_TW: "分享",      // 繁体中文
+    EN_US: "Share"         // 英文 
+};
+
+
+const SHARE_GROUP_TEXT = {
+    ZH_CN: "Group",      // 简体中文
+    ZH_TW: "社團",      // 繁体中文
+    EN_US: "Group"         // 英文 
+};
+
+
+//desc("繼續") desc("Next")
+const SHARE_GROUP_DESC_TEXT = {
+    ZH_CN: "Next",      // 简体中文
+    ZH_TW: "繼續",      // 繁体中文
+    EN_US: "Next"         // 英文 
+};
+
+//desc("POST") desc("發佈")
+const SHARE_GROUP_POST_TEXT = {
+    ZH_CN: "POST",      // 简体中文
+    ZH_TW: "發佈",      // 繁体中文
+    EN_US: "POST"         // 英文 
+};
+
+
 const COMMENT_TEXT = {
     ZH_CN: "Comment",      // 简体中文
     ZH_TW: "留言",      // 繁体中文
@@ -263,6 +292,77 @@ try {
                 }else{
                     taskLog("未触发评论概率 (" + commentProbability + "%)")
                 }
+
+
+
+                //分享
+                var shareProbability = parseFloat(FB_Share_Count) || 0; // 转换为数字，默认为0
+                if (Math.random() * 100 < shareProbability)  {
+                    taskLog("开始触发分享概率 (" + shareProbability + "%)")
+                    var findShareButtonResult = find_share_button(true)
+                    if(findShareButtonResult){
+                        taskLog("找到分享按钮，点击分享按钮")
+                        sleep(random(1000, 3000))
+                        var clickGroupButtonResult = findTextByLanguages(SHARE_GROUP_TEXT)
+                        if(clickGroupButtonResult){
+                            taskLog("找到社團按钮，点击社團按钮")
+                            sleep(random(3000, 5000))
+                            
+                            //找到页面所有的checkBox并尝试点击：className("android.widget.CheckBox") ，最多只能点10个
+                            var checkBoxList = className("android.widget.CheckBox").find()
+                            if(checkBoxList && checkBoxList.length > 0){
+                                for(var k = 0; k < checkBoxList.length; k++){
+                                    checkBoxList[k].click()
+                                    sleep(random(1000, 3000))
+                                }
+                            }
+
+
+                            //点击底部继续按钮
+                            //className("android.widget.Button") desc("繼續") desc("Next")
+                            var findContinueButtonResult = findTextByLanguages(SHARE_GROUP_DESC_TEXT)
+                            if(findContinueButtonResult){
+                                taskLog("找到继续按钮，点击继续按钮")
+                                sleep(random(1000, 3000))
+
+                                //点击右上角发布按钮
+                                var findPostButtonResult = findTextByLanguages(SHARE_GROUP_POST_TEXT)
+                                if(findPostButtonResult){
+                                    taskLog("找到发布按钮，点击发布按钮")
+                                    sleep(random(1000, 3000))
+                                    back()
+                                }else{
+                                    taskLog("未找到发布按钮，跳过发布功能")
+                                }
+
+                            }else{
+                                taskLog("未找到继续按钮，跳过继续功能")
+                            }
+
+
+
+
+                        
+
+
+
+                        }else{
+                            taskLog("未找到社團按钮，跳过社團功能")
+                            back()
+                        }
+
+
+                        //寻找Group按钮
+
+
+                    }else{
+                        taskLog("未找到分享按钮，跳过分享功能")
+                    }
+                }else{
+                    taskLog("未触发分享概率 (" + shareProbability + "%)")
+                }
+                sleep(random(1000, 3000))
+                
     
                 sleep(random(1000, 3000))
                 swipe_up()
@@ -1064,6 +1164,91 @@ function find_viewGroup_desc_base(findText_ZH_TW, findText_EN_US){
      return findBtn
 
 }
+
+
+function find_share_button(shouldClick){
+     // shouldClick: true 表示找到按钮后点击，false 表示找到按钮但不点击
+    // 默认值为 true，保持向后兼容
+    if(shouldClick === undefined) {
+        shouldClick = true;
+    }
+    
+    taskLog("开始寻找分享按钮... (是否点击: " + shouldClick + ")")
+    
+    // 统一的匹配函数：检查描述文本是否匹配 LIKE_TEXT 中的任何值
+    function isLikeButtonMatch(descText) {
+        if(!descText || descText.trim() === "") {
+            return false
+        }
+        
+        // 使用 LIKE_TEXT 中的所有值进行匹配
+        // 支持完全匹配、开头匹配、包含匹配（用于匹配 "讚」按鈕" 中包含 "讚" 的情况）
+        return Object.values(SHARE_TEXT).some(function(text) {
+            return descText === text || 
+                   descText.startsWith(text) || 
+                   descText.indexOf(text) !== -1
+        })
+    }
+    
+    // 等待页面加载
+    sleep(random(1000, 3000))
+    
+    // 先尝试查找 Button 类型的点赞按钮
+    var buttonList = className("android.widget.Button").find()
+    if(buttonList && buttonList.length > 0) {
+        for(var i = 0; i < buttonList.length; i++) {
+            var btn = buttonList[i]
+            if(btn && btn.visibleToUser()) {
+                var descText = btn.desc() || ""
+                taskLog("检查按钮描述: " + descText)
+                
+                if(isLikeButtonMatch(descText)) {
+                    taskLog("找到分享按钮: " + descText)
+                    if(shouldClick) {
+                        click(btn.bounds().centerX(), btn.bounds().centerY())
+                        sleep(random(2000, 3000))
+                        taskLog("已点击分享按钮")
+                    } else {
+                        taskLog("找到分享按钮但未点击（shouldClick=false）")
+                    }
+                    return true // 找到按钮后返回 true
+                }
+            }
+        }
+    }
+    
+    // 如果 Button 中没找到，尝试查找 ViewGroup 类型的点赞按钮
+    var viewGroupList = className("android.view.ViewGroup").find()
+    if(viewGroupList && viewGroupList.length > 0) {
+        for(var i = 0; i < viewGroupList.length; i++) {
+            var viewGroup = viewGroupList[i]
+            if(viewGroup && viewGroup.visibleToUser()) {
+                var descText = viewGroup.desc() || ""
+                
+                if(isLikeButtonMatch(descText)) {
+                    taskLog("找到分享ViewGroup: " + descText)
+                    if(shouldClick) {
+                        click(viewGroup.bounds().centerX(), viewGroup.bounds().centerY())
+                        sleep(random(2000, 3000))
+                        taskLog("已点击分享按钮")
+                    } else {
+                        taskLog("找到分享按钮但未点击（shouldClick=false）")
+                    }
+                    return true // 找到按钮后返回 true
+                }
+            }
+        }
+    }
+    
+    taskLog("未找到分享按钮，退出分享功能")
+    return false // 未找到按钮返回 false
+
+
+
+    
+}
+
+
 
 function find_like_button(shouldClick){
     // shouldClick: true 表示找到按钮后点击，false 表示找到按钮但不点击

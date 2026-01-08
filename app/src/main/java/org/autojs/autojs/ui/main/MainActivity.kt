@@ -89,6 +89,7 @@ import com.stardust.app.permission.DrawOverlaysPermission
 import com.stardust.autojs.execution.ExecutionConfig
 import com.stardust.autojs.script.ScriptSource
 import com.stardust.toast
+import com.stardust.view.accessibility.AccessibilityNotificationObserver
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
@@ -115,10 +116,12 @@ import org.autojs.autojs.ui.main.web.EditorAppManager
 import org.autojs.autojs.ui.nestjs.NestUtils
 import org.autojs.autojs.ui.util.launchActivity
 import org.autojs.autojs.ui.widget.fillMaxSize
+import org.autojs.autoxjs.CpuInfoDetector
 import org.autojs.autoxjs.R
 import org.json.JSONObject
 import java.io.File
 import java.net.URLDecoder
+import kotlin.concurrent.thread
 
 
 data class BottomNavigationItem(val icon: Int, val label: String)
@@ -202,6 +205,12 @@ class MainActivity : FragmentActivity() {
             }
         }
         checkNoticePermission()
+
+
+        val containerId = CpuInfoDetector.getContainerId()
+        Log.d("AutoJs", "containerId = $containerId")
+        Toast.makeText(this, "containerId = $containerId" , Toast.LENGTH_LONG).show()
+
 
     }
 

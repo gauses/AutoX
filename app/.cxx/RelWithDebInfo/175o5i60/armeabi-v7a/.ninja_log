@@ -1,0 +1,21 @@
+# ninja log v5
+1	544	7895576755691543	CMakeFiles/native-lib.dir/native-lib.cpp.o	6abf606379d2db24
+548	644	7895576756711743	D:/AndroidProject/AutoX/app/build/intermediates/cxx/RelWithDebInfo/175o5i60/obj/armeabi-v7a/libnative-lib.so	46493c81902e6c69
+0	12	0	clean	61827871eeb58b9d
+1	15	0	clean	61827871eeb58b9d
+0	8	0	clean	61827871eeb58b9d
+0	7	0	clean	61827871eeb58b9d
+0	7	0	clean	61827871eeb58b9d
+1	8	0	clean	61827871eeb58b9d
+5	546	7895615974362423	CMakeFiles/native-lib.dir/native-lib.cpp.o	6abf606379d2db24
+546	680	7895615975744788	D:/AndroidProject/AutoX/app/build/intermediates/cxx/RelWithDebInfo/175o5i60/obj/armeabi-v7a/libnative-lib.so	46493c81902e6c69
+0	10	0	clean	61827871eeb58b9d
+0	9	0	clean	61827871eeb58b9d
+3	521	7895623143004419	CMakeFiles/native-lib.dir/native-lib.cpp.o	6abf606379d2db24
+521	619	7895623143990461	D:/AndroidProject/AutoX/app/build/intermediates/cxx/RelWithDebInfo/175o5i60/obj/armeabi-v7a/libnative-lib.so	46493c81902e6c69
+1	30	0	clean	61827871eeb58b9d
+0	11	0	clean	61827871eeb58b9d
+0	7	0	clean	61827871eeb58b9d
+0	8	0	clean	61827871eeb58b9d
+5	554	7895630037473463	CMakeFiles/native-lib.dir/native-lib.cpp.o	6abf606379d2db24
+555	665	7895630038651048	D:/AndroidProject/AutoX/app/build/intermediates/cxx/RelWithDebInfo/175o5i60/obj/armeabi-v7a/libnative-lib.so	46493c81902e6c69
