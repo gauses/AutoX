@@ -268,12 +268,12 @@ try {
                 var shouldLike = Math.random() * 100 < likeProbability;
                 if (shouldLike)  {
                     taskLog("开始触发点赞概率 (" + likeProbability + "%)，将点击点赞按钮")
+                    find_like_button(shouldLike)
+                    sleep(random(1000, 3000))   
                 } else {
                     taskLog("未触发点赞概率 (" + likeProbability + "%)，将查找但不点击点赞按钮")
                 }
-                find_like_button(shouldLike)
-                sleep(random(1000, 3000))   
-    
+                
     
                 //评论
                 var commentProbability = parseFloat(FB_Comment_Count) || 0; // 转换为数字，默认为0
@@ -311,7 +311,8 @@ try {
                             //找到页面所有的checkBox并尝试点击：className("android.widget.CheckBox") ，最多只能点10个
                             var checkBoxList = className("android.widget.CheckBox").find()
                             if(checkBoxList && checkBoxList.length > 0){
-                                for(var k = 0; k < checkBoxList.length; k++){
+                                // for(var k = 0; k < checkBoxList.length; k++){
+                                for(var k = 0; k < 5; k++){ //如果checkBoxList.length大于5，则只点击前5个
                                     var checkBox = checkBoxList[k]
                                     if(checkBox && checkBox.visibleToUser()){
                                         // 由于复选框的clickable属性为false，使用坐标点击
@@ -324,6 +325,7 @@ try {
 
                             //点击底部继续按钮
                             //className("android.widget.Button") desc("繼續") desc("Next")
+                            // var findContinueButtonResult = find_btn_desc_base("Next", "繼續")
                             var findContinueButtonResult = findTextByLanguages(SHARE_GROUP_DESC_TEXT)
                             if(findContinueButtonResult){
                                 taskLog("找到继续按钮，点击继续按钮")
@@ -331,18 +333,17 @@ try {
 
                                 //点击右上角发布按钮
                                 //className("android.widget.Button") desc("POST") clickable("true")
-                                var findPostButtonResult = findTextByLanguages(SHARE_GROUP_POST_TEXT)
+                                var indPostButtonResult = findTextByLanguages(SHARE_GROUP_POST_TEXT)
                                 if(findPostButtonResult){
                                     taskLog("找到发布按钮，点击发布按钮")
-                                    sleep(random(1000, 3000))
+                                    sleep(random(3000, 5000))
                                     back()
-                                }else{
-                                    taskLog("未找到发布按钮，跳过发布功能")
                                 }
 
                             }else{
                                 taskLog("未找到继续按钮，跳过继续功能")
                             }
+
 
 
 
@@ -366,10 +367,7 @@ try {
                 }else{
                     taskLog("未触发分享概率 (" + shareProbability + "%)")
                 }
-                sleep(random(1000, 3000))
-                
-    
-                sleep(random(1000, 3000))
+                sleep(random(3000, 5000))
                 swipe_up()
                 sleep(random(1000, 3000))
             }
@@ -538,12 +536,30 @@ function find_btn_desc_base(findText_ZH_TW, findText_ZH_US){
              if (button1) {
                  findBtn = true
                  taskLog("找到" + findText_ZH_TW);
-                 button1.click();
+
+                 if (button1 && button1.clickable()) {
+                    button1.click();
+                    return true;
+                } else if (button1) {
+                    // 如果元素存在但不可点击，尝试点击其坐标
+                    let bounds = button1.bounds();
+                    click(bounds.centerX(), bounds.centerY());
+                    return true;
+                }
                  break; // 跳出循环
              }else if(button2){
                  findBtn = true
                  taskLog("找到" + findText_ZH_US);
-                 button2.click();
+                 if (button2 && button2.clickable()) {
+                    button2.click();
+                    return true;
+                } else if (button2) {
+                    // 如果元素存在但不可点击，尝试点击其坐标
+                    let bounds = button2.bounds();
+                    click(bounds.centerX(), bounds.centerY());
+                    return true;
+                }
+
                  break; // 跳出循环
              }
 
@@ -732,13 +748,27 @@ function getRedirectUrl(originalUrl) {
 function findTextByLanguages(languageObject) {
     for (let lang in languageObject) {
         let targetText = languageObject[lang];
-        if (text(targetText).exists()) {
+        
+        // 先尝试精确匹配
+        let element = text(targetText).findOne(500);
+        
+        // 如果精确匹配不到，尝试忽略大小写匹配
+        if (!element) {
+            // 使用正则表达式进行大小写不敏感匹配
+            let regexPattern = "(?i)^" + targetText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + "$";
+            element = textMatches(regexPattern).findOne(500);
+            if (element) {
+                taskLog("通过忽略大小写找到文本：" + targetText + " | 实际文本：" + element.text());
+            }
+        } else {
             taskLog("找到文本：" + targetText);
-            let element = text(targetText).findOne();
-            if (element && element.clickable()) {
+        }
+        
+        if (element) {
+            if (element.clickable()) {
                 element.click();
                 return true;
-            } else if (element) {
+            } else {
                 // 如果元素存在但不可点击，尝试点击其坐标
                 let bounds = element.bounds();
                 click(bounds.centerX(), bounds.centerY());
@@ -749,7 +779,6 @@ function findTextByLanguages(languageObject) {
     taskLog("未找到任何匹配的文本");
     return false;
 }
-
 
 function openFacebookLink_test(fbUrl){
     taskLog("准备打开链接 = " + fbUrl)
