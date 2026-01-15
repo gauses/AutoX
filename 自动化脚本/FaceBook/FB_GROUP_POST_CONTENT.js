@@ -21,7 +21,6 @@ var taskLogImgName = "nest_task_log.png"
 
 
 //需要添加的用户好友
-// const FB_Group_links = '$${T_FB_输入需要動態文章留言的所有Group}';
 const FB_Group_links = '$${T_FB_輸入指定社團網址}';
 const FB_common_count = '$${FB_留言數量}';
 const FB_group_comment_text = '$${T_FB_輸入留言內容}';
@@ -37,6 +36,14 @@ const LIKE_TEXT = {
 
 const LIKE_TEXT_END = {
     ZH_TW: "按住即可對留言傳達心情", // 繁体中文
+};
+
+const LIKE_TEXT_LIST = {
+    ZH_TW: "傳達了心情",      // 简体中文
+    EN_US: "others reacted",      // 繁体中文
+    EN_US_01: "reacted",         // 英文
+    EN_US_02: "You and others"         // 英文
+
 };
 
 
@@ -74,6 +81,16 @@ if (runningEngines.length > 1) {
   })
 }
 
+//打开Autojs的Log activity
+function openLogActivity() {
+    var intent = {
+        action: "android.intent.action.MAIN",
+        packageName: "org.autojs.autoxjs",
+        className: "org.autojs.autojs.ui.log.LogActivityKt"
+    };
+    app.startActivity(intent);
+}
+
 
 // 注册退出事件监听器
 events.on('exit', function(){
@@ -85,15 +102,15 @@ events.on('exit', function(){
     console.hide()
     sleep(1000)
 
-    if(handleErrorFlag){
-        taskLogError("-----------------脚本执行出现异常---------------");
-        taskLogError("Facebook首页点赞 + 留言---------------");
-        taskLogError("脚本执行时间：" + new Date().toLocaleString());
-    }else{
-        taskLog("-----------------脚本功能执行结束：---------------");
-        taskLog("Facebook首页点赞 + 留言---------------");
-        taskLog("脚本执行时间：" + new Date().toLocaleString());
-    }
+    // if(handleErrorFlag){
+    //     taskLogError("-----------------脚本执行出现异常---------------");
+    //     taskLogError("Facebook首页点赞 + 留言---------------");
+    //     taskLogError("脚本执行时间：" + new Date().toLocaleString());
+    // }else{
+    //     taskLog("-----------------脚本功能执行结束：---------------");
+    //     taskLog("Facebook首页点赞 + 留言---------------");
+    //     taskLog("脚本执行时间：" + new Date().toLocaleString());
+    // }
     openLogActivity();
 
 });
@@ -811,7 +828,59 @@ function forceStop_APP(packageName){
 
 }
 
+//找到当前页面是否有相同的点赞内容，如果有，则不进行点赞，返回true，否则返回false
+function find_same_like_text(likeText){
+    //检查是不是已经点赞过
+    //className("android.view.ViewGroup") desc("你和其他1人都傳達了心情")
+    //className("android.view.ViewGroup") desc("吴烽傳達了心情")
+    //className("android.view.ViewGroup") desc("You and 18 others reacted")
+    //className("android.view.ViewGroup") desc("You and others")
+    //className("android.view.ViewGroup") desc("郭芷涵 reacted")
 
+    //检查ViewGroup的desc，只要包含了以下字段即可，不需要完全一致 :LIKE_TEXT_LIST
+    var viewGroupList = className("android.view.ViewGroup").find()
+    if(viewGroupList && viewGroupList.length > 0) {
+        for(var i = 0; i < viewGroupList.length; i++) {
+            var viewGroup = viewGroupList[i]
+            
+            // 只处理可见的 ViewGroup，跳过不可见的元素
+            try {
+                if(!viewGroup.visibleToUser()) {
+                    continue; // 跳过不可见的元素
+                }
+            } catch(e) {
+                // 如果 visibleToUser() 方法不存在或出错，尝试检查 bounds
+                try {
+                    var bounds = viewGroup.bounds();
+                    if(!bounds || bounds.width() <= 0 || bounds.height() <= 0) {
+                        continue; // 跳过无效或不可见的元素
+                    }
+                } catch(e2) {
+                    continue; // 如果检查失败，跳过该元素
+                }
+            }
+            
+            var descText = viewGroup.desc() || ""
+            
+            // 检查 descText 是否包含 LIKE_TEXT_LIST 中的任何一个值
+            if(descText && descText.trim() !== "") {
+                for(var key in LIKE_TEXT_LIST) {
+                    if(LIKE_TEXT_LIST.hasOwnProperty(key)) {
+                        var likeText = LIKE_TEXT_LIST[key];
+                        if(likeText && descText.includes(likeText)) {
+                            taskLog("找到点赞内容: " + descText , "直接退出点赞功能")
+                            return true
+                        }
+                    }
+                }
+            }
+        }
+    }   
+    taskLog("未找到点赞内容")
+    return false
+
+
+}
 
 
 
@@ -843,13 +912,19 @@ function fina_all_Comment(){
                     if (Object.values(LIKE_TEXT).some(text => descText.startsWith(text)) 
                         || Object.values(LIKE_TEXT_END).some(text => descText.includes(text)))  {
 
-                        if (Math.random() * 100 < FB_Like_Count)  {
-                            taskLog("开始触发点赞概率")
-                            click(likeBtn.bounds().centerX() , likeBtn.bounds().centerY())  
-                            sleep(random(2000, 4000))
+                        if(find_same_like_text(LIKE_TEXT_LIST)){
+                            taskLog("找到相同的点赞内容，直接退出点赞功能")
                         }else{
-                            taskLog("虽然找到点赞按钮，没有触发点赞概率")
+                            if (Math.random() * 100 < FB_Like_Count)  {
+                                taskLog("开始触发点赞概率")
+                                click(likeBtn.bounds().centerX() , likeBtn.bounds().centerY())  
+                                sleep(random(2000, 4000))
+                            }else{
+                                taskLog("虽然找到点赞按钮，没有触发点赞概率")
+                            }
                         }
+
+                        
                     }
                 }
             }
@@ -931,139 +1006,216 @@ function fina_all_Comment(){
     back()
 }
 
+//找到当前页面是否有相同的评论内容，如果有，则不进行评论，返回true，否则返回false
+function find_same_post_text(postText){
+    //className("android.view.ViewGroup") desc("容易髒污變黃。")
+    //找到所有可见的ViewGroup，分析出desc的文本内容，如果存在相同的文本内容，则返回true，否则返回false
+    //postText 内容就是需要评论的内容 使用get_all_groups_comment_text()函数获取，返回的是数组
+    var viewGroupList = className("android.view.ViewGroup").find()
+    if(viewGroupList && viewGroupList.length > 0) {
+        // 限制最多检查的元素数量，避免性能问题
+        var maxCheckCount = Math.min(viewGroupList.length, 50); // 最多检查50个元素
+        var checkedCount = 0;
+        
+        for(var i = 0; i < viewGroupList.length && checkedCount < maxCheckCount; i++) {
+            var viewGroup = viewGroupList[i]
+            
+            // 只处理可见的 ViewGroup，跳过不可见的元素
+            try {
+                if(!viewGroup.visibleToUser()) {
+                    continue; // 跳过不可见的元素
+                }
+            } catch(e) {
+                // 如果 visibleToUser() 方法不存在或出错，尝试检查 bounds
+                try {
+                    var bounds = viewGroup.bounds();
+                    if(!bounds || bounds.width() <= 0 || bounds.height() <= 0) {
+                        continue; // 跳过无效或不可见的元素
+                    }
+                } catch(e2) {
+                    continue; // 如果检查失败，跳过该元素
+                }
+            }
+            
+            checkedCount++; // 增加已检查的可见元素计数
+            
+            var descText = viewGroup.desc() || ""
+            
+            // postText 是数组，需要检查数组中是否有元素等于或包含 descText
+            if(Array.isArray(postText)) {
+                // 跳过空字符串或过短的 descText，避免误匹配
+                if(!descText || descText.trim() === "" || descText.trim().length < 2) {
+                    continue; // 跳过这个 viewGroup，继续检查下一个
+                }
+                
+                // 检查数组中是否有任何元素等于 descText（精确匹配）
+                if(postText.includes(descText)) {
+                    taskLog("找到相同的评论内容: " + descText)
+                    return true
+                }
+                
+                // 或者检查数组中是否有任何元素包含 descText（部分匹配）
+                // 只有当 descText 长度足够时才进行部分匹配，避免误匹配
+                if(descText.trim().length >= 1) {
+                    for(var j = 0; j < postText.length; j++) {
+                        if(postText[j] && typeof postText[j] === 'string' && postText[j].includes(descText)) {
+                            taskLog("找到相同的评论内容（部分匹配）: " + descText)
+                            return true
+                        }
+                    }
+                }
+            } else if(postText && typeof postText === 'string') {
+                // 如果 postText 是字符串，直接比较
+                // 跳过空字符串或过短的 descText，避免误匹配
+                if(!descText || descText.trim() === "" || descText.trim().length < 3) {
+                    continue; // 跳过这个 viewGroup，继续检查下一个
+                }
+                if(postText.includes(descText)) {
+                    taskLog("找到相同的评论内容: " + descText)
+                    return true
+                }
+            }
+        }
+    }
+    taskLog("未找到相同的评论内容")
+    return false
+
+
+}
 
 //开始评论内容
 function post_content(){
-    //设置开始时间
-    const startTime = new Date().getTime();
 
-    //检查总时间的函数
-    function checkTimeout() {
-        if(new Date().getTime() - startTime > 60 * 1000) {  // 60秒 = 60 * 1000毫秒
-            taskLog("评论操作总时间超过60秒，自动退出");
-            sleep(1000)
-            back()
-            sleep(3000)
-            return true;
+    var all_group_comment_text = get_all_groups_comment_text()
+    toast("所有评论数量 = " + all_group_comment_text.length)
+    sleep(5000) 
+
+    //寻找当前页面是否有重复的评论内容
+    var findSamePostText = find_same_post_text(all_group_comment_text)
+    if(findSamePostText){
+        taskLog("找到相同的评论内容，直接退出评论，直接进行下一个Link的任务")
+        sleep(random(3000, 5000))
+        back()
+        sleep(random(3000, 5000))
+        back()
+    }else{
+        //设置开始时间
+        const startTime = new Date().getTime();
+
+        //检查总时间的函数
+        function checkTimeout() {
+            if(new Date().getTime() - startTime > 60 * 1000) {  // 60秒 = 60 * 1000毫秒
+                taskLog("评论操作总时间超过60秒，自动退出");
+                sleep(1000)
+                back()
+                sleep(3000)
+                return true;
+            }
+            taskLog("评论操作总时间没有超过60秒，继续进行");
+            return false;
         }
-        taskLog("评论操作总时间没有超过60秒，继续进行");
-        return false;
-    }
 
 
-    
-    taskLog("准备输入评论内容....");
-    taskLog("准备输入评论内容....");
+        
+        taskLog("准备输入评论内容....");
 
-    //尝试点击输入框
-    try {
-        let inputBox = className("android.widget.AutoCompleteTextView").findOne(10000); // 5秒超时
-        if(inputBox) {
-            inputBox.click();
-            taskLog("点击输入框成功");
-        } else {
-            sleep(3000)
-            taskLog("未找到输入框");
-            sleep(1000)
-            back()
-            sleep(3000)
-            return;
+        //尝试点击输入框
+        try {
+
+
+            var all_group_comment_text = get_all_groups_comment_text()  
+            if(all_group_comment_text.includes("$${T")){ 
+                throw_error_storage_not_enough()
+            }
+            var randIdx = random(0, all_group_comment_text.length - 1)
+            var messageText = all_group_comment_text[randIdx];
+            taskLog("输入内容 = " + messageText);
+
+            var inputBox = className("android.widget.AutoCompleteTextView").findOne(10000); // 5秒超时
+            if(inputBox) {
+
+                taskLog("准备输入分享内容....");
+                className("android.widget.AutoCompleteTextView").findOne().click()
+                sleep(5000)
+                className("android.widget.AutoCompleteTextView").findOne().setText("")
+                sleep(5000)
+                className("android.widget.AutoCompleteTextView").findOne().setText(messageText)
+                sleep(5000)
+
+            } else {
+                sleep(3000)
+                taskLog("未找到输入框");
+                sleep(1000)
+                back()
+                sleep(3000)
+                return;
+            }
+        } catch(e) {
+            sleep(1000);
         }
-    } catch(e) {
-        sleep(1000);
-    }
-    sleep(2000);
-    
-    //检查超时
-    if(checkTimeout()) return;
+        sleep(2000);
+        
+        //检查超时
+        if(checkTimeout()) return;
 
-    //尝试输入文本
-    try {
-        var all_group_comment_text = get_all_groups_comment_text()  
-        if(all_group_comment_text.includes("$${T")){ 
-            throw_error_storage_not_enough()
+        //尝试输入文本
+        try {
+            
+
+            //检查是不是已经到了FB提示页面
+            check_comment_result()
+            sleep(3000)
+
+
+        } catch(e) {
+            sleep(1000);
         }
-        var randIdx = random(0, all_group_comment_text.length - 1)
-        var messageText = all_group_comment_text[randIdx];
-        taskLog("输入内容 = " + messageText);
+        sleep(5000);
+        
+        //检查超时
+        if(checkTimeout()) return;
 
-        //检查是不是已经到了FB提示页面
-        check_comment_result()
+
+        //检查是否需要发图片
+        post_Image()
+        sleep(2000)
+
+        //退出图库选中，因为要点击send按钮，否则可能会点中图库的最后一张图片
+        back()
         sleep(3000)
 
-        //className("android.widget.AutoCompleteTextView")
-        let textBoxList = className("android.widget.AutoCompleteTextView").find(); 
-        if(textBoxList.length > 0) {
-            textBoxList[0].click();
-            sleep(random(1000, 2000))
-            textBoxList[0].setText(messageText);
-        } else {
-            taskLog("未找到输入框");
-            sleep(1000)
-            back()
+
+        //尝试点击发送按钮
+        try {
+
+            let sendBtn = find_btn_desc_base("Send", "傳送", "Send")
+            if(!sendBtn){
+                taskLog("未找到发送按钮");
+                sleep(1000)
+                // back()
+                sleep(3000)
+                return;
+            }
 
 
-            sleep(3000)
-            return;
+        } catch(e) {
+            sleep(1000);
         }
-    } catch(e) {
-        sleep(1000);
-    }
-    sleep(5000);
-    
-    //检查超时
-    if(checkTimeout()) return;
+        sleep(5000);
 
+        // //检查超时
+        // if(checkTimeout()) return;
 
-    //检查是否需要发图片
-    post_Image()
-    sleep(2000)
+        // check_comment_result()
+        // sleep(3000)
 
-    //退出图库选中，因为要点击send按钮，否则可能会点中图库的最后一张图片
-    back()
-    sleep(3000)
+        back()
+        sleep(3000)
 
+        back()
 
-
-    //尝试点击发送按钮
-    try {
-        
-        // let sendBtn = className("android.widget.Button").desc("Send").findOne(10000); // 5秒超时
-        // if(sendBtn) {
-        //     sendBtn.click();
-        // } else {
-        //     taskLog("未找到发送按钮");
-        //     sleep(1000)
-        //     back()
-        //     sleep(3000)
-        //     return;
-        // }
-
-        let sendBtn = find_btn_desc_base("Send", "傳送", "Send")
-        if(!sendBtn){
-            taskLog("未找到发送按钮");
-            sleep(1000)
-            back()
-            sleep(3000)
-            return;
         }
 
-
-    } catch(e) {
-        sleep(1000);
-    }
-    sleep(5000);
-
-    // //检查超时
-    // if(checkTimeout()) return;
-
-    check_comment_result()
-    sleep(3000)
-
-    back()
-    sleep(3000)
-
-    back()
 }
 
 

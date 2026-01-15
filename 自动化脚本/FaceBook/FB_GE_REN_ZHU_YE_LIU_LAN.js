@@ -1315,13 +1315,8 @@ function find_share_button(shouldClick){
 
 
 
-function find_like_button(shouldClick){
-    // shouldClick: true 表示找到按钮后点击，false 表示找到按钮但不点击
-    // 默认值为 true，保持向后兼容
-    if(shouldClick === undefined) {
-        shouldClick = true;
-    }
-
+//找到当前页面是否有相同的点赞内容，如果有，则不进行点赞，返回true，否则返回false
+function find_same_like_text(likeText){
     //检查是不是已经点赞过
     //className("android.view.ViewGroup") desc("你和其他1人都傳達了心情")
     //className("android.view.ViewGroup") desc("吴烽傳達了心情")
@@ -1368,9 +1363,25 @@ function find_like_button(shouldClick){
             }
         }
     }   
+    taskLog("未找到点赞内容")
+    return false
 
 
+}
 
+
+function find_like_button(shouldClick){
+    // shouldClick: true 表示找到按钮后点击，false 表示找到按钮但不点击
+    // 默认值为 true，保持向后兼容
+    if(shouldClick === undefined) {
+        shouldClick = true;
+    }
+
+
+    if(find_same_like_text(LIKE_TEXT_LIST)){
+        taskLog("找到相同的点赞内容，直接退出点赞功能")
+        return true
+    }
 
     
     
@@ -1484,7 +1495,7 @@ function find_same_post_text(postText){
             // postText 是数组，需要检查数组中是否有元素等于或包含 descText
             if(Array.isArray(postText)) {
                 // 跳过空字符串或过短的 descText，避免误匹配
-                if(!descText || descText.trim() === "" || descText.trim().length < 3) {
+                if(!descText || descText.trim() === "" || descText.trim().length < 2) {
                     continue; // 跳过这个 viewGroup，继续检查下一个
                 }
                 
@@ -1496,7 +1507,7 @@ function find_same_post_text(postText){
                 
                 // 或者检查数组中是否有任何元素包含 descText（部分匹配）
                 // 只有当 descText 长度足够时才进行部分匹配，避免误匹配
-                if(descText.trim().length >= 2) {
+                if(descText.trim().length >= 1) {
                     for(var j = 0; j < postText.length; j++) {
                         if(postText[j] && typeof postText[j] === 'string' && postText[j].includes(descText)) {
                             taskLog("找到相同的评论内容（部分匹配）: " + descText)
