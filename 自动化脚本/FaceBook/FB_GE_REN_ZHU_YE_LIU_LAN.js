@@ -1380,8 +1380,105 @@ function find_like_button(shouldClick){
 }
 
 
+//找到当前页面是否有相同的评论内容，如果有，则不进行评论，返回true，否则返回false
+function find_same_post_text(postText){
+    //className("android.view.ViewGroup") desc("容易髒污變黃。")
+    //找到所有可见的ViewGroup，分析出desc的文本内容，如果存在相同的文本内容，则返回true，否则返回false
+    //postText 内容就是需要评论的内容 使用get_all_groups_comment_text()函数获取，返回的是数组
+    var viewGroupList = className("android.view.ViewGroup").find()
+    if(viewGroupList && viewGroupList.length > 0) {
+        // 限制最多检查的元素数量，避免性能问题
+        var maxCheckCount = Math.min(viewGroupList.length, 50); // 最多检查50个元素
+        var checkedCount = 0;
+        
+        for(var i = 0; i < viewGroupList.length && checkedCount < maxCheckCount; i++) {
+            var viewGroup = viewGroupList[i]
+            
+            // 只处理可见的 ViewGroup，跳过不可见的元素
+            try {
+                if(!viewGroup.visibleToUser()) {
+                    continue; // 跳过不可见的元素
+                }
+            } catch(e) {
+                // 如果 visibleToUser() 方法不存在或出错，尝试检查 bounds
+                try {
+                    var bounds = viewGroup.bounds();
+                    if(!bounds || bounds.width() <= 0 || bounds.height() <= 0) {
+                        continue; // 跳过无效或不可见的元素
+                    }
+                } catch(e2) {
+                    continue; // 如果检查失败，跳过该元素
+                }
+            }
+            
+            checkedCount++; // 增加已检查的可见元素计数
+            
+            var descText = viewGroup.desc() || ""
+            
+            // postText 是数组，需要检查数组中是否有元素等于或包含 descText
+            if(Array.isArray(postText)) {
+                // 跳过空字符串或过短的 descText，避免误匹配
+                if(!descText || descText.trim() === "" || descText.trim().length < 3) {
+                    continue; // 跳过这个 viewGroup，继续检查下一个
+                }
+                
+                // 检查数组中是否有任何元素等于 descText（精确匹配）
+                if(postText.includes(descText)) {
+                    taskLog("找到相同的评论内容: " + descText)
+                    return true
+                }
+                
+                // 或者检查数组中是否有任何元素包含 descText（部分匹配）
+                // 只有当 descText 长度足够时才进行部分匹配，避免误匹配
+                if(descText.trim().length >= 2) {
+                    for(var j = 0; j < postText.length; j++) {
+                        if(postText[j] && typeof postText[j] === 'string' && postText[j].includes(descText)) {
+                            taskLog("找到相同的评论内容（部分匹配）: " + descText)
+                            return true
+                        }
+                    }
+                }
+            } else if(postText && typeof postText === 'string') {
+                // 如果 postText 是字符串，直接比较
+                // 跳过空字符串或过短的 descText，避免误匹配
+                if(!descText || descText.trim() === "" || descText.trim().length < 3) {
+                    continue; // 跳过这个 viewGroup，继续检查下一个
+                }
+                if(postText.includes(descText)) {
+                    taskLog("找到相同的评论内容: " + descText)
+                    return true
+                }
+            }
+        }
+    }
+    taskLog("未找到相同的评论内容")
+    return false
+
+
+}
+
+
+
+
 //找到在Group群组发表po文的按钮
 function find_post_button(){
+
+    var all_group_comment_text = get_all_groups_comment_text()
+    toast("所有评论数量 = " + all_group_comment_text.length)
+    sleep(5000) 
+
+    //寻找当前页面是否有重复的评论内容
+    var findSamePostText = find_same_post_text(all_group_comment_text)
+    if(findSamePostText){
+        taskLog("找到相同的评论内容，直接退出评论，直接进行下一个Link的任务")
+        sleep(random(3000, 5000))
+        back()
+        sleep(random(3000, 5000))
+        back()
+        return true
+    }
+
+
 
     var all_AutoCompleteTextView = className("android.widget.AutoCompleteTextView").findOne(15000) // 添加15秒超时
     if(all_AutoCompleteTextView){
@@ -1394,9 +1491,6 @@ function find_post_button(){
         sleep(5000)
 
 
-        var all_group_comment_text = get_all_groups_comment_text()
-        toast("所有评论数量 = " + all_group_comment_text.length)
-        sleep(5000) 
         
         
         var randIdx = random(0, all_group_comment_text.length - 1)
