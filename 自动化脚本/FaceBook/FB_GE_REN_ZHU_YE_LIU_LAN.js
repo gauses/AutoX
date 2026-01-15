@@ -94,6 +94,20 @@ const SEND_TEXT = {
 };
 
 
+    //className("android.view.ViewGroup") desc("你和其他1人都傳達了心情")
+    //className("android.view.ViewGroup") desc("吴烽傳達了心情")
+    //className("android.view.ViewGroup") desc("You and 18 others reacted")
+    //className("android.view.ViewGroup") desc("You and others")
+    //className("android.view.ViewGroup") desc("郭芷涵 reacted")
+const LIKE_TEXT_LIST = {
+    ZH_TW: "傳達了心情",      // 简体中文
+    EN_US: "others reacted",      // 繁体中文
+    EN_US_01: "reacted",         // 英文
+    EN_US_02: "You and others"         // 英文
+
+};
+
+
 
 // 添加全局索引计数器
 let commentIndex = 0;
@@ -1307,6 +1321,58 @@ function find_like_button(shouldClick){
     if(shouldClick === undefined) {
         shouldClick = true;
     }
+
+    //检查是不是已经点赞过
+    //className("android.view.ViewGroup") desc("你和其他1人都傳達了心情")
+    //className("android.view.ViewGroup") desc("吴烽傳達了心情")
+    //className("android.view.ViewGroup") desc("You and 18 others reacted")
+    //className("android.view.ViewGroup") desc("You and others")
+    //className("android.view.ViewGroup") desc("郭芷涵 reacted")
+
+    //检查ViewGroup的desc，只要包含了以下字段即可，不需要完全一致 :LIKE_TEXT_LIST
+    var viewGroupList = className("android.view.ViewGroup").find()
+    if(viewGroupList && viewGroupList.length > 0) {
+        for(var i = 0; i < viewGroupList.length; i++) {
+            var viewGroup = viewGroupList[i]
+            
+            // 只处理可见的 ViewGroup，跳过不可见的元素
+            try {
+                if(!viewGroup.visibleToUser()) {
+                    continue; // 跳过不可见的元素
+                }
+            } catch(e) {
+                // 如果 visibleToUser() 方法不存在或出错，尝试检查 bounds
+                try {
+                    var bounds = viewGroup.bounds();
+                    if(!bounds || bounds.width() <= 0 || bounds.height() <= 0) {
+                        continue; // 跳过无效或不可见的元素
+                    }
+                } catch(e2) {
+                    continue; // 如果检查失败，跳过该元素
+                }
+            }
+            
+            var descText = viewGroup.desc() || ""
+            
+            // 检查 descText 是否包含 LIKE_TEXT_LIST 中的任何一个值
+            if(descText && descText.trim() !== "") {
+                for(var key in LIKE_TEXT_LIST) {
+                    if(LIKE_TEXT_LIST.hasOwnProperty(key)) {
+                        var likeText = LIKE_TEXT_LIST[key];
+                        if(likeText && descText.includes(likeText)) {
+                            taskLog("找到点赞内容: " + descText , "直接退出点赞功能")
+                            return true
+                        }
+                    }
+                }
+            }
+        }
+    }   
+
+
+
+
+    
     
     taskLog("开始寻找点赞按钮... (是否点击: " + shouldClick + ")")
     
