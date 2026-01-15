@@ -26,6 +26,18 @@ const FB_Group_links = '$${T_FB_輸入指定社團網址}';
 const FB_common_count = '$${FB_留言數量}';
 const FB_group_comment_text = '$${T_FB_輸入留言內容}';
 const FB_input_IMAGE = '$${T_FB_輸入圖片地址}';
+const FB_Like_Count = "$${點讚機率}" //点赞概率
+
+
+const LIKE_TEXT = {
+    ZH_CN: "Like",      // 简体中文
+    ZH_TW: "讚",      // 繁体中文
+    EN_US: "Like"         // 英文 
+};
+
+const LIKE_TEXT_END = {
+    ZH_TW: "按住即可對留言傳達心情", // 繁体中文
+};
 
 
 
@@ -62,6 +74,29 @@ if (runningEngines.length > 1) {
   })
 }
 
+
+// 注册退出事件监听器
+events.on('exit', function(){
+
+    taskLog("脚本执行结束，准备关闭日志窗口...");
+    // openLogActivity();
+    forceStop_APP(FacebookPackageName)
+    
+    console.hide()
+    sleep(1000)
+
+    if(handleErrorFlag){
+        taskLogError("-----------------脚本执行出现异常---------------");
+        taskLogError("Facebook首页点赞 + 留言---------------");
+        taskLogError("脚本执行时间：" + new Date().toLocaleString());
+    }else{
+        taskLog("-----------------脚本功能执行结束：---------------");
+        taskLog("Facebook首页点赞 + 留言---------------");
+        taskLog("脚本执行时间：" + new Date().toLocaleString());
+    }
+    openLogActivity();
+
+});
 
 
 sleep(3000)
@@ -797,6 +832,30 @@ function fina_all_Comment(){
     //循环直到点击了需要的Comment按钮次数
     var FB_group_common_count = parseInt(FB_common_count);
     while(clickedCount < FB_group_common_count){
+
+        //检查是不是有点赞按钮
+        var likeBtnList = className("android.widget.Button").find();
+        if(likeBtnList.size() > 0){
+            for(var i = 0; i < likeBtnList.size(); i++) {
+                var likeBtn = likeBtnList.get(i);
+                if(likeBtn){
+                    var descText = likeBtn.desc() || "";
+                    if (Object.values(LIKE_TEXT).some(text => descText.startsWith(text)) 
+                        || Object.values(LIKE_TEXT_END).some(text => descText.includes(text)))  {
+
+                        if (Math.random() * 100 < FB_Like_Count)  {
+                            taskLog("开始触发点赞概率")
+                            click(likeBtn.bounds().centerX() , likeBtn.bounds().centerY())  
+                            sleep(random(2000, 4000))
+                        }else{
+                            taskLog("虽然找到点赞按钮，没有触发点赞概率")
+                        }
+                    }
+                }
+            }
+        }
+
+
         //检查是否超时
         if(new Date().getTime() - startTime > TIMEOUT){
             taskLog("执行时间超过" + (TIMEOUT/1000) + "秒，自动退出");

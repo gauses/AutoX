@@ -148,7 +148,7 @@ sleep(random(3000, 5000))
 // 删除原文件夹
 try {
     files.removeDir(FB_input_IMAGE);
-    taskLog("删除原文件夹成功: " + folderPath);
+    taskLog("删除原文件夹成功: " + FB_input_IMAGE);
 } catch(e) {
     console.error("删除原文件夹失败: " + e);
     // 复制成功但删除失败，也算部分成功
@@ -1012,80 +1012,105 @@ function refreshMedia(path) {
     sleep(5000);
 }
 
-//转移头像图片到Nest临时文件夹（支持文件夹批量处理，不判断扩展名，返回true/false）
-function transferHeadImageToNest(folderPath){
-    //folderPath: /sdcard/Download/01
-    function getParentDir(path) {
-        if (path.endsWith("/")) path = path.slice(0, -1);
-        let idx = path.lastIndexOf("/");
-        if (idx === -1) return "";
-        return path.substring(0, idx);
+//转移头像图片到Nest临时文件夹
+function transferHeadImageToNest(fileName){
+    // 首先验证 fileName 参数是否有效
+    if (!fileName || fileName.trim() === "") {
+        console.error("transferHeadImageToNest: fileName 参数为空");
+        taskLog("transferHeadImageToNest: fileName 参数为空");
+        return;
     }
+    
+    // 直接使用传入的路径，不检查文件是否存在
+    const imagePath = fileName;
 
-    function copyDir(src, dest) {
-        files.ensureDir(dest);
-        let filesList = files.listDir(src);
-        for (let i = 0; i < filesList.length; i++) {
-            let name = filesList[i];
-            let srcPath = src + "/" + name;
-            let destPath = dest + "/" + name;
-            if (files.isDir(srcPath)) {
-                if (!copyDir(srcPath, destPath)) return false;
-            } else {
-                try {
-                    files.copy(srcPath, destPath);
-                } catch(e) {
-                    console.error("复制文件失败: " + srcPath + " -> " + destPath + "，错误：" + e);
-                    return false;
-                }
-            }
-        }
-        return true;
+
+    //开始拷贝一份，到本地自己的文件夹来单独处理，不处理原来的图片，
+    // 创建文件夹(如果不存在)
+    const newFolder = "/storage/emulated/0/Download/" + A_NEST_FaceBook_MEDIA;  // 替换成你想要的文件夹路径
+    if(!files.exists(newFolder)){
+        files.ensureDir(newFolder);
+        console.log("创建文件夹: " + newFolder);
     }
-
-    const parentDir = getParentDir(folderPath); // /sdcard/Download
-    const newFolder = parentDir + "/A_NEST_FaceBook_MEDIA";
-
-    taskLog("准备复制文件夹: " + folderPath + " -> " + newFolder);
-
-    // 判断原文件夹是否存在
-    if (!files.exists(folderPath) || !files.isDir(folderPath)) {
-        console.error("原文件夹不存在: " + folderPath);
-        toast("原文件夹不存在: " + folderPath);
-        return false;
+    // 目标图片路径(在新文件夹中)
+    // 再次检查 imagePath 是否有效，防止空值导致错误
+    if (!imagePath || imagePath.trim() === "") {
+        console.error("imagePath 为空，无法获取文件名");
+        taskLog("imagePath 为空，无法获取文件名");
+        return;
     }
-
-    // 如果目标文件夹已存在，先删除
-    if (files.exists(newFolder)) {
-        try {
-            files.removeDir(newFolder);
-            taskLog("已删除原有目标文件夹: " + newFolder);
-        } catch(e) {
-            console.error("删除原有目标文件夹失败: " + e);
-            return false;
+    
+    // 手动提取文件名，兼容 Windows 和 Android 路径格式
+    let targetFileName = "";
+    
+    // 提取文件名的辅助函数
+    function extractFileName(path) {
+        const lastBackslash = path.lastIndexOf("\\");
+        const lastSlash = path.lastIndexOf("/");
+        const lastSeparator = Math.max(lastBackslash, lastSlash);
+        if (lastSeparator >= 0) {
+            return path.substring(lastSeparator + 1);
+        } else {
+            return path; // 如果没有分隔符，整个路径就是文件名
         }
     }
-
-    // 递归复制文件夹
-    if (!copyDir(folderPath, newFolder)) {
-        console.error("递归复制文件夹失败");
-        return false;
+    
+    try {
+        // 先尝试使用 files.getName()，如果失败则手动提取
+        targetFileName = files.getName(imagePath);
+        // 如果返回的是完整路径（包含 \ 或 /），说明 files.getName() 无法处理该路径格式
+        if (targetFileName.includes("\\") || targetFileName.includes("/") || targetFileName.includes(":")) {
+            // 手动提取文件名：取最后一个 \ 或 / 之后的部分
+            targetFileName = extractFileName(imagePath);
+        }
+    } catch(e) {
+        // 如果 files.getName() 抛出异常，手动提取文件名
+        targetFileName = extractFileName(imagePath);
     }
-    taskLog("复制文件夹成功: " + newFolder);
+    
+    const targetPath = newFolder + "/" + targetFileName;
+    console.log("新图片文件的绝对路径: " + targetPath);
+    // 复制图片文件
+    try {
+        files.copy(imagePath, targetPath);
+        console.log("复制成功!");
+        console.log("新图片路径: " + targetPath);
+        // 复制成功后删除原图片
+        files.remove(imagePath);
+        console.log("已删除原图片: " + imagePath);
+    } catch(e) {
+        console.error("复制失败: " + e);
+    }
 
-    // // 删除原文件夹
-    // try {
-    //     files.removeDir(folderPath);
-    //     taskLog("删除原文件夹成功: " + folderPath);
-    // } catch(e) {
-    //     console.error("删除原文件夹失败: " + e);
-    //     // 复制成功但删除失败，也算部分成功
-    // }
 
-    // 刷新媒体库
-    refreshMedia(newFolder);
+    refreshMedia(newFolder)
 
-    return true;
+    // // 创建文件对象并获取URI
+    // let file = new java.io.File(targetPath);
+    // let uri = app.getUriForFile(targetPath);
+    
+    // // 创建打开图片的 Intent
+    // let intent = new Intent(Intent.ACTION_VIEW);
+    // intent.setDataAndType(uri, "image/*");
+    // // 添加必要的权限标志
+    // intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    // intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+    // // 指定使用系统默认的图库应用
+    // intent.setPackage("com.android.gallery3d");  // 系统默认图库的包名
+    // // 如果上面的包名不生效，可以尝试：
+    // // intent.setPackage("com.google.android.apps.photos");  // Google Photos
+    // // intent.setPackage("com.sec.android.gallery3d");  // 三星图库
+    // // intent.setPackage("com.miui.gallery");  // 小米图库
+
+    // // 启动图片查看Activity
+    // // context.startActivity(intent);
+    // // 等待界面加载
+    // sleep(3000);
+
+    return targetPath
+
+
 }
 
 
