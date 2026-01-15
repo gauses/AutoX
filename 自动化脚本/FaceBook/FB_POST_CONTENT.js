@@ -16,8 +16,8 @@ var taskLogImgName = "nest_task_log.png"
 
 
 //用户需要输入的评论内容
-const FB_input_text = '$${T_FB_输入文案}';
-const FB_input_IMAGE = '$${T_FB_图片地址}';
+const FB_input_text = '$${T_FB_輸入發文內容}';
+const FB_input_IMAGE = '$${T_FB_輸入圖片地址}';
 
 var FacebookPackageName = 'com.facebook.katana';
 //将需要处理的多媒体图片，单独copy一份放到这个文件夹里面，后面处理完成之后，再删除这个文件夹

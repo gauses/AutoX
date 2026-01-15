@@ -16,7 +16,7 @@ var taskLogImgName = "nest_task_log.png"
 
 
 //需要Floow的FaceBook粉丝页
-const FB_input_Page_text = '$${T_FB_输入需要Floow的所有粉丝页}';
+const FB_input_Page_text = '$${T_FB_輸入需要關注的粉絲頁}';
 
 // 添加全局索引计数器
 let commentIndex = 0;

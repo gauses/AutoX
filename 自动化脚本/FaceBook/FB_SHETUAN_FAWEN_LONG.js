@@ -18,10 +18,10 @@ var taskLogFileName = "nest_task_log.txt"
 var taskLogImgName = "nest_task_log.png"
 
 //需要添加的用户好友
-const FB_Group_links = '$${T_FB_输入需要動態文章发文的所有Group}';
+const FB_Group_links = '$${T_FB_輸入需要發文社團網址}';
 const FB_common_count = 10 //一共有多少个Group
-const FB_group_comment_text = '$${T_FB_输入動態发文的所有文本}';
-const FB_input_IMAGE = '$${T_FB_图片地址}';
+const FB_group_comment_text = '$${T_FB_輸入發文內容}';
+const FB_input_IMAGE = '$${T_FB_輸入圖片地址}';
 
 
 

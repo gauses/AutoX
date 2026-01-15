@@ -65,10 +65,10 @@ var taskLogImgName = "nest_task_log.png"
 
 
 //用户需要输入的评论内容
-const FB_Like_Count = "$${點讚概率}" //点赞概率
-const FB_Comment_Count = "$${留言概率}" //评论概率
-const FB_input_text = '$${T_FB_输入评论文案}';
-const FB_input_Count = "$${FB_自定義总执行次数}"
+const FB_Like_Count = "$${點讚機率}" //点赞概率
+const FB_Comment_Count = "$${留言機率}" //评论概率
+const FB_input_text = '$${T_FB_輸入留言內容}';
+const FB_input_Count = "$${FB_動態頁瀏覽次數}"
 
 
 const FORCE_STOP_TEXT = {
@@ -189,26 +189,26 @@ function throw_error_storage_not_enough(){
 //出现异常错误时，打印的日志错误信息
 var handleErrorFlag = false //默认没有错误，如果出现异常，那么该值是true
 
-// // 注册退出事件监听器
-// events.on('exit', function(){
+// 注册退出事件监听器
+events.on('exit', function(){
 
-//     taskLog("脚本执行结束，准备关闭日志窗口...");
-//     // openLogActivity();
+    taskLog("脚本执行结束，准备关闭日志窗口...");
+    // openLogActivity();
     
-//     console.hide()
-//     sleep(1000)
+    console.hide()
+    sleep(1000)
 
-//     if(handleErrorFlag){
-//         taskLogError("-----------------脚本执行出现异常---------------");
-//         taskLogError("Facebook首页点赞 + 留言---------------");
-//         taskLogError("脚本执行时间：" + new Date().toLocaleString());
-//     }else{
-//         taskLog("-----------------脚本功能执行结束：---------------");
-//         taskLog("Facebook首页点赞 + 留言---------------");
-//         taskLog("脚本执行时间：" + new Date().toLocaleString());
-//     }
-//     openLogActivity();
-// });
+    if(handleErrorFlag){
+        taskLogError("-----------------脚本执行出现异常---------------");
+        taskLogError("Facebook首页点赞 + 留言---------------");
+        taskLogError("脚本执行时间：" + new Date().toLocaleString());
+    }else{
+        taskLog("-----------------脚本功能执行结束：---------------");
+        taskLog("Facebook首页点赞 + 留言---------------");
+        taskLog("脚本执行时间：" + new Date().toLocaleString());
+    }
+    openLogActivity();
+});
 
 //打开Autojs的Log activity
 function openLogActivity() {
@@ -1051,5 +1051,6 @@ try{
     
     // 显式退出脚本，触发 exit 事件
     // taskLog("准备退出脚本...");
+    forceStop_APP(targetPackageName)
 }
 

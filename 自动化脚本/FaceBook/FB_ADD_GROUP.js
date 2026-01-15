@@ -20,7 +20,7 @@ var taskLogImgName = "nest_task_log.png"
 
 
 //需要添加的用户好友
-const FB_input_text = '$${T_FB_输入需要添加的所有Group}';
+const FB_input_text = '$${T_FB_輸入指定社團網址}';
 
 // 添加全局索引计数器
 let commentIndex = 0;

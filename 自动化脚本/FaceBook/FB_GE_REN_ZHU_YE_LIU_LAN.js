@@ -16,16 +16,16 @@ var taskLogImgName = "nest_task_log.png"
 
 
 //需要添加的用户好友
-const FB_Group_links = '$${T_FB_输入需要留言點讚的所有個人主頁Link}'; //https://www.facebook.com/liao.fu.da.573941
-const FB_group_comment_text = '$${T_FB_输入動態留言的所有文本}';
+const FB_Group_links = '$${T_FB_輸入個人頁網址}'; //https://www.facebook.com/liao.fu.da.573941
+const FB_group_comment_text = '$${T_FB_輸入留言內容}';
+const FB_Watch_Count = "$${瀏覽數量}" //个人主页浏览查看次数 ，比如5-10次，那么就是刷5-10个帖子
+
 
 const FB_Like_Count = "$${點讚概率}" //点赞概率
 const FB_Comment_Count = "$${留言概率}" //评论概率
 const FB_Share_Count = "$${分享概率}" //分享概率
 
-const FB_Watch_Count = "$${个人主页浏览查看次数}" //个人主页浏览查看次数 ，比如5-10次，那么就是刷5-10个帖子
 
-// const FB_input_IMAGE = '$${T_FB_图片地址}';
 
 
 const FORCE_STOP_TEXT = {
@@ -308,17 +308,35 @@ try {
                             taskLog("找到社團按钮，点击社團按钮")
                             sleep(random(3000, 5000))
                             
-                            //找到页面所有的checkBox并尝试点击：className("android.widget.CheckBox") ，最多只能点10个
-                            var checkBoxList = className("android.widget.CheckBox").find()
-                            if(checkBoxList && checkBoxList.length > 0){
-                                // for(var k = 0; k < checkBoxList.length; k++){
-                                for(var k = 0; k < 5; k++){ //如果checkBoxList.length大于5，则只点击前5个
-                                    var checkBox = checkBoxList[k]
-                                    if(checkBox && checkBox.visibleToUser()){
-                                        // 由于复选框的clickable属性为false，使用坐标点击
-                                        click(checkBox.bounds().centerX(), checkBox.bounds().centerY())
-                                        sleep(random(1000, 3000))
+                            //找到页面所有的checkBox并尝试点击：className("android.widget.CheckBox") ，最多只能点5个
+                            // 每次点击后页面会变化，需要重新查找CheckBox，并从下一个索引开始点击
+                            var startIndex = 0 // 起始索引，每次循环递增
+                            for(var k = 0; k < 5; k++){ //最多点击5个
+                                // 每次循环重新查找所有CheckBox
+                                var checkBoxList = className("android.widget.CheckBox").find()
+                                if(checkBoxList && checkBoxList.length > 0){
+                                    // 从startIndex开始查找可见的CheckBox并点击
+                                    var foundCheckBox = false
+                                    for(var i = startIndex; i < checkBoxList.length; i++){
+                                        var checkBox = checkBoxList[i]
+                                        if(checkBox && checkBox.visibleToUser()){
+                                            // 由于复选框的clickable属性为false，使用坐标点击
+                                            taskLog("找到第 " + (k + 1) + " 个CheckBox（索引 " + i + "），准备点击")
+                                            click(checkBox.bounds().centerX(), checkBox.bounds().centerY())
+                                            sleep(random(1000, 3000))
+                                            foundCheckBox = true
+                                            startIndex = i + 1 // 下次从下一个索引开始
+                                            break // 点击后跳出内层循环，等待页面变化后继续外层循环
+                                        }
                                     }
+                                    // 如果没找到可见的CheckBox，退出循环
+                                    if(!foundCheckBox){
+                                        taskLog("未找到可见的CheckBox，停止点击")
+                                        break
+                                    }
+                                } else {
+                                    taskLog("未找到CheckBox，停止点击")
+                                    break
                                 }
                             }
 
@@ -333,11 +351,10 @@ try {
 
                                 //点击右上角发布按钮
                                 //className("android.widget.Button") desc("POST") clickable("true")
-                                var indPostButtonResult = findTextByLanguages(SHARE_GROUP_POST_TEXT)
+                                var findPostButtonResult = findTextByLanguages(SHARE_GROUP_POST_TEXT)
                                 if(findPostButtonResult){
                                     taskLog("找到发布按钮，点击发布按钮")
                                     sleep(random(3000, 5000))
-                                    back()
                                 }
 
                             }else{
