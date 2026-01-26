@@ -1505,12 +1505,12 @@ function find_same_post_text(postText){
                     return true
                 }
                 
-                // 或者检查数组中是否有任何元素包含 descText（部分匹配）
-                // 只有当 descText 长度足够时才进行部分匹配，避免误匹配
+                // 或者检查数组中是否有任何元素等于 descText（精确匹配）
+                // 只有当 descText 长度足够时才进行精确匹配，避免误匹配
                 if(descText.trim().length >= 1) {
                     for(var j = 0; j < postText.length; j++) {
-                        if(postText[j] && typeof postText[j] === 'string' && postText[j].includes(descText)) {
-                            taskLog("找到相同的评论内容（部分匹配）: " + descText)
+                        if(postText[j] && typeof postText[j] === 'string' && postText[j].trim() === descText.trim()) {
+                            taskLog("找到相同的评论内容（精确匹配）: " + descText)
                             return true
                         }
                     }
