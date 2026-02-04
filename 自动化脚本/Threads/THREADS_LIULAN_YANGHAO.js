@@ -18,10 +18,10 @@ var taskLogImgName = "nest_task_log.png"
 
 
 //用户需要输入的评论内容
-const TT_Watch_Count = "$${瀏覽數量}" //观看视频个数
+const TT_Watch_Count = "$${動態頁瀏覽次數}" //观看视频个数
 const TT_commentFile = '$${T_留言內容}';
-const TT_Like_Count = "$${點讚概率}" //点赞概率
-const TT_Comment_Count = "$${留言概率}" //评论概率
+const TT_Like_Count = "$${點愛心機率}" //点赞概率
+const TT_Comment_Count = "$${留言機率}" //评论概率
 
 
 // 计算循环次数

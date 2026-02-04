@@ -738,6 +738,7 @@ function getRedirectUrl(originalUrl) {
         // 确保 finalUrl 是 JavaScript 字符串
         finalUrl = String(finalUrl);
         
+        
         taskLog("原始 URL: " + originalUrl)
         taskLog("重定向后的真实 URL: " + finalUrl)
         

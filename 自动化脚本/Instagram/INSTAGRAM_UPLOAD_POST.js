@@ -16,9 +16,9 @@ var taskLogImgName = "nest_task_log.png"
 
 
 //名稱.使用者名稱.個人簡介
-const INSTAGRAM_UPLOAD_VIDEO_URL = '$${T_需要上傳影片的本地地址}';
-const INSTAGRAM_UPLOAD_VIDEO_TITLE = '$${T_上傳影片的标题}';
-const INSTAGRAM_UPLOAD_VIDEO_DESC = '$${T_上傳影片的說明}';
+const INSTAGRAM_UPLOAD_VIDEO_URL = '$${T_影片的地址}';
+const INSTAGRAM_UPLOAD_VIDEO_TITLE = '$${T_影片的標題}';
+const INSTAGRAM_UPLOAD_VIDEO_DESC = '$${T_影片的說明}';
 
 
 var INSTAGRAM_PACKAGE_NAME = 'com.instagram.android';

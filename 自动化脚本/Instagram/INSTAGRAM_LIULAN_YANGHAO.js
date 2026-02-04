@@ -19,10 +19,10 @@ var taskLogImgName = "nest_task_log.png"
 
 //用户需要输入的评论内容
 const TT_Watch_Count = "$${瀏覽數量}" //观看视频个数
-const TT_commentFile = '$${T_留言內容}';
-const TT_Like_Count = "$${點讚概率}" //点赞概率
-const TT_Comment_Count = "$${留言概率}" //评论概率
-const TT_Save_Count = "$${收藏概率}" //收藏概率
+const TT_commentFile = '$${T_輸入留言內容}';
+const TT_Like_Count = "$${點愛心機率}" //点赞概率
+const TT_Comment_Count = "$${留言機率}" //评论概率
+const TT_Save_Count = "$${點收藏機率}" //收藏概率
 
 
 // 计算循环次数
@@ -249,7 +249,7 @@ function click_Comment_Btn(commentText){
     sleep(random(2000 , 3000))
 
     taskLog("开始准备评论视频")
-    //fullId("com.instagram.android:id/row_feed_button_comment")
+    //fullId("com.instagram.android:id/row_feed_button_comment") clickable("false")
     clickId("com.instagram.android:id/row_feed_button_comment")
 
     sleep(5000)
@@ -683,31 +683,31 @@ function forceStop_APP(packageName){
 
 
 
-//从评论数组中，顺序挑选一条内容
-function get_all_TT_comment_text(){
-    let comments = [];
-    // 户是否存在
-    taskLog("TT评论数组 =  " + TT_commentFile)
-    const file = new java.io.File(TT_commentFile);
-    if (file.exists() && file.isFile()) {
-        try {
-            // 读取文件内容
-            const reader = new java.io.BufferedReader(new java.io.FileReader(file));
-            let line;
-            while ((line = reader.readLine()) !== null) {
-                comments.push(line);
-            }
-            reader.close();
-        } catch (e) {
-            taskLog("读取文件时发生错误：" + e.message);
-        }
-    } else {
-        // 如果文件不存在，将文件名添加到数组中
-        comments.push(TT_commentFile);
-    }
+// //从评论数组中，顺序挑选一条内容
+// function get_all_TT_comment_text(){
+//     let comments = [];
+//     // 户是否存在
+//     taskLog("TT评论数组 =  " + TT_commentFile)
+//     const file = new java.io.File(TT_commentFile);
+//     if (file.exists() && file.isFile()) {
+//         try {
+//             // 读取文件内容
+//             const reader = new java.io.BufferedReader(new java.io.FileReader(file));
+//             let line;
+//             while ((line = reader.readLine()) !== null) {
+//                 comments.push(line);
+//             }
+//             reader.close();
+//         } catch (e) {
+//             taskLog("读取文件时发生错误：" + e.message);
+//         }
+//     } else {
+//         // 如果文件不存在，将文件名添加到数组中
+//         comments.push(TT_commentFile);
+//     }
     
-    return comments
-}
+//     return comments
+// }
 
 
 //从评论列表数组中，随机挑选一条内容，翻译
@@ -792,7 +792,7 @@ try {
     if(commentTextArrays.includes("$${T")){ 
         throw_error_storage_not_enough()
     }
-    toast("评论文案个数：" + commentTextArrays.length)
+    taskLog("评论文案个数：" + commentTextArrays.length)
 
     for(let currentLoop = 1; currentLoop <= loopTimes; currentLoop++) {
         toast("开始第 " + currentLoop + "/" + loopTimes + " 次执行");    

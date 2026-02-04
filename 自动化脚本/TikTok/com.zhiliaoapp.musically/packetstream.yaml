@@ -1,0 +1,53 @@
+
+# --- Clash 基础设置 ---
+port: 7890
+socks-port: 7891
+allow-lan: true
+mode: rule
+log-level: info
+external-controller: 127.0.0.1:9090
+
+# --- 代理节点配置区 (Proxies) ---
+proxies:
+  - name: "PacketStream-Res"        # 给节点起个名字
+    type: socks5
+    # 下面 4 行请替换为您 PacketStream 后台的具体信息
+    server: proxy.packetstream.io      # <--- 修改这里：PacketStream 的服务器地址 (IP或域名)
+    port: 31113                     # <--- 修改这里：端口号
+    username: "jockys"        # <--- 修改这里：您的用户名
+    password: "gdYeJors0V1msLfe_country-UnitedStates"        # <--- 修改这里：您的密码
+    # ------------------------------------------------
+    udp: true                       # 建议开启 UDP，提高连接成功率
+
+# --- 策略组配置区 (Proxy Groups) ---
+# 这个组让你在软件界面上手动选择是“走代理”还是“直连”
+proxy-groups:
+  - name: "我的代理组"
+    type: select
+    proxies:
+      - "PacketStream-Res"
+      - "DIRECT"
+
+# --- 规则配置区 (Rules) ---
+# 规则从上往下匹配，匹配到了就停止。
+rules:
+  # 1. 省钱规则：防止视频网站偷跑住宅流量 (强制直连)
+  - DOMAIN-SUFFIX,youtube.com,DIRECT
+  - DOMAIN-SUFFIX,googlevideo.com,DIRECT
+
+
+  # 2. 查 IP 网站：强制走代理 (用于测试代理是否生效)
+  - DOMAIN-SUFFIX,whoer.net,我的代理组
+  - DOMAIN-SUFFIX,ip138.com,我的代理组
+
+  # 3. 常见被墙网站：走代理
+  - DOMAIN-SUFFIX,google.com,我的代理组
+  - DOMAIN-SUFFIX,facebook.com,我的代理组
+  - DOMAIN-SUFFIX,twitter.com,我的代理组
+  - DOMAIN-SUFFIX,instagram.com,我的代理组
+
+  # 4. 兜底规则 (Match)
+  # 如果上面的规则都没匹配到：
+  # 写 "我的代理组" = 所有未知道网站都走 PacketStream (比较费流量，但最省心)
+  # 写 "DIRECT"     = 所有未知网站都直连 (最省钱，只让特定网站走代理)
+  - MATCH,我的代理组

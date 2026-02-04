@@ -120,9 +120,9 @@ var CONFIG = {
 };
 
 // 视频上传配置
-var TT_UPLOAD_VIDEO_URL = '$${M_需要上傳影片的本地地址}';
+var TT_UPLOAD_VIDEO_URL = '$${M_需要上傳影片的地址}';
 var TT_UPLOAD_VIDEO_TITLE = '$${T_上傳影片的标题}';
-var TT_UPLOAD_VIDEO_DESC = '$${T_上傳影片的說明}';
+var TT_UPLOAD_VIDEO_DESC = '$${T_上傳影片的介紹}';
 
 // 全局变量
 var targetPackageName = null;

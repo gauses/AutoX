@@ -17,7 +17,7 @@ var taskLogImgName = "nest_task_log.png"
 
 
 //用户需要输入的关注用户ID列表
-const TT_Like_User_ID_GROUP = '$${T_用户ID列表}';
+const TT_Like_User_ID_GROUP = '$${T_輸入用戶ID}';
 
 var THREADS_PACKAGE_NAME = 'com.instagram.barcelona';
 
