@@ -9,12 +9,18 @@
 
 # Add any project specific keep options here:
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class key to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# WebView JS 接口，避免 R8 移除 @JavascriptInterface 方法
+-keepclassmembers class * {
+    @android.webkit.JavascriptInterface <methods>;
+}
+
+# R8 缺失类：Netty/Ktor/Log4j 等可选依赖，Android 上不存在，忽略
+-dontwarn io.netty.internal.tcnative.**
+-dontwarn java.beans.**
+-dontwarn java.lang.management.**
+-dontwarn org.apache.logging.log4j.**
+-dontwarn org.eclipse.jetty.npn.**
+-dontwarn reactor.blockhound.**
 
 -dontwarn org.mozilla.javascript.**
 -dontwarn com.jecelyin.editor.**
@@ -131,17 +137,7 @@
 -keep class com.wang.avi.** { *; }
 -keep class com.wang.avi.indicators.** { *; }
 
-# tencent TBS WebView (Bugly removed)
--dontwarn dalvik.**
--dontwarn com.tencent.smtt.**
-
--keep class com.tencent.smtt.** {
-    *;
-}
-
--keep class com.tencent.tbs.** {
-    *;
-}
+# TBS 已移除
 
 -keep class org.autojs.autoxjs.BuildConfig{
    *;

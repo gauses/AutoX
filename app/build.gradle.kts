@@ -32,9 +32,9 @@ android {
                 arguments["androidManifestFile"] = "$projectDir/src/main/AndroidManifest.xml"
             }
         }
-        ndk {
-            abiFilters += listOf("arm64-v8a", "armeabi-v7a")
-        }
+        // 仅打 arm64-v8a 由下方 splits.abi 控制，此处不再设 ndk.abiFilters 避免冲突
+        // 仅保留简体中文、繁体中文，其他语言不打包
+        resourceConfigurations += listOf("zh-rCN", "zh-rTW")
     }
     lint {
         abortOnError = false
@@ -61,11 +61,9 @@ android {
             // Resets the list of ABIs that Gradle should create APKs for to none.
             reset()
 
-            // Specifies a list of ABIs that Gradle should create APKs for.
-            include("armeabi-v7a", "arm64-v8a")
-
-            // Specifies that we do not want to also generate a universal APK that includes all ABIs.
-            isUniversalApk = true
+            // 仅 arm64-v8a，减小包体
+            include("arm64-v8a")
+            isUniversalApk = false
         }
     }
     buildTypes {
@@ -83,11 +81,11 @@ android {
 //            }
         }
         named("release") {
-            isShrinkResources = false
-            isMinifyEnabled = false
+            isShrinkResources = true
+            isMinifyEnabled = true
             setProguardFiles(
                 listOf(
-                    getDefaultProguardFile("proguard-android.txt"),
+                    getDefaultProguardFile("proguard-android-optimize.txt"),
                     "proguard-rules.pro"
                 )
             )
@@ -147,9 +145,8 @@ android {
 
 dependencies {
     implementation(projects.autojs)
-    implementation(projects.apkbuilder)
-    implementation(projects.codeeditor)
-
+    // implementation(projects.apkbuilder) 已移除以减小 APK（手机端打包成 APK 功能已移除）
+    // codeeditor 已移除以减小 APK（新编辑器 / 编辑脚本功能不再使用）
     implementation(projects.core.network)
 
     implementation(libs.androidx.localbroadcastmanager)
@@ -208,8 +205,7 @@ dependencies {
     // Tasker Plugin
     implementation(libs.android.plugin.client.sdk.`for`.locale)
     // Flurry/Bugly 已移除以降低依赖与后台流量
-    // tencent TBS WebView
-    api(libs.tbssdk)
+    // TBS 已移除，仅使用系统 WebView
     // MaterialDialogCommon
     implementation(libs.material.dialogs.commons)
     // WorkManager
@@ -228,8 +224,7 @@ dependencies {
     implementation(libs.androidx.savedstate)
 
     implementation(libs.bundles.ktor)
-    // qr scan
-    implementation(libs.quickie.bundled)
+    // quickie 已移除以减小 APK（扫二维码连接电脑功能已移除）
     // Fab button with menu, please do not upgrade, download dependencies will be error after upgrade
     //noinspection GradleDependency
     implementation(libs.speed.dial.compose)
@@ -245,40 +240,12 @@ dependencies {
 
 }
 
-fun copyTemplateToAPP(isDebug: Boolean, to: File) {
-    val outName = if (isDebug) "template-debug" else "template-release"
-    val outFile = project(":inrt").buildOutputs.named(outName).get().outputFile
-    copy {
-        from(outFile)
-        into(to)
-        delete(File(to, "template.apk"))
-        rename(outFile.name, "template.apk")
-    }
-    logger.lifecycle("buildTemplate success, debugMode: $isDebug")
-}
-
-val assetsDir = File(projectDir, "src/main/assets")
-if (!File(assetsDir, "template.apk").isFile) {
-    tasks.named("preBuild").dependsOn("buildTemplateApp")
-}
-
-tasks.register("buildTemplateApp") {
-    dependsOn(":inrt:assembleTemplateRelease")
-    doFirst {
-        copyTemplateToAPP(false, assetsDir)
-    }
-}
-tasks.register("buildDebugTemplateApp") {
-    dependsOn(":inrt:assembleTemplateDebug")
-    doFirst {
-        copyTemplateToAPP(true, assetsDir)
-    }
-}
-tasks.named("clean").configure {
-    doFirst {
-        delete(File(assetsDir, "template.apk"))
-    }
-}
+// 手机端打包功能已移除，不再需要 template.apk 与 copyTemplateToAPP
+// val assetsDir = File(projectDir, "src/main/assets")
+// if (!File(assetsDir, "template.apk").isFile) { tasks.named("preBuild").dependsOn("buildTemplateApp") }
+// tasks.register("buildTemplateApp") { ... }
+// tasks.register("buildDebugTemplateApp") { ... }
+// tasks.named("clean").configure { doFirst { delete(File(assetsDir, "template.apk")) } }
 //// 离线文档下载安装
 //val docsDir = File(projectDir, "src/main/assets/docs")
 //tasks.named("preBuild").dependsOn("installationDocumentation")

@@ -22,7 +22,7 @@ object Constant {
             "libleptonica.so",
             "libjpeg.so",
         )
-        val P7ZIP = listOf("libp7zip.so")
+        val P7ZIP = emptyList<String>() // 7zip 已移除以减小 APK 体积
         val TERMINAL_EMULATOR = listOf(
             "libjackpal-androidterm5.so",
             "libjackpal-termexec2.so"

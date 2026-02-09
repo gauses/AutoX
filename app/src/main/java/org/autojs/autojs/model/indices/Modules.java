@@ -8,6 +8,7 @@ import com.google.gson.reflect.TypeToken;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Type;
+import java.util.Collections;
 import java.util.List;
 
 import io.reactivex.Observable;
@@ -36,7 +37,13 @@ public class Modules {
     public Observable<List<Module>> getModules(Context context) {
         if (mModules != null)
             return Observable.just(mModules);
-        return Observable.fromCallable(() -> loadModulesFrom(context.getAssets().open(MODULES_JSON_PATH)))
+        return Observable.fromCallable(() -> {
+                    try {
+                        return loadModulesFrom(context.getAssets().open(MODULES_JSON_PATH));
+                    } catch (Exception e) {
+                        return Collections.<Module>emptyList();
+                    }
+                })
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext(modules -> mModules = modules);

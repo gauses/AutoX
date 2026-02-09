@@ -150,7 +150,20 @@
 
 // Create a JSON object only if one does not already exist. We create the
 // methods in a closure to avoid creating global variables.
-var gson = new com.google.gson.Gson();
+// Gson 延迟创建，避免在 Rhino 加载时因 JavaPackage 解析报错
+var gsonInstance = null;
+function getGson() {
+    if (gsonInstance === null) {
+        try {
+            gsonInstance = new Packages.com.google.gson.Gson();
+        } catch (e) {
+            try {
+                gsonInstance = new com.google.gson.Gson();
+            } catch (e2) {}
+        }
+    }
+    return gsonInstance;
+}
 JSON = {};
 
 (function () {
@@ -230,8 +243,10 @@ JSON = {};
         var partial;
         var value = holder[key];
 
-        if(value && value.getClass){
-            return gson.toJson(value);
+        if (value && value.getClass) {
+            var g = getGson();
+            if (g) return g.toJson(value);
+            return quote(String(value));
         }
 
 // If the value has a toJSON method, call it to obtain a replacement value.

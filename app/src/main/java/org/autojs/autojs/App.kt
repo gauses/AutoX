@@ -29,10 +29,10 @@ import org.autojs.autojs.autojs.AutoJs
 import org.autojs.autojs.autojs.key.GlobalKeyObserver
 import org.autojs.autojs.external.receiver.DynamicBroadcastReceivers
 import org.autojs.autojs.theme.ThemeColorManagerCompat
+import org.autojs.autojs.model.explorer.Explorers
 import org.autojs.autojs.timing.TimedTaskManager
 import org.autojs.autojs.timing.TimedTaskScheduler
 import org.autojs.autojs.tool.CrashHandler
-import org.autojs.autojs.model.explorer.Explorers
 import org.autojs.autojs.ui.error.ErrorReportActivity
 import org.autojs.autojs.ui.floating.PerfOverlay
 import org.autojs.autoxjs.BuildConfig
@@ -49,41 +49,21 @@ import kotlin.jvm.Volatile
 
 class App : MultiDexApplication(), Configuration.Provider, ComponentCallbacks2 {
 
-    override fun onTrimMemory(level: Int) {
-        super.onTrimMemory(level)
-        when (level) {
-            ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN,
-            ComponentCallbacks2.TRIM_MEMORY_RUNNING_MODERATE -> {
-                Runtime.getRuntime().gc()
-            }
-            ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW,
-            ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL -> {
-                try {
-                    Explorers.workspace().clearPageCache()
-                    Explorers.external().clearPageCache()
-                } catch (_: Exception) { }
-                Runtime.getRuntime().gc()
-            }
-            ComponentCallbacks2.TRIM_MEMORY_BACKGROUND,
-            ComponentCallbacks2.TRIM_MEMORY_MODERATE,
-            ComponentCallbacks2.TRIM_MEMORY_COMPLETE -> {
-                Runtime.getRuntime().gc()
-            }
-            else -> { }
-        }
-    }
-
     override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
         super.onConfigurationChanged(newConfig)
     }
 
+    /**
+     * 必须重写且不能调用 super：App 已通过 registerComponentCallbacks(this) 把自己注册为回调，
+     * 若此处不重写，会走到 Application.onTrimMemory() 再次 dispatch 到所有回调（含自身），形成无限递归导致栈溢出。
+     * 只做本应用内存清理，不调用 super。
+     */
+    override fun onTrimMemory(level: Int) {
+        // 不调用 super，避免重入 dispatchTrimMemory
+    }
+
     override fun onLowMemory() {
-        super.onLowMemory()
-        try {
-            Explorers.workspace().clearPageCache()
-            Explorers.external().clearPageCache()
-        } catch (_: Exception) { }
-        Runtime.getRuntime().gc()
+        // 同上，不调用 super
     }
 
     lateinit var dynamicBroadcastReceivers: DynamicBroadcastReceivers
@@ -343,6 +323,11 @@ class App : MultiDexApplication(), Configuration.Provider, ComponentCallbacks2 {
             Debug.getMemoryInfo(memInfo)
             val totalPssKb = memInfo.totalPss
             val totalPssMb = totalPssKb / 1024
+            val dalvikPssMb = memInfo.dalvikPss / 1024
+            val nativePssMb = memInfo.nativePss / 1024
+            val otherPssMb = memInfo.otherPss / 1024
+            val swappableKb = if (android.os.Build.VERSION.SDK_INT >= 19) memInfo.getTotalSwappablePss() else 0
+            val swappableMb = swappableKb / 1024
             val cpuRawPct = getProcessCpuUsagePercentRaw()
             val numCores = runtime.availableProcessors()
 
@@ -369,7 +354,8 @@ class App : MultiDexApplication(), Configuration.Provider, ComponentCallbacks2 {
             } else "-"
 
             val totalMemStr = if (totalMemMb != null) "${totalMemMb}MB" else "-"
-            val fullLine = "Java: ${javaUsed}MB | Native: ${nativeUsed}MB | PSS: ${totalPssMb}MB | 总内存: $totalMemStr | 内存占比: ${memRatioPct}% | CPU占比: ${cpuRatioPct}%"
+            val pssDetail = "dalvikPss: ${dalvikPssMb}MB nativePss: ${nativePssMb}MB otherPss: ${otherPssMb}MB swappable(.so/dex等): ${swappableMb}MB"
+            val fullLine = "Java: ${javaUsed}MB | Native: ${nativeUsed}MB | PSS: ${totalPssMb}MB | $pssDetail | 总内存: $totalMemStr | 内存占比: ${memRatioPct}% | CPU占比: ${cpuRatioPct}%"
             val floatLine = "内存占比: ${memRatioPct}% | CPU占比: ${cpuRatioPct}%"
             memRatioPct.toDoubleOrNull()?.let { ratio ->
                 if (ratio >= 4.0) {

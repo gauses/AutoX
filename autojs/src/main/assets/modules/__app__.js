@@ -155,10 +155,20 @@ module.exports = function (runtime, global) {
     app.versionCode = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionCode;
     app.versionName = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName;
     
-    app.autojs = {
-        versionCode: com.stardust.app.GlobalAppContext.getBuildConfig().VERSION_CODE,
-        versionName: com.stardust.app.GlobalAppContext.getBuildConfig().VERSION_NAME
-    };
+    (function () {
+        var buildConfig = null;
+        try {
+            buildConfig = Packages.com.stardust.app.GlobalAppContext.getBuildConfig();
+        } catch (e) {
+            try {
+                buildConfig = com.stardust.app.GlobalAppContext.getBuildConfig();
+            } catch (e2) {}
+        }
+        app.autojs = {
+            versionCode: buildConfig ? buildConfig.VERSION_CODE : app.versionCode,
+            versionName: buildConfig ? buildConfig.VERSION_NAME : app.versionName
+        };
+    })();
 
     app.intentToShell = function(i) {
         var cmd = "";

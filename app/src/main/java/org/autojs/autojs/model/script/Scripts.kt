@@ -3,7 +3,6 @@ package org.autojs.autojs.model.script
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.widget.Toast
 import com.stardust.app.GlobalAppContext
 import com.stardust.autojs.execution.ExecutionConfig
@@ -22,8 +21,7 @@ import org.autojs.autoxjs.R
 import org.mozilla.javascript.RhinoException
 import java.io.File
 import java.io.FileFilter
-import com.aiselp.autojs.codeeditor.EditActivity as EditActivity2
-import org.autojs.autojs.ui.edit.EditActivity as EditActivity1
+import org.autojs.autojs.ui.edit.EditActivity
 
 /**
  * Created by Stardust on 2017/5/3.
@@ -93,11 +91,7 @@ object Scripts {
 
 
     fun edit(context: Context, file: ScriptFile) {
-        if (Pref.getEditor() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            EditActivity2.editFile(context, file)
-        } else {
-            EditActivity1.editFile(context, file.simplifiedName, file.path, false)
-        }
+        EditActivity.editFile(context, file.simplifiedName, file.path, false)
     }
 
     fun edit(context: Context, path: String) {

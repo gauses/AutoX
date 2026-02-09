@@ -34,7 +34,7 @@ dependencies {
     api(projects.localRepo.libtermexec)
     api(projects.localRepo.emulatorview)
     api(projects.localRepo.term)
-    api(projects.localRepo.p7zip)
+    // api(projects.localRepo.p7zip) 已移除以减小 APK 体积
     // api(projects.localRepo.openCV) 已关闭以降低内存
     // api(projects.paddleocr) 已关闭 OCR，降低内存占用
     // libs
@@ -56,9 +56,8 @@ dependencies {
     // OkHttp
     api(libs.okhttp)
 
-    // RootShell
-//    api(libs.rootshell)
-    api(fileTree("../app/libs") { include("RootShell-1.6.jar") })
+    // RootShell 已移除以减小 APK，RootTool.isRootAvailable() 始终返回 false
+    // api(fileTree("../app/libs") { include("RootShell-1.6.jar") })
 
     // Gson
     api(libs.google.gson)

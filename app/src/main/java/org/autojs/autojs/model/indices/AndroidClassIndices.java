@@ -102,7 +102,7 @@ public class AndroidClassIndices {
                 .subscribeOn(Schedulers.from(mSingleThreadExecutor))
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(Observers.emptyConsumer(), t -> {
-                    mLoadThrowable = t;
+                    // indices 已从 APK 移除时不抛错，仅保留空列表，查找 Android 类返回空
                     t.printStackTrace();
                 });
     }

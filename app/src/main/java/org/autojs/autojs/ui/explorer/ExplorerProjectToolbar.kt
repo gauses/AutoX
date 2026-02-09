@@ -18,7 +18,6 @@ import kotlinx.coroutines.withContext
 import org.autojs.autojs.autojs.AutoJs
 import org.autojs.autojs.model.explorer.ExplorerChangeEvent
 import org.autojs.autojs.model.explorer.Explorers
-import org.autojs.autojs.ui.build.BuildActivity.Companion.start
 import org.autojs.autojs.ui.build.ProjectConfigActivity
 import org.autojs.autojs.ui.util.launchActivity
 import org.autojs.autoxjs.R
@@ -52,9 +51,7 @@ class ExplorerProjectToolbar : CardView {
         view.findViewById<View>(R.id.run).setOnClickListener {
             run()
         }
-        view.findViewById<View>(R.id.build).setOnClickListener {
-            build()
-        }
+        view.findViewById<View>(R.id.build).apply { visibility = View.GONE }
         view.findViewById<View>(R.id.sync).setOnClickListener {
             sync()
         }
@@ -90,10 +87,6 @@ class ExplorerProjectToolbar : CardView {
             e.printStackTrace()
             Toast.makeText(context, e.message, Toast.LENGTH_LONG).show()
         }
-    }
-
-    fun build() {
-        start(context, mDirectory!!.path)
     }
 
     fun sync() {

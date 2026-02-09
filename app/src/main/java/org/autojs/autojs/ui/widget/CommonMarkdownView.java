@@ -8,9 +8,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import android.util.AttributeSet;
 
-import com.tencent.smtt.export.external.interfaces.WebResourceRequest;
-import com.tencent.smtt.sdk.WebView;
-import com.tencent.smtt.sdk.WebViewClient;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
 
 import org.autojs.autojs.theme.dialog.ThemeColorMaterialDialogBuilder;
@@ -26,7 +26,7 @@ import java.util.Collections;
  * Created by Stardust on 2017/3/5.
  */
 
-public class CommonMarkdownView extends WebView {
+public class CommonMarkdownView extends android.webkit.WebView {
 
     public interface OnPageFinishedListener {
         void onPageFinished(WebView view, String url);

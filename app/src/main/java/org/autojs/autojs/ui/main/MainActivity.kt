@@ -86,7 +86,6 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.fragment.app.FragmentActivity
 import androidx.viewpager2.widget.ViewPager2
-import com.aiselp.autojs.codeeditor.EditActivity
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
@@ -625,16 +624,6 @@ private fun TopBar(
                         modifier = Modifier.weight(1f),
                         text = stringResource(id = R.string.app_name)
                     )
-                }
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    IconButton(onClick = {
-                        context.startActivity(Intent(context, EditActivity::class.java))
-                    }) {
-                        Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = "editor"
-                        )
-                    }
                 }
                 if (currentPage == 0) {
                     IconButton(onClick = { isSearch = true }) {

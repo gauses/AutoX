@@ -42,7 +42,6 @@ import org.autojs.autojs.model.script.Scripts.run
 import org.autojs.autojs.model.script.Scripts.send
 import org.autojs.autojs.theme.widget.ThemeColorSwipeRefreshLayout
 import org.autojs.autojs.tool.Observers
-import org.autojs.autojs.ui.build.BuildActivity
 import org.autojs.autojs.ui.common.ScriptLoopDialog
 import org.autojs.autojs.ui.common.ScriptOperations
 import org.autojs.autojs.ui.viewmodel.ExplorerItemList
@@ -333,11 +332,6 @@ open class ExplorerViewKt : ThemeColorSwipeRefreshLayout, OnRefreshListener,
             R.id.timed_task -> {
                 ScriptOperations(context, this, currentPage)
                     .timedTask(selectedItem!!.toScriptFile())
-                notifyOperated()
-            }
-
-            R.id.action_build_apk -> {
-                BuildActivity.start(context, selectedItem!!.path)
                 notifyOperated()
             }
 

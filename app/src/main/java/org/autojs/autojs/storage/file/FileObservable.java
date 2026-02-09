@@ -2,10 +2,10 @@ package org.autojs.autojs.storage.file;
 
 import com.stardust.pio.PFiles;
 
-import org.apache.commons.io.FileUtils;
-
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 
 import io.reactivex.Observable;
 import io.reactivex.Observer;
@@ -53,7 +53,7 @@ public class FileObservable {
             copyDir(fromFile, toFile, deleteOld, progress);
         } else {
             PFiles.ensureDir(toFile.getPath());
-            FileUtils.copyFile(fromFile, toFile);
+            Files.copy(fromFile.toPath(), toFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
         }
         if (deleteOld) {
             fromFile.delete();

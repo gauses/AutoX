@@ -41,8 +41,6 @@ import com.stardust.notification.NotificationListenerService
 import com.stardust.toast
 import com.stardust.util.IntentUtil
 import com.stardust.view.accessibility.AccessibilityService
-import io.github.g00fy2.quickie.QRResult
-import io.github.g00fy2.quickie.ScanQRCode
 import kotlinx.coroutines.*
 import org.autojs.autojs.Pref
 import org.autojs.autojs.autojs.AutoJs
@@ -50,7 +48,6 @@ import org.autojs.autojs.devplugin.DevPlugin
 import org.autojs.autojs.external.foreground.ForegroundService
 import org.autojs.autojs.tool.AccessibilityServiceTool
 import org.autojs.autojs.tool.WifiTool
-import org.autojs.autojs.ui.build.MyTextField
 import org.autojs.autojs.ui.compose.theme.AutoXJsTheme
 import org.autojs.autojs.ui.compose.widget.MyAlertDialog1
 import org.autojs.autojs.ui.compose.widget.MyIcon
@@ -277,28 +274,6 @@ private fun ConnectComputerSwitch() {
     }
 
     val scope = rememberCoroutineScope()
-    val scanCodeLauncher =
-        rememberLauncherForActivityResult(contract = ScanQRCode(), onResult = { result ->
-            when (result) {
-                is QRResult.QRSuccess -> {
-                    val url = result.content.rawValue
-                    if (url.matches(Regex("^(ws://|wss://).+$"))) {
-                        Pref.saveServerAddress(url)
-                        connectServer(url)
-                    } else {
-                        Toast.makeText(
-                            context,
-                            context.getString(R.string.text_unsupported_qr_code),
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                }
-
-                QRResult.QRUserCanceled -> {}
-                QRResult.QRMissingPermission -> {}
-                is QRResult.QRError -> {}
-            }
-        })
     LaunchedEffect(key1 = Unit, block = {
         DevPlugin.connectState.collect {
             withContext(Dispatchers.Main) {
@@ -334,19 +309,13 @@ private fun ConnectComputerSwitch() {
         }
     )
     if (showDialog) {
-        ConnectComputerDialog(
-            onDismissRequest = { showDialog = false },
-            onScanCode = { scanCodeLauncher.launch(null) }
-        )
+        ConnectComputerDialog(onDismissRequest = { showDialog = false })
     }
 
 }
 
 @Composable
-private fun ConnectComputerDialog(
-    onDismissRequest: () -> Unit,
-    onScanCode: () -> Unit
-) {
+private fun ConnectComputerDialog(onDismissRequest: () -> Unit) {
     val context = LocalContext.current
     Dialog(onDismissRequest = { onDismissRequest() }) {
         var host by remember {
@@ -355,13 +324,13 @@ private fun ConnectComputerDialog(
         Surface(shape = RoundedCornerShape(4.dp)) {
             Column(Modifier.padding(16.dp)) {
                 Text(text = stringResource(id = R.string.text_server_address))
-                MyTextField(
+                OutlinedTextField(
                     value = host,
-                    onValueChange = { host = it },
-                    modifier = Modifier.padding(vertical = 16.dp),
-                    placeholder = {
-                        Text(text = host)
-                    }
+                    onValueChange = { newValue -> host = newValue },
+                    modifier = Modifier
+                        .padding(vertical = 16.dp)
+                        .fillMaxWidth(),
+                    singleLine = true
                 )
                 Row(Modifier.fillMaxWidth()) {
                     TextButton(
@@ -371,14 +340,6 @@ private fun ConnectComputerDialog(
                         }
                     ) {
                         Text(text = stringResource(id = R.string.text_help))
-                    }
-                    TextButton(
-                        onClick = {
-                            onDismissRequest()
-                            onScanCode()
-                        }
-                    ) {
-                        Text(text = stringResource(id = R.string.text_scan_qr))
                     }
                     Spacer(modifier = Modifier.weight(1f))
                     TextButton(onClick = {
@@ -391,7 +352,6 @@ private fun ConnectComputerDialog(
                 }
             }
         }
-
     }
 }
 
@@ -695,21 +655,6 @@ private fun AccessibilityServiceSwitch() {
                 ).show()
             }
         }
-    var editor by remember { mutableStateOf(Pref.getEditor()) }
-    SwitchItem(
-        icon = {
-            MyIcon(
-                Icons.Default.Edit,
-                contentDescription = null,
-            )
-        },
-        text = { Text(text = "启用新编辑器") },
-        checked = editor,
-        onCheckedChange = { isChecked ->
-            editor = isChecked
-            Pref.setEditor(isChecked)
-        }
-    )
     SwitchItem(
         icon = {
             MyIcon(

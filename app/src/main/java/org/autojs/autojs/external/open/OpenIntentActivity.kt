@@ -39,7 +39,6 @@ class OpenIntentActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         menus = mapOf(
             getString(R.string.text_edit_script) to ::editFile,
-            getString(R.string.text_edit_script) + "(新编辑器)" to ::editFile2,
             getString(R.string.text_import_script) to ::importFile,
             getString(R.string.text_run_script) to ::runFile,
         )
@@ -72,18 +71,6 @@ class OpenIntentActivity : BaseActivity() {
             EditActivity.editFile(this, file, false)
         }
         return job
-    }
-
-    private fun editFile2(file: Uri): Job? {
-        val path = file.path!!
-        if (file.scheme == "file" && File(path).isFile()) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                com.aiselp.autojs.codeeditor.EditActivity.editFile(this, File(path))
-            }
-            return Job().apply { complete() }
-        }
-        showToast(R.string.edit_and_run_handle_intent_error)
-        return null
     }
 
     private fun importFile(file: Uri): Job {

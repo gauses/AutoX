@@ -82,8 +82,15 @@ public class WorkspaceFileProvider extends ExplorerFileProvider {
             pathOfSample = directory.getPath().substring(mSampleDir.getPath().length());
         }
         String pathOfAsset = SAMPLE_PATH + pathOfSample;
-        return Observable.just(pathOfAsset)
-                .flatMap(path -> Observable.fromArray(mAssetManager.list(path)))
+        String[] list = null;
+        try {
+            list = mAssetManager.list(pathOfAsset);
+        } catch (Exception ignored) {
+        }
+        if (list == null || list.length == 0) {
+            return Observable.empty();
+        }
+        return Observable.fromArray(list)
                 .map(child -> {
                     PFile file = new PFile(new File(directory, child).getPath());
                     if (file.exists()) {
@@ -94,6 +101,7 @@ public class WorkspaceFileProvider extends ExplorerFileProvider {
                         PFiles.copyStream(stream, file.getPath());
                     } catch (FileNotFoundException e) {
                         file.mkdirs();
+                    } catch (Exception ignored) {
                     }
                     return file;
                 });
@@ -106,8 +114,11 @@ public class WorkspaceFileProvider extends ExplorerFileProvider {
         String pathOfSample = file.getPath().substring(mSampleDir.getPath().length());
         String pathOfAsset = SAMPLE_PATH + pathOfSample;
         return Observable.fromCallable(() -> {
-            InputStream stream = mAssetManager.open(pathOfAsset);
-            PFiles.copyStream(stream, file.getPath());
+            try {
+                InputStream stream = mAssetManager.open(pathOfAsset);
+                PFiles.copyStream(stream, file.getPath());
+            } catch (Exception ignored) {
+            }
             return file;
         })
                 .subscribeOn(Schedulers.io());
@@ -116,9 +127,7 @@ public class WorkspaceFileProvider extends ExplorerFileProvider {
     @Override
     protected ExplorerDirPage createExplorerPage(String path, ExplorerPage parent) {
         ExplorerDirPage page = super.createExplorerPage(path, parent);
-        if (new File(path).equals(new File(Pref.getScriptDirPath()))) {
-            page.addChild(ExplorerSamplePage.createRoot(mSampleDir));
-        }
+        // 示例已从 APK 中移除，不再在文件管理器中显示「示例」入口
         return page;
     }
 }

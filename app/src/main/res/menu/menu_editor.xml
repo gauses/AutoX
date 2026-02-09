@@ -6,10 +6,6 @@
         android:title="@string/text_force_stop"
         app:showAsAction="never" />
     <item
-        android:id="@+id/action_build_apk"
-        android:title="@string/text_build_apk"
-        app:showAsAction="never" />
-    <item
         android:id="@+id/action_console"
         android:title="@string/text_console"
         app:showAsAction="never" />

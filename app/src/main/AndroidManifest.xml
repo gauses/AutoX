@@ -117,7 +117,6 @@
         android:roundIcon="@drawable/autojs_logo"
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
-        android:debuggable="true"
         android:usesCleartextTraffic="true"
         tools:replace="android:label, android:allowBackup">
         <profileable
@@ -180,10 +179,6 @@
             android:name="org.autojs.autojs.external.tasker.TaskerScriptEditActivity"
             android:configChanges="orientation|screenSize" />
         <activity android:name="org.autojs.autojs.ui.edit.ViewSampleActivity" />
-        <activity
-            android:name="org.autojs.autojs.ui.build.BuildActivity"
-            android:configChanges="orientation|screenSize" />
-        <activity android:name="org.autojs.autojs.ui.build.SignManageActivityKt" />
         <activity android:name="org.autojs.autojs.ui.build.ProjectConfigActivity" />
         <activity android:name="org.autojs.autojs.ui.log.LogActivityKt" />
         <activity android:name="org.autojs.autojs.ui.shortcut.ShortcutIconSelectActivity" />

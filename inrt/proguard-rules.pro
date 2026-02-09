@@ -28,17 +28,7 @@
 -dontwarn jackpal.androidterm.**
 -keep class org.mozilla.javascript.** { *; }
 
-# tencent TBS WebView (Bugly removed)
--dontwarn dalvik.**
--dontwarn com.tencent.smtt.**
-
--keep class com.tencent.smtt.** {
-    *;
-}
-
--keep class com.tencent.tbs.** {
-    *;
-}
+# TBS 已移除
 
 -keep class org.autojs.autoxjs.inrt.BuildConfig{
    *;

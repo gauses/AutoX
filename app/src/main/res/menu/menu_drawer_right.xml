@@ -2,11 +2,6 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
-        android:id="@+id/web_kernel"
-        android:icon="@drawable/ic_check_for_updates"
-        android:title="切换Web内核"
-         />
-    <item
         android:id="@+id/web_bookmarks"
         android:icon="@drawable/ic_star"
         android:title="收藏管理"

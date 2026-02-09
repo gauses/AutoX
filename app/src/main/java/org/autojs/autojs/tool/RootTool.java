@@ -1,21 +1,15 @@
 package org.autojs.autojs.tool;
 
 import com.stardust.autojs.core.util.ProcessShell;
-import com.stericson.RootShell.RootShell;
 
 /**
- * Created by Stardust on 2018/1/26.
+ * Root 检测与指针位置等。RootShell 依赖已移除以减小 APK，始终视为无 root。
  */
-
 public class RootTool {
 
+    /** RootShell 已移除，始终返回 false。 */
     public static boolean isRootAvailable() {
-        try {
-            return RootShell.isRootAvailable();
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
+        return false;
     }
 
     private static final String cmd = "enabled=$(settings get system pointer_location)\n" +
