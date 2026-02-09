@@ -115,10 +115,17 @@ object LogFileUtils {
 
         var nestScriptJson= JSONObject(nestScript)
         // 获取基本参数
-        val task_id = nestScriptJson.getString("task_id")
-        val env_id = nestScriptJson.getString("env_id")
-        val account_id = nestScriptJson.getString("account_id")
-        val xToken = nestScriptJson.getString("xToken")
+        val task_id = nestScriptJson.optString("task_id")
+        val env_id = nestScriptJson.optString("env_id")
+        val account_id = nestScriptJson.optString("account_id")
+        val xToken = nestScriptJson.optString("xToken")
+
+        if (task_id.isEmpty() || env_id.isEmpty() || account_id.isEmpty()) {
+            Log.e("LogFileUtils", "上报跳过: task_id/env_id/account_id 为空 (task_id=$task_id, env_id=$env_id, account_id=$account_id)，不执行上报任务")
+            return
+        }
+
+
 
         // 生成OSS路径
         val uuid = UUID.randomUUID().toString()
@@ -232,10 +239,18 @@ object LogFileUtils {
 
         Log.d("LogFileUtils", "开始执行上报任务...")
 
+        val taskId = nestScriptJson.optString("task_id").trim()
+        val envId = nestScriptJson.optString("env_id").trim()
+        val accountId = nestScriptJson.optString("account_id").trim()
+        if (taskId.isEmpty() || envId.isEmpty() || accountId.isEmpty()) {
+            Log.e("LogFileUtils", "上报跳过: task_id/env_id/account_id 为空 (task_id=$taskId, env_id=$envId, account_id=$accountId)，不执行上报任务")
+            return
+        }
+
         var reportJson = JSONObject()
-        reportJson.put("task_id", nestScriptJson.get("task_id").toString())
-        reportJson.put("env_id", nestScriptJson.get("env_id").toString())
-        reportJson.put("account_id", nestScriptJson.get("account_id").toString())
+        reportJson.put("task_id", taskId)
+        reportJson.put("env_id", envId)
+        reportJson.put("account_id", accountId)
         reportJson.put("report_id", nestScriptJson.optString("report_id"))
 
         reportJson.put("report", report_oss_path) //上传oss的执行记录txt地址

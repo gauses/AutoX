@@ -11,7 +11,6 @@ import android.widget.Toast;
 
 public class UiHandler extends Handler {
 
-
     private final Context mContext;
 
     public UiHandler(Context context) {

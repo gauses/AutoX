@@ -17,6 +17,8 @@ import com.stardust.autojs.core.image.TemplateMatching
 import com.stardust.autojs.core.image.capture.ScreenCaptureRequester
 import com.stardust.autojs.core.opencv.Mat
 import com.stardust.autojs.core.opencv.OpenCVHelper
+import com.stardust.autojs.core.opencv.Point
+import com.stardust.autojs.core.opencv.Rect
 import com.stardust.autojs.core.ui.inflater.util.Drawables
 import com.stardust.autojs.runtime.ScriptRuntime
 import com.stardust.pio.UncheckedIOException
@@ -24,9 +26,6 @@ import com.stardust.util.ScreenMetrics
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import org.opencv.core.Point
-import org.opencv.core.Rect
-import org.opencv.imgproc.Imgproc
 import java.io.ByteArrayOutputStream
 import java.io.FileNotFoundException
 import java.io.FileOutputStream
@@ -228,7 +227,7 @@ class Images(
             src = Mat(src, rect)
         }
         val result = TemplateMatching.fastTemplateMatching(
-            src, template.mat, Imgproc.TM_CCOEFF_NORMED,
+            src, template.mat, TemplateMatching.MATCHING_METHOD_DEFAULT,
             weakThreshold, threshold, maxLevel, limit
         )
         for (match in result) {
@@ -254,31 +253,9 @@ class Images(
         return Mat(mat, roi)
     }
 
+    /** OpenCV 已移除：不再加载 native，仅标记已就绪。 */
     fun initOpenCvIfNeeded() {
-        if (mOpenCvInitialized || OpenCVHelper.isInitialized()) {
-            return
-        }
-        val currentActivity = mScriptRuntime.app.currentActivity
-        val context = currentActivity ?: mContext
-        mScriptRuntime.console.info("opencv initializing")
-        if (Looper.myLooper() == Looper.getMainLooper()) {
-            OpenCVHelper.initIfNeeded(context) {
-                mOpenCvInitialized = true
-                mScriptRuntime.console.info("opencv initialized")
-            }
-        } else {
-            runBlocking {
-                val result = Job()
-                launch {
-                    OpenCVHelper.initIfNeeded(context) {
-                        result.complete()
-                    }
-                }
-                result.join()
-                mOpenCvInitialized = true
-                mScriptRuntime.console.info("opencv initialized")
-            }
-        }
+        mOpenCvInitialized = true
     }
 
 

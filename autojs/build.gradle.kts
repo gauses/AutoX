@@ -35,8 +35,8 @@ dependencies {
     api(projects.localRepo.emulatorview)
     api(projects.localRepo.term)
     api(projects.localRepo.p7zip)
-    api(projects.localRepo.openCV)
-    api(projects.paddleocr)
+    // api(projects.localRepo.openCV) 已关闭以降低内存
+    // api(projects.paddleocr) 已关闭 OCR，降低内存占用
     // libs
     api(fileTree("../app/libs") { include("dx.jar", "rhino-1.7.14-jdk7.jar") })
 
@@ -65,12 +65,13 @@ dependencies {
     // log4j
     api(libs.android.logging.log4j)
     api(libs.log4j)
-    api(libs.tesseract4android)
-    api(libs.text.recognition)
-    api(libs.text.recognition.chinese)
-    api(libs.text.recognition.devanagari)
-    api(libs.text.recognition.japanese)
-    api(libs.text.recognition.korean)
+    // OCR 已关闭以降低内存：tesseract、ML Kit 已移除
+    // api(libs.tesseract4android)
+    // api(libs.text.recognition)
+    // api(libs.text.recognition.chinese)
+    // api(libs.text.recognition.devanagari)
+    // api(libs.text.recognition.japanese)
+    // api(libs.text.recognition.korean)
     implementation ("com.squareup.okhttp3:okhttp:4.10.0") // 或者最新版本
     implementation ("com.squareup.okhttp3:logging-interceptor:4.10.0") // 或者最新版本
 }

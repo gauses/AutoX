@@ -1,62 +1,30 @@
 package com.stardust.autojs.runtime.api
 
-import android.content.Context
-import com.baidu.paddle.lite.demo.ocr.OcrResult
-import com.baidu.paddle.lite.demo.ocr.Predictor
-import com.stardust.app.GlobalAppContext.get
 import com.stardust.autojs.core.image.ImageWrapper
 
+/**
+ * OCR 已关闭以降低内存占用；调用 ocr/ocrText 返回空结果。
+ * 若需恢复 OCR，请重新接入 paddleocr 依赖并还原原实现。
+ */
 class Paddle {
 
-    private val predictor = Predictor()
-    private val availableProcessors = Runtime.getRuntime().availableProcessors()
-
-    private fun initOcr(context: Context, cpuThreadNum: Int, useSlim: Boolean) {
-        predictor.initOcr(context, cpuThreadNum, useSlim)
-    }
-
-    private fun initOcr(context: Context, myModelPath: String): Boolean {
-        return predictor.init(context, myModelPath)
-    }
+    /** 桩结果，供脚本侧 result.map(e => e.words) 使用 */
+    data class OcrResult(val words: String)
 
     @JvmOverloads
     fun ocr(
         image: ImageWrapper,
-        cpuThreadNum: Int = availableProcessors,
+        cpuThreadNum: Int = Runtime.getRuntime().availableProcessors(),
         useSlim: Boolean = true
-    ): List<OcrResult> {
-        val bitmap = image.bitmap
-        if (bitmap == null || bitmap.isRecycled) {
-            return emptyList()
-        }
-        if (!predictor.isLoaded()) {
-            initOcr(get(), cpuThreadNum, useSlim)
-        }
-        return predictor.runOcr(bitmap, cpuThreadNum)
-    }
+    ): List<OcrResult> = emptyList()
 
     fun ocr(
         image: ImageWrapper,
         cpuThreadNum: Int,
         myModelPath: String
-    ): List<OcrResult> {
+    ): List<OcrResult> = emptyList()
 
-        val bitmap = image.bitmap
-        if (bitmap == null || bitmap.isRecycled) {
-            return emptyList()
-        }
-        if (!predictor.isLoaded()) {
-            initOcr(get(), myModelPath)
-        }
-        return predictor.runOcr(bitmap, cpuThreadNum)
-    }
+    fun ocr(image: ImageWrapper, useSlim: Boolean): List<OcrResult> = emptyList()
 
-    fun ocr(image: ImageWrapper, useSlim: Boolean): List<OcrResult> {
-        return ocr(image, availableProcessors, useSlim)
-    }
-
-    fun ocr(image: ImageWrapper, myModelPath: String): List<OcrResult> {
-        return ocr(image, availableProcessors, myModelPath)
-    }
-
+    fun ocr(image: ImageWrapper, myModelPath: String): List<OcrResult> = emptyList()
 }

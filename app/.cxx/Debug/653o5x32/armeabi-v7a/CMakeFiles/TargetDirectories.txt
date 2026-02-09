@@ -1,0 +1,3 @@
+D:/AndroidProject/AutoX/app/.cxx/Debug/653o5x32/armeabi-v7a/CMakeFiles/native-lib.dir
+D:/AndroidProject/AutoX/app/.cxx/Debug/653o5x32/armeabi-v7a/CMakeFiles/edit_cache.dir
+D:/AndroidProject/AutoX/app/.cxx/Debug/653o5x32/armeabi-v7a/CMakeFiles/rebuild_cache.dir

@@ -132,24 +132,18 @@ public abstract class ScriptRuntime {
     @ScriptVariable
     public final Files files;
 
-    @ScriptVariable
-    public SevenZip zips;
+    /** 懒加载：SevenZip / Media / Plugins / Sensors 首次访问时创建，降低未使用脚本的内存占用 */
+    private SevenZip mZips;
+    private Sensors mSensors;
+    private Media mMedia;
+    private Plugins mPlugins;
 
-    @ScriptVariable
-    public Sensors sensors;
+    /** 懒加载：仅在脚本首次使用 gmlkit 时创建，降低内存与 CPU 占用 */
+    private GoogleMLKit mGmlkit;
 
-    @ScriptVariable
-    public final Media media;
-
-    @ScriptVariable
-    public final Plugins plugins;
-
-    @ScriptVariable
-    public final GoogleMLKit gmlkit;
-//    @ScriptVariable
-//    public final Paddle paddle;
-
-    private Images images;
+    /** 懒加载：仅在脚本首次使用 images 时创建，避免未用找图/截屏时加载 OpenCV 等 */
+    private Images mImages;
+    private final ScreenCaptureRequester mScreenCaptureRequester;
 
     private static WeakReference<Context> applicationContext;
     private Map<String, Object> mProperties = new ConcurrentHashMap<>();
@@ -170,17 +164,21 @@ public abstract class ScriptRuntime {
         this.automator = new SimpleActionAutomator(accessibilityBridge, this);
         automator.setScreenMetrics(mScreenMetrics);
         this.info = accessibilityBridge.getInfoProvider();
-        images = new Images(context, this, builder.getScreenCaptureRequester());
+        mScreenCaptureRequester = builder.getScreenCaptureRequester();
         engines = new Engines(builder.getEngineService(), this);
         dialogs = new Dialogs(this);
         device = new Device(context);
         floaty = new Floaty(uiHandler, ui, this);
         files = new Files(this);
-        media = new Media(context, this);
-        plugins = new Plugins(context, this);
-        zips = new SevenZip();
-        gmlkit = new GoogleMLKit();
-//        paddle = new Paddle();
+    }
+
+    /** 脚本访问 runtime.gmlkit 时按需创建，避免未使用 OCR 时加载 ML Kit */
+    public GoogleMLKit getGmlkit() {
+        if (mGmlkit == null) {
+            android.util.Log.i(TAG, "AUTOX_PERF: gmlkit 懒加载触发，首次使用 OCR");
+            mGmlkit = new GoogleMLKit();
+        }
+        return mGmlkit;
     }
 
     public abstract void init();
@@ -352,15 +350,21 @@ public abstract class ScriptRuntime {
         }
         ignoresException(threads::shutDownAll);
         ignoresException(events::recycle);
-        ignoresException(media::recycle);
+        ignoresException(() -> {
+            if (mMedia != null) mMedia.recycle();
+        });
         ignoresException(loopers::recycle);
         ignoresException(() -> {
             if (mRootShell != null) mRootShell.exit();
             mRootShell = null;
             mShellSupplier = null;
         });
-        ignoresException(images::releaseScreenCapturer);
-        ignoresException(sensors::unregisterAll);
+        ignoresException(() -> {
+            if (mImages != null) mImages.releaseScreenCapturer();
+        });
+        ignoresException(() -> {
+            if (mSensors != null) mSensors.unregisterAll();
+        });
         ignoresException(timers::recycle);
         ignoresException(ui::recycle);
 //        ignoresException(paddle::release);
@@ -374,8 +378,45 @@ public abstract class ScriptRuntime {
         }
     }
 
+    /** 懒加载：首次访问时创建 Images（会拉取 OpenCV 等），降低不涉及找图/截屏脚本的内存占用 */
     public Object getImages() {
-        return images;
+        if (mImages == null) {
+            android.util.Log.i(TAG, "AUTOX_PERF: images 懒加载触发，首次使用找图/截屏");
+            mImages = new Images(uiHandler.getContext(), this, mScreenCaptureRequester);
+        }
+        return mImages;
+    }
+
+    public SevenZip getZips() {
+        if (mZips == null) {
+            android.util.Log.i(TAG, "AUTOX_PERF: zips 懒加载触发，首次使用压缩");
+            mZips = new SevenZip();
+        }
+        return mZips;
+    }
+
+    public Media getMedia() {
+        if (mMedia == null) {
+            android.util.Log.i(TAG, "AUTOX_PERF: media 懒加载触发，首次使用媒体");
+            mMedia = new Media(uiHandler.getContext(), this);
+        }
+        return mMedia;
+    }
+
+    public Plugins getPlugins() {
+        if (mPlugins == null) {
+            android.util.Log.i(TAG, "AUTOX_PERF: plugins 懒加载触发，首次使用插件");
+            mPlugins = new Plugins(uiHandler.getContext(), this);
+        }
+        return mPlugins;
+    }
+
+    public Sensors getSensors() {
+        if (mSensors == null) {
+            android.util.Log.i(TAG, "AUTOX_PERF: sensors 懒加载触发，首次使用传感器");
+            mSensors = new Sensors(uiHandler.getContext(), this);
+        }
+        return mSensors;
     }
 
     public Object getProperty(String key) {

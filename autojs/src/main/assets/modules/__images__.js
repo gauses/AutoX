@@ -104,22 +104,16 @@ module.exports = function (runtime, scope) {
         util.__assignFunctions__(runtime.images, images, ['captureScreen', 'read', 'copy', 'load', 'clip', 'pixel'])
     }
     images.opencvImporter = JavaImporter(
-        org.opencv.core.Point,
-        org.opencv.core.Point3,
-        org.opencv.core.Rect,
-        org.opencv.core.Algorithm,
-        org.opencv.core.Scalar,
-        org.opencv.core.Size,
-        org.opencv.core.Core,
-        org.opencv.core.CvException,
-        org.opencv.core.CvType,
-        org.opencv.core.TermCriteria,
-        org.opencv.core.RotatedRect,
-        org.opencv.core.Range,
-        org.opencv.imgproc.Imgproc,
-        com.stardust.autojs.core.opencv
+        com.stardust.autojs.core.opencv.Mat,
+        com.stardust.autojs.core.opencv.Point,
+        com.stardust.autojs.core.opencv.Rect,
+        com.stardust.autojs.core.opencv.Scalar,
+        com.stardust.autojs.core.opencv.Size
     );
     with (images.opencvImporter) {
+        function opencvDisabled() {
+            throw new Error("OpenCV has been disabled to reduce memory usage.");
+        }
         const defaultColorThreshold = 4;
 
         var colors = Object.create(runtime.colors);
@@ -174,137 +168,51 @@ module.exports = function (runtime, scope) {
         images.saveImage = images.save;
 
         images.grayscale = function (img, dstCn) {
-            return images.cvtColor(img, "BGR2GRAY", dstCn);
+            opencvDisabled();
         }
 
         images.threshold = function (img, threshold, maxVal, type) {
-            initIfNeeded();
-            var mat = new Mat();
-            type = type || "BINARY";
-            type = Imgproc["THRESH_" + type];
-            Imgproc.threshold(img.mat, mat, threshold, maxVal, type);
-            return images.matToImage(mat);
+            opencvDisabled();
         }
 
         images.inRange = function (img, lowerBound, upperBound) {
-            initIfNeeded();
-            var lb = new Scalar(colors.red(lowerBound), colors.green(lowerBound),
-                colors.blue(lowerBound), colors.alpha(lowerBound));
-            var ub = new Scalar(colors.red(upperBound), colors.green(upperBound),
-                colors.blue(upperBound), colors.alpha(lowerBound))
-            var bi = new Mat();
-            Core.inRange(img.mat, lb, ub, bi);
-            return images.matToImage(bi);
+            opencvDisabled();
         }
 
         images.interval = function (img, color, threshold) {
-            initIfNeeded();
-            var lb = new Scalar(colors.red(color) - threshold, colors.green(color) - threshold,
-                colors.blue(color) - threshold, colors.alpha(color));
-            var ub = new Scalar(colors.red(color) + threshold, colors.green(color) + threshold,
-                colors.blue(color) + threshold, colors.alpha(color));
-            var bi = new Mat();
-            Core.inRange(img.mat, lb, ub, bi);
-            return images.matToImage(bi);
+            opencvDisabled();
         }
 
         images.adaptiveThreshold = function (img, maxValue, adaptiveMethod, thresholdType, blockSize, C) {
-            initIfNeeded();
-            var mat = new Mat();
-            adaptiveMethod = Imgproc["ADAPTIVE_THRESH_" + adaptiveMethod];
-            thresholdType = Imgproc["THRESH_" + thresholdType];
-            Imgproc.adaptiveThreshold(img.mat, mat, maxValue, adaptiveMethod, thresholdType, blockSize, C);
-            return images.matToImage(mat);
-
+            opencvDisabled();
         }
+
         images.blur = function (img, size, point, type) {
-            initIfNeeded();
-            var mat = new Mat();
-            size = newSize(size);
-            type = Core["BORDER_" + (type || "DEFAULT")];
-            if (point == undefined) {
-                Imgproc.blur(img.mat, mat, size);
-            } else {
-                Imgproc.blur(img.mat, mat, size, new Point(point[0], point[1]), type);
-            }
-            return images.matToImage(mat);
+            opencvDisabled();
         }
 
         images.medianBlur = function (img, size) {
-            initIfNeeded();
-            var mat = new Mat();
-            Imgproc.medianBlur(img.mat, mat, size);
-            return images.matToImage(mat);
+            opencvDisabled();
         }
 
-
         images.gaussianBlur = function (img, size, sigmaX, sigmaY, type) {
-            initIfNeeded();
-            var mat = new Mat();
-            size = newSize(size);
-            sigmaX = sigmaX == undefined ? 0 : sigmaX;
-            sigmaY = sigmaY == undefined ? 0 : sigmaY;
-            type = Core["BORDER_" + (type || "DEFAULT")];
-            Imgproc.GaussianBlur(img.mat, mat, size, sigmaX, sigmaY, type);
-            return images.matToImage(mat);
+            opencvDisabled();
         }
 
         images.cvtColor = function (img, code, dstCn) {
-            initIfNeeded();
-            var mat = new Mat();
-            code = Imgproc["COLOR_" + code];
-            if (dstCn == undefined) {
-                Imgproc.cvtColor(img.mat, mat, code);
-            } else {
-                Imgproc.cvtColor(img.mat, mat, code, dstCn);
-            }
-            return images.matToImage(mat);
+            opencvDisabled();
         }
 
         images.findCircles = function (grayImg, options) {
-            initIfNeeded();
-            options = options || {};
-            var mat = options.region == undefined ? grayImg.mat : new Mat(grayImg.mat, buildRegion(options.region, grayImg));
-            var resultMat = new Mat()
-            var dp = options.dp == undefined ? 1 : options.dp;
-            var minDst = options.minDst == undefined ? grayImg.height / 8 : options.minDst;
-            var param1 = options.param1 == undefined ? 100 : options.param1;
-            var param2 = options.param2 == undefined ? 100 : options.param2;
-            var minRadius = options.minRadius == undefined ? 0 : options.minRadius;
-            var maxRadius = options.maxRadius == undefined ? 0 : options.maxRadius;
-            Imgproc.HoughCircles(mat, resultMat, Imgproc.CV_HOUGH_GRADIENT, dp, minDst, param1, param2, minRadius, maxRadius);
-            var result = [];
-            for (var i = 0; i < resultMat.rows(); i++) {
-                for (var j = 0; j < resultMat.cols(); j++) {
-                    var d = resultMat.get(i, j);
-                    result.push({
-                        x: d[0],
-                        y: d[1],
-                        radius: d[2]
-                    });
-                }
-            }
-            if (options.region != undefined) {
-                mat.release();
-            }
-            resultMat.release();
-            return result;
+            opencvDisabled();
         }
 
         images.resize = function (img, size, interpolation) {
-            initIfNeeded();
-            var mat = new Mat();
-            interpolation = Imgproc["INTER_" + (interpolation || "LINEAR")];
-            Imgproc.resize(img.mat, mat, newSize(size), 0, 0, interpolation);
-            return images.matToImage(mat);
+            opencvDisabled();
         }
 
         images.scale = function (img, fx, fy, interpolation) {
-            initIfNeeded();
-            var mat = new Mat();
-            interpolation = Imgproc["INTER_" + (interpolation || "LINEAR")];
-            Imgproc.resize(img.mat, mat, newSize([0, 0]), fx, fy, interpolation);
-            return images.matToImage(mat);
+            opencvDisabled();
         }
 
         images.rotate = function (img, degree, x, y) {
@@ -518,7 +426,7 @@ module.exports = function (runtime, scope) {
             var y = region[1] === undefined ? 0 : region[1];
             var width = region[2] === undefined ? img.getWidth() - x : region[2];
             var height = region[3] === undefined ? (img.getHeight() - y) : region[3];
-            var r = new org.opencv.core.Rect(x, y, width, height);
+            var r = new Rect(x, y, width, height);
             if (x < 0 || y < 0 || x + width > img.width || y + height > img.height) {
                 throw new Error("out of region: region = [" + [x, y, width, height] + "], image.size = [" + [img.width, img.height] + "]");
             }
@@ -539,7 +447,7 @@ module.exports = function (runtime, scope) {
             if (size.length == 1) {
                 size = [size[0], size[0]];
             }
-            return new Size(size[0], size[1]);
+            return new com.stardust.autojs.core.opencv.Size(size[0], size[1]);
         }
 
         function initIfNeeded() {

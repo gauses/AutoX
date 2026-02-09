@@ -72,7 +72,6 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import coil.compose.rememberAsyncImagePainter
 import com.afollestad.materialdialogs.DialogAction
 import com.afollestad.materialdialogs.MaterialDialog
 import com.stardust.app.DialogUtils
@@ -401,7 +400,7 @@ private fun RunConfigCard(model: BuildViewModel) {
                 )
             } else {
                 Image(
-                    painter = rememberAsyncImagePainter(model = model.splashIcon),
+                    painter = painterResource(R.drawable.autojs_logo1),
                     contentDescription = stringResource(R.string.apk_icon),
                     modifier = modifier,
                 )
@@ -481,7 +480,7 @@ private fun ConfigCard(model: BuildViewModel) {
                             )
                         } else {
                             Image(
-                                painter = rememberAsyncImagePainter(model = model.icon),
+                                painter = painterResource(R.drawable.autojs_logo1),
                                 contentDescription = stringResource(R.string.apk_icon),
                                 modifier = modifier,
                             )

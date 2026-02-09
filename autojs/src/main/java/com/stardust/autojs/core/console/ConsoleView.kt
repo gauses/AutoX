@@ -107,6 +107,14 @@ class ConsoleView : FrameLayout, LogListener {
     fun setConsole(console: ConsoleImpl) {
         mConsole = console
         console.setConsoleView(this)
+        // 同步加载已有日志，避免 REORDER_TO_FRONT 复用时界面空白
+        refreshLog()
+        post { refreshLog() }
+    }
+
+    /** 供 Activity onResume 等场景调用，从 Console 重新拉取并刷新显示 */
+    fun refreshFromConsole() {
+        post { refreshLog() }
     }
 
     override fun onNewLog(logEntry: ConsoleImpl.LogEntry) = Unit
@@ -157,7 +165,7 @@ class ConsoleView : FrameLayout, LogListener {
                     mLogEntries.add(logEntries[i])
                 }
             }
-            mLogListRecyclerView.adapter!!.notifyItemRangeInserted(oldSize, size - 1)
+            mLogListRecyclerView.adapter!!.notifyItemRangeInserted(oldSize, size - oldSize)
             mLogListRecyclerView.scrollToPosition(size - 1)
         }
     }

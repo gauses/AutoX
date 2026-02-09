@@ -58,10 +58,6 @@ public class ScriptExecutionGlobalListener implements ScriptExecutionListener {
             throw new RuntimeException(ex);
         }
         AutoJs.getInstance().getScriptEngineService().stopAllAndToast();
-
-
-
-
     }
 
     //执行完成
@@ -119,8 +115,6 @@ public class ScriptExecutionGlobalListener implements ScriptExecutionListener {
             throw new RuntimeException(ex);
         }
         AutoJs.getInstance().getScriptEngineService().stopAllAndToast();
-
-
     }
 
 }

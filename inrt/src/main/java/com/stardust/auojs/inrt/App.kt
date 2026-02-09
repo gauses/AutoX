@@ -7,18 +7,19 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.os.Build.VERSION
 import android.util.Log
 import android.view.View
 import android.widget.ImageView
 import androidx.core.app.NotificationCompat
 import androidx.preference.PreferenceManager
-import com.bumptech.glide.Glide
-import com.bumptech.glide.request.target.CustomViewTarget
-import com.bumptech.glide.request.transition.Transition
 import com.fanjun.keeplive.KeepLive
 import com.fanjun.keeplive.config.ForegroundNotification
 import com.google.mlkit.common.MlKit
@@ -32,6 +33,7 @@ import com.stardust.autojs.core.ui.inflater.util.Drawables
 import com.stardust.autojs.execution.ScriptExecuteActivity
 import org.autojs.autoxjs.inrt.BuildConfig
 import org.autojs.autoxjs.inrt.R
+import java.util.concurrent.Executors
 
 
 /**
@@ -50,71 +52,39 @@ class App : Application() {
         Utils.init(this);
         AutoJs.initInstance(this)
         GlobalKeyObserver.init()
+        val ctx = applicationContext
+        val mainHandler = Handler(Looper.getMainLooper())
+        val executor = Executors.newSingleThreadExecutor()
+        fun decodeUri(uri: Uri): Bitmap? = when (uri.scheme) {
+            "file" -> uri.path?.let { BitmapFactory.decodeFile(it) }
+            "content" -> runCatching { ctx.contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it) } }.getOrNull()
+            else -> null
+        }
         Drawables.setDefaultImageLoader(object : ImageLoader {
             override fun loadInto(imageView: ImageView, uri: Uri) {
-                Glide.with(this@App)
-                    .load(uri)
-                    .into(imageView)
+                executor.execute {
+                    val bmp = decodeUri(uri) ?: return@execute
+                    mainHandler.post { imageView.setImageBitmap(bmp) }
+                }
             }
-
             override fun loadIntoBackground(view: View, uri: Uri) {
-                Glide.with(this@App)
-                    .load(uri)
-                    .into(object : CustomViewTarget<View, Drawable>(view) {
-                        override fun onResourceReady(
-                            resource: Drawable,
-                            transition: Transition<in Drawable>?
-                        ) {
-                            view.background = resource
-                        }
-
-                        override fun onLoadFailed(errorDrawable: Drawable?) = Unit
-
-                        override fun onResourceCleared(placeholder: Drawable?) = Unit
-                    })
+                executor.execute {
+                    val bmp = decodeUri(uri) ?: return@execute
+                    mainHandler.post { view.background = BitmapDrawable(ctx.resources, bmp) }
+                }
             }
-
-            override fun load(view: View, uri: Uri): Drawable {
-                throw UnsupportedOperationException()
+            override fun load(view: View, uri: Uri): Drawable = throw UnsupportedOperationException()
+            override fun load(view: View, uri: Uri, drawableCallback: ImageLoader.DrawableCallback) {
+                executor.execute {
+                    val bmp = decodeUri(uri)
+                    mainHandler.post { bmp?.let { drawableCallback.onLoaded(BitmapDrawable(ctx.resources, it)) } }
+                }
             }
-
-            override fun load(
-                view: View,
-                uri: Uri,
-                drawableCallback: ImageLoader.DrawableCallback
-            ) {
-                Glide.with(this@App)
-                    .load(uri)
-                    .into(object : CustomViewTarget<View, Drawable>(view) {
-                        override fun onResourceReady(
-                            resource: Drawable,
-                            transition: Transition<in Drawable>?
-                        ) {
-                            drawableCallback.onLoaded(resource)
-                        }
-
-                        override fun onLoadFailed(errorDrawable: Drawable?) = Unit
-
-                        override fun onResourceCleared(placeholder: Drawable?) = Unit
-                    })
-            }
-
             override fun load(view: View, uri: Uri, bitmapCallback: ImageLoader.BitmapCallback) {
-                Glide.with(this@App)
-                    .asBitmap()
-                    .load(uri)
-                    .into(object : CustomViewTarget<View, Bitmap>(view) {
-                        override fun onResourceReady(
-                            resource: Bitmap,
-                            transition: Transition<in Bitmap>?
-                        ) {
-                            bitmapCallback.onLoaded(resource)
-                        }
-
-                        override fun onLoadFailed(errorDrawable: Drawable?) = Unit
-
-                        override fun onResourceCleared(placeholder: Drawable?) = Unit
-                    })
+                executor.execute {
+                    val bmp = decodeUri(uri)
+                    mainHandler.post { bitmapCallback.onLoaded(bmp) }
+                }
             }
         })
 

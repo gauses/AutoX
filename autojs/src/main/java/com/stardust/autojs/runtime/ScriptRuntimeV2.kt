@@ -25,7 +25,7 @@ class ScriptRuntimeV2(builder: Builder) : ScriptRuntime(builder) {
         loopers = Loopers(this)
         events = Events(uiHandler.context, accessibilityBridge, this)
         mThread = Thread.currentThread()
-        sensors = Sensors(uiHandler.context, this)
+        // sensors 改为 ScriptRuntime.getSensors() 懒加载
     }
     override fun getUiHandler(): UiHandler {
         return uiHandler

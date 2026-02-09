@@ -4,21 +4,9 @@ import android.content.Context;
 
 import androidx.annotation.Nullable;
 
-import android.os.Looper;
-import android.util.Log;
-
-import com.afollestad.materialdialogs.MaterialDialog;
-import com.stardust.app.DialogUtils;
-
-import org.opencv.android.InstallCallbackInterface;
-import org.opencv.android.LoaderCallbackInterface;
-import org.opencv.android.OpenCVLoader;
-
-
 /**
- * Created by Stardust on 2018/4/2.
+ * 桩：OpenCV 已移除以降低内存。不再加载 native OpenCV，初始化恒为“已就绪”。
  */
-
 public class OpenCVHelper {
 
     public interface InitializeCallback {
@@ -26,41 +14,28 @@ public class OpenCVHelper {
     }
 
     private static final String LOG_TAG = "OpenCVHelper";
-    private static boolean sInitialized = false;
+    private static final boolean sInitialized = true;
 
     public static MatOfPoint newMatOfPoint(Mat mat) {
         return new MatOfPoint(mat);
     }
 
     public static void release(@Nullable MatOfPoint mat) {
-        if (mat == null)
-            return;
+        if (mat == null) return;
         mat.release();
     }
 
     public static void release(@Nullable Mat mat) {
-        if (mat == null)
-            return;
+        if (mat == null) return;
         mat.release();
     }
 
-    public synchronized static boolean isInitialized() {
+    public static boolean isInitialized() {
         return sInitialized;
     }
 
-    public synchronized static void initIfNeeded(Context context, InitializeCallback callback) {
-        if (sInitialized) {
-            callback.onInitFinish();
-            return;
-        }
-        sInitialized = true;
-        if (Looper.getMainLooper() == Looper.myLooper()) {
-            new Thread(() -> {
-                OpenCVLoader.initDebug();
-                callback.onInitFinish();
-            }).start();
-        } else {
-            OpenCVLoader.initDebug();
+    public static void initIfNeeded(Context context, InitializeCallback callback) {
+        if (callback != null) {
             callback.onInitFinish();
         }
     }

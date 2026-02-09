@@ -19,9 +19,12 @@ import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBars
@@ -45,6 +48,7 @@ import androidx.compose.material.ProvideTextStyle
 import androidx.compose.material.Scaffold
 import androidx.compose.material.ScaffoldState
 import androidx.compose.material.Surface
+import androidx.compose.material.Switch
 import androidx.compose.material.Text
 import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
@@ -62,10 +66,12 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -93,6 +99,7 @@ import com.stardust.view.accessibility.AccessibilityNotificationObserver
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
+import org.autojs.autojs.App
 import org.autojs.autojs.Pref
 import org.autojs.autojs.alioss.LogFileUtils
 import org.autojs.autojs.autojs.AutoJs
@@ -107,12 +114,12 @@ import org.autojs.autojs.ui.compose.widget.SearchBox2
 import org.autojs.autojs.ui.explorer.ExplorerViewKt
 import org.autojs.autojs.ui.floating.FloatyWindowManger
 import org.autojs.autojs.ui.log.LogActivityKt
-import org.autojs.autojs.ui.main.components.DocumentPageMenuButton
 import org.autojs.autojs.ui.main.components.LogButton
 import org.autojs.autojs.ui.main.drawer.DrawerPage
+import org.autojs.autojs.ui.main.log.MainLogFragment
+import org.autojs.autojs.ui.main.log.PerfMonitorFragment
 import org.autojs.autojs.ui.main.scripts.ScriptListFragment
 import org.autojs.autojs.ui.main.task.TaskManagerFragmentKt
-import org.autojs.autojs.ui.main.web.EditorAppManager
 import org.autojs.autojs.ui.nestjs.NestUtils
 import org.autojs.autojs.ui.util.launchActivity
 import org.autojs.autojs.ui.widget.fillMaxSize
@@ -129,13 +136,19 @@ data class BottomNavigationItem(val icon: Int, val label: String)
 class MainActivity : FragmentActivity() {
 
     companion object {
+        const val EXTRA_OPEN_LOG_TAB = "open_log_tab"
+
         @JvmStatic
         fun getIntent(context: Context) = Intent(context, MainActivity::class.java)
     }
 
+    /** 由 LogActivityKt 跳转时传入，MainPage 会切到日志 tab 并清空 */
+    private val requestedPageState = mutableStateOf<Int?>(null)
+
     private val scriptListFragment by lazy { ScriptListFragment() }
     private val taskManagerFragment by lazy { TaskManagerFragmentKt() }
-    private val webViewFragment by lazy { EditorAppManager() }
+    private val perfMonitorFragment by lazy { PerfMonitorFragment() }
+    private val logListFragment by lazy { MainLogFragment() }
     private var lastBackPressedTime = 0L
     private var drawerState: DrawerState? = null
     private val viewPager: ViewPager2 by lazy { ViewPager2(this) }
@@ -156,6 +169,9 @@ class MainActivity : FragmentActivity() {
             if (DrawOverlaysPermission.isCanDrawOverlays(this)) FloatyWindowManger.showCircularMenu()
             else Pref.setFloatingMenuShown(false)
         }
+        if (intent.getBooleanExtra(EXTRA_OPEN_LOG_TAB, false)) {
+            requestedPageState.value = 3
+        }
         setContent {
             scope = rememberCoroutineScope()
             AutoXJsTheme {
@@ -167,7 +183,6 @@ class MainActivity : FragmentActivity() {
                     }
                     LaunchedEffect(key1 = Unit, block = {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                            // 先判断有没有权限
                             if (Environment.isExternalStorageManager()) {
                                 scriptListFragment.explorerView.onRefresh()
                             } else {
@@ -176,17 +191,18 @@ class MainActivity : FragmentActivity() {
                         } else {
                             permission.launchMultiplePermissionRequest()
                         }
-
                     })
                     MainPage(
                         activity = this,
                         scriptListFragment = scriptListFragment,
                         taskManagerFragment = taskManagerFragment,
-                        webViewFragment = webViewFragment,
+                        perfMonitorFragment = perfMonitorFragment,
+                        logListFragment = logListFragment,
                         onDrawerState = {
                             this.drawerState = it
                         },
-                        viewPager = viewPager
+                        viewPager = viewPager,
+                        requestedPageState = this@MainActivity.requestedPageState
                     )
                 }
             }
@@ -307,6 +323,13 @@ class MainActivity : FragmentActivity() {
             .create().show()
     }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        if (intent.getBooleanExtra(EXTRA_OPEN_LOG_TAB, false)) {
+            requestedPageState.value = 3
+        }
+    }
+
     override fun onResume() {
         super.onResume()
         TimedTaskScheduler.ensureCheckTaskWorks(application)
@@ -337,6 +360,8 @@ class MainActivity : FragmentActivity() {
                 Log.d("sb", "MainActivity script scriptFilePath.path = ${scriptFilePath?.path}")
                 ScriptIntents.handleIntent(this, intent.setData(Uri.parse(scriptFilePath?.path)))
                 LogActivityKt.start(this)
+                // 清除 net_script_name，避免从 LogActivity 按返回键回到 MainActivity 时 onResume 再次触发执行脚本
+                intent.removeExtra("net_script_name")
             }
         }
     }
@@ -348,6 +373,10 @@ class MainActivity : FragmentActivity() {
             return
         }
         if (viewPager.currentItem == 0 && scriptListFragment.onBackPressed()) {
+            return
+        }
+        if (viewPager.currentItem != 0) {
+            viewPager.currentItem = 0
             return
         }
         back()
@@ -372,9 +401,11 @@ fun MainPage(
     activity: FragmentActivity,
     scriptListFragment: ScriptListFragment,
     taskManagerFragment: TaskManagerFragmentKt,
-    webViewFragment: EditorAppManager,
+    perfMonitorFragment: PerfMonitorFragment,
+    logListFragment: MainLogFragment,
     onDrawerState: (DrawerState) -> Unit,
-    viewPager: ViewPager2
+    viewPager: ViewPager2,
+    requestedPageState: MutableState<Int?>
 ) {
     val context = LocalContext.current
     val scaffoldState = rememberScaffoldState()
@@ -386,6 +417,13 @@ fun MainPage(
     }
     var currentPage by remember {
         mutableStateOf(0)
+    }
+
+    LaunchedEffect(requestedPageState.value) {
+        requestedPageState.value?.let { page ->
+            currentPage = page
+            requestedPageState.value = null
+        }
     }
 
     SetSystemUI(scaffoldState)
@@ -411,7 +449,7 @@ fun MainPage(
                             scriptListFragment.explorerView.setFilter { it.name.contains(keyword) }
                         },
                         scriptListFragment = scriptListFragment,
-                        webViewFragment = webViewFragment
+                        perfMonitorFragment = perfMonitorFragment
                     )
                 }
             }
@@ -441,8 +479,10 @@ fun MainPage(
                         activity,
                         scriptListFragment,
                         taskManagerFragment,
-                        webViewFragment
+                        perfMonitorFragment,
+                        logListFragment
                     )
+                    offscreenPageLimit = 3
                     isUserInputEnabled = false
                     ViewCompat.setNestedScrollingEnabled(this, true)
                 }
@@ -516,7 +556,11 @@ private fun getBottomItems(context: Context) = mutableStateListOf(
     ),
     BottomNavigationItem(
         R.drawable.ic_web,
-        context.getString(R.string.text_document)
+        context.getString(R.string.text_perf_monitor)
+    ),
+    BottomNavigationItem(
+        R.drawable.ic_logcat,
+        context.getString(R.string.text_log)
     )
 )
 
@@ -558,7 +602,7 @@ private fun TopBar(
     requestOpenDrawer: () -> Unit,
     onSearch: (String) -> Unit,
     scriptListFragment: ScriptListFragment,
-    webViewFragment: EditorAppManager,
+    perfMonitorFragment: PerfMonitorFragment,
 ) {
     var isSearch by remember {
         mutableStateOf(false)
@@ -635,9 +679,7 @@ private fun TopBar(
             LogButton()
             when (currentPage) {
                 0 -> {
-                    var expanded by remember {
-                        mutableStateOf(false)
-                    }
+                    var expanded by remember { mutableStateOf(false) }
                     Box() {
                         IconButton(onClick = { expanded = true }) {
                             Icon(
@@ -652,7 +694,6 @@ private fun TopBar(
                         )
                     }
                 }
-
                 1 -> {
                     IconButton(onClick = { AutoJs.getInstance().scriptEngineService.stopAll() }) {
                         Icon(
@@ -661,12 +702,15 @@ private fun TopBar(
                         )
                     }
                 }
-
                 2 -> {
-                    DocumentPageMenuButton { webViewFragment.swipeRefreshWebView.webView }
+                    IconButton(onClick = { perfMonitorFragment.clearLog() }) {
+                        Icon(
+                            imageVector = Icons.Default.Clear,
+                            contentDescription = stringResource(id = R.string.text_clear)
+                        )
+                    }
                 }
             }
-
         }
     }
 }
@@ -684,6 +728,7 @@ fun TopAppBarMenu(
         NewFile(context, scriptListFragment, onDismissRequest)
         ImportFile(context, scriptListFragment, onDismissRequest)
         NewProject(context, scriptListFragment, onDismissRequest)
+        MemoryMonitoringSwitch(context)
 //        DropdownMenuItem(onClick = { /*TODO*/ }) {
 //            MyIcon(
 //                painter = painterResource(id = R.drawable.ic_timed_task),
@@ -831,6 +876,36 @@ private fun NewProject(
         )
         Spacer(modifier = Modifier.width(8.dp))
         Text(text = stringResource(id = R.string.text_project))
+    }
+}
+
+@Composable
+private fun MemoryMonitoringSwitch(context: Context) {
+    var enabled by remember { mutableStateOf(Pref.isMemoryMonitoringEnabled()) }
+    DropdownMenuItem(
+        onClick = { /* 不关闭菜单，仅通过 Switch 切换 */ }
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                MyIcon(
+                    painter = painterResource(id = R.drawable.ic_manage),
+                    contentDescription = null
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = stringResource(id = R.string.text_memory_monitoring))
+            }
+            Switch(
+                checked = enabled,
+                onCheckedChange = { checked ->
+                    enabled = checked
+                    App.app.setMemoryMonitoringEnabledByUser(context, checked)
+                }
+            )
+        }
     }
 }
 

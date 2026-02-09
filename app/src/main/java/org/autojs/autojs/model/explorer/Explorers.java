@@ -5,9 +5,9 @@ import com.stardust.app.GlobalAppContext;
 public class Explorers {
 
 
-    private static Explorer sWorkspaceExplorer = new Explorer(Providers.workspace(), 20);
+    private static Explorer sWorkspaceExplorer = new Explorer(Providers.workspace(), 10);
 
-    private static Explorer sExternalExplorer = new Explorer(new ExplorerFileProvider(), 10);
+    private static Explorer sExternalExplorer = new Explorer(new ExplorerFileProvider(), 5);
 
     public static Explorer workspace() {
         return sWorkspaceExplorer;

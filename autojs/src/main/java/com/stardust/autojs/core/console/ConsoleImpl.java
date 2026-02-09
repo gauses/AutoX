@@ -197,6 +197,13 @@ public class ConsoleImpl extends AbstractConsole {
     }
 
 
+    /** 通知已绑定的 ConsoleView 从本 Console 重新拉取日志（如 LogActivity onResume 时用） */
+    public void requestRefresh() {
+        if (mConsoleView != null && mConsoleView.get() != null) {
+            mConsoleView.get().refreshFromConsole();
+        }
+    }
+
     @Override
     public void clear() {
         synchronized (mLogEntries) {

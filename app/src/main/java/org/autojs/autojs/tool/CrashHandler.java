@@ -1,10 +1,5 @@
 package org.autojs.autojs.tool;
 
-/**
- * Created by Stardust on 2017/2/2.
- */
-
-
 import android.content.Intent;
 import android.os.Build;
 import android.os.Looper;
@@ -15,35 +10,37 @@ import com.stardust.app.GlobalAppContext;
 import org.autojs.autoxjs.BuildConfig;
 import org.mozilla.javascript.RhinoException;
 
-import com.stardust.view.accessibility.AccessibilityService;
-import com.tencent.bugly.crashreport.BuglyLog;
-import com.tencent.bugly.crashreport.CrashReport;
-
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.Thread.UncaughtExceptionHandler;
-import java.util.Map;
 
-public class CrashHandler extends CrashReport.CrashHandleCallback implements UncaughtExceptionHandler {
+import com.stardust.view.accessibility.AccessibilityService;
+
+/**
+ * 全局未捕获异常处理，Flurry/Bugly 已移除以降低依赖与后台流量。
+ */
+public class CrashHandler implements UncaughtExceptionHandler {
+
     private static final String TAG = "CrashHandler";
     private static int crashCount = 0;
     private static long firstCrashMillis = 0;
     private final Class<?> mErrorReportClass;
-    private UncaughtExceptionHandler mBuglyHandler;
-    private UncaughtExceptionHandler mSystemHandler;
+    private final UncaughtExceptionHandler mSystemHandler;
 
     public CrashHandler(Class<?> errorReportClass) {
         this.mErrorReportClass = errorReportClass;
         mSystemHandler = Thread.getDefaultUncaughtExceptionHandler();
     }
 
-    public void setBuglyHandler(UncaughtExceptionHandler buglyHandler) {
-        mBuglyHandler = buglyHandler;
-    }
-
+    @Override
     public void uncaughtException(Thread thread, Throwable ex) {
         Log.e(TAG, "Uncaught Exception", ex);
         if (thread != Looper.getMainLooper().getThread()) {
-            if(!(ex instanceof RhinoException)){
-                CrashReport.postCatchedException(ex, thread);
+            if (!(ex instanceof RhinoException)) {
+                Log.w(TAG, "Non-main thread crash, no error report UI", ex);
+            }
+            if (mSystemHandler != null) {
+                mSystemHandler.uncaughtException(thread, ex);
             }
             return;
         }
@@ -52,37 +49,40 @@ public class CrashHandler extends CrashReport.CrashHandleCallback implements Unc
             Log.d(TAG, "disable service: " + service);
             service.disableSelf();
         } else {
-            BuglyLog.d(TAG, "cannot disable service: " + service);
+            Log.d(TAG, "cannot disable service: " + service);
         }
         if (BuildConfig.DEBUG) {
-            mSystemHandler.uncaughtException(thread, ex);
+            if (mSystemHandler != null) {
+                mSystemHandler.uncaughtException(thread, ex);
+            }
         } else {
-            mBuglyHandler.uncaughtException(thread, ex);
+            if (!crashTooManyTimes()) {
+                String msg = ex.getMessage() != null ? ex.getMessage() : ex.getClass().getSimpleName();
+                String detail = getStackTrace(ex);
+                startErrorReportActivity(msg, detail);
+            }
+            if (mSystemHandler != null) {
+                mSystemHandler.uncaughtException(thread, ex);
+            }
         }
     }
 
-    @Override
-    public synchronized Map<String, String> onCrashHandleStart(int crashType, String errorType,
-                                                               String errorMessage, String errorStack) {
-        Log.d(TAG, "onCrashHandleStart: crashType = " + crashType + ", errorType = " + errorType + ", msg = "
-                + errorMessage + ", stack = " + errorStack);
-        try {
-            if (crashTooManyTimes())
-                return super.onCrashHandleStart(crashType, errorType, errorMessage, errorStack);
-            String msg = errorType + ": " + errorMessage;
-            startErrorReportActivity(msg, errorStack);
-        } catch (Throwable throwable) {
-            throwable.printStackTrace();
-        }
-        return super.onCrashHandleStart(crashType, errorType, errorMessage, errorStack);
+    private static String getStackTrace(Throwable ex) {
+        StringWriter sw = new StringWriter();
+        ex.printStackTrace(new PrintWriter(sw));
+        return sw.toString();
     }
 
     private void startErrorReportActivity(String msg, String detail) {
-        Intent intent = new Intent(GlobalAppContext.get(), this.mErrorReportClass);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        intent.putExtra("message", msg);
-        intent.putExtra("error", detail);
-        GlobalAppContext.get().startActivity(intent);
+        try {
+            Intent intent = new Intent(GlobalAppContext.get(), mErrorReportClass);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            intent.putExtra("message", msg);
+            intent.putExtra("error", detail);
+            GlobalAppContext.get().startActivity(intent);
+        } catch (Throwable t) {
+            Log.e(TAG, "startErrorReportActivity failed", t);
+        }
     }
 
     private boolean crashTooManyTimes() {
@@ -102,6 +102,4 @@ public class CrashHandler extends CrashReport.CrashHandleCallback implements Unc
     private boolean crashIntervalTooLong() {
         return System.currentTimeMillis() - firstCrashMillis > 3000;
     }
-
-
 }

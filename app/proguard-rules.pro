@@ -105,11 +105,6 @@
 -keepattributes EnclosingMethod
 
 
-# Required to preserve the Flurry SDK
--keep class com.flurry.** { *; }
--dontwarn com.flurry.**
--keepattributes *Annotation*,EnclosingMethod,Signature
-
 -keepclasseswithmembers class * {
 	public <init>(android.content.Context, android.util.AttributeSet, int);
 }
@@ -136,11 +131,7 @@
 -keep class com.wang.avi.** { *; }
 -keep class com.wang.avi.indicators.** { *; }
 
-# tencent
-
--dontwarn com.tencent.bugly.**
--keep public class com.tencent.bugly.**{*;}
-
+# tencent TBS WebView (Bugly removed)
 -dontwarn dalvik.**
 -dontwarn com.tencent.smtt.**
 

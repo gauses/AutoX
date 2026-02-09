@@ -152,7 +152,16 @@ module.exports = function (runtime, global) {
         return global.Buffer.from(arrBuffer)
     }
 
-    global.zips = Object.create(runtime.zips);
-    global.gmlkit = Object.create(runtime.gmlkit);
-    // global.paddle = Object.create(runtime.paddle);
+    // zips 懒加载：首次访问时才创建 SevenZip，避免未使用压缩时占用内存
+    Object.defineProperty(global, 'zips', {
+        get: function () { return Object.create(runtime.getZips()); },
+        configurable: true,
+        enumerable: true
+    });
+    // gmlkit 懒加载：首次访问时才创建，避免未使用 OCR 时加载 ML Kit
+    Object.defineProperty(global, 'gmlkit', {
+        get: function () { return runtime.getGmlkit(); },
+        configurable: true,
+        enumerable: true
+    });
 }

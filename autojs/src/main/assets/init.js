@@ -58,11 +58,11 @@ runtime.init();
 
     //初始化全局函数
     require("__globals__")(runtime, global);
-    //初始化一般模块
+    // 启动时只加载核心模块，images 改为懒加载以降低不涉及找图/截屏脚本的内存占用
     (function (scope) {
         var modules = ['app', 'automator', 'console', 'dialogs', 'files', 'io', 'selector', 'shell', 'web', 'ui',
-            "images", "threads", "events", "engines", "RootAutomator", "http", "storages", "floaty",
-            "sensors", "media", "plugins", "continuation", "$zip", "$base64", "$crypto", "paddle"];
+            "threads", "events", "engines", "floaty",
+            "continuation", "$base64", "$crypto"];
         var len = modules.length;
         for (var i = 0; i < len; i++) {
             var m = modules[i];
@@ -73,6 +73,48 @@ runtime.init();
             }
         }
     })(global);
+
+    // 重型/可选模块懒加载：首次访问时才 require，避免未使用时加载 Paddle/OCR/Images 等
+    (function () {
+        var lazyNames = ['images', 'paddle', 'sensors', 'media', 'plugins', 'RootAutomator', 'http', 'storages', '$zip'];
+        for (var i = 0; i < lazyNames.length; i++) {
+            (function (name) {
+                var cached;
+                Object.defineProperty(global, name, {
+                    get: function () {
+                        if (!cached) {
+                            if (typeof console !== 'undefined' && console.log) {
+                                console.log('AUTOX_PERF: 懒加载模块首次加载: ' + name);
+                            }
+                            cached = require('__' + name + '__')(runtime, global);
+                            global['$' + name] = cached;
+                        }
+                        return cached;
+                    },
+                    configurable: true,
+                    enumerable: true
+                });
+            })(lazyNames[i]);
+        }
+    })();
+
+    // images 懒加载后，requestScreenCapture/captureScreen 等不再在启动时挂到全局；这里为常用名加懒 getter，兼容直接写 requestScreenCapture() 的脚本
+    (function () {
+        var imageGlobalNames = ['requestScreenCapture', 'captureScreen', 'findImage', 'findImageInRegion', 'findColor', 'findColorInRegion', 'findColorEquals', 'findMultiColors'];
+        for (var i = 0; i < imageGlobalNames.length; i++) {
+            (function (name) {
+                if (global[name] !== undefined) return;
+                Object.defineProperty(global, name, {
+                    get: function () {
+                        var im = global.images;
+                        return im && im[name];
+                    },
+                    configurable: true,
+                    enumerable: true
+                });
+            })(imageGlobalNames[i]);
+        }
+    })();
 
     importClass(android.view.KeyEvent);
     importClass(com.stardust.autojs.core.util.Shell);

@@ -9,9 +9,6 @@ import com.stardust.autojs.core.opencv.Mat;
 import com.stardust.autojs.core.opencv.OpenCVHelper;
 import com.stardust.pio.UncheckedIOException;
 
-import org.opencv.android.Utils;
-import org.opencv.imgcodecs.Imgcodecs;
-
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.nio.ByteBuffer;
@@ -98,25 +95,24 @@ public class ImageWrapper {
         return mHeight;
     }
 
+    /** OpenCV 已移除：有 Bitmap 时仍返回桩 Mat，不再做 bitmapToMat。 */
     public Mat getMat() {
         ensureNotRecycled();
-        if (mMat == null && mBitmap != null) {
+        if (mMat == null) {
             mMat = new Mat();
-            Utils.bitmapToMat(mBitmap, mMat);
         }
         return mMat;
     }
 
     public void saveTo(String path) {
         ensureNotRecycled();
-        if (mBitmap != null) {
+        Bitmap b = getBitmap();
+        if (b != null) {
             try {
-                mBitmap.compress(Bitmap.CompressFormat.PNG, 100, new FileOutputStream(path));
+                b.compress(Bitmap.CompressFormat.PNG, 100, new FileOutputStream(path));
             } catch (FileNotFoundException e) {
                 throw new UncheckedIOException(e);
             }
-        } else {
-            Imgcodecs.imwrite(path, mMat);
         }
     }
 
@@ -125,15 +121,16 @@ public class ImageWrapper {
         if (mBitmap != null) {
             return mBitmap.getPixel(x, y);
         }
-        double[] channels = mMat.get(x, y);
-        return Color.argb((int) channels[3], (int) channels[0], (int) channels[1], (int) channels[2]);
+        return 0;
     }
 
+    /** OpenCV 已移除：仅有 Mat 时返回空占位 Bitmap，不再做 matToBitmap。 */
     public Bitmap getBitmap() {
         ensureNotRecycled();
         if (mBitmap == null && mMat != null) {
-            mBitmap = Bitmap.createBitmap(mMat.width(), mMat.height(), Bitmap.Config.ARGB_8888);
-            Utils.matToBitmap(mMat, mBitmap);
+            int w = Math.max(1, mMat.width());
+            int h = Math.max(1, mMat.height());
+            mBitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
         }
         return mBitmap;
     }

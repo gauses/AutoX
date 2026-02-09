@@ -71,10 +71,7 @@ var handleErrorFlag = false //默认没有错误，如果出现异常，那么�
 
 // 注册退出事件监听器
 events.on('exit', function(){
-    console.hide()
-    sleep(1000)
-
-
+    console.hide();
     if(handleErrorFlag){
         taskLogError("-----------------脚本执行出现异常---------------");
         taskLogError("Tiktok私信：根據私訊列表UID的順序，去私訊​​用戶---------------");
@@ -838,5 +835,6 @@ try {
     }
     // 刷新媒体库
     refreshMedia(RPAFilePath);
-    sleep(random(3000, 5000))
+    sleep(random(3000, 5000));
+    openLogActivity()
 }

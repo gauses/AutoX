@@ -4,17 +4,13 @@ import android.graphics.Color;
 import android.os.Build;
 import androidx.annotation.RequiresApi;
 
+import com.stardust.autojs.core.opencv.Mat;
 import com.stardust.autojs.core.opencv.MatOfPoint;
 import com.stardust.autojs.core.opencv.OpenCVHelper;
+import com.stardust.autojs.core.opencv.Point;
+import com.stardust.autojs.core.opencv.Rect;
+import com.stardust.autojs.core.opencv.Scalar;
 import com.stardust.util.ScreenMetrics;
-
-import org.opencv.core.Core;
-
-import com.stardust.autojs.core.opencv.Mat;
-
-import org.opencv.core.Point;
-import org.opencv.core.Rect;
-import org.opencv.core.Scalar;
 
 /**
  * Created by Stardust on 2017/5/18.
@@ -48,8 +44,8 @@ public class ColorFinder {
         }
         Point point = matOfPoint.toArray()[0];
         if (rect != null) {
-            point.x = mScreenMetrics.scaleX((int) (point.x + rect.x));
-            point.y = mScreenMetrics.scaleX((int) (point.y + rect.y));
+            point.setX(mScreenMetrics.scaleX((int) (point.getX() + rect.getX())));
+            point.setY(mScreenMetrics.scaleX((int) (point.getY() + rect.getY())));
         }
         OpenCVHelper.release(matOfPoint);
         return point;
@@ -65,37 +61,16 @@ public class ColorFinder {
         OpenCVHelper.release(matOfPoint);
         if (rect != null) {
             for (int i = 0; i < points.length; i++) {
-                points[i].x = mScreenMetrics.scaleX((int) (points[i].x + rect.x));
-                points[i].y = mScreenMetrics.scaleX((int) (points[i].y + rect.y));
+                points[i].setX(mScreenMetrics.scaleX((int) (points[i].getX() + rect.getX())));
+                points[i].setY(mScreenMetrics.scaleX((int) (points[i].getY() + rect.getY())));
             }
         }
         return points;
     }
 
+    /** OpenCV 已移除：恒返回 null，不再做真实找色。 */
     private MatOfPoint findColorInner(ImageWrapper image, int color, int threshold, Rect rect) {
-        Mat bi = new Mat();
-        Scalar lowerBound = new Scalar(Color.red(color) - threshold, Color.green(color) - threshold,
-                Color.blue(color) - threshold, 255);
-        Scalar upperBound = new Scalar(Color.red(color) + threshold, Color.green(color) + threshold,
-                Color.blue(color) + threshold, 255);
-        if (rect != null) {
-            Mat m = new Mat(image.getMat(), rect);
-            Core.inRange(m, lowerBound, upperBound, bi);
-            OpenCVHelper.release(m);
-        } else {
-            Core.inRange(image.getMat(), lowerBound, upperBound, bi);
-        }
-        Mat nonZeroPos = new Mat();
-        Core.findNonZero(bi, nonZeroPos);
-        MatOfPoint result;
-        if (nonZeroPos.rows() == 0 || nonZeroPos.cols() == 0) {
-            result = null;
-        } else {
-            result = OpenCVHelper.newMatOfPoint(nonZeroPos);
-        }
-        OpenCVHelper.release(bi);
-        OpenCVHelper.release(nonZeroPos);
-        return result;
+        return null;
     }
 
     public Point findMultiColors(ImageWrapper image, int firstColor, int threshold, Rect rect, int[] points) {
@@ -116,8 +91,8 @@ public class ColorFinder {
             int y = points[i + 1];
             int color = points[i + 2];
             ColorDetector colorDetector = new ColorDetector.DifferenceDetector(color, threshold);
-            x += startingPoint.x;
-            y += startingPoint.y;
+            x += startingPoint.getX();
+            y += startingPoint.getY();
             if (x >= image.getWidth() || y >= image.getHeight()
                     || x < 0 || y < 0) {
                 return false;

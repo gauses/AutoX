@@ -6,10 +6,7 @@ package com.stardust.autojs.project
  */
 object Constant {
     object Libraries {
-        val OPEN_CV = listOf(
-            "libopencv_java4.so",
-            "libc++_shared.so",
-        )
+        val OPEN_CV = emptyList<String>() // OpenCV 已移除以降低内存
         val GOOGLE_ML_KIT_OCR = listOf("libmlkit_google_ocr_pipeline.so")
         val PADDLE_OCR = listOf(
             "libc++_shared.so",

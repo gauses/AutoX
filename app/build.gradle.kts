@@ -202,16 +202,13 @@ dependencies {
     implementation(libs.rxjava2)
     implementation(libs.rxjava2.rxandroid)
 
-    // Glide
-    implementation(libs.glide)
+    // Glide/Coil 已移除以降低内存占用，使用 BitmapFactory 占位
     // joda time
     implementation(libs.android.joda)
     // Tasker Plugin
     implementation(libs.android.plugin.client.sdk.`for`.locale)
-    // Flurry
-    implementation(libs.analytics)
-    // tencent
-    implementation(libs.crashreport)
+    // Flurry/Bugly 已移除以降低依赖与后台流量
+    // tencent TBS WebView
     api(libs.tbssdk)
     // MaterialDialogCommon
     implementation(libs.material.dialogs.commons)
@@ -239,11 +236,13 @@ dependencies {
     // TextView markdown
     implementation(libs.markwon.core)
     implementation(libs.androidx.viewpager2)
-    implementation(libs.coil.compose)
 
     debugImplementation(libs.leakcanary.android)
 
     implementation(libs.core.ktx)
+
+
+
 }
 
 fun copyTemplateToAPP(isDebug: Boolean, to: File) {

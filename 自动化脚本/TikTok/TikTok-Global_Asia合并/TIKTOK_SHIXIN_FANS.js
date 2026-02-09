@@ -14,8 +14,8 @@ var taskLogImgName = "nest_task_log.png"
 
 
 //用户需要输入的关注用户ID列表
-const TT_Like_User_FANS_ID_COUNT = '$${私信用户粉丝数量}';
-const TT_Message_GROUP = '$${T_私信用户文案列表}';
+const TT_Like_User_FANS_ID_COUNT = "$${私信用户粉丝数量}";
+const TT_Message_GROUP = '$${T_私訊內容}';
 
 
 // 需要私信的粉丝总数

@@ -97,6 +97,12 @@ public class Explorer {
         mEventBus.post(ExplorerChangeEvent.EVENT_ALL);
     }
 
+    /** 仅清空页面缓存，不触发 UI 刷新；供内存紧张时（onTrimMemory）调用以释放内存 */
+    public void clearPageCache() {
+        if (mExplorerPageLruCache != null)
+            mExplorerPageLruCache.evictAll();
+    }
+
 
     public Single<ExplorerPage> fetchChildren(ExplorerPage page) {
         ExplorerPage cachedGroup = mExplorerPageLruCache == null ? null : mExplorerPageLruCache.get(page.getPath());

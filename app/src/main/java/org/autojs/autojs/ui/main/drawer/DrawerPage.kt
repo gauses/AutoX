@@ -2,9 +2,11 @@ package org.autojs.autojs.ui.main.drawer
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.Application
 import android.app.AppOpsManager
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import android.widget.TextView
@@ -30,14 +32,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.preference.PreferenceManager
-import coil.compose.rememberAsyncImagePainter
 import com.stardust.app.GlobalAppContext
 import com.stardust.app.isOpPermissionGranted
 import com.stardust.app.permission.DrawOverlaysPermission
 import com.stardust.app.permission.DrawOverlaysPermission.launchCanDrawOverlaysSettings
-import com.stardust.app.permission.PermissionsSettingsUtil
 import com.stardust.enhancedfloaty.FloatyService
 import com.stardust.notification.NotificationListenerService
 import com.stardust.toast
@@ -45,7 +47,6 @@ import com.stardust.util.IntentUtil
 import com.stardust.view.accessibility.AccessibilityService
 import io.github.g00fy2.quickie.QRResult
 import io.github.g00fy2.quickie.ScanQRCode
-import io.noties.markwon.Markwon
 import kotlinx.coroutines.*
 import org.autojs.autojs.Pref
 import org.autojs.autojs.autojs.AutoJs
@@ -61,16 +62,14 @@ import org.autojs.autojs.ui.compose.widget.MySwitch
 import org.autojs.autojs.ui.floating.FloatyWindowManger
 import org.autojs.autojs.ui.settings.SettingsActivity
 import org.autojs.autoxjs.R
-import org.joda.time.DateTimeZone
-import org.joda.time.Instant
 import org.autojs.autojs.core.network.socket.State
 import org.autojs.autoxjs.NativeUtils
 
 private const val TAG = "DrawerPage"
 private const val URL_DEV_PLUGIN = "https://github.com/kkevsekk1/Auto.js-VSCode-Extension"
+private const val FEEDBACK_ADDRESS = "https://github.com/kkevsekk1/AutoX/issues"
 private const val PROJECT_ADDRESS = "https://github.com/kkevsekk1/AutoX"
 private const val DOWNLOAD_ADDRESS = "https://github.com/kkevsekk1/AutoX/releases"
-private const val FEEDBACK_ADDRESS = "https://github.com/kkevsekk1/AutoX/issues"
 
 @Composable
 fun DrawerPage() {
@@ -91,7 +90,7 @@ fun DrawerPage() {
         ) {
             Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                 Image(
-                    painter = rememberAsyncImagePainter(R.drawable.autojs_logo1),
+                    painter = painterResource(R.drawable.autojs_logo1),
                     contentDescription = null,
                     modifier = Modifier.size(120.dp),
                 )
@@ -109,15 +108,15 @@ fun DrawerPage() {
             AutoBackupSwitch()
 
             Text(text = stringResource(id = R.string.text_others))
+            ProjectAddress()
+            DownloadLink()
+            CheckForUpdate()
+            AppDetailsSettings()
             ConnectComputerSwitch()
             USBDebugSwitch()
 
             SwitchTimedTaskScheduler()
-            ProjectAddress()
-            DownloadLink()
             Feedback()
-            CheckForUpdate()
-            AppDetailsSettings()
         }
         Spacer(
             modifier = Modifier
@@ -130,16 +129,6 @@ fun DrawerPage() {
             modifier = Modifier
                 .windowInsetsBottomHeight(WindowInsets.navigationBars)
         )
-    }
-}
-
-@Composable
-private fun AppDetailsSettings() {
-    val context = LocalContext.current
-    TextButton(onClick = {
-        context.startActivity(PermissionsSettingsUtil.getAppDetailSettingIntent(context.packageName))
-    }) {
-        Text(text = stringResource(R.string.text_app_detail_settings))
     }
 }
 
@@ -171,95 +160,88 @@ private fun Feedback() {
 }
 
 @Composable
-private fun DownloadLink() {
-    val context = LocalContext.current
-    TextButton(onClick = { IntentUtil.browse(context, DOWNLOAD_ADDRESS) }) {
-        Text(text = stringResource(R.string.text_app_download_link))
-    }
-}
-
-@Composable
 private fun ProjectAddress() {
     val context = LocalContext.current
-    TextButton(onClick = { IntentUtil.browse(context, PROJECT_ADDRESS) }) {
-        Text(text = stringResource(R.string.text_project_link))
+    TextButton(
+        onClick = { IntentUtil.browse(context, PROJECT_ADDRESS) },
+        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colors.onBackground)
+    ) {
+        MyIcon(painterResource(id = R.drawable.ic_web), contentDescription = null)
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(text = stringResource(id = R.string.text_project_link))
     }
 }
 
 @Composable
-private fun CheckForUpdate(model: DrawerViewModel = viewModel()) {
-    var showDialog by rememberSaveable { mutableStateOf(false) }
-    var enabled by rememberSaveable { mutableStateOf(true) }
-
+private fun DownloadLink() {
+    val context = LocalContext.current
     TextButton(
-        enabled = enabled,
-        onClick = {
-            enabled = false
-            model.checkUpdate(
-                onUpdate = {
-                    showDialog = true
-                },
-                onComplete = {
-                    enabled = true
-                },
-            )
-        }
+        onClick = { IntentUtil.browse(context, DOWNLOAD_ADDRESS) },
+        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colors.onBackground)
     ) {
-        Text(text = stringResource(R.string.text_check_for_updates))
+        MyIcon(painterResource(id = R.drawable.ic_web), contentDescription = null)
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(text = stringResource(id = R.string.text_app_download_link))
     }
-    if (showDialog && model.githubReleaseInfo != null) {
-        AlertDialog(onDismissRequest = { showDialog = false },
-            title = {
-                Text(
-                    text = stringResource(
-                        id = R.string.text_new_version2,
-                        model.githubReleaseInfo!!.name
-                    )
-                )
-            },
-            text = {
-                val date = rememberSaveable {
-                    Instant.parse(model.githubReleaseInfo!!.createdAt)
-                        .toDateTime(DateTimeZone.getDefault())
-                        .toString("yyyy-MM-dd HH:mm:ss")
-                }
-                Column(
-                    Modifier
-                        .fillMaxWidth()
-                        .verticalScroll(rememberScrollState())
-                ) {
-                    Text(text = stringResource(id = R.string.text_release_date, date))
-                    AndroidView(
-                        factory = { context ->
-                            TextView(context).apply {
-                                val content =
-                                    model.githubReleaseInfo!!.body.trim().replace("\r\n", "\n")
-                                        .replace("\n", "  \n")
-                                val markdwon = Markwon.builder(context).build()
-                                markdwon.setMarkdown(this, content)
-                            }
-                        },
-                        update = {
+}
 
-                        }
-                    )
-                }
+@Composable
+private fun CheckForUpdate() {
+    val context = LocalContext.current
+    val viewModel: DrawerViewModel = viewModel(
+        factory = object : ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                @Suppress("UNCHECKED_CAST")
+                return DrawerViewModel(context.applicationContext as Application) as T
+            }
+        }
+    )
+    var showUpdateDialog by remember { mutableStateOf(false) }
+    LaunchedEffect(viewModel.githubReleaseInfo) {
+        if (viewModel.githubReleaseInfo != null) showUpdateDialog = true
+    }
+    TextButton(
+        onClick = {
+            viewModel.checkUpdate(
+                onUpdate = { showUpdateDialog = true },
+                onComplete = { }
+            )
+        },
+        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colors.onBackground)
+    ) {
+        MyIcon(painterResource(id = R.drawable.ic_web), contentDescription = null)
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(text = stringResource(id = R.string.text_check_for_updates))
+    }
+    if (showUpdateDialog && viewModel.githubReleaseInfo != null) {
+        val releaseName = viewModel.githubReleaseInfo!!.name
+        MyAlertDialog1(
+            onDismissRequest = { showUpdateDialog = false },
+            onConfirmClick = {
+                viewModel.downloadApk()
+                showUpdateDialog = false
             },
-            dismissButton = {
-                TextButton(onClick = {
-                    showDialog = false
-                }) {
-                    Text(text = stringResource(id = R.string.text_cancel))
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    showDialog = false
-                    model.downloadApk()
-                }) {
-                    Text(text = stringResource(id = R.string.text_download))
-                }
-            })
+            title = { Text(stringResource(id = R.string.text_check_for_updates)) },
+            text = { Text(releaseName) }
+        )
+    }
+}
+
+@Composable
+private fun AppDetailsSettings() {
+    val context = LocalContext.current
+    TextButton(
+        onClick = {
+            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                data = Uri.parse("package:${context.packageName}")
+            }
+            context.startActivity(intent)
+        },
+        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colors.onBackground)
+    ) {
+        MyIcon(painterResource(id = R.drawable.ic_web), contentDescription = null)
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(text = stringResource(id = R.string.text_app_detail_settings))
     }
 }
 

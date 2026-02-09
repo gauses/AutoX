@@ -19,3 +19,17 @@
 0	7	0	clean	61827871eeb58b9d
 2	598	7895630029643294	CMakeFiles/native-lib.dir/native-lib.cpp.o	f6a124dadf8aeaf
 599	741	7895630031102110	D:/AndroidProject/AutoX/app/build/intermediates/cxx/RelWithDebInfo/175o5i60/obj/arm64-v8a/libnative-lib.so	d64fc6b9ce29e6dc
+0	8	0	clean	61827871eeb58b9d
+0	10	0	clean	61827871eeb58b9d
+4	10114	7918924839336022	CMakeFiles/native-lib.dir/native-lib.cpp.o	f6a124dadf8aeaf
+10115	10517	7918924843426801	D:/AndroidProject/AutoX/app/build/intermediates/cxx/RelWithDebInfo/175o5i60/obj/arm64-v8a/libnative-lib.so	d64fc6b9ce29e6dc
+1	15	0	clean	61827871eeb58b9d
+1	8	0	clean	61827871eeb58b9d
+4	522	7918926522072798	CMakeFiles/native-lib.dir/native-lib.cpp.o	f6a124dadf8aeaf
+523	626	7918926523165712	D:/AndroidProject/AutoX/app/build/intermediates/cxx/RelWithDebInfo/175o5i60/obj/arm64-v8a/libnative-lib.so	d64fc6b9ce29e6dc
+0	10	0	clean	61827871eeb58b9d
+0	11	0	clean	61827871eeb58b9d
+0	8	0	clean	61827871eeb58b9d
+0	7	0	clean	61827871eeb58b9d
+5	13614	7919897404237452	CMakeFiles/native-lib.dir/native-lib.cpp.o	f6a124dadf8aeaf
+13615	14069	7919897408838445	D:/AndroidProject/AutoX/app/build/intermediates/cxx/RelWithDebInfo/175o5i60/obj/arm64-v8a/libnative-lib.so	d64fc6b9ce29e6dc

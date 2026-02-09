@@ -2,40 +2,45 @@ package com.stardust.autojs.core.opencv;
 
 import com.stardust.util.ResourceMonitor;
 
-import org.opencv.core.Mat;
-import org.opencv.core.Point;
-
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class MatOfPoint extends org.opencv.core.MatOfPoint implements ResourceMonitor.Resource {
+/**
+ * 桩：替代 org.opencv.core.MatOfPoint，OpenCV 已移除以降低内存。不依赖 OpenCV。
+ */
+public class MatOfPoint implements ResourceMonitor.Resource {
 
     private static final AtomicInteger sResourceId = new AtomicInteger();
     private volatile boolean mReleased = false;
     private final int mResourceId = sResourceId.incrementAndGet();
+    private final Point[] mPoints;
 
     public MatOfPoint() {
-        super();
+        mPoints = new Point[0];
         ResourceMonitor.onOpen(this);
     }
 
     public MatOfPoint(long addr) {
-        super(addr);
+        mPoints = new Point[0];
         ResourceMonitor.onOpen(this);
     }
 
     public MatOfPoint(Mat m) {
-        super(m);
+        mPoints = new Point[0];
         ResourceMonitor.onOpen(this);
     }
 
     public MatOfPoint(Point... a) {
-        super(a);
+        mPoints = a != null ? a : new Point[0];
         ResourceMonitor.onOpen(this);
     }
 
-    @Override
+    /** 返回桩点数组，无 OpenCV 时恒为空或占位。 */
+    public Point[] toArray() {
+        return mPoints;
+    }
+
     public void release() {
-        super.release();
+        if (mReleased) return;
         mReleased = true;
         ResourceMonitor.onClose(this);
     }
@@ -44,7 +49,7 @@ public class MatOfPoint extends org.opencv.core.MatOfPoint implements ResourceMo
     protected void finalize() throws Throwable {
         if (!mReleased) {
             ResourceMonitor.onFinalize(this);
-            super.release();
+            mReleased = true;
         }
         super.finalize();
     }

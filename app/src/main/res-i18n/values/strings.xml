@@ -192,6 +192,7 @@
     <string name="summary_single_build_clean_mode">开启后单文件打包时不保存打包配置文件,及不保存启动图和应用图标等所有配置信息</string>
     <string name="text_directory">文件夹</string>
     <string name="text_file">文件</string>
+    <string name="text_memory_monitoring">内存监控</string>
     <string name="text_tutorial">教程</string>
     <string name="text_community">社区</string>
     <string name="text_manage">管理</string>
@@ -398,6 +399,7 @@
     <string name="text_debug_step_over">单步</string>
     <string name="text_debug_resume_script">继续</string>
     <string name="text_stop">停止</string>
+    <string name="text_stop_monitor">终止监控</string>
     <string name="text_new_watching_variable">增加监视的变量或表达式</string>
     <string name="text_variable_or_expr">变量或表达式</string>
     <string name="text_remove_all_breakpoints">删除所有断点</string>
@@ -515,6 +517,7 @@
     <string name="text_home">主页</string>
     <string name="text_management">管理</string>
     <string name="text_document">文档</string>
+    <string name="text_perf_monitor">监控</string>
     <string name="text_open_usb_debug">打开USB调试</string>
     <string name="text_scan_qr">扫码</string>
     <string name="text_connect_failed">连接失败：%s, 请检查电脑防火墙是否放行9317端口，是否在同一局域网中，VS CODE插件是否已开启服务…</string>

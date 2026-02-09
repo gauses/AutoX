@@ -703,7 +703,6 @@ function get_post_text(){
     // 用于存储用户的数组
     let comments = [];
     // 户是否存在
-    taskLog("用户地址 =  " + FB_input_text)
     const file = new java.io.File(FB_input_text);
     if (file.exists() && file.isFile()) {
         try {
@@ -1022,6 +1021,9 @@ try{
         packageName: targetPackageName,
         className: targetClassName
     });
+
+    taskLog("评论概率：" + FB_Comment_Count)
+    taskLog("点赞概率：" + FB_Like_Count)
     
     
     // 开始主循环
@@ -1030,13 +1032,13 @@ try{
     if(commentTextArrays.includes("$${T")){ 
         throw_error_storage_not_enough()
     }
-    toast("评论文案个数：" + commentTextArrays.length)
+
     
     
     // 执行随机跳转（默认跳转3个页面）
     // random_jump_pages()
     
-    jump_to_home_page()
+    // jump_to_home_page()
     sleep(random(3000, 5000))
     // swipe_up()
     // sleep(random(5000, 8000))
@@ -1044,6 +1046,9 @@ try{
     // sleep(random(5000, 8000))
     // jump_to_home_page()
     // sleep(random(3000, 5000))
+
+    taskLog("评论文案个数：" + commentTextArrays.length)
+    taskLog("循环次数：" + loopTimes)
 
 
     for(let currentLoop = 1; currentLoop <= loopTimes; currentLoop++) {

@@ -166,9 +166,9 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
 
     androidTestImplementation(libs.espresso.core)
-    implementation(libs.glide) {
-        exclude(group = "com.android.support")
-    }
+//    implementation(libs.glide) {
+//        exclude(group = "com.android.support")
+//    }
 
     implementation(libs.keeplive)
     implementation(libs.websocket2)
