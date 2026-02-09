@@ -2,7 +2,6 @@ package org.autojs.autojs.ui.main.drawer
 
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.app.Application
 import android.app.AppOpsManager
 import android.content.Context
 import android.content.Intent
@@ -32,9 +31,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.preference.PreferenceManager
 import com.stardust.app.GlobalAppContext
 import com.stardust.app.isOpPermissionGranted
@@ -68,8 +64,6 @@ import org.autojs.autoxjs.NativeUtils
 private const val TAG = "DrawerPage"
 private const val URL_DEV_PLUGIN = "https://github.com/kkevsekk1/Auto.js-VSCode-Extension"
 private const val FEEDBACK_ADDRESS = "https://github.com/kkevsekk1/AutoX/issues"
-private const val PROJECT_ADDRESS = "https://github.com/kkevsekk1/AutoX"
-private const val DOWNLOAD_ADDRESS = "https://github.com/kkevsekk1/AutoX/releases"
 
 @Composable
 fun DrawerPage() {
@@ -108,9 +102,6 @@ fun DrawerPage() {
             AutoBackupSwitch()
 
             Text(text = stringResource(id = R.string.text_others))
-            ProjectAddress()
-            DownloadLink()
-            CheckForUpdate()
             AppDetailsSettings()
             ConnectComputerSwitch()
             USBDebugSwitch()
@@ -156,74 +147,6 @@ private fun Feedback() {
         }
     }) {
         Text(text = "关机")
-    }
-}
-
-@Composable
-private fun ProjectAddress() {
-    val context = LocalContext.current
-    TextButton(
-        onClick = { IntentUtil.browse(context, PROJECT_ADDRESS) },
-        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colors.onBackground)
-    ) {
-        MyIcon(painterResource(id = R.drawable.ic_web), contentDescription = null)
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(text = stringResource(id = R.string.text_project_link))
-    }
-}
-
-@Composable
-private fun DownloadLink() {
-    val context = LocalContext.current
-    TextButton(
-        onClick = { IntentUtil.browse(context, DOWNLOAD_ADDRESS) },
-        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colors.onBackground)
-    ) {
-        MyIcon(painterResource(id = R.drawable.ic_web), contentDescription = null)
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(text = stringResource(id = R.string.text_app_download_link))
-    }
-}
-
-@Composable
-private fun CheckForUpdate() {
-    val context = LocalContext.current
-    val viewModel: DrawerViewModel = viewModel(
-        factory = object : ViewModelProvider.Factory {
-            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                @Suppress("UNCHECKED_CAST")
-                return DrawerViewModel(context.applicationContext as Application) as T
-            }
-        }
-    )
-    var showUpdateDialog by remember { mutableStateOf(false) }
-    LaunchedEffect(viewModel.githubReleaseInfo) {
-        if (viewModel.githubReleaseInfo != null) showUpdateDialog = true
-    }
-    TextButton(
-        onClick = {
-            viewModel.checkUpdate(
-                onUpdate = { showUpdateDialog = true },
-                onComplete = { }
-            )
-        },
-        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colors.onBackground)
-    ) {
-        MyIcon(painterResource(id = R.drawable.ic_web), contentDescription = null)
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(text = stringResource(id = R.string.text_check_for_updates))
-    }
-    if (showUpdateDialog && viewModel.githubReleaseInfo != null) {
-        val releaseName = viewModel.githubReleaseInfo!!.name
-        MyAlertDialog1(
-            onDismissRequest = { showUpdateDialog = false },
-            onConfirmClick = {
-                viewModel.downloadApk()
-                showUpdateDialog = false
-            },
-            title = { Text(stringResource(id = R.string.text_check_for_updates)) },
-            text = { Text(releaseName) }
-        )
     }
 }
 
