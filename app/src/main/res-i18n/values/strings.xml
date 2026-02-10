@@ -403,6 +403,9 @@
     <string name="text_perf_over_5_title">内存占比超过 5%</string>
     <string name="text_perf_no_over_5_title">本次执行内存未超过 5%</string>
     <string name="text_perf_no_over_5_message">本次执行中，日志列表里没有内存占比超过 5% 的记录。</string>
+    <string name="text_perf_notify_over_5_title">内存或 CPU 超过 5%</string>
+    <string name="text_perf_notify_over_5_content">当前内存占比: %1$.2f%%，CPU占比: %2$.2f%%</string>
+    <string name="text_perf_notify_channel_name">性能监控提醒</string>
     <string name="text_new_watching_variable">增加监视的变量或表达式</string>
     <string name="text_variable_or_expr">变量或表达式</string>
     <string name="text_remove_all_breakpoints">删除所有断点</string>

@@ -50,7 +50,6 @@ public class ScriptExecutionGlobalListener implements ScriptExecutionListener {
             return;
         double taskSeconds = (System.currentTimeMillis() - millis) / 1000.0;
 
-
         //上传文件
         LogFileUtils.INSTANCE.uploadLogFileToServer("success", taskSeconds);
 
@@ -88,6 +87,7 @@ public class ScriptExecutionGlobalListener implements ScriptExecutionListener {
         AutoJs.getInstance().getScriptEngineService().getGlobalConsole().println(Log.VERBOSE, "自动关闭内存监控");
         Pref.setMemoryMonitoringEnabled(false);
         App.Companion.getApp().stopMemoryMonitoring();
+
 
 
 

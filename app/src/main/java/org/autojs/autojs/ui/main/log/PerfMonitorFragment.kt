@@ -1,6 +1,10 @@
 package org.autojs.autojs.ui.main.log
 
 import android.app.AlertDialog
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
+import android.os.Build
 import android.graphics.Color
 import android.graphics.Typeface
 import android.os.Bundle
@@ -18,6 +22,7 @@ import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import androidx.core.app.NotificationCompat
 import androidx.fragment.app.Fragment
 import org.autojs.autojs.App
 import org.autojs.autojs.ui.widget.fillMaxSize
@@ -31,9 +36,13 @@ class PerfMonitorFragment : Fragment() {
     companion object {
         private const val MAX_LINES = 500
         private const val INTERVAL_MS = 2000L
+        private const val PERF_NOTIFY_CHANNEL_ID = "perf_over_5"
+        private const val PERF_NOTIFY_ID = 9001
+        private const val PERF_NOTIFY_THROTTLE_MS = 30_000L
     }
 
     private val mainHandler = Handler(Looper.getMainLooper())
+    private var lastOver5NotifyTime = 0L
     private var scrollView: ScrollView? = null
     private var textView: TextView? = null
     private var samplingRunnable: Runnable? = null
@@ -106,6 +115,7 @@ class PerfMonitorFragment : Fragment() {
                         val (fullLine, _) = App.logMemoryAndCpuSnapshot()
                         mainHandler.post {
                             appendLine(fullLine)
+                            checkAndNotifyIfOver5(fullLine)
                             samplingRunnable?.let { if (isSampling) mainHandler.postDelayed(it, INTERVAL_MS) }
                         }
                     } catch (e: Exception) {
@@ -127,6 +137,41 @@ class PerfMonitorFragment : Fragment() {
     }
 
     private val memRatioRegex = Regex("内存占比:\\s*([\\d.]+)%")
+    private val cpuRatioRegex = Regex("CPU占比:\\s*([\\d.]+)%")
+
+    /** 监控过程中：若当前条目的内存或 CPU 占比超过 5%，立即发通知（30 秒内不重复）。 */
+    private fun checkAndNotifyIfOver5(fullLine: String) {
+        val memPct = memRatioRegex.find(fullLine)?.groupValues?.getOrNull(1)?.toDoubleOrNull() ?: 0.0
+        val cpuPct = cpuRatioRegex.find(fullLine)?.groupValues?.getOrNull(1)?.toDoubleOrNull() ?: 0.0
+        if (memPct <= 5.0 && cpuPct <= 5.0) return
+        val now = System.currentTimeMillis()
+        if (now - lastOver5NotifyTime < PERF_NOTIFY_THROTTLE_MS) return
+        lastOver5NotifyTime = now
+        val ctx = context ?: return
+        ensurePerfNotifyChannel(ctx)
+        val title = ctx.getString(R.string.text_perf_notify_over_5_title)
+        val content = ctx.getString(R.string.text_perf_notify_over_5_content, memPct, cpuPct)
+        val notification = NotificationCompat.Builder(ctx, PERF_NOTIFY_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_perf_notify_alert)
+            .setColor(Color.RED) // 纯红色
+            .setContentTitle(title)
+            .setContentText(content)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(fullLine))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+            .build()
+        (ctx.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager)?.notify(PERF_NOTIFY_ID, notification)
+    }
+
+    private fun ensurePerfNotifyChannel(context: Context) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+        val channel = NotificationChannel(
+            PERF_NOTIFY_CHANNEL_ID,
+            context.getString(R.string.text_perf_notify_channel_name),
+            NotificationManager.IMPORTANCE_DEFAULT
+        )
+        (context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager)?.createNotificationChannel(channel)
+    }
 
     /** 监控结束后：若有内存占比超过 5% 的条目则弹窗列出；否则弹窗提示本次没有超过 5%。 */
     private fun showMemoryOver5PercentDialogIfNeeded() {
