@@ -8,6 +8,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody
+import org.autojs.autojs.PerfLogHolder
 import org.json.JSONObject
 import java.io.File
 import java.io.IOException
@@ -34,6 +35,37 @@ object LogFileUtils {
             return logDir
         }
         return null
+    }
+
+    // 内存占比正则，与 PerfMonitorFragment 一致
+    private val memRatioRegex = Regex("内存占比:\\s*([\\d.]+)%")
+
+    /** 上传前：将内存监控结果追加到会上传到 report_oss_path 的本地 txt 文件末尾（最后一行为内存结果）。不写 nest_result_rpa.txt。 */
+    private fun appendMemMonitorResultToReportFiles() {
+        val logDir = getScreenCaptureDirectory() ?: return
+        val perfSnapshot = PerfLogHolder.getSnapshot()
+        val lines = perfSnapshot.split("\n").filter { it.isNotBlank() }
+        val hasOver5 = lines.any { line ->
+            memRatioRegex.find(line)?.groupValues?.getOrNull(1)?.toDoubleOrNull()?.let { it > 5.0 } ?: false
+        }
+        val lineToAppend = if (hasOver5) {
+            lines.joinToString("\n")
+        } else {
+            "执行完成脚本文件，内存监控占比始终控制在5%以下"
+        }
+        val reportTxtFiles = logDir.listFiles()?.filter { f ->
+            f.isFile && getMimeType(f) == "text/plain" && f.name != "nest_result_rpa.txt"
+        } ?: emptyList()
+        for (file in reportTxtFiles) {
+            try {
+                val existing = if (file.exists()) file.readText() else ""
+                val newContent = if (existing.endsWith("\n")) existing + lineToAppend else existing + "\n" + lineToAppend
+                file.writeText(newContent)
+                Log.d("LogFileUtils", "已追加内存监控结果到报告文件末尾: ${file.name} (hasOver5=$hasOver5)")
+            } catch (e: Exception) {
+                Log.e("LogFileUtils", "追加内存监控结果到 ${file.name} 失败", e)
+            }
+        }
     }
 
     // 获取文件的MIME类型
@@ -125,7 +157,8 @@ object LogFileUtils {
             return
         }
 
-
+        // 上传前最后一步：将内存监控结果追加到会上传到 report_oss_path 的本地 txt 文件末尾
+        appendMemMonitorResultToReportFiles()
 
         // 生成OSS路径
         val uuid = UUID.randomUUID().toString()
@@ -180,7 +213,7 @@ object LogFileUtils {
 
                             for (attempt in 1..3) { // 最多尝试3次
                                 Log.d("LogFileUtils", "正在上传文本文件，第${attempt}次尝试")
-//                                if (AliOSSUtils.upload(xToken, "template-store/rpa-report/$task_id.txt", file.path)) {
+
                                 if (AliOSSUtils.upload(xToken, report_oss_path, file.path)) {
                                     txtUploadSuccess = true
                                     Log.d("LogFileUtils", "文本文件 ${file.name} 上传成功")

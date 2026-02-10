@@ -25,6 +25,7 @@ import android.widget.TextView
 import androidx.core.app.NotificationCompat
 import androidx.fragment.app.Fragment
 import org.autojs.autojs.App
+import org.autojs.autojs.PerfLogHolder
 import org.autojs.autojs.ui.widget.fillMaxSize
 import org.autojs.autoxjs.R
 
@@ -223,6 +224,7 @@ class PerfMonitorFragment : Fragment() {
     }
 
     private fun appendLine(line: String) {
+        PerfLogHolder.appendLine(line)
         val tv = textView ?: return
         val sv = scrollView ?: return
         val current = tv.text?.toString() ?: ""
@@ -237,6 +239,7 @@ class PerfMonitorFragment : Fragment() {
 
     /** 供 TopBar 清除按钮调用 */
     fun clearLog() {
+        PerfLogHolder.clear()
         mainHandler.post {
             textView?.text = ""
         }
