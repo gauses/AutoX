@@ -9,6 +9,8 @@ import com.stardust.autojs.execution.ScriptExecution;
 import com.stardust.autojs.execution.ScriptExecutionListener;
 
 import org.apache.log4j.lf5.LogLevel;
+import org.autojs.autojs.App;
+import org.autojs.autojs.Pref;
 import org.autojs.autojs.alioss.AliOSSUtils;
 import org.autojs.autojs.alioss.LogFileUtils;
 import org.autojs.autoxjs.R;
@@ -58,6 +60,10 @@ public class ScriptExecutionGlobalListener implements ScriptExecutionListener {
             throw new RuntimeException(ex);
         }
         AutoJs.getInstance().getScriptEngineService().stopAllAndToast();
+
+
+
+
     }
 
     //执行完成
@@ -77,6 +83,11 @@ public class ScriptExecutionGlobalListener implements ScriptExecutionListener {
         Log.d("ScriptExecutionGlobal" , "onFinish result = " + execution.getSource().toString());
         Log.d("ScriptExecutionGlobal" , "onFinish result = " + execution.getConfig().toString());
         Log.d("ScriptExecutionGlobal" , "onFinish result ======================= " );
+
+        // 脚本执行结束后，自动关闭内存监控
+        AutoJs.getInstance().getScriptEngineService().getGlobalConsole().println(Log.VERBOSE, "自动关闭内存监控");
+        Pref.setMemoryMonitoringEnabled(false);
+        App.Companion.getApp().stopMemoryMonitoring();
 
 
 

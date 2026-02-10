@@ -23,6 +23,9 @@
   <string name="text_save_as_project">保存为项目</string>
   <string name="text_run">运行</string>
   <string name="text_alert">提示</string>
+  <string name="text_perf_over_5_title">内存占比超过 5%</string>
+  <string name="text_perf_no_over_5_title">本次执行内存未超过 5%</string>
+  <string name="text_perf_no_over_5_message">本次执行中，日志列表里没有内存占比超过 5% 的记录。</string>
   <string name="edit_exit_without_save_warn">内容尚未保存，您确定要退出吗？</string>
   <string name="text_select_save_mode">请选择保存方式</string>
   <string name="text_save_and_exit">保存并退出</string>

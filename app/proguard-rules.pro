@@ -139,6 +139,14 @@
 
 # TBS 已移除
 
+# 阿里云 OSS SDK：保留泛型与回调，避免 response 解析时 ClassCastException: Class cannot be cast to ParameterizedType
+-keep class com.alibaba.sdk.android.oss.** { *; }
+-keep class com.alibaba.sdk.android.oss.model.** { *; }
+-keep class org.autojs.autojs.alioss.** { *; }
+-keepclassmembers class * implements com.alibaba.sdk.android.oss.callback.OSSCompletedCallback {
+    *;
+}
+
 -keep class org.autojs.autoxjs.BuildConfig{
    *;
 }

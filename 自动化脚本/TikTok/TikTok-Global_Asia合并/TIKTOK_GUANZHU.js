@@ -892,4 +892,5 @@ try{
     // 刷新媒体库
     refreshMedia(RPAFilePath);
     sleep(random(3000, 5000))
+    openLogActivity()
 }

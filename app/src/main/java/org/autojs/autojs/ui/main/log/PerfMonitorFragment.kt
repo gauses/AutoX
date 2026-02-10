@@ -1,5 +1,6 @@
 package org.autojs.autojs.ui.main.log
 
+import android.app.AlertDialog
 import android.graphics.Color
 import android.graphics.Typeface
 import android.os.Bundle
@@ -62,7 +63,7 @@ class PerfMonitorFragment : Fragment() {
         frame.addView(scroll, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
         val stopBtn = Button(context).apply {
             text = context.getString(R.string.text_stop_monitor)
-            setOnClickListener { stopSampling() }
+            setOnClickListener { stopSampling(showDialog = true) }
         }
         val btnParams = FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
             gravity = Gravity.BOTTOM or Gravity.END
@@ -88,7 +89,7 @@ class PerfMonitorFragment : Fragment() {
     }
 
     override fun onDestroyView() {
-        stopSampling()
+        stopSampling(showDialog = false)
         scrollView = null
         textView = null
         super.onDestroyView()
@@ -118,10 +119,41 @@ class PerfMonitorFragment : Fragment() {
         mainHandler.postDelayed(samplingRunnable!!, INTERVAL_MS)
     }
 
-    private fun stopSampling() {
+    private fun stopSampling(showDialog: Boolean = false) {
         isSampling = false
         samplingRunnable?.let { mainHandler.removeCallbacks(it) }
         samplingRunnable = null
+        if (showDialog) showMemoryOver5PercentDialogIfNeeded()
+    }
+
+    private val memRatioRegex = Regex("内存占比:\\s*([\\d.]+)%")
+
+    /** 监控结束后：若有内存占比超过 5% 的条目则弹窗列出；否则弹窗提示本次没有超过 5%。 */
+    private fun showMemoryOver5PercentDialogIfNeeded() {
+        mainHandler.post {
+            val tv = textView ?: return@post
+            val fullText = tv.text?.toString() ?: ""
+            val lines = fullText.split("\n").filter { it.isNotBlank() }
+            val over5Lines = lines.filter { line ->
+                memRatioRegex.find(line)?.groupValues?.getOrNull(1)?.toDoubleOrNull()?.let { it > 5.0 } ?: false
+            }
+            val context = context ?: return@post
+            val title = if (over5Lines.isEmpty()) {
+                context.getString(R.string.text_perf_no_over_5_title)
+            } else {
+                context.getString(R.string.text_perf_over_5_title)
+            }
+            val message = if (over5Lines.isEmpty()) {
+                context.getString(R.string.text_perf_no_over_5_message)
+            } else {
+                over5Lines.joinToString("\n")
+            }
+            AlertDialog.Builder(context)
+                .setTitle(title)
+                .setMessage(message)
+                .setPositiveButton(android.R.string.ok, null)
+                .show()
+        }
     }
 
     private val defaultTextColor = 0xFF2E7D32.toInt() // 浅绿
