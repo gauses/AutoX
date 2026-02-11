@@ -66,8 +66,8 @@ var taskLogImgName = "nest_task_log.png"
 
 
 //用户需要输入的评论内容
-const FB_input_text = '$${T_FB_输入文案}'; //用户需要输入的评论内容，就是T开头
-const FB_input_IMAGE = '$${M_FB_图片地址}'; //用户需要输入的图片地址，就是M开头
+const FB_input_text = '$${T_FB_輸入發文內容}';//用户需要输入的评论内容，就是T开头
+const FB_input_IMAGE = '$${M_FB_輸入圖片地址}';//用户需要输入的图片地址，就是M开头
 
 // 配置对象
 var CONFIG = {
@@ -757,7 +757,7 @@ function post_Image(){
 
                 //className("android.widget.Button").desc("Photo/video").findOne().click()
                 taskLog("准备点击 - 相片／影片....")
-                find_btn_desc_base({ texts: ["Photo/video", "相片／影片", "圖庫", "Gallery"] })
+                find_btn_desc_base({ texts: ["Photo/video","照片/视频", "相片／影片", "圖庫","Gallery"] })
                 sleep(random(3000, 5000))
 
                 //点击权限
@@ -1427,8 +1427,8 @@ try {
     //desc("在 Facebook 撰寫貼文")
     //desc("在想些什麽?建立貼文")
     //desc("Make a post on Facebook")
-    var makePostBtn = find_btn_desc_base({ texts: ["Make a post", "貼文", "Create a post", "on your mind?"] })
-    // if(!makePostBtn){
+    var makePostBtn = find_btn_desc_base({ texts: ["Make a post on Facebook", 
+        "在 Facebook 撰寫貼文", "發布到 Facebook","Make a post", "貼文", "Create a post", "on your mind?", "在 Facebook 发帖", "发帖"] })    // if(!makePostBtn){
     //     throw new Error("未找到Facebook建立貼文按钮");
     // }
     sleep(random(5000, 6000))

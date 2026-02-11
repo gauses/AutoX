@@ -65,8 +65,9 @@ var taskLogImgName = "nest_task_log.png"
 
 
 //用户需要输入的评论内容
-const FB_input_text = '$${T_FB_输入文案}'; //用户需要输入的评论内容，就是T开头
-const FB_input_IMAGE = '$${T_FB_图片地址}'; //用户需要输入的图片地址，就是M开头
+const FB_input_text = '$${T_FB_輸入發文內容}';//用户需要输入的评论内容，就是T开头
+const FB_input_IMAGE = '$${M_FB_輸入圖片地址}';//用户需要输入的图片地址，就是M开头
+
 
 
 // 配置对象
@@ -757,7 +758,8 @@ function post_Image(){
 
                 //className("android.widget.Button").desc("Photo/video").findOne().click()
                 taskLog("准备点击 - 相片／影片....")
-                find_btn_desc_base("Photo/video", "相片／影片", "圖庫")
+                //desc("照片/视频")
+                find_btn_desc_base({ texts: ["Photo/video","照片/视频", "相片／影片", "圖庫","Gallery"] })
                 sleep(random(3000, 5000))
 
                 //点击权限
@@ -821,7 +823,7 @@ function post_Image(){
 
 
                     //选择图片 - desc("選擇多個")
-                    find_btn_desc_base("Select multiple", "選擇多個")
+                    find_btn_desc_base("Select multiple", "選擇多個","多选")
                     sleep(random(3000, 5000))
 
                     //选中所有图片（支持滑动选取，使用 bounds 唯一标识）
@@ -841,12 +843,14 @@ function post_Image(){
                             taskLog("buttonDesc: " + buttonDesc + "，button.selected(): " + button.selected());
                             //影片：desc("在6月 27, 2025 03:22拍攝的影片")  - desc("Video taken on Jun 27, 2025 15:25")
 
-                            if(buttonDesc.indexOf("Video taken on") !== -1 || buttonDesc.indexOf("影片") !== -1){
+                            if(buttonDesc.indexOf("Video taken on") !== -1 || buttonDesc.indexOf("影片") !== -1|| buttonDesc.indexOf("视频") !== -1){
                                 containVideoCount++;
                             }
 
 
-                            if (buttonDesc.indexOf("Photo taken on") !== -1 || buttonDesc.indexOf("的相片") !== -1 || buttonDesc.indexOf("影片") !== -1 || buttonDesc.indexOf("Video taken on") !== -1) {
+                            if (buttonDesc.indexOf("Photo taken on") !== -1 || buttonDesc.indexOf("的相片") !== -1 
+                                    || buttonDesc.indexOf("影片") !== -1 || buttonDesc.indexOf("Video taken on") !== -1
+                                    || buttonDesc.indexOf("视频") !== -1) {
                                 if(button.selected() === false){
                                     let bounds = button.bounds();
                                     let safePoint = getSafeClickPoint(bounds);
@@ -876,8 +880,7 @@ function post_Image(){
 
                     //点击Nest
                     //className("android.widget.Button").desc("Next").findOne().click()
-                    //desc("繼續")
-                    find_btn_desc_base("Next", "繼續")
+                    find_btn_desc_base("Next", "繼續", "下一步")
                     sleep(random(3000, 5000))
 
                 });
@@ -1147,18 +1150,29 @@ function debugButtons() {
     });
 }
 
-//通过Button的Desc（支持多语言）
-function find_btn_desc_base(findText_EN_US, findText_ZH_TW, findText_ZH_CN, waitAfterClick) {
-    // debugButtons();
-    var texts = [findText_EN_US, findText_ZH_TW, findText_ZH_CN].filter(Boolean); // 过滤空值
+//通过Button的Desc（支持多语言），支持任意多个文本参数
+// 用法1: find_btn_desc_base("文本1", "文本2", "文本3", ... [, waitAfterClick数字可选])
+// 用法2: find_btn_desc_base({ texts: ["文本1", "文本2", ...], waitAfterClick: 2000 })
+function find_btn_desc_base() {
+    var texts, clickWait;
+    var first = arguments[0];
+    if (arguments.length === 1 && typeof first === "object" && first !== null && Array.isArray(first.texts)) {
+        texts = first.texts.filter(Boolean);
+        clickWait = (first.waitAfterClick !== undefined) ? first.waitAfterClick : 2000;
+    } else {
+        var args = Array.prototype.slice.call(arguments);
+        if (args.length > 0 && typeof args[args.length - 1] === "number") {
+            clickWait = args.pop();
+        } else {
+            clickWait = 2000;
+        }
+        texts = args.filter(Boolean);
+    }
     taskLog("待查找的语言文本数量: " + texts.length + " | 内容: " + JSON.stringify(texts));
-    
-    // 默认点击后等待2秒
-    var clickWait = (waitAfterClick !== undefined) ? waitAfterClick : 2000;
-    
+
     for (var loopCount = 1; loopCount <= 3; loopCount++) {
         taskLog("第 " + loopCount + " 轮查找开始");
-        
+
         for (var i = 0; i < texts.length; i++) {
             taskLog("  正在查找[" + i + "]: " + texts[i]);
             var btn = className("android.widget.Button").descContains(texts[i]).findOne(1000);
@@ -1172,7 +1186,7 @@ function find_btn_desc_base(findText_EN_US, findText_ZH_TW, findText_ZH_CN, wait
         }
         sleep(1000);
     }
-    
+
     taskLog("循环查找按钮已执行3次，未找到目标按钮");
     return false;
 }
@@ -1426,7 +1440,9 @@ try {
     //desc("在 Facebook 撰寫貼文")
     //desc("在想些什麽?建立貼文")
     //desc("Make a post on Facebook")
-    var makePostBtn = find_btn_desc_base("Make a post", "貼文", "Create a post")
+    //desc("在 Facebook 发帖")
+    var makePostBtn = find_btn_desc_base({ texts: ["Make a post on Facebook", 
+        "在 Facebook 撰寫貼文", "發布到 Facebook","Make a post", "貼文", "Create a post", "on your mind?", "在 Facebook 发帖", "发帖"] })
     // if(!makePostBtn){
     //     throw new Error("未找到Facebook建立貼文按钮");
     // }

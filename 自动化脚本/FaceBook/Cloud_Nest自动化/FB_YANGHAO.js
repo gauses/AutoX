@@ -66,7 +66,7 @@ var taskLogImgName = "nest_task_log.png"
 
 //用户需要输入的评论内容
 const FB_Like_Count = "$${點讚機率}" //点赞概率
-const FB_Comment_Count = "$${留言機率}" //评论概率
+const FB_Comment_Count = "$${留言概率}" //评论概率
 const FB_input_text = '$${T_FB_輸入留言內容}';
 const FB_input_Count = "$${FB_動態頁瀏覽次數}"
 
@@ -91,9 +91,10 @@ const SEND_TEXT = {
 };
 
 const LIKE_TEXT = {
-    ZH_CN: "Like",      // 简体中文
+    ZH_CN: "赞",      // 简体中文
     ZH_TW: "讚",      // 繁体中文
-    EN_US: "Like"         // 英文 
+    EN_US: "Like" ,        // 英文 
+    ZH_TW_01: "點按兩下並按住即可傳達心情。"         // desc("「讚」按鈕。點按兩下並按住即可傳達心情。")
 };
 
 const LIKE_TEXT_END = {
@@ -102,7 +103,7 @@ const LIKE_TEXT_END = {
 
 
 const COMMENT_TEXT = {
-    ZH_CN: "Comment",      // 简体中文
+    ZH_CN: "评论",      // 简体中文
     ZH_TW: "留言",      // 繁体中文
     EN_US: "Comment"         // 英文
 };
@@ -1075,7 +1076,7 @@ try{
                 var likeBtn = likeBtnList.get(i);
                 if(likeBtn){
                     var descText = likeBtn.desc() || "";
-                    if (Object.values(LIKE_TEXT).some(text => descText.startsWith(text)) 
+                    if (Object.values(LIKE_TEXT).some(text => descText.includes(text)) 
                         || Object.values(LIKE_TEXT_END).some(text => descText.includes(text)))  {
 
 
@@ -1095,10 +1096,8 @@ try{
 
 
                         }
-
-                        
-    
-                    }else if(Object.values(COMMENT_TEXT).some(text => descText.startsWith(text))){
+                    }
+                    if(Object.values(COMMENT_TEXT).some(text => descText.startsWith(text))){
     
                         if (Math.random() * 100 < FB_Comment_Count)  { 
     
