@@ -147,6 +147,11 @@
     *;
 }
 
+# 布局检查浮窗：保留 showLayoutBounds/showLayoutHierarchy 等方法名，避免方法引用 (::showLayoutBounds) 在混淆后无法解析
+-keep class org.autojs.autojs.ui.floating.CircularMenu { *; }
+-keep class org.autojs.autojs.ui.floating.layoutinspector.LayoutHierarchyFloatyWindow { *; }
+-keep class org.autojs.autojs.ui.floating.layoutinspector.LayoutBoundsFloatyWindow { *; }
+
 -keep class org.autojs.autoxjs.BuildConfig{
    *;
 }

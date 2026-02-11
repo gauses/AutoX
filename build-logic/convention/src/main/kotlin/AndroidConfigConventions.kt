@@ -1,4 +1,4 @@
 object AndroidConfigConventions {
-    const val VERSION_CODE = 680
-    const val VERSION_NAME = "6.8.0"
+    const val VERSION_CODE = 690
+    const val VERSION_NAME = "6.9.0"
 }
