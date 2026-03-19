@@ -22,6 +22,8 @@ adb shell settings put secure enabled_accessibility_services org.autojs.autoxjs/
 
 adb shell settings put secure accessibility_enabled 1
 
+查看是否写入成功：adb shell settings get secure enabled_accessibility_services
+
 adb shell appops set --uid org.autojs.autoxjs MANAGE_EXTERNAL_STORAGE allow
 adb shell pm grant org.autojs.autoxjs android.permission.READ_EXTERNAL_STORAGE
 

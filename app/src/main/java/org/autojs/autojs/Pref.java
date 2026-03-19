@@ -28,8 +28,6 @@ public class Pref {
     private static final String KEY_EDITOR_THEME = "editor.theme";
     private static final String KEY_EDITOR_TEXT_SIZE = "editor.textSize";
     private static final String KEY_EDITOR_NEW = "KEY_EDITOR_NEW";
-    private static final String KEY_MEMORY_MONITORING_USER_SET = "memory_monitoring_user_set";
-    private static final String KEY_MEMORY_MONITORING_ENABLED = "memory_monitoring_enabled";
 
     public static boolean getEditor() {
         return def().getBoolean(KEY_EDITOR_NEW, true);
@@ -238,43 +236,6 @@ public class Pref {
 
     public static int getTaskManager() {
         return def().getInt("TaskManager", 0);
-    }
-
-    // 内存监控：一周内(2026-02-05 ~ 2026-02-13)默认开启，之后默认关闭；用户可在加号下拉里手动开关
-    public static boolean getMemoryMonitoringUserSet() {
-        return def().getBoolean(KEY_MEMORY_MONITORING_USER_SET, false);
-    }
-
-    public static void setMemoryMonitoringUserSet(boolean set) {
-        def().edit().putBoolean(KEY_MEMORY_MONITORING_USER_SET, set).apply();
-    }
-
-    public static boolean getMemoryMonitoringEnabled() {
-        return def().getBoolean(KEY_MEMORY_MONITORING_ENABLED, false);
-    }
-
-    public static void setMemoryMonitoringEnabled(boolean enabled) {
-        def().edit().putBoolean(KEY_MEMORY_MONITORING_ENABLED, enabled).apply();
-    }
-
-    /** 2026-02-05 00:00:00 ~ 2026-02-13 23:59:59 为默认开启期 */
-    private static boolean isInMemoryMonitoringDefaultOnPeriod() {
-        Calendar cal = Calendar.getInstance(TimeZone.getDefault());
-        long now = cal.getTimeInMillis();
-        cal.set(2026, Calendar.FEBRUARY, 5, 0, 0, 0);
-        cal.set(Calendar.MILLISECOND, 0);
-        long start = cal.getTimeInMillis();
-        cal.set(2026, Calendar.FEBRUARY, 13, 23, 59, 59);
-        cal.set(Calendar.MILLISECOND, 999);
-        long end = cal.getTimeInMillis();
-        return now >= start && now <= end;
-    }
-
-    public static boolean isMemoryMonitoringEnabled() {
-        if (!getMemoryMonitoringUserSet()) {
-            return isInMemoryMonitoringDefaultOnPeriod();
-        }
-        return getMemoryMonitoringEnabled();
     }
 
 }

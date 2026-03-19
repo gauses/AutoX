@@ -16,7 +16,9 @@ data class BuildConfig(
     @JvmField
     val VERSION_CODE: Long = 0,
     @JvmField
-    val VERSION_NAME: String = ""
+    val VERSION_NAME: String = "",
+    @JvmField
+    val BUILD_TIME: String = ""
 ) {
     companion object {
         fun generate(rawBuildConfigClass: Class<*>): BuildConfig {

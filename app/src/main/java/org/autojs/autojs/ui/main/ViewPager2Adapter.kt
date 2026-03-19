@@ -4,7 +4,6 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import org.autojs.autojs.ui.main.log.MainLogFragment
-import org.autojs.autojs.ui.main.log.PerfMonitorFragment
 import org.autojs.autojs.ui.main.scripts.ScriptListFragment
 import org.autojs.autojs.ui.main.task.TaskManagerFragmentKt
 
@@ -12,7 +11,6 @@ class ViewPager2Adapter(
     fragmentActivity: FragmentActivity,
     private val scriptListFragment: ScriptListFragment,
     private val taskManagerFragment: TaskManagerFragmentKt,
-    private val perfMonitorFragment: PerfMonitorFragment,
     private val logListFragment: MainLogFragment
 ) : FragmentStateAdapter(fragmentActivity) {
 
@@ -20,10 +18,9 @@ class ViewPager2Adapter(
         return when (position) {
             0 -> scriptListFragment
             1 -> taskManagerFragment
-            2 -> perfMonitorFragment
             else -> logListFragment
         }
     }
 
-    override fun getItemCount(): Int = 4
+    override fun getItemCount(): Int = 3
 }

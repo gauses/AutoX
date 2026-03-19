@@ -90,6 +90,7 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.google.gson.Gson
+import com.stardust.app.GlobalAppContext
 import com.stardust.app.permission.DrawOverlaysPermission
 import com.stardust.autojs.execution.ExecutionConfig
 import com.stardust.autojs.script.ScriptSource
@@ -116,7 +117,6 @@ import org.autojs.autojs.ui.log.LogActivityKt
 import org.autojs.autojs.ui.main.components.LogButton
 import org.autojs.autojs.ui.main.drawer.DrawerPage
 import org.autojs.autojs.ui.main.log.MainLogFragment
-import org.autojs.autojs.ui.main.log.PerfMonitorFragment
 import org.autojs.autojs.ui.main.scripts.ScriptListFragment
 import org.autojs.autojs.ui.main.task.TaskManagerFragmentKt
 import org.autojs.autojs.ui.nestjs.NestUtils
@@ -146,7 +146,6 @@ class MainActivity : FragmentActivity() {
 
     private val scriptListFragment by lazy { ScriptListFragment() }
     private val taskManagerFragment by lazy { TaskManagerFragmentKt() }
-    private val perfMonitorFragment by lazy { PerfMonitorFragment() }
     private val logListFragment by lazy { MainLogFragment() }
     private var lastBackPressedTime = 0L
     private var drawerState: DrawerState? = null
@@ -169,7 +168,7 @@ class MainActivity : FragmentActivity() {
             else Pref.setFloatingMenuShown(false)
         }
         if (intent.getBooleanExtra(EXTRA_OPEN_LOG_TAB, false)) {
-            requestedPageState.value = 3
+            requestedPageState.value = 2
         }
         setContent {
             scope = rememberCoroutineScope()
@@ -195,7 +194,6 @@ class MainActivity : FragmentActivity() {
                         activity = this,
                         scriptListFragment = scriptListFragment,
                         taskManagerFragment = taskManagerFragment,
-                        perfMonitorFragment = perfMonitorFragment,
                         logListFragment = logListFragment,
                         onDrawerState = {
                             this.drawerState = it
@@ -325,7 +323,7 @@ class MainActivity : FragmentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         if (intent.getBooleanExtra(EXTRA_OPEN_LOG_TAB, false)) {
-            requestedPageState.value = 3
+            requestedPageState.value = 2
         }
     }
 
@@ -400,7 +398,6 @@ fun MainPage(
     activity: FragmentActivity,
     scriptListFragment: ScriptListFragment,
     taskManagerFragment: TaskManagerFragmentKt,
-    perfMonitorFragment: PerfMonitorFragment,
     logListFragment: MainLogFragment,
     onDrawerState: (DrawerState) -> Unit,
     viewPager: ViewPager2,
@@ -434,7 +431,7 @@ fun MainPage(
         drawerGesturesEnabled = scaffoldState.drawerState.isOpen,
         topBar = {
             Surface(elevation = 4.dp, color = MaterialTheme.colors.primarySurface) {
-                Column() {
+                Column(modifier = Modifier.fillMaxWidth()) {
                     Spacer(
                         modifier = Modifier
                             .windowInsetsTopHeight(WindowInsets.statusBars)
@@ -447,8 +444,16 @@ fun MainPage(
                         onSearch = { keyword ->
                             scriptListFragment.explorerView.setFilter { it.name.contains(keyword) }
                         },
-                        scriptListFragment = scriptListFragment,
-                        perfMonitorFragment = perfMonitorFragment
+                        scriptListFragment = scriptListFragment
+                    )
+                    val buildConfig = GlobalAppContext.buildConfig
+                    Text(
+                        text = "对应版本号：${buildConfig.VERSION_NAME}  更新日期：${buildConfig.BUILD_TIME}",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 4.dp),
+                        style = MaterialTheme.typography.caption,
+                        color = MaterialTheme.colors.onSurface
                     )
                 }
             }
@@ -478,10 +483,9 @@ fun MainPage(
                         activity,
                         scriptListFragment,
                         taskManagerFragment,
-                        perfMonitorFragment,
                         logListFragment
                     )
-                    offscreenPageLimit = 3
+                    offscreenPageLimit = 2
                     isUserInputEnabled = false
                     ViewCompat.setNestedScrollingEnabled(this, true)
                 }
@@ -554,10 +558,6 @@ private fun getBottomItems(context: Context) = mutableStateListOf(
         context.getString(R.string.text_management)
     ),
     BottomNavigationItem(
-        R.drawable.ic_web,
-        context.getString(R.string.text_perf_monitor)
-    ),
-    BottomNavigationItem(
         R.drawable.ic_logcat,
         context.getString(R.string.text_log)
     )
@@ -601,7 +601,6 @@ private fun TopBar(
     requestOpenDrawer: () -> Unit,
     onSearch: (String) -> Unit,
     scriptListFragment: ScriptListFragment,
-    perfMonitorFragment: PerfMonitorFragment,
 ) {
     var isSearch by remember {
         mutableStateOf(false)
@@ -691,14 +690,6 @@ private fun TopBar(
                         )
                     }
                 }
-                2 -> {
-                    IconButton(onClick = { perfMonitorFragment.clearLog() }) {
-                        Icon(
-                            imageVector = Icons.Default.Clear,
-                            contentDescription = stringResource(id = R.string.text_clear)
-                        )
-                    }
-                }
             }
         }
     }
@@ -717,7 +708,6 @@ fun TopAppBarMenu(
         NewFile(context, scriptListFragment, onDismissRequest)
         ImportFile(context, scriptListFragment, onDismissRequest)
         NewProject(context, scriptListFragment, onDismissRequest)
-        MemoryMonitoringSwitch(context)
 //        DropdownMenuItem(onClick = { /*TODO*/ }) {
 //            MyIcon(
 //                painter = painterResource(id = R.drawable.ic_timed_task),
@@ -865,36 +855,6 @@ private fun NewProject(
         )
         Spacer(modifier = Modifier.width(8.dp))
         Text(text = stringResource(id = R.string.text_project))
-    }
-}
-
-@Composable
-private fun MemoryMonitoringSwitch(context: Context) {
-    var enabled by remember { mutableStateOf(Pref.isMemoryMonitoringEnabled()) }
-    DropdownMenuItem(
-        onClick = { /* 不关闭菜单，仅通过 Switch 切换 */ }
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                MyIcon(
-                    painter = painterResource(id = R.drawable.ic_manage),
-                    contentDescription = null
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(text = stringResource(id = R.string.text_memory_monitoring))
-            }
-            Switch(
-                checked = enabled,
-                onCheckedChange = { checked ->
-                    enabled = checked
-                    App.app.setMemoryMonitoringEnabledByUser(context, checked)
-                }
-            )
-        }
     }
 }
 

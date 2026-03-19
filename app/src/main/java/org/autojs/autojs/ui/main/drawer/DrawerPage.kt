@@ -23,6 +23,8 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -42,6 +44,8 @@ import com.stardust.toast
 import com.stardust.util.IntentUtil
 import com.stardust.view.accessibility.AccessibilityService
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
 import org.autojs.autojs.Pref
 import org.autojs.autojs.autojs.AutoJs
 import org.autojs.autojs.devplugin.DevPlugin
@@ -636,11 +640,20 @@ private fun StableModeSwitch() {
 private fun AccessibilityServiceSwitch() {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val lifecycleOwner = LocalLifecycleOwner.current
     var showDialog by remember {
         mutableStateOf(false)
     }
     var isAccessibilityServiceEnabled by remember {
         mutableStateOf(AccessibilityServiceTool.isAccessibilityServiceEnabled(context))
+    }
+    LaunchedEffect(lifecycleOwner) {
+        snapshotFlow { lifecycleOwner.lifecycle.currentState }
+            .filter { it == Lifecycle.State.RESUMED }
+            .distinctUntilChanged()
+            .collect {
+                isAccessibilityServiceEnabled = AccessibilityServiceTool.isAccessibilityServiceEnabled(context)
+            }
     }
     val accessibilitySettingsLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {

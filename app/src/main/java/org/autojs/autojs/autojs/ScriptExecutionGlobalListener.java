@@ -83,11 +83,6 @@ public class ScriptExecutionGlobalListener implements ScriptExecutionListener {
         Log.d("ScriptExecutionGlobal" , "onFinish result = " + execution.getConfig().toString());
         Log.d("ScriptExecutionGlobal" , "onFinish result ======================= " );
 
-        // 脚本执行结束后，自动关闭内存监控
-        AutoJs.getInstance().getScriptEngineService().getGlobalConsole().println(Log.VERBOSE, "自动关闭内存监控");
-        Pref.setMemoryMonitoringEnabled(false);
-        App.Companion.getApp().stopMemoryMonitoring();
-
 
 
 

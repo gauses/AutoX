@@ -1,5 +1,8 @@
 import com.android.build.gradle.internal.tasks.factory.dependsOn
 import okhttp3.Request
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import java.util.Properties
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
@@ -26,6 +29,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 //        multiDexEnabled = true
         buildConfigField("boolean", "isMarket", "false")
+        buildConfigField("String", "BUILD_TIME", "\"${SimpleDateFormat("yyyy-MM-dd - HH:mm:ss", Locale.getDefault()).format(Date())}\"")
         javaCompileOptions {
             annotationProcessorOptions {
                 arguments["resourcePackageName"] = applicationId.toString()
@@ -81,8 +85,8 @@ android {
 //            }
         }
         named("release") {
-            isShrinkResources = true
-            isMinifyEnabled = true
+            isShrinkResources = false
+            isMinifyEnabled = false  // 暂时关闭混淆
             setProguardFiles(
                 listOf(
                     getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -104,14 +108,14 @@ android {
 //            buildConfigField("String", "APPID", "\"?id=21\"")
             manifestPlaceholders.putAll(mapOf("appName" to "@string/app_name"))
         }
-        create("v6") {
-            applicationIdSuffix = ".v6"
-            versionCode = AndroidConfigConventions.VERSION_CODE
-            versionName = AndroidConfigConventions.VERSION_NAME
-            buildConfigField("String", "CHANNEL", "\"v6\"")
-//            buildConfigField("String", "APPID", "\"?id=23\"")
-            manifestPlaceholders.putAll(mapOf("appName" to "Autox.js v6"))
-        }
+//         create("v6") {
+//             applicationIdSuffix = ".v6"
+//             versionCode = AndroidConfigConventions.VERSION_CODE
+//             versionName = AndroidConfigConventions.VERSION_NAME
+//             buildConfigField("String", "CHANNEL", "\"v6\"")
+// //            buildConfigField("String", "APPID", "\"?id=23\"")
+//             manifestPlaceholders.putAll(mapOf("appName" to "Autox.js v6"))
+//         }
     }
 
     sourceSets {
