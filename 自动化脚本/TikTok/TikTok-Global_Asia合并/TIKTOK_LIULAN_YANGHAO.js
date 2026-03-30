@@ -7,6 +7,120 @@ importClass(java.io.FileWriter);
 //***********************Tiktok首页浏览养号*************************
 //******************************************************************
 
+
+/**
+ * AOSP 系统应用专用：静默开启所有权限
+ */
+/**
+ * 1. 基础权限初始化 (只在脚本启动时运行一次)
+ */
+function initialSystemGrant() {
+    var pkg = "org.autojs.autoxjs";
+    log("正在执行初始化系统授权...");
+    try {
+        // 授权标准权限
+        shell("pm grant " + pkg + " android.permission.READ_EXTERNAL_STORAGE");
+        shell("pm grant " + pkg + " android.permission.WRITE_EXTERNAL_STORAGE");
+        // 授权 AppOps 特权
+        shell("appops set " + pkg + " SYSTEM_ALERT_WINDOW allow");
+        shell("appops set " + pkg + " BACKGROUND_START_ACTIVITY allow");
+        shell("appops set " + pkg + " MANAGE_EXTERNAL_STORAGE allow");
+        //截图:adb shell appops set org.autojs.autoxjs PROJECT_MEDIA allow
+        shell("appops set " + pkg + " PROJECT_MEDIA allow");
+        // 加入白名单
+        shell("dumpsys deviceidle whitelist +" + pkg);
+        toastLog("初始权限配置完成");
+    } catch (e) {
+        log("初始化授权失败: " + e);
+    }
+}
+
+/**
+ * 2. 核心：无障碍服务守护线程 (每 1 秒检查一次)
+ * 主脚本收尾时务必 stopAccessibilityMonitor()，否则子线程 AsyncTask 会一直挂住主 Looper，
+ * Java 层 ScriptExecutionGlobalListener.onSuccess 不会触发。
+ */
+var accessibilityMonitorRunning = true;
+var accessibilityMonitorThread = null;
+
+function stopAccessibilityMonitor() {
+    accessibilityMonitorRunning = false;
+    if (accessibilityMonitorThread != null) {
+        try {
+            accessibilityMonitorThread.interrupt();
+        } catch (e) {
+            log("stopAccessibilityMonitor: " + e);
+        }
+    }
+}
+
+function startAccessibilityMonitor() {
+    var pkg = "org.autojs.autoxjs";
+    var serviceName = pkg + "/com.stardust.autojs.core.accessibility.AccessibilityService";
+
+    accessibilityMonitorThread = threads.start(function () {
+        log("无障碍守护线程已启动...");
+        var resolver = context.getContentResolver();
+        importClass(android.provider.Settings);
+
+        while (accessibilityMonitorRunning) {
+            try {
+                // 读取当前已开启的服务列表
+                var enabledServices = Settings.Secure.getString(resolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES) || "";
+                var isEnabled = Settings.Secure.getInt(resolver, Settings.Secure.ACCESSIBILITY_ENABLED, 0);
+
+                // 如果总开关关了，或者服务不在列表里
+                if (isEnabled == 0 || enabledServices.indexOf(serviceName) === -1) {
+                    taskLog("检测到无障碍服务已关闭，正在尝试重新开启...");
+
+                    // 重新构建服务字符串（保持其他已开启的服务不受影响）
+                    var newServices = enabledServices;
+                    if (enabledServices.indexOf(serviceName) === -1) {
+                        newServices = enabledServices ? enabledServices + ":" + serviceName : serviceName;
+                    }
+
+                    // 静默写入数据库 (系统应用特权)
+                    Settings.Secure.putString(resolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES, newServices);
+                    Settings.Secure.putInt(resolver, Settings.Secure.ACCESSIBILITY_ENABLED, 1);
+
+                    taskLog("无障碍服务已通过守护线程强制拉起");
+                }
+            } catch (err) {
+                log("守护线程执行异常: " + err);
+            }
+            if (!accessibilityMonitorRunning) {
+                break;
+            }
+            try {
+                sleep(500);
+            } catch (ie) {
+                break;
+            }
+        }
+        log("无障碍守护线程已结束");
+    });
+}
+
+// --- 顺序执行 ---
+initialSystemGrant();     // 初始化一次
+
+// 前台常驻通知，降低被系统杀进程概率
+(function () {
+    importClass(org.autojs.autojs.external.foreground.ForegroundService);
+    try {
+        ForegroundService.start(context);
+        log("已启动前台服务（常驻通知）");
+    } catch (e) {
+        log("启动前台服务失败: " + e);
+    }
+})();
+
+startAccessibilityMonitor(); // 开启后台监听
+
+// 你的主脚本逻辑开始
+log("主逻辑运行中...");
+
+
 var ASIA_TikTokPackageName = 'com.ss.android.ugc.trill';
 var GLOBAL_TikTokPackageName = 'com.zhiliaoapp.musically';
 
@@ -84,6 +198,8 @@ events.on('exit', function(){
     openLogActivity();
 });
 
+// 第一次：注册完 exit 后立刻等无障碍连上，再跑后面所有逻辑（避免未就绪就调 auto.*）
+auto.waitFor();
 
 function throw_error_storage_not_enough(){
     throw new Error("当前设备的存储空间不可用，请关机重启一次设备，然后重新执行一次脚本")
@@ -156,6 +272,7 @@ function handleError(e) {
 
 //开始录屏截图到本地
 function Nest_ScreenCapture(){
+    taskLog("Nest_ScreenCapture 开始截图操作.");
     // 申请截图权限（会弹系统录屏权限框）
     if (!requestScreenCapture()) {
         taskLog("自动化任务-申请截图权限失败");
@@ -506,106 +623,25 @@ function stopCurrentTask(){
 
 }
 
-
-
-
-//强制停止TikTok 
-function forceStop_APP(packageName){
-    try {
-        taskLog("准备强杀:" + packageName + "...")
-        sleep(1000);
-        app.openAppSetting(packageName)
-        sleep(5000)
-
-        //繁体
-        if (text("強制停止").exists()) {
-            let forceStopBtn = text("強制停止").findOne();
-            if (forceStopBtn && forceStopBtn.clickable()) {
-                forceStopBtn.click();
-                sleep(1000);
-                // 确认操作
-                if (text("確定").exists()) {
-                    taskLog("已经找到可点击的'強制停止'按钮！！！！！！！！！！");
-                    text("確定").findOne().click();
-                }
-            } else {
-                taskLog("未找到可点击的'強制停止'按钮");
-            }
-        } else {
-            taskLog("未找到'強制停止'按钮");
-        }
-        sleep(3000)
-
-        //简体
-        if (text("强行停止").exists()) {
-            let forceStopBtn = text("强行停止").findOne();
-            if (forceStopBtn && forceStopBtn.clickable()) {
-                forceStopBtn.click();
-                sleep(1000);
-                // 确认操作
-                if (text("确定").exists()) {
-                    text("确定").findOne().click();
-                }
-            } else {
-                taskLog("未找到可点击的'强行停止'按钮");
-            }
-        } else {
-            taskLog("未找到'强行停止'按钮");
-        }
-
-        sleep(3000)
-
-
-        //英语
-        if (text("Force stop").exists()) {
-            let forceStopBtn = text("Force stop").findOne();
-            if (forceStopBtn && forceStopBtn.clickable()) {
-                forceStopBtn.click();
-                sleep(1000);
-                // 确认操作
-                if (text("OK").exists()) {
-                    text("OK").findOne().click();
-                }
-            } else {
-                taskLog("未找到可点击的'Force stop'按钮");
-            }
-        } else {
-            taskLog("未找到'Force stop'按钮");
-        }
-        sleep(3000)
-
-        //英语
-        if (text("FORCE STOP").exists()) {
-            let forceStopBtn = text("FORCE STOP").findOne();
-            if (forceStopBtn && forceStopBtn.clickable()) {
-                forceStopBtn.click();
-                sleep(1000);
-                // 确认操作
-                if (text("OK").exists()) {
-                    text("OK").findOne().click();
-                }
-            } else {
-                taskLog("未找到可点击的'FORCE STOP'按钮");
-            }
-        } else {
-            taskLog("未找到'FORCE STOP'按钮");
-        }
-        sleep(3000)
-
-
-        home()
-    } catch(e) {
-        taskLogError("强制停止应用失败：" + e);
-        // 即使失败也尝试返回主屏幕
-        try {
-            home();
-        } catch(homeError) {
-            taskLogError("返回主屏幕也失败：" + homeError);
-        }
-        // 重新抛出异常，让调用者知道失败了
-        throw e;
-    }
+/**
+ * 强制停止指定包名的应用
+ * @param {string} packageName - 目标应用的包名
+ */
+function forceStop_APP(packageName) {
+    // log("正在强制停止应用: " + packageName);
+    
+    // // 注意：因为你是系统应用，直接调用 shell 即可，千万不要加第二个参数 true (找 su)
+    // var result = shell("am force-stop " + packageName);
+    
+    // if (result.code == 0) {
+    //     toastLog("成功停止: " + packageName);
+    //     return true;
+    // } else {
+    //     log("停止失败，错误信息: " + result.error);
+    //     return false;
+    // }
 }
+
 
 
 
@@ -657,18 +693,18 @@ try {
         taskLog("检测到已安装全球版TikTok，准备启动...");
 
 
-        sleep(random(3000, 5000))
-        taskLog("准备启动全球版TikTok...");
-        app.startActivity({
-            action: "android.intent.action.VIEW",
-            packageName: GLOBAL_TikTokPackageName,
-            className: "com.ss.android.ugc.aweme.main.MainActivity"
-        });
+        // sleep(random(3000, 5000))
+        // taskLog("准备启动全球版TikTok...");
+        // app.startActivity({
+        //     action: "android.intent.action.VIEW",
+        //     packageName: GLOBAL_TikTokPackageName,
+        //     className: "com.ss.android.ugc.aweme.main.MainActivity"
+        // });
 
 
-        sleep(random(5000, 8000))
-        openAppSettings(GLOBAL_TikTokPackageName)
-        sleep(random(3000, 5000))
+        // sleep(random(5000, 8000))
+        // openAppSettings(GLOBAL_TikTokPackageName)
+        // sleep(random(3000, 5000))
 
         forceStop_APP(GLOBAL_TikTokPackageName)
         sleep(3000)
@@ -678,18 +714,18 @@ try {
         targetClassName = "com.ss.android.ugc.aweme.main.MainActivity";
         taskLog("检测到已安装亚洲版TikTok，准备启动...");
 
-        sleep(random(3000, 5000))
-        taskLog("准备启动亚洲版TikTok...");
-        app.startActivity({
-            action: "android.intent.action.VIEW",
-            packageName: ASIA_TikTokPackageName,
-            className: "com.ss.android.ugc.aweme.main.MainActivity"
-        });
+        // sleep(random(3000, 5000))
+        // taskLog("准备启动亚洲版TikTok...");
+        // app.startActivity({
+        //     action: "android.intent.action.VIEW",
+        //     packageName: ASIA_TikTokPackageName,
+        //     className: "com.ss.android.ugc.aweme.main.MainActivity"
+        // });
 
 
-        sleep(random(5000, 8000))
-        openAppSettings(ASIA_TikTokPackageName)
-        sleep(random(3000, 5000))
+        // sleep(random(5000, 8000))
+        // openAppSettings(ASIA_TikTokPackageName)
+        // sleep(random(3000, 5000))
 
         forceStop_APP(ASIA_TikTokPackageName)
         sleep(3000)
@@ -701,12 +737,20 @@ try {
         
     }
 
+    // 第二次：强杀 TikTok、切前台等可能让无障碍短暂断连，启动 App 与截图前再等一次（已连接则立刻返回）
+    sleep(1000);
+    auto.waitFor();
+    taskLog("无障碍已就绪，准备启动 TikTok");
 
     app.startActivity({
         action: "android.intent.action.VIEW",
         packageName: targetPackageName,
         className: targetClassName
     });
+
+    Nest_ScreenCapture() //启动截图 ，保证有一个Notification通知栏
+    auto.waitFor(); //等待无障碍连接
+
 
 
     taskStartTime = new Date().getTime();
@@ -741,7 +785,8 @@ try {
         // 将 count 加 1
         taskLog("开始观看第"+count+"个TikTok视频")
         count++;
-
+        
+        Nest_ScreenCapture()
         sleep(random(10000, 15000))
         total_success++
 
@@ -837,4 +882,5 @@ try {
     refreshMedia(RPAFilePath);
     sleep(random(3000, 5000));
     openLogActivity()
+    stopAccessibilityMonitor();
 }

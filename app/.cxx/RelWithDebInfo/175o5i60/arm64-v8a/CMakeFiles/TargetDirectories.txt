@@ -1,3 +1,3 @@
-D:/AndroidProject/AutoX/app/.cxx/RelWithDebInfo/175o5i60/arm64-v8a/CMakeFiles/native-lib.dir
-D:/AndroidProject/AutoX/app/.cxx/RelWithDebInfo/175o5i60/arm64-v8a/CMakeFiles/edit_cache.dir
-D:/AndroidProject/AutoX/app/.cxx/RelWithDebInfo/175o5i60/arm64-v8a/CMakeFiles/rebuild_cache.dir
+D:/Project/AutoX/app/.cxx/RelWithDebInfo/175o5i60/arm64-v8a/CMakeFiles/native-lib.dir
+D:/Project/AutoX/app/.cxx/RelWithDebInfo/175o5i60/arm64-v8a/CMakeFiles/edit_cache.dir
+D:/Project/AutoX/app/.cxx/RelWithDebInfo/175o5i60/arm64-v8a/CMakeFiles/rebuild_cache.dir

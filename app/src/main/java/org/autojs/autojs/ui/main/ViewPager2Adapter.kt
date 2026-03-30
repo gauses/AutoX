@@ -16,8 +16,10 @@ class ViewPager2Adapter(
 
     override fun createFragment(position: Int): Fragment {
         return when (position) {
-            0 -> scriptListFragment
-            1 -> taskManagerFragment
+            // 0=日志, 1=主页, 2=管理
+            0 -> logListFragment
+            1 -> scriptListFragment
+            2 -> taskManagerFragment
             else -> logListFragment
         }
     }

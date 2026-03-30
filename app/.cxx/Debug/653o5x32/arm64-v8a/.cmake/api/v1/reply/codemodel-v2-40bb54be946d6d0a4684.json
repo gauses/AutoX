@@ -6,7 +6,7 @@
 			[
 				{
 					"build" : ".",
-					"jsonFile" : "directory-.-RelWithDebInfo-d0094a50bb2071803777.json",
+					"jsonFile" : "directory-.-Debug-d0094a50bb2071803777.json",
 					"minimumCMakeVersion" : 
 					{
 						"string" : "3.4.1"
@@ -19,7 +19,7 @@
 					]
 				}
 			],
-			"name" : "RelWithDebInfo",
+			"name" : "Debug",
 			"projects" : 
 			[
 				{
@@ -39,7 +39,7 @@
 				{
 					"directoryIndex" : 0,
 					"id" : "native-lib::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-native-lib-RelWithDebInfo-4b325a0984da7eec2967.json",
+					"jsonFile" : "target-native-lib-Debug-38ac441cc2d4b2c584ff.json",
 					"name" : "native-lib",
 					"projectIndex" : 0
 				}
@@ -49,8 +49,8 @@
 	"kind" : "codemodel",
 	"paths" : 
 	{
-		"build" : "D:/AndroidProject/AutoX/app/.cxx/RelWithDebInfo/175o5i60/arm64-v8a",
-		"source" : "D:/AndroidProject/AutoX/app/src/main/cpp"
+		"build" : "D:/Project/AutoX/app/.cxx/Debug/653o5x32/arm64-v8a",
+		"source" : "D:/Project/AutoX/app/src/main/cpp"
 	},
 	"version" : 
 	{

@@ -1,1 +1,1 @@
-D:\AndroidProject\AutoX\app\build\intermediates\cxx\RelWithDebInfo\175o5i60\obj\arm64-v8a
+D:\Project\AutoX\app\build\intermediates\cxx\RelWithDebInfo\175o5i60\obj\arm64-v8a

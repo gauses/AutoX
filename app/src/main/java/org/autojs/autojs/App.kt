@@ -50,9 +50,10 @@ class App : MultiDexApplication(), Configuration.Provider, ComponentCallbacks2 {
     }
 
 //    /**
-//     * 必须重写且不能调用 super：App 已通过 registerComponentCallbacks(this) 把自己注册为回调，
-//     * 若此处不重写，会走到 Application.onTrimMemory() 再次 dispatch 到所有回调（含自身），形成无限递归导致栈溢出。
-//     * 只做本应用内存清理，不调用 super。
+//     * 若仍然调用 registerComponentCallbacks(this) 把自己注册为回调，
+//     * 则必须重写且不能调用 super：否则会再次进入 Application.onTrimMemory()
+//     * dispatch 到所有回调（含自身），形成无限递归导致栈溢出。
+//     * 本次通过移除 registerComponentCallbacks(this) 从源头避免该递归链路。
 //     */
 //    override fun onTrimMemory(level: Int) {
 //        // 不调用 super，避免重入 dispatchTrimMemory
@@ -72,7 +73,6 @@ class App : MultiDexApplication(), Configuration.Provider, ComponentCallbacks2 {
             this, com.stardust.app.BuildConfig.generate(BuildConfig::class.java)
         )
         instance = WeakReference(this)
-        registerComponentCallbacks(this)
         setUpCrashHandler()
         init()
 

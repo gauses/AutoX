@@ -1,12 +1,5 @@
 # ninja log v5
-4	650	7924099124160692	CMakeFiles/native-lib.dir/native-lib.cpp.o	d66cb29492ec5b27
-650	752	7924099125189827	D:/AndroidProject/AutoX/app/build/intermediates/cxx/Debug/653o5x32/obj/arm64-v8a/libnative-lib.so	899d4b467547435
-0	14	0	clean	61827871eeb58b9d
-9	369	7954426830521262	build.ninja	3aaa8a4cfff1789
-1	12	0	clean	61827871eeb58b9d
-0	46	0	clean	61827871eeb58b9d
-0	6	0	clean	61827871eeb58b9d
-0	12	0	clean	61827871eeb58b9d
-0	8	0	clean	61827871eeb58b9d
-0	8	0	clean	61827871eeb58b9d
-0	7	0	clean	61827871eeb58b9d
+0	23	0	clean	8140c17a088004d7
+0	8	0	clean	8140c17a088004d7
+0	15	0	clean	8140c17a088004d7
+0	13	0	clean	8140c17a088004d7

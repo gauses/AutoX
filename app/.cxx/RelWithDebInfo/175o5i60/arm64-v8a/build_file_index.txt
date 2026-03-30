@@ -1,1 +1,1 @@
-D:\AndroidProject\AutoX\app\src\main\cpp\CMakeLists.txt
+D:\Project\AutoX\app\src\main\cpp\CMakeLists.txt
