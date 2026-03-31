@@ -323,23 +323,21 @@ class MainActivity : FragmentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        setIntent(intent)
         if (intent.getBooleanExtra(EXTRA_OPEN_LOG_TAB, false)) {
             requestedPageState.value = 2
         }
+        handleNetScriptIntent(intent)
     }
 
     override fun onResume() {
         super.onResume()
         TimedTaskScheduler.ensureCheckTaskWorks(application)
+        handleNetScriptIntent(intent)
+    }
 
-        var a1 = intent.getStringExtra("net_script_name")
-        if (a1 == null) {
-            a1 = ""
-        }
-
-
-
-        intent.getStringExtra("net_script_name")?.let {
+    private fun handleNetScriptIntent(incomingIntent: Intent?) {
+        incomingIntent?.getStringExtra("net_script_name")?.let {
             Log.d("sb", "MainActivity script name = $it")
             if (!TextUtils.isEmpty(it)) {
 
@@ -356,10 +354,10 @@ class MainActivity : FragmentActivity() {
 
                 Log.d("sb", "MainActivity script scriptFilePath = $scriptFilePath")
                 Log.d("sb", "MainActivity script scriptFilePath.path = ${scriptFilePath?.path}")
-                ScriptIntents.handleIntent(this, intent.setData(Uri.parse(scriptFilePath?.path)))
+                ScriptIntents.handleIntent(this, incomingIntent.setData(Uri.parse(scriptFilePath?.path)))
                 LogActivityKt.start(this)
                 // 清除 net_script_name，避免从 LogActivity 按返回键回到 MainActivity 时 onResume 再次触发执行脚本
-                intent.removeExtra("net_script_name")
+                incomingIntent.removeExtra("net_script_name")
             }
         }
     }
