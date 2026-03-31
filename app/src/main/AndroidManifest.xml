@@ -2,12 +2,17 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" />
+    <uses-permission android:name="android.permission.WRITE_SETTINGS" />
+    <uses-permission android:name="android.permission.INJECT_EVENTS" />
+
     <uses-feature
         android:name="android.hardware.telephony"
         android:required="false" />
     <uses-feature
         android:name="android.hardware.camera"
         android:required="false" />
+
 
     <!--  必要权限  -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
@@ -105,6 +110,8 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+
+
     <application
         android:name="org.autojs.autojs.App"
         android:allowBackup="true"
@@ -117,6 +124,7 @@
         android:roundIcon="@drawable/autojs_logo"
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
+        android:process="system"
         android:usesCleartextTraffic="true"
         tools:replace="android:label, android:allowBackup">
         <profileable

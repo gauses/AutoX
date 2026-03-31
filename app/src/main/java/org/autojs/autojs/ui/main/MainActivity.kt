@@ -168,8 +168,8 @@ class MainActivity : FragmentActivity() {
             else Pref.setFloatingMenuShown(false)
         }
         if (intent.getBooleanExtra(EXTRA_OPEN_LOG_TAB, false)) {
-            // 0=日志, 1=主页, 2=管理
-            requestedPageState.value = 0
+            // 0=主页, 1=管理, 2=日志
+            requestedPageState.value = 2
         }
         setContent {
             scope = rememberCoroutineScope()
@@ -324,7 +324,7 @@ class MainActivity : FragmentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         if (intent.getBooleanExtra(EXTRA_OPEN_LOG_TAB, false)) {
-            requestedPageState.value = 0
+            requestedPageState.value = 2
         }
     }
 
@@ -370,12 +370,12 @@ class MainActivity : FragmentActivity() {
             scope?.launch { drawerState?.close() }
             return
         }
-        // 0=日志, 1=主页, 2=管理
-        if (viewPager.currentItem == 1 && scriptListFragment.onBackPressed()) {
+        // 0=主页, 1=管理, 2=日志
+        if (viewPager.currentItem == 0 && scriptListFragment.onBackPressed()) {
             return
         }
-        if (viewPager.currentItem != 1) {
-            viewPager.currentItem = 1
+        if (viewPager.currentItem != 0) {
+            viewPager.currentItem = 0
             return
         }
         back()
@@ -413,7 +413,7 @@ fun MainPage(
     val bottomBarItems = remember {
         getBottomItems(context)
     }
-    // 0=日志, 1=主页, 2=管理
+    // 0=主页, 1=管理, 2=日志
     var currentPage by remember { mutableStateOf(0) }
 
     LaunchedEffect(requestedPageState.value) {
@@ -551,16 +551,16 @@ private fun SetSystemUI(scaffoldState: ScaffoldState) {
 
 private fun getBottomItems(context: Context) = mutableStateListOf(
     BottomNavigationItem(
-        R.drawable.ic_logcat,
-        context.getString(R.string.text_log)
-    ),
-    BottomNavigationItem(
         R.drawable.ic_home,
         context.getString(R.string.text_home)
     ),
     BottomNavigationItem(
         R.drawable.ic_manage,
         context.getString(R.string.text_management)
+    ),
+    BottomNavigationItem(
+        R.drawable.ic_logcat,
+        context.getString(R.string.text_log)
     )
 )
 
@@ -625,7 +625,7 @@ private fun TopBar(
                         text = stringResource(id = R.string.app_name)
                     )
                 }
-                if (currentPage == 1) {
+                if (currentPage == 0) {
                     IconButton(onClick = { isSearch = true }) {
                         Icon(
                             imageVector = Icons.Default.Search,
@@ -667,8 +667,8 @@ private fun TopBar(
             }
             LogButton()
             when (currentPage) {
-                // 1=主页
-                1 -> {
+                // 0=主页
+                0 -> {
                     var expanded by remember { mutableStateOf(false) }
                     Box() {
                         IconButton(onClick = { expanded = true }) {
@@ -684,8 +684,8 @@ private fun TopBar(
                         )
                     }
                 }
-                // 2=管理
-                2 -> {
+                // 1=管理
+                1 -> {
                     IconButton(onClick = { AutoJs.getInstance().scriptEngineService.stopAll() }) {
                         Icon(
                             imageVector = Icons.Default.Clear,

@@ -179,6 +179,14 @@ public class Pref {
     public static String getScriptDirPath() {
         String dir = def().getString(getString(R.string.key_script_dir_path),
                 getString(R.string.default_value_script_dir_path));
+
+        // 兼容旧默认值：
+        // 1) 之前默认是 `/脚本/`
+        // 2) 之前我改过一次默认到 `/Download/脚本/`
+        // 现在统一改到 `/Download/` 根目录。
+        if ("/脚本/".equals(dir) || "/Download/脚本/".equals(dir)) {
+            dir = "/Download/";
+        }
         return new File(Environment.getExternalStorageDirectory(), dir).getPath();
     }
 

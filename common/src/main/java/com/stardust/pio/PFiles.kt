@@ -427,11 +427,24 @@ object PFiles {
         )
     }
 
+    /**
+     * 将绝对路径缩短为相对「主外部存储根」的路径（用于界面展示）。
+     *
+     * 注意：[Environment.getExternalStorageDirectory] 在部分系统版本/进程（如多用户、
+     * system 侧）会要求通过 UserEnvironment 指定用户，直接调用会抛错；此处捕获后退回原路径。
+     */
     @JvmStatic
     fun getSimplifiedPath(path: String): String {
-        return if (path.startsWith(Environment.getExternalStorageDirectory().path)) {
-            path.substring(Environment.getExternalStorageDirectory().path.length)
-        } else path
+        val extRoot = try {
+            Environment.getExternalStorageDirectory()?.path
+        } catch (_: Throwable) {
+            null
+        } ?: return path
+        return if (path.startsWith(extRoot)) {
+            path.substring(extRoot.length)
+        } else {
+            path
+        }
     }
 
     @JvmStatic

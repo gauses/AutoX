@@ -140,11 +140,11 @@ export class NestAdb {
         break;
       }
 	  
-	  //文件权限：adb shell appops set --uid org.autojs.autoxjs MANAGE_EXTERNAL_STORAGE allow
+	  // 文件权限：adb shell appops set org.autojs.autoxjs MANAGE_EXTERNAL_STORAGE allow
+	  // 注意：--uid 后面必须是数字 UID，不能写包名；按包名设置时不要带 --uid。
 	  args = [];
       args.push('appops');
       args.push('set');
-	  args.push('--uid');
       args.push('org.autojs.autoxjs');
       args.push('MANAGE_EXTERNAL_STORAGE');
 	  args.push('allow');
@@ -179,11 +179,10 @@ export class NestAdb {
         break;
       }
 
-	  //截图权限：adb shell appops set org.autojs.autoxjs PROJECT_MEDIA allow
+	  // 截图权限：adb shell appops set org.autojs.autoxjs PROJECT_MEDIA allow
       args = [];
       args.push('appops');
       args.push('set');
-	  args.push('--uid');
       args.push('org.autojs.autoxjs');
       args.push('PROJECT_MEDIA');
 	  args.push('allow');

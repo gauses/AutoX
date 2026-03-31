@@ -9,7 +9,6 @@ import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
 import android.view.View
 import android.widget.ImageView
 import androidx.core.content.ContextCompat
@@ -18,6 +17,7 @@ import androidx.multidex.MultiDexApplication
 import androidx.work.Configuration
 import android.graphics.BitmapFactory
 import android.graphics.drawable.BitmapDrawable
+import android.util.Log
 import com.stardust.app.GlobalAppContext
 import com.stardust.autojs.core.ui.inflater.ImageLoader
 import com.stardust.autojs.core.ui.inflater.util.Drawables
@@ -29,7 +29,9 @@ import org.autojs.autojs.theme.ThemeColorManagerCompat
 import org.autojs.autojs.model.explorer.Explorers
 import org.autojs.autojs.timing.TimedTaskManager
 import org.autojs.autojs.timing.TimedTaskScheduler
+import org.autojs.autojs.tool.AutoEnableAccessibility
 import org.autojs.autojs.tool.CrashHandler
+import org.autojs.autojs.tool.ManageExternalStorage
 import org.autojs.autojs.ui.error.ErrorReportActivity
 import org.autojs.autoxjs.BuildConfig
 import org.autojs.autoxjs.CpuInfoDetector
@@ -49,35 +51,34 @@ class App : MultiDexApplication(), Configuration.Provider, ComponentCallbacks2 {
         super.onConfigurationChanged(newConfig)
     }
 
-//    /**
-//     * 若仍然调用 registerComponentCallbacks(this) 把自己注册为回调，
-//     * 则必须重写且不能调用 super：否则会再次进入 Application.onTrimMemory()
-//     * dispatch 到所有回调（含自身），形成无限递归导致栈溢出。
-//     * 本次通过移除 registerComponentCallbacks(this) 从源头避免该递归链路。
-//     */
-//    override fun onTrimMemory(level: Int) {
-//        // 不调用 super，避免重入 dispatchTrimMemory
-//    }
-//
-//    override fun onLowMemory() {
-//        // 同上，不调用 super
-//    }
-
     lateinit var dynamicBroadcastReceivers: DynamicBroadcastReceivers
         private set
 
+
+
+
+
     override fun onCreate() {
         super.onCreate()
+        Log.e(TAG, "onCreate enter, package=${packageName}")
 
         GlobalAppContext.set(
             this, com.stardust.app.BuildConfig.generate(BuildConfig::class.java)
         )
         instance = WeakReference(this)
         setUpCrashHandler()
+        ManageExternalStorage.grantManageExternalStorage(this)
         init()
+//        Log.e(TAG, "before AutoEnableAccessibility.enableAccessibility")
+//        AutoEnableAccessibility.enableAccessibility(this)
+//        Log.e(TAG, "after AutoEnableAccessibility.enableAccessibility")
+
 
 
     }
+
+
+
 
     private fun setUpCrashHandler() {
         val crashHandler = CrashHandler(ErrorReportActivity::class.java)
@@ -101,7 +102,6 @@ class App : MultiDexApplication(), Configuration.Provider, ComponentCallbacks2 {
         TimedTaskScheduler.init(this)
         initDynamicBroadcastReceivers()
     }
-
 
     @SuppressLint("CheckResult")
     private fun initDynamicBroadcastReceivers() {
@@ -179,7 +179,7 @@ class App : MultiDexApplication(), Configuration.Provider, ComponentCallbacks2 {
         .build()
 
     companion object {
-        private const val TAG = "App"
+        private const val TAG = "AppInitTrace"
         private lateinit var instance: WeakReference<App>
 
         val app: App

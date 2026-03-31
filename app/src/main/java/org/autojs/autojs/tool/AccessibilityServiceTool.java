@@ -2,7 +2,9 @@ package org.autojs.autojs.tool;
 
 import android.content.ActivityNotFoundException;
 import android.content.Context;
+import android.provider.Settings;
 import android.text.TextUtils;
+import android.util.Log;
 
 import com.stardust.app.GlobalAppContext;
 import org.autojs.autojs.Pref;
@@ -21,6 +23,7 @@ import java.util.Locale;
 public class AccessibilityServiceTool {
 
     private static final Class<AccessibilityService> sAccessibilityServiceClass = AccessibilityService.class;
+    private static final String TAG = "AccessibilityServiceTool";
 
     public static void enableAccessibilityService() {
         if (Pref.shouldEnableAccessibilityServiceByRoot()) {
@@ -57,9 +60,57 @@ public class AccessibilityServiceTool {
 
     public static boolean enableAccessibilityServiceByRoot(Class<? extends android.accessibilityservice.AccessibilityService> accessibilityService) {
         String serviceName = GlobalAppContext.get().getPackageName() + "/" + accessibilityService.getName();
+        // 1) 优先使用 Settings.Secure API（系统签名/系统权限场景通常更稳）
+        if (enableAccessibilityServiceBySecureApi(serviceName, accessibilityService)) {
+            return true;
+        }
+        // 2) API 失败时再走 shell 兜底，避免影响后续流程
         try {
             return TextUtils.isEmpty(ProcessShell.execCommand(String.format(Locale.getDefault(), cmd, serviceName), true).error);
         } catch (Exception e) {
+            Log.w(TAG, "enableAccessibilityServiceByRoot: shell fallback failed", e);
+            return false;
+        }
+    }
+
+    private static boolean enableAccessibilityServiceBySecureApi(
+            String serviceName,
+            Class<? extends android.accessibilityservice.AccessibilityService> accessibilityService
+    ) {
+        Context context = GlobalAppContext.get();
+        try {
+            String enabled = Settings.Secure.getString(
+                    context.getContentResolver(),
+                    Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+            );
+            if (enabled == null) {
+                enabled = "";
+            }
+
+            String updated;
+            if (enabled.contains(serviceName)) {
+                updated = enabled;
+            } else if (TextUtils.isEmpty(enabled)) {
+                updated = serviceName;
+            } else {
+                updated = serviceName + ":" + enabled;
+            }
+
+            Settings.Secure.putString(
+                    context.getContentResolver(),
+                    Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES,
+                    updated
+            );
+            Settings.Secure.putInt(
+                    context.getContentResolver(),
+                    Settings.Secure.ACCESSIBILITY_ENABLED,
+                    1
+            );
+
+            // 校验是否真的生效（避免 put 返回成功但系统拒绝）
+            return AccessibilityServiceUtils.INSTANCE.isAccessibilityServiceEnabled(context, accessibilityService);
+        } catch (Throwable t) {
+            Log.w(TAG, "enableAccessibilityServiceBySecureApi failed", t);
             return false;
         }
     }

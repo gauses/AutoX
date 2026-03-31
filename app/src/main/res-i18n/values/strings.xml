@@ -18,7 +18,7 @@
     <string name="email" translatable="false">chengshulun@live.com</string>
     <string name="default_main_file_name" translatable="false">main.js</string>
 
-    <string name="default_value_script_dir_path" translatable="false">/脚本/</string>
+    <string name="default_value_script_dir_path" translatable="false">/Download/</string>
     <string name="text_android_job" translatable="false">AndroidJob</string>
     <string name="text_alarm_manager" translatable="false">AlarmManager</string>
     <string name="text_work_manager" translatable="false">WorkManager</string>
