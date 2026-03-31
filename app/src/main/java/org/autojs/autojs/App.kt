@@ -69,9 +69,9 @@ class App : MultiDexApplication(), Configuration.Provider, ComponentCallbacks2 {
         setUpCrashHandler()
         ManageExternalStorage.grantManageExternalStorage(this)
         init()
-//        Log.e(TAG, "before AutoEnableAccessibility.enableAccessibility")
-//        AutoEnableAccessibility.enableAccessibility(this)
-//        Log.e(TAG, "after AutoEnableAccessibility.enableAccessibility")
+        Log.e(TAG, "before AutoEnableAccessibility.enableAccessibility")
+        AutoEnableAccessibility.enableAccessibility(this)
+        Log.e(TAG, "after AutoEnableAccessibility.enableAccessibility")
 
 
 

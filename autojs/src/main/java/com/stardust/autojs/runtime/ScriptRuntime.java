@@ -141,7 +141,7 @@ public abstract class ScriptRuntime {
     /** 懒加载：仅在脚本首次使用 gmlkit 时创建，降低内存与 CPU 占用 */
     private GoogleMLKit mGmlkit;
 
-    /** 懒加载：仅在脚本首次使用 images 时创建，避免未用找图/截屏时加载 OpenCV 等 */
+    /** 默认预加载：运行时创建阶段即初始化，避免首次使用找图/截屏时额外初始化耗时 */
     private Images mImages;
     private final ScreenCaptureRequester mScreenCaptureRequester;
 
@@ -170,6 +170,7 @@ public abstract class ScriptRuntime {
         device = new Device(context);
         floaty = new Floaty(uiHandler, ui, this);
         files = new Files(this);
+        initImages();
     }
 
     /** 脚本访问 runtime.gmlkit 时按需创建，避免未使用 OCR 时加载 ML Kit */
@@ -378,13 +379,19 @@ public abstract class ScriptRuntime {
         }
     }
 
-    /** 懒加载：首次访问时创建 Images（会拉取 OpenCV 等），降低不涉及找图/截屏脚本的内存占用 */
+    /** 默认预加载；保留空值兜底，避免极端场景下空引用 */
     public Object getImages() {
         if (mImages == null) {
-            android.util.Log.i(TAG, "AUTOX_PERF: images 懒加载触发，首次使用找图/截屏");
-            mImages = new Images(uiHandler.getContext(), this, mScreenCaptureRequester);
+            initImages();
         }
         return mImages;
+    }
+
+    private void initImages() {
+        if (mImages == null) {
+            android.util.Log.i(TAG, "AUTOX_PERF: images 预加载初始化");
+            mImages = new Images(uiHandler.getContext(), this, mScreenCaptureRequester);
+        }
     }
 
     public SevenZip getZips() {

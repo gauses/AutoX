@@ -66,3 +66,10 @@
 0	13	0	clean	8140c17a088004d7
 3	644	7966493938033167	CMakeFiles/native-lib.dir/native-lib.cpp.o	4b79482873220425
 644	740	7966493939023187	D:/Project/AutoX/app/build/intermediates/cxx/RelWithDebInfo/175o5i60/obj/arm64-v8a/libnative-lib.so	2daefa154ad3810b
+0	27	0	clean	8140c17a088004d7
+3	646	7966501580992767	CMakeFiles/native-lib.dir/native-lib.cpp.o	4b79482873220425
+646	743	7966501582019469	D:/Project/AutoX/app/build/intermediates/cxx/RelWithDebInfo/175o5i60/obj/arm64-v8a/libnative-lib.so	2daefa154ad3810b
+0	15	0	clean	8140c17a088004d7
+0	6	0	clean	8140c17a088004d7
+2	633	7966503429942847	CMakeFiles/native-lib.dir/native-lib.cpp.o	4b79482873220425
+634	732	7966503430941197	D:/Project/AutoX/app/build/intermediates/cxx/RelWithDebInfo/175o5i60/obj/arm64-v8a/libnative-lib.so	2daefa154ad3810b
