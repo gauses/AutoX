@@ -784,15 +784,15 @@ function taskLogError(_log){
 
 //开始录屏截图到本地
 function Nest_ScreenCapture(){
-    // 申请截图权限（会弹系统录屏权限框）
-    if (!requestScreenCapture()) {
-        taskLog("自动化任务-申请截图权限失败");
-    }
+    // // 申请截图权限（会弹系统录屏权限框）
+    // if (!requestScreenCapture()) {
+    //     taskLog("自动化任务-申请截图权限失败");
+    // }
 
-    // 申请截图权限（会弹系统录屏权限框）
-    if (!requestScreenCapture()) {
-        taskLog("自动化任务-申请截图权限失败");
-    }
+    // // 申请截图权限（会弹系统录屏权限框）
+    // if (!requestScreenCapture()) {
+    //     taskLog("自动化任务-申请截图权限失败");
+    // }
 
     // 截一张整屏
     var img = captureScreen();           // 返回 Image 对象

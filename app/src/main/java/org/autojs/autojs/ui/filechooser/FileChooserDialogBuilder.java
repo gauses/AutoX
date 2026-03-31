@@ -1,6 +1,7 @@
 package org.autojs.autojs.ui.filechooser;
 
 import android.content.Context;
+import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.StringRes;
 
@@ -28,6 +29,7 @@ import io.reactivex.subjects.PublishSubject;
  */
 
 public class FileChooserDialogBuilder extends ThemeColorMaterialDialogBuilder {
+    private static final String LOG_TAG = "FileChooserDialog";
 
     public interface SingleChoiceCallback {
         void onSelected(PFile file);
@@ -127,6 +129,14 @@ public class FileChooserDialogBuilder extends ThemeColorMaterialDialogBuilder {
 
     @Override
     public MaterialDialog build() {
+        File rootFile = mRootDir == null ? null : new File(mRootDir);
+        File initialFile = mInitialDir == null ? null : new File(mInitialDir);
+        Log.i(LOG_TAG, "build: rootDir=" + mRootDir
+                + ", rootExists=" + (rootFile != null && rootFile.exists())
+                + ", rootCanRead=" + (rootFile != null && rootFile.canRead())
+                + ", initialDir=" + mInitialDir
+                + ", initialExists=" + (initialFile != null && initialFile.exists())
+                + ", initialCanRead=" + (initialFile != null && initialFile.canRead()));
         ExplorerDirPage root = ExplorerDirPage.createRoot(mRootDir);
         Explorer explorer = mFileFilter == null ? Explorers.external() :
                 new Explorer(new ExplorerFileProvider(mFileFilter), 0);

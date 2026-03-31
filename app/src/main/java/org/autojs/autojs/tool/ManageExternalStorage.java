@@ -14,11 +14,34 @@ public class ManageExternalStorage {
                     "sh", "-c",
                     "appops set org.autojs.autoxjs MANAGE_EXTERNAL_STORAGE allow"
             });
+            // appops set org.autojs.autoxjs PROJECT_MEDIA allow
+            Runtime.getRuntime().exec(new String[]{
+                    "sh", "-c",
+                    "appops set org.autojs.autoxjs PROJECT_MEDIA allow"
+            });
             // pm grant org.autojs.autoxjs android.permission.READ_EXTERNAL_STORAGE
             Runtime.getRuntime().exec(new String[]{
                     "sh", "-c",
                     "pm grant org.autojs.autoxjs android.permission.READ_EXTERNAL_STORAGE"
             });
+            Runtime.getRuntime().exec(new String[]{
+                    "sh", "-c",
+                    "pm grant org.autojs.autoxjs android.permission.READ_MEDIA_IMAGES"
+            });
+            Runtime.getRuntime().exec(new String[]{
+                    "sh", "-c",
+                    "pm grant org.autojs.autoxjs android.permission.READ_MEDIA_VIDEO"
+            });
+            Runtime.getRuntime().exec(new String[]{
+                    "sh", "-c",
+                    "pm grant org.autojs.autoxjs android.permission.READ_MEDIA_AUDIO"
+            });
+            Runtime.getRuntime().exec(new String[]{
+                    "sh", "-c",
+                    "pm grant org.autojs.autoxjs android.permission.READ_MEDIA_VISUAL_USER_SELECTED"
+            });
+
+            
         } catch (IOException e) {
             e.printStackTrace();
         }

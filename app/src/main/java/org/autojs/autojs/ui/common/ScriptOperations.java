@@ -7,6 +7,7 @@ import android.os.Environment;
 import android.os.Looper;
 import android.text.Editable;
 import android.text.InputType;
+import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -321,10 +322,27 @@ public class ScriptOperations {
 
 
     public void importFile() {
+        File externalStorageDir = Environment.getExternalStorageDirectory();
+        Log.i(LOG_TAG, "importFile: root=" + externalStorageDir.getPath()
+                + ", exists=" + externalStorageDir.exists()
+                + ", canRead=" + externalStorageDir.canRead()
+                + ", canWrite=" + externalStorageDir.canWrite());
+        File downloadDir = new File(externalStorageDir, "Download");
+        Log.i(LOG_TAG, "importFile: download=" + downloadDir.getPath()
+                + ", exists=" + downloadDir.exists()
+                + ", canRead=" + downloadDir.canRead()
+                + ", canWrite=" + downloadDir.canWrite());
         new FileChooserDialogBuilder(mContext)
                 .dir(Environment.getExternalStorageDirectory().getPath())
                 .justScriptFile()
-                .singleChoice(file -> importFile(file.getPath()).subscribe())
+                .singleChoice(file -> {
+                    Log.i(LOG_TAG, "importFile: selected file=" + file.getPath());
+                    importFile(file.getPath())
+                            .subscribe(
+                                    path -> Log.i(LOG_TAG, "importFile: copied to " + path),
+                                    throwable -> Log.e(LOG_TAG, "importFile: copy failed", throwable)
+                            );
+                })
                 .title(R.string.text_select_file_to_import)
                 .positiveText(R.string.ok)
                 .show();

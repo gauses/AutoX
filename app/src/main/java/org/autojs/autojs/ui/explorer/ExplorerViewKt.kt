@@ -228,6 +228,10 @@ open class ExplorerViewKt : ThemeColorSwipeRefreshLayout, OnRefreshListener,
     @SuppressLint("CheckResult", "NotifyDataSetChanged")
     private fun loadItemList() {
         isRefreshing = true
+        Log.i(
+            LOG_TAG,
+            "loadItemList start: page=${currentPageState.currentPage?.path}, explorerReady=${explorer != null}"
+        )
         explorer!!.fetchChildren(currentPageState.currentPage)
             .subscribeOn(Schedulers.io())
             .flatMapObservable { page: ExplorerPage? ->
@@ -243,12 +247,26 @@ open class ExplorerViewKt : ThemeColorSwipeRefreshLayout, OnRefreshListener,
             .observeOn(Schedulers.computation())
             .doOnSuccess { obj: ExplorerItemList -> obj.sort() }
             .observeOn(AndroidSchedulers.mainThread())
-            .subscribe { list: ExplorerItemList ->
-                explorerItemList = list
-                explorerAdapter.notifyDataSetChanged()
-                isRefreshing = false
-                post { explorerItemListView!!.scrollToPosition(currentPageState.scrollY) }
-            }
+            .subscribe(
+                { list: ExplorerItemList ->
+                    explorerItemList = list
+                    explorerAdapter.notifyDataSetChanged()
+                    isRefreshing = false
+                    Log.i(
+                        LOG_TAG,
+                        "loadItemList success: page=${currentPageState.currentPage?.path}, itemCount=${list.count()}"
+                    )
+                    post { explorerItemListView!!.scrollToPosition(currentPageState.scrollY) }
+                },
+                { throwable: Throwable ->
+                    isRefreshing = false
+                    Log.e(
+                        LOG_TAG,
+                        "loadItemList failed: page=${currentPageState.currentPage?.path}",
+                        throwable
+                    )
+                }
+            )
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
