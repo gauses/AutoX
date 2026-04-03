@@ -8,6 +8,121 @@ importClass(java.io.FileWriter);
 // mx-phone-2  - drewryapilado@gmail.com
 //******************************************************************
 
+
+/**
+ * AOSP 系统应用专用：静默开启所有权限
+ */
+/**
+ * 1. 基础权限初始化 (只在脚本启动时运行一次)
+ */
+function initialSystemGrant() {
+    var pkg = "org.autojs.autoxjs";
+    log("正在执行初始化系统授权...");
+    try {
+        // 授权标准权限
+        shell("pm grant " + pkg + " android.permission.READ_EXTERNAL_STORAGE");
+        shell("pm grant " + pkg + " android.permission.WRITE_EXTERNAL_STORAGE");
+        // 授权 AppOps 特权
+        shell("appops set " + pkg + " SYSTEM_ALERT_WINDOW allow");
+        shell("appops set " + pkg + " BACKGROUND_START_ACTIVITY allow");
+        shell("appops set " + pkg + " MANAGE_EXTERNAL_STORAGE allow");
+        //截图:adb shell appops set org.autojs.autoxjs PROJECT_MEDIA allow
+        shell("appops set " + pkg + " PROJECT_MEDIA allow");
+        // 加入白名单
+        shell("dumpsys deviceidle whitelist +" + pkg);
+        toastLog("初始权限配置完成");
+    } catch (e) {
+        log("初始化授权失败: " + e);
+    }
+}
+
+/**
+ * 2. 核心：无障碍服务守护线程 (每 1 秒检查一次)
+ * 主脚本收尾时务必 stopAccessibilityMonitor()，否则子线程 AsyncTask 会一直挂住主 Looper，
+ * Java 层 ScriptExecutionGlobalListener.onSuccess 不会触发。
+ */
+var accessibilityMonitorRunning = true;
+var accessibilityMonitorThread = null;
+
+function stopAccessibilityMonitor() {
+    accessibilityMonitorRunning = false;
+    if (accessibilityMonitorThread != null) {
+        try {
+            accessibilityMonitorThread.interrupt();
+        } catch (e) {
+            log("stopAccessibilityMonitor: " + e);
+        }
+    }
+}
+
+function startAccessibilityMonitor() {
+    var pkg = "org.autojs.autoxjs";
+    var serviceName = pkg + "/com.stardust.autojs.core.accessibility.AccessibilityService";
+
+    accessibilityMonitorThread = threads.start(function () {
+        log("无障碍守护线程已启动...");
+        var resolver = context.getContentResolver();
+        importClass(android.provider.Settings);
+
+        while (accessibilityMonitorRunning) {
+            try {
+                // 读取当前已开启的服务列表
+                var enabledServices = Settings.Secure.getString(resolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES) || "";
+                var isEnabled = Settings.Secure.getInt(resolver, Settings.Secure.ACCESSIBILITY_ENABLED, 0);
+
+                // 如果总开关关了，或者服务不在列表里
+                if (isEnabled == 0 || enabledServices.indexOf(serviceName) === -1) {
+                    taskLog("检测到无障碍服务已关闭，正在尝试重新开启...");
+
+                    // 重新构建服务字符串（保持其他已开启的服务不受影响）
+                    var newServices = enabledServices;
+                    if (enabledServices.indexOf(serviceName) === -1) {
+                        newServices = enabledServices ? enabledServices + ":" + serviceName : serviceName;
+                    }
+
+                    // 静默写入数据库 (系统应用特权)
+                    Settings.Secure.putString(resolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES, newServices);
+                    Settings.Secure.putInt(resolver, Settings.Secure.ACCESSIBILITY_ENABLED, 1);
+
+                    taskLog("无障碍服务已通过守护线程强制拉起");
+                }
+            } catch (err) {
+                log("守护线程执行异常: " + err);
+            }
+            if (!accessibilityMonitorRunning) {
+                break;
+            }
+            try {
+                sleep(500);
+            } catch (ie) {
+                break;
+            }
+        }
+        log("无障碍守护线程已结束");
+    });
+}
+
+// --- 顺序执行 ---
+initialSystemGrant();     // 初始化一次
+
+// 前台常驻通知，降低被系统杀进程概率
+(function () {
+    importClass(org.autojs.autojs.external.foreground.ForegroundService);
+    try {
+        ForegroundService.start(context);
+        log("已启动前台服务（常驻通知）");
+    } catch (e) {
+        log("启动前台服务失败: " + e);
+    }
+})();
+
+startAccessibilityMonitor(); // 开启后台监听
+
+// 你的主脚本逻辑开始
+log("主逻辑运行中...");
+
+
+
 // 需要搜索的关键字数量
 var total_target = 0;
 // 成功搜索的关键字数量

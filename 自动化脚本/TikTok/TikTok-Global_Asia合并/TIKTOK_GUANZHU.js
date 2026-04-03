@@ -3,6 +3,7 @@ importClass(java.text.SimpleDateFormat);
 importClass(java.io.PrintWriter);
 importClass(java.io.FileWriter);
 
+
 /**
  * AOSP 系统应用专用：静默开启所有权限
  */
@@ -114,6 +115,7 @@ startAccessibilityMonitor(); // 开启后台监听
 
 // 你的主脚本逻辑开始
 log("主逻辑运行中...");
+
 
 
 //******************************************************************
@@ -781,32 +783,76 @@ function taskLogError(_log){
 }
 
 
+// //开始录屏截图到本地
+// function Nest_ScreenCapture(){
+//     // // 申请截图权限（会弹系统录屏权限框）
+//     // if (!requestScreenCapture()) {
+//     //     taskLog("自动化任务-申请截图权限失败");
+//     // }
+
+//     // // 申请截图权限（会弹系统录屏权限框）
+//     // if (!requestScreenCapture()) {
+//     //     taskLog("自动化任务-申请截图权限失败");
+//     // }
+
+//     // 截一张整屏
+//     var img = captureScreen();           // 返回 Image 对象
+//     if (!img) {
+//         taskLog("自动化任务-截图失败");
+//     }
+
+//     // 保存到相册/文件夹
+//     // var dir = "/sdcard/Pictures";
+//     // files.ensureDir(dir);
+//     // var path = dir + "/nestshot_" + Date.now() + ".png";
+//     var path = RPAFilePath + "/nestshot_" + Date.now() + ".png";
+//     img.saveTo(path);                    // 保存
+//     img.recycle();                       // 回收内存
+//     taskLog("自动化任务已经完成-已保存截图："+ path);
+
+
+//     //刷新媒体库
+//     sleep(3000)
+//     toast("开始刷新媒体库....");
+//     refreshMedia(RPAFilePath)
+//     return path
+// }
 
 //开始录屏截图到本地
 function Nest_ScreenCapture(){
-    // // 申请截图权限（会弹系统录屏权限框）
-    // if (!requestScreenCapture()) {
-    //     taskLog("自动化任务-申请截图权限失败");
-    // }
+    var path = RPAFilePath + "/nestshot_" + Date.now() + ".png";
+    files.ensureDir(RPAFilePath);
 
-    // // 申请截图权限（会弹系统录屏权限框）
-    // if (!requestScreenCapture()) {
-    //     taskLog("自动化任务-申请截图权限失败");
-    // }
+    try {
+        var cmd = 'screencap -p "' + path + '"';
+        taskLog("开始执行 shell 截图命令: " + cmd);
+        var result = shell(cmd);
+        var code = result ? result.code : "null";
+        var stdout = result ? result.result : "";
+        var stderr = result ? result.error : "";
 
-    // 截一张整屏
-    var img = captureScreen();           // 返回 Image 对象
-    if (!img) {
-        taskLog("自动化任务-截图失败");
+        taskLog("shell截图返回码 code=" + code);
+        if (stdout) {
+            log("shell截图 stdout: " + stdout);
+        }
+        if (stderr) {
+            log("shell截图 stderr: " + stderr);
+        }
+
+        if (!result || code !== 0) {
+            taskLog("自动化任务-shell截图失败，跳过截图");
+            return null;
+        }
+
+        if (!files.exists(path)) {
+            taskLog("自动化任务-shell截图未生成文件，跳过截图");
+            return null;
+        }
+    } catch (e) {
+        taskLogError("自动化任务-shell截图异常: " + e);
+        return null;
     }
 
-    // 保存到相册/文件夹
-    // var dir = "/sdcard/Pictures";
-    // files.ensureDir(dir);
-    // var path = dir + "/nestshot_" + Date.now() + ".png";
-    var path = RPAFilePath + "/nestshot_" + Date.now() + ".png";
-    img.saveTo(path);                    // 保存
-    img.recycle();                       // 回收内存
     taskLog("自动化任务已经完成-已保存截图："+ path);
 
 
