@@ -101,6 +101,37 @@ function startAccessibilityMonitor() {
     });
 }
 
+function isAccessibilityServiceReady() {
+    try {
+        var service = com.stardust.view.accessibility.AccessibilityService.Companion.getInstance();
+        return service != null;
+    } catch (e) {
+        try {
+            return auto.service != null;
+        } catch (ignored) {
+            return false;
+        }
+    }
+}
+
+function waitAccessibilityReady(timeoutMs) {
+    var start = new Date().getTime();
+    var lastLogTime = 0;
+    while (new Date().getTime() - start < timeoutMs) {
+        if (isAccessibilityServiceReady()) {
+            log("无障碍服务实例已就绪");
+            return true;
+        }
+        var now = new Date().getTime();
+        if (now - lastLogTime >= 1000) {
+            lastLogTime = now;
+            log("等待无障碍服务实例绑定中...");
+        }
+        sleep(300);
+    }
+    return false;
+}
+
 // --- 顺序执行 ---
 initialSystemGrant();     // 初始化一次
 
@@ -116,6 +147,10 @@ initialSystemGrant();     // 初始化一次
 })();
 
 startAccessibilityMonitor(); // 开启后台监听
+
+if (!waitAccessibilityReady(15000)) {
+    throw new Error("无障碍服务开关已开启，但服务实例在15秒内未就绪");
+}
 
 // 你的主脚本逻辑开始
 log("主逻辑运行中...");
@@ -623,23 +658,74 @@ function stopCurrentTask(){
 
 }
 
-/**
- * 强制停止指定包名的应用
- * @param {string} packageName - 目标应用的包名
- */
-function forceStop_APP(packageName) {
-    // log("正在强制停止应用: " + packageName);
-    
-    // // 注意：因为你是系统应用，直接调用 shell 即可，千万不要加第二个参数 true (找 su)
-    // var result = shell("am force-stop " + packageName);
-    
-    // if (result.code == 0) {
-    //     toastLog("成功停止: " + packageName);
-    //     return true;
-    // } else {
-    //     log("停止失败，错误信息: " + result.error);
-    //     return false;
+//强制停止TikTok 
+function forceStop_APP(packageName){
+    try {
+        var cmd = "am force-stop " + packageName;
+        taskLog("准备强杀: " + packageName);
+        taskLog("执行命令: " + cmd);
+
+        var result = shell(cmd);
+        var code = result ? result.code : "null";
+        var stdout = result ? result.result : "";
+        var stderr = result ? result.error : "";
+
+        log("force-stop code = " + code);
+        if (stdout) {
+            log("force-stop result = " + stdout);
+        }
+        if (stderr) {
+            log("force-stop error = " + stderr);
+        }
+
+        if (result && code === 0) {
+            taskLog("强杀成功: " + packageName);
+            return true;
+        } else {
+            taskLogError("强杀失败: " + packageName + (stderr ? "，error=" + stderr : ""));
+            return false;
+        }
+    } catch (e) {
+        taskLogError("强杀异常: " + e);
+        return false;
+    }
+
+    // taskLog("准备强杀:" + packageName + "...")
+    // sleep(1000);
+    // openAppSettings(packageName)
+    // sleep(5000)
+
+    // // 遍历所有可能的强制停止按钮文本
+    // for (let lang in FORCE_STOP_TEXT) {
+    //     let stopText = FORCE_STOP_TEXT[lang];
+    //     if (text(stopText).exists()) {
+    //         let forceStopBtn = text(stopText).findOne();
+    //         if (forceStopBtn && forceStopBtn.clickable()) {
+    //             forceStopBtn.click();
+    //             sleep(1000);
+                
+    //             // 遍历所有可能的确认按钮文本
+    //             for (let confirmLang in FORCE_STOP_CONFIRM_TEXT) {
+    //                 let confirmText = FORCE_STOP_CONFIRM_TEXT[confirmLang];
+    //                 if (text(confirmText).exists()) {
+    //                     text(confirmText).findOne().click();
+    //                     taskLog("成功点击'" + stopText + "'按钮并确认");
+    //                     sleep(3000);
+    //                     home();
+    //                     return;
+    //                 }
+    //             }
+    //         } else {
+    //             taskLog("未找到可点击的'" + stopText + "'按钮");
+    //         }
+    //     } else {
+    //         taskLog("未找到'" + stopText + "'按钮");
+    //     }
+    //     sleep(1000);
     // }
+
+    // // 如果所有语言都尝试失败，返回主页
+    // home();
 }
 
 

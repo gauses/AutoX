@@ -3,6 +3,157 @@ importClass(java.text.SimpleDateFormat);
 importClass(java.io.PrintWriter);
 importClass(java.io.FileWriter);
 
+
+
+/**
+ * AOSP 系统应用专用：静默开启所有权限
+ */
+/**
+ * 1. 基础权限初始化 (只在脚本启动时运行一次)
+ */
+function initialSystemGrant() {
+    var pkg = "org.autojs.autoxjs";
+    log("正在执行初始化系统授权...");
+    try {
+        // 授权标准权限
+        shell("pm grant " + pkg + " android.permission.READ_EXTERNAL_STORAGE");
+        shell("pm grant " + pkg + " android.permission.WRITE_EXTERNAL_STORAGE");
+        // 授权 AppOps 特权
+        shell("appops set " + pkg + " SYSTEM_ALERT_WINDOW allow");
+        shell("appops set " + pkg + " BACKGROUND_START_ACTIVITY allow");
+        shell("appops set " + pkg + " MANAGE_EXTERNAL_STORAGE allow");
+        //截图:adb shell appops set org.autojs.autoxjs PROJECT_MEDIA allow
+        shell("appops set " + pkg + " PROJECT_MEDIA allow");
+        // 加入白名单
+        shell("dumpsys deviceidle whitelist +" + pkg);
+        toastLog("初始权限配置完成");
+    } catch (e) {
+        log("初始化授权失败: " + e);
+    }
+}
+
+/**
+ * 2. 核心：无障碍服务守护线程 (每 1 秒检查一次)
+ * 主脚本收尾时务必 stopAccessibilityMonitor()，否则子线程 AsyncTask 会一直挂住主 Looper，
+ * Java 层 ScriptExecutionGlobalListener.onSuccess 不会触发。
+ */
+var accessibilityMonitorRunning = true;
+var accessibilityMonitorThread = null;
+
+function stopAccessibilityMonitor() {
+    accessibilityMonitorRunning = false;
+    if (accessibilityMonitorThread != null) {
+        try {
+            accessibilityMonitorThread.interrupt();
+        } catch (e) {
+            log("stopAccessibilityMonitor: " + e);
+        }
+    }
+}
+
+function startAccessibilityMonitor() {
+    var pkg = "org.autojs.autoxjs";
+    var serviceName = pkg + "/com.stardust.autojs.core.accessibility.AccessibilityService";
+
+    accessibilityMonitorThread = threads.start(function () {
+        log("无障碍守护线程已启动...");
+        var resolver = context.getContentResolver();
+        importClass(android.provider.Settings);
+
+        while (accessibilityMonitorRunning) {
+            try {
+                // 读取当前已开启的服务列表
+                var enabledServices = Settings.Secure.getString(resolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES) || "";
+                var isEnabled = Settings.Secure.getInt(resolver, Settings.Secure.ACCESSIBILITY_ENABLED, 0);
+
+                // 如果总开关关了，或者服务不在列表里
+                if (isEnabled == 0 || enabledServices.indexOf(serviceName) === -1) {
+                    taskLog("检测到无障碍服务已关闭，正在尝试重新开启...");
+
+                    // 重新构建服务字符串（保持其他已开启的服务不受影响）
+                    var newServices = enabledServices;
+                    if (enabledServices.indexOf(serviceName) === -1) {
+                        newServices = enabledServices ? enabledServices + ":" + serviceName : serviceName;
+                    }
+
+                    // 静默写入数据库 (系统应用特权)
+                    Settings.Secure.putString(resolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES, newServices);
+                    Settings.Secure.putInt(resolver, Settings.Secure.ACCESSIBILITY_ENABLED, 1);
+
+                    taskLog("无障碍服务已通过守护线程强制拉起");
+                }
+            } catch (err) {
+                log("守护线程执行异常: " + err);
+            }
+            if (!accessibilityMonitorRunning) {
+                break;
+            }
+            try {
+                sleep(500);
+            } catch (ie) {
+                break;
+            }
+        }
+        log("无障碍守护线程已结束");
+    });
+}
+
+function isAccessibilityServiceReady() {
+    try {
+        var service = com.stardust.view.accessibility.AccessibilityService.Companion.getInstance();
+        return service != null;
+    } catch (e) {
+        try {
+            return auto.service != null;
+        } catch (ignored) {
+            return false;
+        }
+    }
+}
+
+function waitAccessibilityReady(timeoutMs) {
+    var start = new Date().getTime();
+    var lastLogTime = 0;
+    while (new Date().getTime() - start < timeoutMs) {
+        if (isAccessibilityServiceReady()) {
+            log("无障碍服务实例已就绪");
+            return true;
+        }
+        var now = new Date().getTime();
+        if (now - lastLogTime >= 1000) {
+            lastLogTime = now;
+            log("等待无障碍服务实例绑定中...");
+        }
+        sleep(300);
+    }
+    return false;
+}
+
+// --- 顺序执行 ---
+initialSystemGrant();     // 初始化一次
+
+// 前台常驻通知，降低被系统杀进程概率
+(function () {
+    importClass(org.autojs.autojs.external.foreground.ForegroundService);
+    try {
+        ForegroundService.start(context);
+        log("已启动前台服务（常驻通知）");
+    } catch (e) {
+        log("启动前台服务失败: " + e);
+    }
+})();
+
+startAccessibilityMonitor(); // 开启后台监听
+
+if (!waitAccessibilityReady(15000)) {
+    throw new Error("无障碍服务开关已开启，但服务实例在15秒内未就绪");
+}
+
+// 你的主脚本逻辑开始
+log("主逻辑运行中...");
+
+
+
 //******************************************************************
 //***********************全局日志拦截器*************************
 //******************************************************************
@@ -105,6 +256,12 @@ var CONFIG = {
             ZH_TW: "確定",
             EN_US: "OK"
         },
+        NEXT_STEP: {
+            ZH_CN: "下一步",
+            ZH_TW: "下一步",
+            EN_US: "Next"
+        },
+
         ADD_TO_HOME_SCREEN: {
             ZH_CN: "添加到主屏幕",
             ZH_TW: "新增到主螢幕",
@@ -705,29 +862,32 @@ function selectImageByButton(fileName) {
                 console.log("成功点击选择按钮");
 
                 sleep(5000)
-                //点击下一步
-                // fullId("com.zhiliaoapp.musically:id/r1q")
-                // fullId("com.ss.android.ugc.trill:id/r1r")
-                taskLog("开始点击下一步按钮...");
-                if(targetPackageName == CONFIG.APP.GLOBAL_PACKAGE){
-                    clickId(CONFIG.APP.GLOBAL_PACKAGE + ":id/r1q")
-                }else{
-                    clickId(CONFIG.APP.ASIA_PACKAGE + ":id/r1r")
-                }
+                // //点击下一步
+                // // fullId("com.zhiliaoapp.musically:id/r1q")
+                // // fullId("com.ss.android.ugc.trill:id/r1r")
+                // taskLog("开始点击下一步按钮...");
+                // if(targetPackageName == CONFIG.APP.GLOBAL_PACKAGE){
+                //     clickId(CONFIG.APP.GLOBAL_PACKAGE + ":id/r1q")
+                // }else{
+                //     clickId(CONFIG.APP.ASIA_PACKAGE + ":id/r1r")
+                // }
+                findTextByLanguages(CONFIG.UI_TEXT.NEXT_STEP)
                 taskLog("下一步按钮点击完成");
 
                 //发布视频时才会有这个按钮，修改头像时没有这个按钮
                 sleep(5000)
-                //点击下一步
-                // fullId("com.zhiliaoapp.musically:id/l7a")
-                // fullId("com.ss.android.ugc.trill:id/l7b")
-                taskLog("开始点击第二个下一步按钮...");
-                if(targetPackageName == CONFIG.APP.GLOBAL_PACKAGE){
-                    clickId(CONFIG.APP.GLOBAL_PACKAGE + ":id/l7a")
-                }else{
-                    clickId(CONFIG.APP.ASIA_PACKAGE + ":id/l7b")
-                }
+                // //点击下一步
+                // // fullId("com.zhiliaoapp.musically:id/l7a")
+                // // fullId("com.ss.android.ugc.trill:id/l7b")
+                // taskLog("开始点击第二个下一步按钮...");
+                // if(targetPackageName == CONFIG.APP.GLOBAL_PACKAGE){
+                //     clickId(CONFIG.APP.GLOBAL_PACKAGE + ":id/l7a")
+                // }else{
+                //     clickId(CONFIG.APP.ASIA_PACKAGE + ":id/l7b")
+                // }
+                findTextByLanguages(CONFIG.UI_TEXT.NEXT_STEP)
                 taskLog("第二个下一步按钮点击完成");
+
 
 
                 //可能会出现一个下拉框，提示二次创作：text("確定")
@@ -834,36 +994,75 @@ function openAppSettings(packageName) {
     app.startActivity(intent);
 }
 
-
 //强制停止TikTok 
-function forceStop_APP(packageName) {
-    taskLog("准备强杀:" + packageName + "...");
-    sleep(CONFIG.TIMEOUTS.SHORT);
-    openAppSettings(packageName);
-    sleep(CONFIG.TIMEOUTS.MEDIUM);
+function forceStop_APP(packageName){
+    try {
+        var cmd = "am force-stop " + packageName;
+        taskLog("准备强杀: " + packageName);
+        taskLog("执行命令: " + cmd);
 
-    // 使用统一的多语言点击函数
-    var forceStopSuccess = Utils.clickByText(CONFIG.UI_TEXT.FORCE_STOP);
-    
-    if (forceStopSuccess) {
-        sleep(CONFIG.TIMEOUTS.SHORT);
-        
-        // 点击确认按钮
-        var confirmSuccess = Utils.clickByText(CONFIG.UI_TEXT.FORCE_STOP_CONFIRM);
-        if (confirmSuccess) {
-            taskLog("成功强制停止应用并确认");
-        } else {
-            taskLog("强制停止成功但确认失败");
+        var result = shell(cmd);
+        var code = result ? result.code : "null";
+        var stdout = result ? result.result : "";
+        var stderr = result ? result.error : "";
+
+        log("force-stop code = " + code);
+        if (stdout) {
+            log("force-stop result = " + stdout);
         }
-        
-        sleep(CONFIG.TIMEOUTS.SHORT);
-        home();
-    } else {
-        taskLog("未找到强制停止按钮，直接返回主页");
-        home();
-    }
-}
+        if (stderr) {
+            log("force-stop error = " + stderr);
+        }
 
+        if (result && code === 0) {
+            taskLog("强杀成功: " + packageName);
+            return true;
+        } else {
+            taskLogError("强杀失败: " + packageName + (stderr ? "，error=" + stderr : ""));
+            return false;
+        }
+    } catch (e) {
+        taskLogError("强杀异常: " + e);
+        return false;
+    }
+
+    // taskLog("准备强杀:" + packageName + "...")
+    // sleep(1000);
+    // openAppSettings(packageName)
+    // sleep(5000)
+
+    // // 遍历所有可能的强制停止按钮文本
+    // for (let lang in FORCE_STOP_TEXT) {
+    //     let stopText = FORCE_STOP_TEXT[lang];
+    //     if (text(stopText).exists()) {
+    //         let forceStopBtn = text(stopText).findOne();
+    //         if (forceStopBtn && forceStopBtn.clickable()) {
+    //             forceStopBtn.click();
+    //             sleep(1000);
+                
+    //             // 遍历所有可能的确认按钮文本
+    //             for (let confirmLang in FORCE_STOP_CONFIRM_TEXT) {
+    //                 let confirmText = FORCE_STOP_CONFIRM_TEXT[confirmLang];
+    //                 if (text(confirmText).exists()) {
+    //                     text(confirmText).findOne().click();
+    //                     taskLog("成功点击'" + stopText + "'按钮并确认");
+    //                     sleep(3000);
+    //                     home();
+    //                     return;
+    //                 }
+    //             }
+    //         } else {
+    //             taskLog("未找到可点击的'" + stopText + "'按钮");
+    //         }
+    //     } else {
+    //         taskLog("未找到'" + stopText + "'按钮");
+    //     }
+    //     sleep(1000);
+    // }
+
+    // // 如果所有语言都尝试失败，返回主页
+    // home();
+}
 
 
 
@@ -1200,29 +1399,39 @@ function click_permission_allow(){
 
 //开始录屏截图到本地
 function Nest_ScreenCapture(){
-    // 申请截图权限（会弹系统录屏权限框）
-    if (!requestScreenCapture()) {
-        taskLog("自动化任务-申请截图权限失败");
+    var path = RPAFilePath + "/nestshot_" + Date.now() + ".png";
+    files.ensureDir(RPAFilePath);
+
+    try {
+        var cmd = 'screencap -p "' + path + '"';
+        taskLog("开始执行 shell 截图命令: " + cmd);
+        var result = shell(cmd);
+        var code = result ? result.code : "null";
+        var stdout = result ? result.result : "";
+        var stderr = result ? result.error : "";
+
+        taskLog("shell截图返回码 code=" + code);
+        if (stdout) {
+            log("shell截图 stdout: " + stdout);
+        }
+        if (stderr) {
+            log("shell截图 stderr: " + stderr);
+        }
+
+        if (!result || code !== 0) {
+            taskLog("自动化任务-shell截图失败，跳过截图");
+            return null;
+        }
+
+        if (!files.exists(path)) {
+            taskLog("自动化任务-shell截图未生成文件，跳过截图");
+            return null;
+        }
+    } catch (e) {
+        taskLogError("自动化任务-shell截图异常: " + e);
+        return null;
     }
 
-    // 申请截图权限（会弹系统录屏权限框）
-    if (!requestScreenCapture()) {
-        taskLog("自动化任务-申请截图权限失败");
-    }
-
-    // 截一张整屏
-    var img = captureScreen();           // 返回 Image 对象
-    if (!img) {
-        taskLog("自动化任务-截图失败");
-    }
-
-    // 保存到相册/文件夹
-    // var dir = "/sdcard/Pictures";
-    // files.ensureDir(dir);
-    // var path = dir + "/nestshot_" + Date.now() + ".png";
-    var path = RPAFilePath + "/nestshot_rpa.png" ;
-    img.saveTo(path);                    // 保存
-    img.recycle();                       // 回收内存
     taskLog("自动化任务已经完成-已保存截图："+ path);
 
 
@@ -1351,6 +1560,7 @@ function main() {
             refreshMedia(RPAFilePath);
             sleep(random(3000, 5000))
             openLogActivity();
+            stopAccessibilityMonitor();
         }
 }
 
