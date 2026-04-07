@@ -871,9 +871,13 @@ function selectImageByButton(fileName) {
                 // }else{
                 //     clickId(CONFIG.APP.ASIA_PACKAGE + ":id/r1r")
                 // }
-                findTextByLanguages(CONFIG.UI_TEXT.NEXT_STEP)
+                if (!findTextByLanguagesWithRetry(CONFIG.UI_TEXT.NEXT_STEP, 
+                    10, 5000, "第一个下一步按钮连续10次点击失败")) {
+                    throw new Error("第一个下一步按钮连续10次点击失败");
+                }
                 taskLog("下一步按钮点击完成");
 
+                taskLog("开始等待5秒，此时正在等待载入视频.....");
                 //发布视频时才会有这个按钮，修改头像时没有这个按钮
                 sleep(5000)
                 // //点击下一步
@@ -885,7 +889,11 @@ function selectImageByButton(fileName) {
                 // }else{
                 //     clickId(CONFIG.APP.ASIA_PACKAGE + ":id/l7b")
                 // }
-                findTextByLanguages(CONFIG.UI_TEXT.NEXT_STEP)
+                
+                if (!findTextByLanguagesWithRetry(CONFIG.UI_TEXT.NEXT_STEP, 
+                    10, 5000, "第二个下一步按钮连续10次点击失败")) {
+                    throw new Error("第二个下一步按钮连续10次点击失败");
+                }
                 taskLog("第二个下一步按钮点击完成");
 
 
@@ -1187,6 +1195,22 @@ function findTextByLanguages(languageObject) {
         }
     }
     taskLog("未找到任何匹配的文本");
+    return false;
+}
+
+function findTextByLanguagesWithRetry(languageObject, maxRetries, delayMs, failMessage) {
+    for (var attempt = 1; attempt <= maxRetries; attempt++) {
+        taskLog("开始第" + attempt + "次检测目标文本...");
+        if (findTextByLanguages(languageObject)) {
+            taskLog("第" + attempt + "次检测成功");
+            return true;
+        }
+        if (attempt < maxRetries) {
+            taskLog("第" + attempt + "次检测失败，等待" + delayMs + "毫秒后重试");
+            sleep(delayMs);
+        }
+    }
+    taskLogError(failMessage || ("连续" + maxRetries + "次检测失败"));
     return false;
 }
 
