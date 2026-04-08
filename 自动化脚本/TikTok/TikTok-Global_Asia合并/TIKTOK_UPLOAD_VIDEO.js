@@ -261,6 +261,35 @@ var CONFIG = {
             ZH_TW: "下一步",
             EN_US: "Next"
         },
+        CREATE_POST_TEX: {
+            ZH_CN: "创建", 
+            ZH_TW: "創作", // 創作
+            ZH_TW_02: "建立", 
+            EN_US: "Create", //desc("Create")
+            EN_US_02: "CREATE" //desc("Create")
+        },
+
+        NEW_VIDEO_TEX: {
+            ZH_CN: "新视频", //text("新视频")
+            ZH_TW: "新影片", //text("新视频")
+            EN_US: "New video", //text("New video")
+            EN_US_02: "NEW VIDEO" //text("New video")
+        },
+
+        ALL_VIDEO_TEX: {
+            ZH_CN: "全部", 
+            ZH_TW: "全部",
+            EN_US: "All",
+            EN_US_02: "Recents"
+        },
+
+        CHOOSE_VIDEO_NEXT_TEXT:{
+            ZH_CN: "下一步",//desc("下一步")
+            ZH_TW: "下一步",
+            EN_US: "Next", //desc("下一步")
+            EN_US_02: "NEXT"
+        },
+
 
         ADD_TO_HOME_SCREEN: {
             ZH_CN: "添加到主屏幕",
@@ -367,7 +396,7 @@ var Utils = {
 
     // 安全的坐标点击
     safeClick: function(x, y, deviation) {
-        deviation = deviation || 2;
+        deviation = (typeof deviation === "number") ? deviation : 2;
         var finalX = Math.max(0, x + random(-deviation, deviation));
         var finalY = Math.max(0, y + random(-deviation, deviation));
         
@@ -786,23 +815,38 @@ function selectImageByButton(fileName) {
         var allTextView = className("android.widget.TextView").find();
         taskLog("找到allTextView: 全部 = "  + allTextView.size());
         if (allTextView && allTextView.size() > 0) {
+            var allButtonClicked = false;
             for (var i = 0; i < allTextView.size(); i++) {
                 var textView = allTextView.get(i);
                 if (textView) {
                     // taskLog("找到textView控件-Text：" + textView.text());
                     
                     //点击顶部按钮：全部
-                    //TextView全部：fullId("com.zhiliaoapp.musically:id/tqg")
-                    //fullId("com.ss.android.ugc.trill:id/tqj")
-                    if (textView.id() == (CONFIG.APP.GLOBAL_PACKAGE +":id/tqg") || textView.id() == (CONFIG.APP.ASIA_PACKAGE +":id/tqj")) {
-                        // 正确调用bounds()方法并点击
-                        taskLog("找到顶部控件: 全部" );
-                        var bounds = textView.bounds();
-                        click(bounds.centerX(), bounds.centerY());
-                        // 找到并点击后可以跳出循环
+                    // if (textView.id() == (CONFIG.APP.GLOBAL_PACKAGE +":id/tqg") 
+                    //     || textView.id() == (CONFIG.APP.ASIA_PACKAGE +":id/tqj")) {
+                    //     // 正确调用bounds()方法并点击
+                    //     taskLog("找到顶部控件: 全部" );
+                    //     var bounds = textView.bounds();
+                    //     click(bounds.centerX(), bounds.centerY());
+                    //     // 找到并点击后可以跳出循环
+                    //     break;
+                    // }
+
+                    // 点击发布按钮：通过底部导航结构查找 TikTok 底部中间的 Button
+                    allButtonClicked = findTextOrDescByLanguagesWithRetry(
+                        CONFIG.UI_TEXT.ALL_VIDEO_TEX,
+                        10,
+                        5000,
+                        "未找到 TikTok 顶部图像库的“全部”按钮"
+                    );
+                    if (allButtonClicked) {
+                        sleep(CONFIG.TIMEOUTS.SHORT);
                         break;
                     }
                 }
+            }
+            if (!allButtonClicked) {
+                throw new Error("未找到 TikTok 顶部图像库的“全部”按钮");
             }
         }
 
@@ -835,97 +879,92 @@ function selectImageByButton(fileName) {
 
         sleep(5000);
         
-        // 查找并点击指定按钮（其实只需要点击第一个图片的按钮就行了，因为肯定就是第一张图片）
-
-        var autoSelectButton = null;
-        //右上角最小的圆形按钮
-        //fullId("com.ss.android.ugc.trill:id/hkm")
-        //fullId("com.zhiliaoapp.musically:id/hkl")
-        if(targetPackageName == CONFIG.APP.GLOBAL_PACKAGE){
-            autoSelectButton = id(CONFIG.APP.GLOBAL_PACKAGE + ":id/hkl").find();
-            taskLog("查找全球版选择按钮，包名：" + CONFIG.APP.GLOBAL_PACKAGE + ":id/hkl");
-        }else{
-            autoSelectButton = id(CONFIG.APP.ASIA_PACKAGE + ":id/hkm").find();
-            taskLog("查找亚洲版选择按钮，包名：" + CONFIG.APP.ASIA_PACKAGE + ":id/hkm");
+        // 找到 GridView，点击其内部所有 FrameLayout（逐个点击）
+        var gridView = className("android.widget.GridView").findOne(10000);
+        if (!gridView) {
+            throw new Error("未找到 A_NEST_TikTok_MEDIA 界面下有影片GridView，请检查是否跳转到A_NEST_TikTok_MEDIA");
         }
-        
-        taskLog("找到的选择按钮数量：" + (autoSelectButton ? autoSelectButton.size() : 0));
-        
-        for(var i = 0; i < autoSelectButton.size(); i++) {
-            var selectButton = autoSelectButton.get(i);
-            taskLog("处理第 " + (i + 1) + " 个选择按钮");
-            if(selectButton) {
-                taskLog("找到有效的选择按钮，开始点击");
-                sleep(1000)
-                // 点击选择按钮
-                selectButton.click();
-                console.log("成功点击选择按钮");
 
-                sleep(5000)
-                // //点击下一步
-                // // fullId("com.zhiliaoapp.musically:id/r1q")
-                // // fullId("com.ss.android.ugc.trill:id/r1r")
-                // taskLog("开始点击下一步按钮...");
-                // if(targetPackageName == CONFIG.APP.GLOBAL_PACKAGE){
-                //     clickId(CONFIG.APP.GLOBAL_PACKAGE + ":id/r1q")
-                // }else{
-                //     clickId(CONFIG.APP.ASIA_PACKAGE + ":id/r1r")
-                // }
-                if (!findTextByLanguagesWithRetry(CONFIG.UI_TEXT.NEXT_STEP, 
-                    10, 5000, "第一个下一步按钮连续10次点击失败")) {
-                    throw new Error("第一个下一步按钮连续10次点击失败");
-                }
-                taskLog("下一步按钮点击完成");
+        var frameLayouts = gridView.find(className("android.widget.FrameLayout"));
+        var frameCount = frameLayouts ? frameLayouts.size() : 0;
+        taskLog("GridView 内找到 FrameLayout 数量：" + frameCount);
+        if (!frameLayouts || frameCount <= 0) {
+            throw new Error("未找到 A_NEST_TikTok_MEDIA 界面下有任何影片，请检查是否存在影片");
+        }
 
-                taskLog("开始等待5秒，此时正在等待载入视频.....");
-                //发布视频时才会有这个按钮，修改头像时没有这个按钮
-                sleep(5000)
-                // //点击下一步
-                // // fullId("com.zhiliaoapp.musically:id/l7a")
-                // // fullId("com.ss.android.ugc.trill:id/l7b")
-                // taskLog("开始点击第二个下一步按钮...");
-                // if(targetPackageName == CONFIG.APP.GLOBAL_PACKAGE){
-                //     clickId(CONFIG.APP.GLOBAL_PACKAGE + ":id/l7a")
-                // }else{
-                //     clickId(CONFIG.APP.ASIA_PACKAGE + ":id/l7b")
-                // }
-                
-                if (!findTextByLanguagesWithRetry(CONFIG.UI_TEXT.NEXT_STEP, 
-                    10, 5000, "第二个下一步按钮连续10次点击失败")) {
-                    throw new Error("第二个下一步按钮连续10次点击失败");
-                }
-                taskLog("第二个下一步按钮点击完成");
+        var clickedKeySet = {};
+        var clickedCount = 0;
+        for (var i = 0; i < frameCount; i++) {
+            var frame = frameLayouts.get(i);
+            if (!frame) continue;
+
+            var b = frame.bounds();
+            var key = [b.left, b.top, b.right, b.bottom].join(",");
+            if (clickedKeySet[key]) continue;
+            clickedKeySet[key] = true;
+
+            var cx = b.centerX();
+            var cy = b.centerY();
+            taskLog("点击第 " + (clickedCount + 1) + " 个 FrameLayout，centerX=" + cx + ", centerY=" + cy);
+            click(cx, cy);
+            clickedCount++;
+            sleep(300);
+        }
+        taskLog("FrameLayout 点击完成，总点击数：" + clickedCount);
 
 
 
-                //可能会出现一个下拉框，提示二次创作：text("確定")
-                findTextByLanguages(CONFIG.UI_TEXT.CONFIRM)
+        sleep(5000);
+        if (!findTextOrDescByLanguagesWithRetry(CONFIG.UI_TEXT.NEXT_STEP,
+            30, 5000, "第一个下一步按钮连续10次点击失败")) {
+            throw new Error("第一个下一步按钮连续10次点击失败");
+        }
+        taskLog("下一步按钮点击完成");
 
-                sleep(3000)
-                click_Video_desc()
 
-                sleep(5000)
-                //点击Post
-                //fullId("com.zhiliaoapp.musically:id/neo")
-                //之前找不到ID，所以直接点击最后一个Button
-                var allPostButtons = className("android.widget.Button").find();
-                if (allPostButtons && allPostButtons.size() > 0) {
-                    var lastPostButton = allPostButtons.get(allPostButtons.size() - 1);
-                    if (lastPostButton) {
-                        lastPostButton.click();
-                        taskLog("Post按钮点击完成");
-                    }
-                }
-                sleep(5000)
 
-                // //可能会出现一个下拉框，提示是否添加到主屏幕:text("ADD TO HOME SCREEN")
-                taskLog("开始查找是否添加到主屏幕.....")
-                findTextByLanguages(CONFIG.UI_TEXT.ADD_TO_HOME_SCREEN)
+        taskLog("开始等待5秒，此时正在等待载入视频.....");
+        sleep(5000);
 
-                sleep(CONFIG.TIMEOUTS.UPLOAD) //上传需要耗时
+
+        //进入编辑页面：右上角无文字按钮（两个 Button 在一个 LinearLayout 里），点击后一个 Button
+        // if (!clickTopRightSecondButtonInLinearLayoutWithRetry(
+        //     10,
+        //     1500,
+        //     "第二个下一步按钮（右上角后一个Button）连续10次点击失败"
+        // )) {
+        //     throw new Error("第二个下一步按钮（右上角后一个Button）连续10次点击失败");
+        // }
+        // taskLog("第二个下一步按钮点击完成（右上角后一个Button）");
+        if (!findTextOrDescByLanguagesWithRetry(CONFIG.UI_TEXT.CHOOSE_VIDEO_NEXT_TEXT,
+            30, 5000, "第二个下一步按钮连续10次点击失败")) {
+            throw new Error("第二个下一步按钮连续10次点击失败");
+        }
+        taskLog("第二个下一步按钮点击完成");
+
+
+
+        //可能会出现一个下拉框，提示二次创作：text("確定")
+        findTextByLanguages(CONFIG.UI_TEXT.CONFIRM);
+
+        sleep(3000);
+        click_Video_desc();
+
+        sleep(5000);
+        //点击Post
+        //fullId("com.zhiliaoapp.musically:id/neo")
+        //之前找不到ID，所以直接点击最后一个Button
+        var allPostButtons = className("android.widget.Button").find();
+        if (allPostButtons && allPostButtons.size() > 0) {
+            var lastPostButton = allPostButtons.get(allPostButtons.size() - 1);
+            if (lastPostButton) {
+                lastPostButton.click();
+                taskLog("Post按钮点击完成");
+
+                sleep(5000);
 
                 // 上传完成后进行截图
-                taskLog("开始准备上传完成后进行截图.....")
+                taskLog("开始准备上传完成后进行截图.....");
                 var screenshotPath = Nest_ScreenCapture();
                 taskLog("已保存完成后的截图：" + screenshotPath);
 
@@ -933,15 +972,20 @@ function selectImageByButton(fileName) {
                 total_success++;
                 taskLog("视频上传成功！当前成功数量：" + total_success);
 
-                //删除临时媒体文件夹
-                var delFolder = CONFIG.PATHS.DOWNLOAD + CONFIG.PATHS.TEMP_MEDIA;
-                deleteNestMediaFile(delFolder)
-
-                break;
-
-
             }
         }
+        sleep(5000);
+
+        //可能会出现一个下拉框，提示是否添加到主屏幕:text("ADD TO HOME SCREEN")
+        taskLog("开始查找是否添加到主屏幕.....");
+        findTextByLanguages(CONFIG.UI_TEXT.ADD_TO_HOME_SCREEN);
+
+        sleep(CONFIG.TIMEOUTS.UPLOAD); //上传需要耗时
+
+        
+        //删除临时媒体文件夹
+        var delFolder = CONFIG.PATHS.DOWNLOAD + CONFIG.PATHS.TEMP_MEDIA;
+        deleteNestMediaFile(delFolder);
         
     } catch (e) {
         // 记录失败信息
@@ -1198,19 +1242,59 @@ function findTextByLanguages(languageObject) {
     return false;
 }
 
-function findTextByLanguagesWithRetry(languageObject, maxRetries, delayMs, failMessage) {
+// 通过语言对象查找文本或描述（desc）
+function findTextOrDescByLanguages(languageObject) {
+    for (var lang in languageObject) {
+        var targetText = languageObject[lang];
+        var candidates = Array.isArray(targetText) ? targetText : [targetText];
+
+        for (var i = 0; i < candidates.length; i++) {
+            var item = candidates[i];
+
+            if (text(item).exists()) {
+                taskLog("通过 text 找到目标：" + item);
+                var textElement = text(item).findOne();
+                if (textElement && textElement.clickable()) {
+                    textElement.click();
+                    return true;
+                } else if (textElement) {
+                    var textBounds = textElement.bounds();
+                    click(textBounds.centerX(), textBounds.centerY());
+                    return true;
+                }
+            }
+
+            if (desc(item).exists()) {
+                taskLog("通过 desc 找到目标：" + item);
+                var descElement = desc(item).findOne();
+                if (descElement && descElement.clickable()) {
+                    descElement.click();
+                    return true;
+                } else if (descElement) {
+                    var descBounds = descElement.bounds();
+                    click(descBounds.centerX(), descBounds.centerY());
+                    return true;
+                }
+            }
+        }
+    }
+    taskLog("未通过 text/desc 找到任何匹配的目标");
+    return false;
+}
+
+function findTextOrDescByLanguagesWithRetry(languageObject, maxRetries, delayMs, failMessage) {
     for (var attempt = 1; attempt <= maxRetries; attempt++) {
-        taskLog("开始第" + attempt + "次检测目标文本...");
-        if (findTextByLanguages(languageObject)) {
-            taskLog("第" + attempt + "次检测成功");
+        taskLog("开始第" + attempt + "次检测 text/desc 目标...");
+        if (findTextOrDescByLanguages(languageObject)) {
+            taskLog("第" + attempt + "次 text/desc 检测成功");
             return true;
         }
         if (attempt < maxRetries) {
-            taskLog("第" + attempt + "次检测失败，等待" + delayMs + "毫秒后重试");
+            taskLog("第" + attempt + "次 text/desc 检测失败，等待" + delayMs + "毫秒后重试");
             sleep(delayMs);
         }
     }
-    taskLogError(failMessage || ("连续" + maxRetries + "次检测失败"));
+    taskLogError(failMessage || ("连续" + maxRetries + "次 text/desc 检测失败"));
     return false;
 }
 
@@ -1221,12 +1305,6 @@ function click_Video_desc(){
     taskLog("开始准备输入视频描述")
 
     sleep(3000)
-    //短描述：fullId("com.zhiliaoapp.musically:id/epv")
-    //fullId("com.ss.android.ugc.trill:id/eqx")
-
-
-    //长描述：fullId("com.zhiliaoapp.musically:id/epu")
-    //fullId("com.ss.android.ugc.trill:id/eqw")
 
     var autoCompleteTextViews = className("android.widget.EditText").find();
     for(var i = 0; i < autoCompleteTextViews.size(); i++) {
@@ -1254,23 +1332,24 @@ function click_Video_desc(){
             }
 
 
-            if(all_TT_TITLE_text.length > 0){
-                var randTitleIdx = random(0, all_TT_TITLE_text.length - 1)
-                var titleText = all_TT_TITLE_text[randTitleIdx];
+            // if(all_TT_TITLE_text.length > 0){
+            //     var randTitleIdx = random(0, all_TT_TITLE_text.length - 1)
+            //     var titleText = all_TT_TITLE_text[randTitleIdx];
 
-                if(titleText.includes("$${T")){ 
-                    throw_error_storage_not_enough()
-                }
-                taskLog("标题：" + titleText);
-                //短描述：fullId("com.zhiliaoapp.musically:id/eqw")
-                //fullId("com.ss.android.ugc.trill:id/eqx")
-                if(textView.id() == CONFIG.APP.GLOBAL_PACKAGE + ":id/eqw" || textView.id() == CONFIG.APP.ASIA_PACKAGE + ":id/eqx"){
-                    // textView.setText(titleText)
-                    textView.setText(all_TT_TITLE_text.join("\n"))
-                    sleep(random(3000,5000))
-                } 
+            //     if(titleText.includes("$${T")){ 
+            //         throw_error_storage_not_enough()
+            //     }
+            //     taskLog("标题：" + titleText);
+            //     //短描述：fullId("com.zhiliaoapp.musically:id/eqw")
+            //     //fullId("com.ss.android.ugc.trill:id/eqx")
+            //     if(textView.id() == CONFIG.APP.GLOBAL_PACKAGE + ":id/eqw" 
+            //     || textView.id() == CONFIG.APP.ASIA_PACKAGE + ":id/eqx"){
+            //         // textView.setText(titleText)
+            //         textView.setText(all_TT_TITLE_text.join("\n"))
+            //         sleep(random(3000,5000))
+            //     } 
 
-            }
+            // }
 
 
             if(all_TT_DESC_text.length > 0){
@@ -1283,11 +1362,12 @@ function click_Video_desc(){
                 taskLog("描述：" + descText);
                 //长描述：fullId("com.zhiliaoapp.musically:id/eqv")
                 //fullId("com.ss.android.ugc.trill:id/eqw")
-                if(textView.id() == CONFIG.APP.GLOBAL_PACKAGE + ":id/eqv" || textView.id() == CONFIG.APP.ASIA_PACKAGE + ":id/eqw"){
+                // if(textView.id() == CONFIG.APP.GLOBAL_PACKAGE + ":id/eqv" 
+                // || textView.id() == CONFIG.APP.ASIA_PACKAGE + ":id/eqw"){
                     // textView.setText(descText)
                     textView.setText(all_TT_DESC_text.join("\n"))
                     sleep(random(5000,10000))
-                }   
+                // }   
             }
 
     
@@ -1476,6 +1556,72 @@ function refreshMedia(path) {
 }
 
 
+function taskLogError(_log){
+    toast(_log);
+    
+    console.error(getSystemDate("df") +":" +_log)
+    // console.error(_log)
+
+    try {
+        //确保目录存在
+        files.ensureDir(RPAFilePath);
+        
+        //将日志写入文件
+        var logContent = getSystemDate("df") + ":" + "【!!!ERROR!!!】" + _log + "\n";
+        // var logContent = "【!!!ERROR!!!】" + _log + "\n";
+        files.append(logFilePath, logContent);
+        
+    } catch(e) {
+        console.error("写入日志文件失败：" + e);
+    }
+}
+
+function collectDescendantsByClass(root, targetClassName, result, depth, maxDepth) {
+    if (!root || depth > maxDepth) {
+        return;
+    }
+    try {
+        var count = root.childCount();
+        for (var i = 0; i < count; i++) {
+            var child = root.child(i);
+            if (!child) {
+                continue;
+            }
+            if (String(child.className()) === targetClassName) {
+                result.push(child);
+            }
+            collectDescendantsByClass(child, targetClassName, result, depth + 1, maxDepth);
+        }
+    } catch (e) {
+        taskLog("遍历子节点异常: " + e);
+    }
+}
+
+function getCenterMostNode(nodes, expectedCenterX) {
+    var bestNode = null;
+    var bestDistance = Number.MAX_VALUE;
+    for (var i = 0; i < nodes.length; i++) {
+        var node = nodes[i];
+        if (!node) {
+            continue;
+        }
+        try {
+            var bounds = node.bounds();
+            var distance = Math.abs(bounds.centerX() - expectedCenterX);
+            if (distance < bestDistance) {
+                bestDistance = distance;
+                bestNode = node;
+            }
+        } catch (e) {
+            taskLog("计算节点中心异常: " + e);
+        }
+    }
+    return bestNode;
+}
+
+
+
+
 // 主执行函数
 function main() {
     try {
@@ -1484,18 +1630,23 @@ function main() {
         taskLog("开始执行TikTok视频上传任务，目标上传数量：" + total_target);
         Logger.info("开始执行TikTok视频上传任务");
         
-        // 点击发布按钮：Tiktok底部中间的Button按钮
-        var publishButtonId = targetPackageName === CONFIG.APP.GLOBAL_PACKAGE 
-            ? CONFIG.APP.GLOBAL_PACKAGE + ":id/k6_" 
-            : CONFIG.APP.ASIA_PACKAGE + ":id/k6a";
-        
-        clickId(publishButtonId);
+        // 点击发布按钮：通过底部导航结构查找 TikTok 底部中间的 Button
+        if (!findTextOrDescByLanguagesWithRetry(CONFIG.UI_TEXT.CREATE_POST_TEX,  // 或你自己定义的 { ZH_CN: "…", EN_US: "…", … }
+            10,
+            5000,
+            "未找到 TikTok 底部中间的发布 Button")) {
+            throw new Error("未找到 TikTok 底部中间的发布 Button");
+        }
         sleep(CONFIG.TIMEOUTS.SHORT);
 
         // 处理权限问题
         taskLog("开始处理权限问题.....");
         click_permission_allow();
         sleep(CONFIG.TIMEOUTS.SHORT);
+
+        //删除临时媒体文件夹，避免上一次任务遗漏的视频文件
+        var delFolder = CONFIG.PATHS.DOWNLOAD + CONFIG.PATHS.TEMP_MEDIA;
+        deleteNestMediaFile(delFolder);
 
         // 刷新媒体库
         taskLog("开始刷新本地媒体库.....");
@@ -1523,12 +1674,29 @@ function main() {
         sleep(CONFIG.TIMEOUTS.SHORT);
 
         // 点击选择视频按钮
-        var selectVideoButtonId = targetPackageName === CONFIG.APP.GLOBAL_PACKAGE 
-            ? CONFIG.APP.GLOBAL_PACKAGE + ":id/frp" 
-            : CONFIG.APP.ASIA_PACKAGE + ":id/frq";
-        
-        clickId(selectVideoButtonId);
+        // var selectVideoButtonId = targetPackageName === CONFIG.APP.GLOBAL_PACKAGE 
+        //     ? CONFIG.APP.GLOBAL_PACKAGE + ":id/frp" 
+        //     : CONFIG.APP.ASIA_PACKAGE + ":id/frq";
+        // clickId(selectVideoButtonId);
+        //text("创建")
+        //底部：发布，创建，直播
+        if (!findTextOrDescByLanguagesWithRetry(CONFIG.UI_TEXT.CREATE_POST_TEX,  // 或你自己定义的 { ZH_CN: "…", EN_US: "…", … }
+            10,
+            5000,
+            "未找到 TikTok媒体页面底部中间的创建按钮")) {
+            throw new Error("未找到 TikTok媒体页面底部中间的创建按钮");
+        }
         sleep(CONFIG.TIMEOUTS.SHORT);
+
+
+        if (!findTextOrDescByLanguagesWithRetry(CONFIG.UI_TEXT.NEW_VIDEO_TEX,  // 或你自己定义的 { ZH_CN: "…", EN_US: "…", … }
+            10,
+            5000,
+            "未找到 TikTok媒体页面顶部的新视频按钮")) {
+            throw new Error("未找到 TikTok媒体页面顶部的新视频按钮");
+        }
+        sleep(CONFIG.TIMEOUTS.LONG);
+
 
         // 最后一次处理权限问题
         taskLog("开始处理权限问题.....");
