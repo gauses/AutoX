@@ -928,19 +928,14 @@ function selectImageByButton(fileName) {
 
 
         //进入编辑页面：右上角无文字按钮（两个 Button 在一个 LinearLayout 里），点击后一个 Button
-        // if (!clickTopRightSecondButtonInLinearLayoutWithRetry(
-        //     10,
-        //     1500,
-        //     "第二个下一步按钮（右上角后一个Button）连续10次点击失败"
-        // )) {
-        //     throw new Error("第二个下一步按钮（右上角后一个Button）连续10次点击失败");
-        // }
-        // taskLog("第二个下一步按钮点击完成（右上角后一个Button）");
-        if (!findTextOrDescByLanguagesWithRetry(CONFIG.UI_TEXT.CHOOSE_VIDEO_NEXT_TEXT,
-            30, 5000, "第二个下一步按钮连续10次点击失败")) {
-            throw new Error("第二个下一步按钮连续10次点击失败");
+        if (!clickTopRightSecondButtonInLinearLayoutWithRetry(
+            10,
+            1500,
+            "第二个下一步按钮（右上角后一个Button）连续10次点击失败"
+        )) {
+            throw new Error("第二个下一步按钮（右上角后一个Button）连续10次点击失败");
         }
-        taskLog("第二个下一步按钮点击完成");
+        taskLog("第二个下一步按钮点击完成（右上角后一个Button）");
 
 
 
@@ -961,7 +956,7 @@ function selectImageByButton(fileName) {
                 lastPostButton.click();
                 taskLog("Post按钮点击完成");
 
-                sleep(5000);
+                sleep(60000);
 
                 // 上传完成后进行截图
                 taskLog("开始准备上传完成后进行截图.....");
@@ -1295,6 +1290,201 @@ function findTextOrDescByLanguagesWithRetry(languageObject, maxRetries, delayMs,
         }
     }
     taskLogError(failMessage || ("连续" + maxRetries + "次 text/desc 检测失败"));
+    return false;
+}
+
+// 无文字按钮：点击屏幕右上角 LinearLayout 内“后面/更右侧”的 Button（通常为 2 个 Button）
+function clickTopRightSecondButtonInLinearLayoutWithRetry(maxRetries, delayMs, failMessage) {
+    maxRetries = maxRetries || 10;
+    delayMs = delayMs || 1500;
+
+    var screenW = device.width;
+    var screenH = device.height;
+
+    function waitForEditText(timeoutMs) {
+        var start = new Date().getTime();
+        while (new Date().getTime() - start < timeoutMs) {
+            try {
+                var edit = className("android.widget.EditText").findOne(200);
+                if (edit) return true;
+            } catch (e) {}
+            sleep(200);
+        }
+        return false;
+    }
+
+    function waitForPageTransition(targetBounds, timeoutMs) {
+        var start = new Date().getTime();
+        while (new Date().getTime() - start < timeoutMs) {
+            try {
+                // 成功特征1：编辑页输入框出现
+                if (className("android.widget.EditText").findOne(200)) {
+                    return true;
+                }
+
+                // 成功特征2：视频选择页的 GridView 消失
+                if (!className("android.widget.GridView").exists()) {
+                    return true;
+                }
+
+                // 成功特征3：原目标按钮不再出现在原坐标附近
+                var stillThere = false;
+                var btns = className("android.widget.Button").find();
+                if (btns && btns.size() > 0) {
+                    for (var i = 0; i < btns.size(); i++) {
+                        var btn = btns.get(i);
+                        if (!btn) continue;
+                        var bb = btn.bounds();
+                        var dx = Math.abs(bb.centerX() - targetBounds.centerX());
+                        var dy = Math.abs(bb.centerY() - targetBounds.centerY());
+                        if (dx <= 10 && dy <= 10) {
+                            stillThere = true;
+                            break;
+                        }
+                    }
+                }
+                if (!stillThere) {
+                    return true;
+                }
+            } catch (e) {}
+            sleep(200);
+        }
+        return false;
+    }
+
+    for (var attempt = 1; attempt <= maxRetries; attempt++) {
+        taskLog("开始第" + attempt + "次查找右上角 Button 组并点击后一个Button...");
+
+        var allButtons = className("android.widget.Button").find();
+        var btnCount = allButtons ? allButtons.size() : 0;
+        var topRightButtons = [];
+        var parentGroupMap = {};
+
+        if (allButtons && btnCount > 0) {
+            for (var i = 0; i < btnCount; i++) {
+                var btn = allButtons.get(i);
+                if (!btn) continue;
+
+                var bb = btn.bounds();
+                // 只保留右上角区域里的按钮（放宽阈值）
+                if (bb.centerY() > screenH * 0.45) continue;
+                if (bb.centerX() < screenW * 0.55) continue;
+                if (bb.width() <= 0 || bb.height() <= 0) continue;
+
+                topRightButtons.push(btn);
+
+                var p = btn.parent();
+                if (!p) continue;
+                var pb = p.bounds();
+                var parentKey = [pb.left, pb.top, pb.right, pb.bottom].join(",");
+                if (!parentGroupMap[parentKey]) {
+                    parentGroupMap[parentKey] = [];
+                }
+                parentGroupMap[parentKey].push(btn);
+            }
+        }
+
+        var groupKeys = Object.keys(parentGroupMap);
+        taskLog("Button总数=" + btnCount + "，右上角Button数=" + topRightButtons.length + "，同父节点分组数=" + groupKeys.length);
+
+        // 在“同一父节点且正好2个按钮”的分组中选择最靠右上的组
+        var bestGroup = null;
+        var bestGroupScore = -999999;
+        for (var g = 0; g < groupKeys.length; g++) {
+            var key = groupKeys[g];
+            var group = parentGroupMap[key];
+            if (!group || group.length !== 2) continue;
+
+            var p0 = group[0].parent();
+            if (!p0) continue;
+            var p0b = p0.bounds();
+            var score = (screenH - p0b.top) + p0b.right;
+            if (score > bestGroupScore) {
+                bestGroupScore = score;
+                bestGroup = group;
+            }
+        }
+
+        var bestBtn = null;
+        if (bestGroup && bestGroup.length === 2) {
+            var leftBtn = bestGroup[0];
+            var rightBtn = bestGroup[1];
+            if (leftBtn.bounds().centerX() > rightBtn.bounds().centerX()) {
+                var tmp = leftBtn;
+                leftBtn = rightBtn;
+                rightBtn = tmp;
+            }
+            bestBtn = rightBtn; // 优先：2按钮组里更右侧那个
+            taskLog("命中2按钮分组，选择更右侧Button");
+        } else if (topRightButtons.length > 0) {
+            // 兜底：有些版本无障碍树只暴露出1个Button，直接取最靠右上的Button
+            var bestSingleScore = -999999;
+            for (var t = 0; t < topRightButtons.length; t++) {
+                var sb = topRightButtons[t];
+                if (!sb) continue;
+                var sbb = sb.bounds();
+                var s = (screenH - sbb.top) + sbb.right;
+                if (s > bestSingleScore) {
+                    bestSingleScore = s;
+                    bestBtn = sb;
+                }
+            }
+            taskLog("未命中2按钮分组，使用单Button兜底策略");
+        }
+
+        if (bestBtn) {
+            var b = bestBtn.bounds();
+            taskLog("命中右上角目标Button，centerX=" + b.centerX() + ", centerY=" + b.centerY());
+            var clickedOk = false;
+
+            try {
+                if (bestBtn.click()) {
+                    clickedOk = true;
+                    taskLog("右上角后一个Button点击触发（node.click）");
+                }
+            } catch (e1) {}
+
+            if (!clickedOk) {
+                try {
+                    var parentNode = bestBtn.parent();
+                    if (parentNode && parentNode.click && parentNode.click()) {
+                        clickedOk = true;
+                        taskLog("右上角后一个Button点击触发（parent.click）");
+                    }
+                } catch (e2) {}
+            }
+
+            if (!clickedOk) {
+                try {
+                    if (Utils.safeClick(b.centerX(), b.centerY(), 0)) {
+                        clickedOk = true;
+                        taskLog("右上角后一个Button点击触发（坐标兜底）");
+                    }
+                } catch (e3) {}
+            }
+
+            if (clickedOk) {
+                sleep(600);
+                if (waitForPageTransition(b, 3500)) {
+                    taskLog("右上角后一个Button点击有效：检测到页面切换");
+                    return true;
+                }
+                // 再补一次纯 EditText 检测，兼容慢机型
+                if (waitForEditText(1500)) {
+                    taskLog("右上角后一个Button点击有效：检测到 EditText");
+                    return true;
+                }
+                taskLog("右上角后一个Button点击无效（未检测到页面切换），将继续重试...");
+            }
+        }
+
+        if (attempt < maxRetries) {
+            taskLog("第" + attempt + "次未命中右上角目标Button，等待" + delayMs + "毫秒后重试");
+            sleep(delayMs);
+        }
+    }
+
+    taskLogError(failMessage || ("连续" + maxRetries + "次未找到右上角后一个Button"));
     return false;
 }
 
