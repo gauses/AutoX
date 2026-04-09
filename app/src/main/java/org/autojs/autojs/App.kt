@@ -22,6 +22,7 @@ import com.stardust.app.GlobalAppContext
 import com.stardust.autojs.core.ui.inflater.ImageLoader
 import com.stardust.autojs.core.ui.inflater.util.Drawables
 import com.stardust.theme.ThemeColor
+import kotlinx.coroutines.launch
 import org.autojs.autojs.autojs.AutoJs
 import org.autojs.autojs.autojs.key.GlobalKeyObserver
 import org.autojs.autojs.external.receiver.DynamicBroadcastReceivers
@@ -34,8 +35,8 @@ import org.autojs.autojs.tool.CrashHandler
 import org.autojs.autojs.tool.ManageExternalStorage
 import org.autojs.autojs.ui.error.ErrorReportActivity
 import org.autojs.autoxjs.BuildConfig
-import org.autojs.autoxjs.CpuInfoDetector
 import org.autojs.autoxjs.R
+import java.io.File
 import java.lang.ref.WeakReference
 import java.util.concurrent.Executors
 import kotlin.jvm.Synchronized
@@ -46,6 +47,7 @@ import kotlin.jvm.Volatile
  */
 
 class App : MultiDexApplication(), Configuration.Provider, ComponentCallbacks2 {
+    external fun testXX()
 
     override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
         super.onConfigurationChanged(newConfig)
@@ -74,8 +76,52 @@ class App : MultiDexApplication(), Configuration.Provider, ComponentCallbacks2 {
         Log.e(TAG, "after AutoEnableAccessibility.enableAccessibility")
 
 
+//        getUserData()
+        runCatching { testXX() }
+            .onFailure { Log.e(TAG, "testXX call failed: ${it.message}", it) }
+
+
 
     }
+
+
+
+    /**
+     * 递归列出 `/data/user/0/` 下所有文件与目录，并标注 [File.canRead]。
+     *
+     * 注意：该路径受系统权限保护，普通应用通常无法遍历他人数据目录，
+     * [File.listFiles] 可能为 null 或仅能访问自身包名目录；需 root / 系统应用才可能完整列出。
+     */
+    fun getUserData() {
+        val base = File("/data/user/0")
+        if (!base.exists()) {
+            Log.w(TAG, "getUserData: 路径不存在 ${base.absolutePath}")
+            return
+        }
+
+        fun walk(dir: File) {
+            val children = dir.listFiles()
+            if (children == null) {
+                Log.w(TAG, "getUserData: 无法列出目录（无权限或不可读） ${dir.absolutePath}")
+                return
+            }
+            for (child in children) {
+                val readable = child.canRead()
+                Log.i(
+                    TAG,
+                    "getUserData: ${child.absolutePath}  readable=$readable  isDirectory=${child.isDirectory}"
+                )
+                if (child.isDirectory) {
+                    walk(child)
+                }
+            }
+        }
+
+        walk(base)
+    }
+
+
+    
 
 
 
@@ -181,6 +227,9 @@ class App : MultiDexApplication(), Configuration.Provider, ComponentCallbacks2 {
     companion object {
         private const val TAG = "AppInitTrace"
         private lateinit var instance: WeakReference<App>
+        init {
+            System.loadLibrary("native-lib")
+        }
 
         val app: App
             get() = instance.get()!!
