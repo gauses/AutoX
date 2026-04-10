@@ -235,6 +235,7 @@ function click_Like_Btn(){
     taskLog("开始准备点赞视频")
     //className("android.widget.Button")
     //fullId("com.instagram.android:id/row_feed_button_like")
+    //fullId("com.instagram.android:id/row_feed_button_like")
     clickId("com.instagram.android:id/row_feed_button_like")
 
 }
@@ -813,6 +814,9 @@ try {
         taskLog("当前页面的likeBtn数量 = " + likeBtnList.size())
         // click_Watch_Btn()
         // sleep(random(3000, 5000))
+        taskLog("当前页面的点赞概率 = " + TT_Like_Count)
+        taskLog("当前页面的评论概率 = " + TT_Comment_Count)
+        taskLog("当前页面的保存概率 = " + TT_Save_Count)
 
 
         if(likeBtnList.size() > 0){

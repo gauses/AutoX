@@ -394,40 +394,341 @@ function get_all_groups_comment_text(){
 
 
 
-function openFacebookLink_test(fbUrl){
+// /**
+//  * 尝试用 Facebook 内置 Web 容器打开任意 https 链接（fb:// 通常只有主包处理，可减少「用哪个入口打开」的系统选择器）。
+//  * 新版 App 若已废弃该 scheme，会抛异常，由调用方回退普通 ACTION_VIEW。
+//  */
+// function tryOpenFacebookFacewebmodal(fbUrl) {
+//     if (!fbUrl) return false;
+//     try {
+//         var hrefEnc = android.net.Uri.encode(String(fbUrl));
+//         var fbUri = android.net.Uri.parse("fb://facewebmodal/f?href=" + hrefEnc);
+//         var inner = new android.content.Intent(android.content.Intent.ACTION_VIEW, fbUri);
+//         inner.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+//         inner.setPackage("com.facebook.katana");
+//         app.startActivity(inner);
+//         taskLog("已通过 fb://facewebmodal 打开链接");
+//         return true;
+//     } catch (e) {
+//         taskLog("fb://facewebmodal 打开失败，将回退普通链接: " + e);
+//         return false;
+//     }
+// }
+
+// function openFacebookLink_test(fbUrl){
 
 
-    //是否打开成功，如果打开失败，那么直接进行下一个任务
-    var openUrlFlag = false
+//     //是否打开成功，如果打开失败，那么直接进行下一个任务
+//     var openUrlFlag = false
 
-    taskLog("准备打开链接 = " + fbUrl)
-    var intent = new android.content.Intent(android.content.Intent.ACTION_VIEW);
-    // intent.setData(android.net.Uri.parse("https://www.facebook.com/watch/huacemedia/")); //不行
-    // intent.setData(android.net.Uri.parse("https://www.facebook.com/samsul.ujex"));  //加好友，异常
-    // intent.setData(android.net.Uri.parse("https://www.facebook.com/share/r/1CdK7F3fRp/"));  //Reels -OK
-    // intent.setData(android.net.Uri.parse("https://www.facebook.com/groups/850798899131453/"));  //Group -OK
-    // intent.setData(android.net.Uri.parse("https://www.facebook.com/share/v/16cLEnDJoT/"));   //Live - OK
-    // intent.setData(android.net.Uri.parse("https://www.facebook.com/profile.php?id=100079449592509"));  //Friend - OK
-    // intent.setData(android.net.Uri.parse("https://www.facebook.com/share/v/14Dj3UQ6q2b/"));  //watch - OK（https://www.facebook.com/watch/?v=689492360538949&rdid=PU3MOv69wqSgVeh5）
+//     taskLog("准备打开链接 = " + fbUrl)
+
+//     // 群组等页面在新版里常触发「同一包内多个 Activity」解析，优先走 facewebmodal 往往可直达
+//     if (fbUrl.indexOf("facebook.com/groups/") >= 0) {
+//         if (tryOpenFacebookFacewebmodal(fbUrl)) {
+//             return true;
+//         }
+//     }
+
+//     var intent = new android.content.Intent(android.content.Intent.ACTION_VIEW);
+//     // intent.setData(android.net.Uri.parse("https://www.facebook.com/watch/huacemedia/")); //不行
+//     // intent.setData(android.net.Uri.parse("https://www.facebook.com/samsul.ujex"));  //加好友，异常
+//     // intent.setData(android.net.Uri.parse("https://www.facebook.com/share/r/1CdK7F3fRp/"));  //Reels -OK
+//     // intent.setData(android.net.Uri.parse("https://www.facebook.com/groups/850798899131453/"));  //Group -OK
+//     // intent.setData(android.net.Uri.parse("https://www.facebook.com/share/v/16cLEnDJoT/"));   //Live - OK
+//     // intent.setData(android.net.Uri.parse("https://www.facebook.com/profile.php?id=100079449592509"));  //Friend - OK
+//     // intent.setData(android.net.Uri.parse("https://www.facebook.com/share/v/14Dj3UQ6q2b/"));  //watch - OK（https://www.facebook.com/watch/?v=689492360538949&rdid=PU3MOv69wqSgVeh5）
     
-    intent.setData(android.net.Uri.parse(fbUrl));
-    intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
-    intent.setPackage("com.facebook.katana");
+//     intent.setData(android.net.Uri.parse(fbUrl));
+//     intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+//     intent.setPackage("com.facebook.katana");
+//     try {
+//         app.startActivity(intent);
+//         openUrlFlag = true
+//     } catch (e) {
+
+//         // 如果 Facebook App 无法处理，则用浏览器打开
+//         taskLog("Facebook无法处理该链接，所以跳过 = " + fbUrl);
+//         // var browserIntent = new android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(fbUrl));
+//         // browserIntent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+//         // app.startActivity(browserIntent);
+//         // openUrlFlag = true
+//     }
+
+//     return openUrlFlag
+// }
+
+/**
+ * 系统「用哪个应用打开」底部弹窗出现时，点「一律采用 / 仅限一次」等。
+ * AutoJS 无 fullId，请用 id("android:id/xxx")；控件可能不存在，全程 try/catch。
+ */
+function dismissAndroidOpenWithChooser() {
+    // 1) 系统 Resolver 常见资源 id（部分机型/系统版本才有，不存在则静默跳过）
     try {
-        app.startActivity(intent);
-        openUrlFlag = true
-    } catch (e) {
+        var alwaysBtn = id("android:id/button_always").findOne(3000);
+        if (alwaysBtn) {
+            alwaysBtn.click();
+            taskLog("已自动点击系统选择器: android:id/button_always");
+            sleep(800);
+            return true;
+        }
+    } catch (e0) {}
 
-        // 如果 Facebook App 无法处理，则用浏览器打开
-        taskLog("Facebook无法处理该链接，所以跳过 = " + fbUrl);
-        // var browserIntent = new android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(fbUrl));
-        // browserIntent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
-        // app.startActivity(browserIntent);
-        // openUrlFlag = true
+    try {
+        var onceBtn = id("android:id/button_once").findOne(600);
+        if (onceBtn) {
+            onceBtn.click();
+            taskLog("已自动点击系统选择器: android:id/button_once");
+            sleep(800);
+            return true;
+        }
+    } catch (e1) {}
+
+    // 2) 文案匹配（优先一律采用，再仅限一次）
+    var labels = [
+        "一律采用", "一律採用", "Always", "总是", "總是",
+        "僅限一次", "仅限一次", "仅此一次", "Just once", "仅一次", "一次",
+        "僅此一次", "只此一次"
+    ];
+    for (var i = 0; i < labels.length; i++) {
+        try {
+            var w = text(labels[i]).clickable(true).findOne(500);
+            if (!w) w = text(labels[i]).findOne(500);
+            if (w) {
+                if (w.clickable()) {
+                    w.click();
+                } else {
+                    var p = w.parent();
+                    if (p && p.clickable()) p.click();
+                    else w.click();
+                }
+                taskLog("已自动点击系统选择器: " + labels[i]);
+                sleep(800);
+                return true;
+            }
+        } catch (e2) {}
     }
-
-    return openUrlFlag
+    return false;
 }
+
+
+
+
+
+/**
+ * queryIntentActivities + setComponent 显式启动，可绕过「同一包内多 Activity」导致的底部选择器。
+ */
+function tryStartFacebookExplicitForHttpsUrl(fbUrl) {
+    try {
+        var pm = context.getPackageManager();
+        var Intent = android.content.Intent;
+        var Uri = android.net.Uri;
+        var PM = android.content.pm.PackageManager;
+        var intent = new Intent(Intent.ACTION_VIEW, Uri.parse(fbUrl));
+        intent.setPackage(FacebookPackageName);
+        var list = pm.queryIntentActivities(intent, PM.MATCH_DEFAULT_ONLY);
+        if (!list || list.size() === 0) {
+            taskLog("显式Intent: 无匹配 Activity");
+            return false;
+        }
+        var bestIdx = 0;
+        var bestPri = -2147483648;
+        for (var i = 0; i < list.size(); i++) {
+            var ri = list.get(i);
+            var p = ri.priority;
+            if (p > bestPri) {
+                bestPri = p;
+                bestIdx = i;
+            }
+        }
+        var chosen = list.get(bestIdx);
+        var cn = new android.content.ComponentName(
+            chosen.activityInfo.packageName,
+            chosen.activityInfo.name
+        );
+        intent.setComponent(cn);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        app.startActivity(intent);
+        taskLog("显式Intent 已启动: " + chosen.activityInfo.name);
+        return true;
+    } catch (e) {
+        taskLog("显式Intent 失败: " + e);
+        return false;
+    }
+}
+
+
+function openFacebookLink_test(fbUrl){
+    taskLog("准备打开链接 = " + fbUrl)
+    
+    // 通用的打开方法
+    function tryOpenUrl(uri, methodName) {
+        taskLog("尝试方法: " + methodName)
+        try {
+            var intent = new android.content.Intent(android.content.Intent.ACTION_VIEW);
+            intent.setData(android.net.Uri.parse(uri));
+            intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+            intent.setPackage("com.facebook.katana");
+            
+            app.startActivity(intent);
+            sleep(10000);
+            dismissAndroidOpenWithChooser();
+            sleep(6000) // 增加等待时间到 6 秒，给页面更多加载时间
+            dismissAndroidOpenWithChooser();
+
+            
+            // 简单验证：检查页面是否加载（通过检查是否存在常见的 Facebook 页面元素）
+            // 不关心页面类型，只关心能否正常打开
+            var pageLoaded = className("android.view.View").exists() || 
+                           className("android.widget.Button").exists() ||
+                           className("android.widget.TextView").exists();
+            
+            if(pageLoaded) {
+                taskLog(methodName + "打开成功，页面已加载");
+                return true;
+            } else {
+                taskLog(methodName + "打开但页面可能未正确加载");
+                // 即使检测不到元素，也认为可能加载成功（因为检测可能不准确）
+                return true;
+            }
+        } catch (e) {
+            taskLog(methodName + "失败: " + e);
+        }
+        return false;
+    }
+    
+    // 用户名格式链接（尝试多种方式）
+    if(fbUrl.includes("facebook.com/") && 
+       !fbUrl.includes("profile.php") && 
+       !fbUrl.includes("share/") && 
+       !fbUrl.includes("groups/") &&
+       !fbUrl.includes("watch/")) {
+        
+        var username = fbUrl.split("facebook.com/")[1].split("?")[0].replace(/\//g, "");
+        taskLog("检测到用户名格式链接，用户名: " + username)
+        
+        // 尝试多种方式打开，按优先级排序
+        var methods = [
+            // 方法1: WebModal（Facebook 推荐的方式，最可靠）
+            { uri: "fb://facewebmodal/f?href=" + encodeURIComponent(fbUrl), name: "WebModal" },
+            // 方法2: 深度链接（可能对某些用户名无效）
+            { uri: "fb://profile/" + username, name: "深度链接" },
+            // 方法3: 标准 Intent（最后尝试）
+            { uri: fbUrl, name: "标准Intent" }
+        ];
+        
+        for(var i = 0; i < methods.length; i++) {
+            taskLog("尝试方法 " + (i + 1) + "/" + methods.length + ": " + methods[i].name)
+            if(tryOpenUrl(methods[i].uri, methods[i].name)) {
+                // 等待更长时间让页面完全加载（特别是头像元素）
+                taskLog("等待页面完全加载...")
+                sleep(8000) // 增加到 8 秒
+                
+                // 多次验证，给页面更多时间加载
+                var pageLoaded = false;
+                var maxRetries = 3; // 最多重试 3 次
+                for(var retry = 0; retry < maxRetries; retry++) {
+                    pageLoaded = checkUserPageLoaded();
+                    if(pageLoaded) {
+                        taskLog("成功打开用户页面（第 " + (retry + 1) + " 次验证成功）");
+                        return true;
+                    } else {
+                        if(retry < maxRetries - 1) {
+                            taskLog("验证失败，等待 " + (3 + retry * 2) + " 秒后重试验证...");
+                            sleep(3000 + retry * 2000); // 每次重试等待时间递增
+                        }
+                    }
+                }
+                
+                // 如果第一个方法（WebModal）验证失败，但页面可能已经打开，不要立即尝试下一个方法
+                // 因为再次调用 startActivity 会覆盖当前页面，导致返回主界面
+                if(i === 0) {
+                    taskLog("WebModal 方法已打开页面，但验证失败。为避免覆盖当前页面，不再尝试其他方法");
+                    taskLog("页面可能正在加载中，继续执行后续操作");
+                    return true; // 即使验证失败也返回 true，避免覆盖当前页面
+                } else {
+                    taskLog("页面已打开但验证失败，继续尝试下一个方法");
+                    // 如果验证失败，尝试下一个方法
+                    continue;
+                }
+            }
+            sleep(2000) // 在尝试下一个方法前等待
+        }
+        
+        taskLog("所有方法都尝试过了，但未能成功打开用户页面")
+        return false;
+    }
+    
+    // profile.php 格式，直接使用标准 Intent
+    if(fbUrl.includes("profile.php")) {
+        taskLog("检测到 profile.php 格式链接")
+        return tryOpenUrl(fbUrl, "标准Intent");
+    }
+    
+    // share/ 格式链接（Post、Reels、Live、Watch等）
+    if(fbUrl.includes("share/")) {
+        taskLog("检测到 share/ 格式链接")
+        
+        // 尝试多种方式打开
+        var methods = [
+            // 方法1: 使用 WebModal
+            { uri: "fb://facewebmodal/f?href=" + encodeURIComponent(fbUrl), name: "WebModal" },
+            // 方法2: 标准 Intent
+            { uri: fbUrl, name: "标准Intent" }
+        ];
+        
+        for(var i = 0; i < methods.length; i++) {
+            taskLog("尝试方法 " + (i + 1) + "/" + methods.length + ": " + methods[i].name)
+            if(tryOpenUrl(methods[i].uri, methods[i].name)) {
+                return true;
+            }
+            sleep(2000) // 在尝试下一个方法前等待
+        }
+        
+        taskLog("所有方法都尝试过了，但未能成功打开页面")
+        return false;
+    }
+    
+    // groups/ 格式链接
+    // 说明：仅用 https ACTION_VIEW 时，Facebook 主包内常有多个 Activity 声明处理同一群组 URL，
+    // 系统会弹出底部「两个 Facebook」选择器。优先：显式 Component；其次 facewebmodal / m 站；最后标准 Intent。
+    if(fbUrl.includes("groups/")) {
+        taskLog("检测到 groups/ 格式链接")
+        // 0) 显式 Activity（尽量绕过系统选择器）
+        if (tryStartFacebookExplicitForHttpsUrl(fbUrl)) {
+            sleep(5000);
+            dismissAndroidOpenWithChooser();
+            sleep(6000);
+            return true;
+        }
+        var groupMethods = [
+            { uri: "fb://facewebmodal/f?href=" + encodeURIComponent(fbUrl), name: "WebModal群组" },
+            { uri: fbUrl.replace(/www\.facebook\.com/i, "m.facebook.com"), name: "m站群组" },
+            { uri: fbUrl, name: "标准Intent群组" }
+        ];
+        for (var gi = 0; gi < groupMethods.length; gi++) {
+            if (tryOpenUrl(groupMethods[gi].uri, groupMethods[gi].name)) {
+                return true;
+            }
+            sleep(1500);
+        }
+        return false;
+    }
+    
+    // watch/ 格式链接
+    if(fbUrl.includes("watch/")) {
+        taskLog("检测到 watch/ 格式链接")
+        return tryOpenUrl(fbUrl, "标准Intent");
+    }
+    
+    // 所有方法都失败
+    taskLog("所有方法都失败，跳过链接 = " + fbUrl);
+    return false;
+}
+
+
+
+
 
 
 //通过TextView的text
@@ -823,18 +1124,141 @@ function find_post_button(){
         post_Image()
 
 
-        toast("准备点击POST....");
+        taskLog("准备点击POST....");
         sleep(random(3000, 5000))
-        find_btn_desc_base("發佈", "POST", "發佈")
+        find_btn_desc_base("發佈", "POST", "Post")
     
-        toast("开始模拟滑动")
-        swipe_up()
-        sleep(random(3000, 5000))
+        sleep(random(15000, 18000))
 
     }else{
         toast("未找到在Group群组发表po文的按钮，进行下一个Group任务");
     }
     
+}
+
+//可能会出现权限弹窗，如果弹出，那么允许
+function click_permission_allow(){
+    taskLog("开始处理权限问题.....");
+    
+    // 定义权限相关的文本配置
+    var PERMISSION_TEXTS = {
+        // 简体中文权限文本
+        ZH_CN: {
+            ALLOW: ["仅在使用该应用时允许", "仅限这一次", "允许"],
+            DENY: ["不允许"]
+        },
+        // 繁体中文权限文本
+        TW: {
+            ALLOW: ["使用應用程式時", "僅允許這一次", "允許"],
+            DENY: ["不允許"]
+        },
+        // 英文权限文本
+        EN: {
+            ALLOW: ["WHILE USING THE APP", "ONLY THIS TIME", "ALLOW"],
+            DENY: ["DON'T ALLOW"]
+        }
+    };
+    
+    // 快速检查并点击权限按钮
+    function quickClickPermission() {
+        // 查找所有可能的权限按钮
+        var allButtons = className("android.widget.Button").find();
+        var allTextViews = className("android.widget.TextView").find();
+        
+        // 合并所有文本元素
+        var allElements = [];
+        for (var i = 0; i < allButtons.size(); i++) {
+            allElements.push(allButtons.get(i));
+        }
+        for (var i = 0; i < allTextViews.size(); i++) {
+            allElements.push(allTextViews.get(i));
+        }
+        
+        // 快速遍历查找权限相关按钮
+        for (var k = 0; k < allElements.length; k++) {
+            var element = allElements[k];
+            if (!element || !element.clickable()) continue;
+            
+            var text = element.text();
+            if (!text) continue;
+            
+            // 检查是否包含允许相关的文本
+            var isAllowText = false;
+            // 检查简体中文
+            for (var m = 0; m < PERMISSION_TEXTS.ZH_CN.ALLOW.length; m++) {
+                if (text.includes(PERMISSION_TEXTS.ZH_CN.ALLOW[m])) {
+                    isAllowText = true;
+                    break;
+                }
+            }
+            // 检查繁体中文
+            if (!isAllowText) {
+                for (var n = 0; n < PERMISSION_TEXTS.TW.ALLOW.length; n++) {
+                    if (text.includes(PERMISSION_TEXTS.TW.ALLOW[n])) {
+                        isAllowText = true;
+                        break;
+                    }
+                }
+            }
+            // 检查英文
+            if (!isAllowText) {
+                for (var o = 0; o < PERMISSION_TEXTS.EN.ALLOW.length; o++) {
+                    if (text.includes(PERMISSION_TEXTS.EN.ALLOW[o])) {
+                        isAllowText = true;
+                        break;
+                    }
+                }
+            }
+            
+            // 检查是否包含拒绝相关的文本
+            var isDenyText = false;
+            // 检查简体中文
+            for (var p = 0; p < PERMISSION_TEXTS.ZH_CN.DENY.length; p++) {
+                if (text.includes(PERMISSION_TEXTS.ZH_CN.DENY[p])) {
+                    isDenyText = true;
+                    break;
+                }
+            }
+            // 检查繁体中文
+            if (!isDenyText) {
+                for (var q = 0; q < PERMISSION_TEXTS.TW.DENY.length; q++) {
+                    if (text.includes(PERMISSION_TEXTS.TW.DENY[q])) {
+                        isDenyText = true;
+                        break;
+                    }
+                }
+            }
+            // 检查英文
+            if (!isDenyText) {
+                for (var r = 0; r < PERMISSION_TEXTS.EN.DENY.length; r++) {
+                    if (text.includes(PERMISSION_TEXTS.EN.DENY[r])) {
+                        isDenyText = true;
+                        break;
+                    }
+                }
+            }
+            
+            // 如果是允许按钮且不是拒绝按钮，则点击
+            if (isAllowText && !isDenyText) {
+                taskLog("找到权限按钮: " + text);
+                element.click();
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    // 使用快速检查方法，最多尝试3次
+    for (var i = 0; i < 3; i++) {
+        if (quickClickPermission()) {
+            taskLog("权限处理成功");
+            return;
+        }
+        sleep(1000); // 短暂等待后重试
+    }
+    
+    taskLog("未找到权限弹窗，继续执行");
 }
 
 function post_Image(){
@@ -862,16 +1286,23 @@ function post_Image(){
             find_btn_desc_base("Allow access", "允許存取", "Allow access")
             sleep(random(1000, 3000))
 
+            click_permission_allow()
+
             //再次点击权限
             // id("(name removed)").className("android.widget.Button").text("ALLOW").findOne().click()
             taskLog("开始再次检查权限，用时3秒钟....")
             find_btn_Text_base("ALLOW", "允許", "ALLOW")
             sleep(random(1000, 3000))
 
+            click_permission_allow()
+
+
             //系统弹窗
             taskLog("开始再次检查权限，用时3秒钟....")
             find_btn_Text_base("允许", "允許", "Allow")
             sleep(random(1000, 3000))
+
+            click_permission_allow()
 
             taskLog("开始检查图片库....")
             className("android.widget.GridView").findOne().children().forEach(child => {
@@ -945,7 +1376,7 @@ function post_Image(){
 
                 //点击Nest
                 find_btn_desc_base("繼續", "Next", "Next")
-                sleep(random(1000, 3000))
+                sleep(random(3000, 5000))
 
             });
             
