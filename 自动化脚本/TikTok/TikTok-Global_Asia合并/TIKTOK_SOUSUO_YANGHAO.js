@@ -151,7 +151,85 @@ const TT_Save_Count = "$${收藏概率}" //收藏概率
 const TT_Comment_Count = "$${評論概率}" //评论概率
 
 
-const TT_Watch_Author_Page= 0 //查看作者主页的概率
+// 配置对象
+var CONFIG = {
+    // 应用配置
+    APP: {
+        ASIA_PACKAGE: 'com.ss.android.ugc.trill',
+        GLOBAL_PACKAGE: 'com.zhiliaoapp.musically',
+        MAIN_ACTIVITY: 'com.ss.android.ugc.aweme.main.MainActivity'
+    },
+
+    
+    // 路径配置
+    PATHS: {
+        DOWNLOAD: "/storage/emulated/0/Download/",
+        TEMP_MEDIA: "A_NEST_TikTok_MEDIA",
+        LOG_DIR: "/sdcard/Download/log/"
+    },
+    
+    // 超时配置
+    TIMEOUTS: {
+        SHORT: 3000,
+        MEDIUM: 5000,
+        LONG: 10000,
+        UPLOAD: 120000
+    },
+    
+    // 重试配置
+    RETRY: {
+        MAX_ATTEMPTS: 3,
+        DELAY: 1000
+    },
+    
+    // UI文本配置
+    UI_TEXT: {
+        TT_LIKE_BUTTON: {
+            ZH_CN: ["赞", "按赞"],//className("android.widget.ImageView") desc("赞") 
+            ZH_TW: ["按讚", "讚"], //className("android.widget.ImageView") desc("按讚")
+            EN_US: ["Like", "Liked"], //className("android.widget.ImageView") desc("Like")
+            EN_US_0: "Like" //className("android.widget.Button") desc("Like video. 3.2M likes")
+        },
+
+        TT_COMMENT_BUTTON: {
+            ZH_CN: "阅读或添加评论",//className("android.widget.Button")  desc("阅读或添加评论。0 条评论")
+            //desc("閱讀或新增評論。32 則評論")
+            ZH_TW: "閱讀或新增評論", //className("android.widget.Button") desc("閱讀或新增評論。")
+            // 英文版 desc 常为 "Read or add comments. 0 comments" —— 多给几条便于 contains 命中；部分机型评论入口是 ImageView
+            EN_US: [
+                "Read or add comments",
+                "Read or add comment"
+            ]
+        },
+
+        TT_SAVE_BUTTON: {
+            ZH_CN: "将此视频添加到或移出收藏",//className("android.widget.Button") desc("将此视频添加到或移出收藏。")
+            ZH_TW: "從「我的珍藏」新增或移除此影片", //className("android.widget.Button") desc("從「我的珍藏」新增或移除此影片。")
+            EN_US: "Add or remove this video from Favorites" //className("android.widget.Button") desc("Add or remove this video from Favorites.")
+        },
+
+        TT_POST_BUTTON: {
+            ZH_CN: "发布评论",//className("android.widget.Button") desc("发布评论")
+            ZH_TW: "發佈評論", //className("android.widget.Button") desc("發佈評論")
+            EN_US: "Post comment" //className("android.widget.Button") desc("Post comment")
+        }
+
+        
+
+    },
+    
+    // 日志配置
+    LOG: {
+        FILENAME: "nest_task_log.txt",
+        IMG_NAME: "nest_task_log.png"
+    }
+};
+
+
+
+// 第二页搜索入口限定控件类型：如 "android.widget.Button"、"android.widget.ImageView"；
+// 设为空字符串、null 或未传参则不对 className 过滤（仅按 text/desc 匹配）。
+var TT_SEARCH_WIDGET_BUTTON_CLASS = "android.widget.Button";
 
 
 
@@ -174,6 +252,14 @@ const VIDEO_TEXT = {
     ZH_CN: "影片",    // 简体中文
     ZH_TW: "视频",    // 繁体中文
     EN_US: "Videos"   // 英文
+};
+
+
+
+const TT_SEARCH_BUTTON = {
+    ZH_CN: "搜索",//className("android.widget.Button") 
+    ZH_TW: "搜尋", //className("android.widget.Button") text("搜尋")
+    EN_US: "Search" //className("android.widget.Button") text("Search")
 };
 
 // 通过语言对象查找文本
@@ -215,6 +301,116 @@ function findTextByLanguages(languageObject) {
         }
     }
     taskLog("未找到任何匹配的文本");
+    return false;
+}
+
+/** @param widgetClassName 可选，非空时与 text/desc 组合为 className(widget).text(item) */
+function resolveTextSelector(item, widgetClassName) {
+    if (widgetClassName) {
+        return className(widgetClassName).text(item);
+    }
+    return text(item);
+}
+
+/** @param widgetClassName 可选，非空时与 desc 组合为 className(widget).desc(item) */
+function resolveDescSelector(item, widgetClassName) {
+    if (widgetClassName) {
+        return className(widgetClassName).desc(item);
+    }
+    return desc(item);
+}
+
+// 通过语言对象查找文本或描述（desc）
+// widgetClassName：可选，见 TT_SEARCH_WIDGET_BUTTON_CLASS 说明
+function findTextOrDescByLanguages(languageObject, widgetClassName) {
+    for (var lang in languageObject) {
+        var targetText = languageObject[lang];
+        var candidates = Array.isArray(targetText) ? targetText : [targetText];
+
+        for (var i = 0; i < candidates.length; i++) {
+            var item = candidates[i];
+
+            var textSel = resolveTextSelector(item, widgetClassName);
+            if (textSel.exists()) {
+                taskLog("通过 text 检测到存在：" + item);
+                var textElement = textSel.findOne();
+                if (!textElement) {
+                    taskLog("警告：text(\"" + item + "\") exists 为真但 findOne() 为 null，将再试 desc");
+                } else {
+                    var tb = textElement.bounds();
+                    taskLog("text 节点 clickable=" + textElement.clickable() + " id=" + textElement.id()
+                        + " bounds=" + tb.left + "," + tb.top + "," + tb.right + "," + tb.bottom);
+                    // TikTok 上常出现 clickable=true 但 Accessibility click() 返回 false，优先用坐标更稳
+                    if (tb.width() > 0 && tb.height() > 0) {
+                        click(tb.centerX(), tb.centerY());
+                        taskLog("text 优先坐标点击 center=(" + tb.centerX() + "," + tb.centerY() + ")");
+                        return true;
+                    }
+                    if (textElement.clickable()) {
+                        var textClickOk = textElement.click();
+                        taskLog("text 无障碍 click()（bounds 无效时兜底）返回：" + textClickOk);
+                        if (textClickOk) {
+                            return true;
+                        }
+                        taskLog("text 无障碍点击未生效，将再试 desc");
+                    } else {
+                        taskLog("text 节点 bounds 无效且不可点击，将再试 desc");
+                    }
+                }
+            }
+
+            var descSel = resolveDescSelector(item, widgetClassName);
+            if (descSel.exists()) {
+                taskLog("通过 desc 检测到存在：" + item);
+                var descElement = descSel.findOne();
+                if (!descElement) {
+                    taskLog("警告：desc(\"" + item + "\") exists 为真但 findOne() 为 null，跳过该候选");
+                } else {
+                    var db = descElement.bounds();
+                    taskLog("desc 节点 clickable=" + descElement.clickable() + " id=" + descElement.id()
+                        + " bounds=" + db.left + "," + db.top + "," + db.right + "," + db.bottom);
+                    if (db.width() > 0 && db.height() > 0) {
+                        click(db.centerX(), db.centerY());
+                        taskLog("desc 优先坐标点击 center=(" + db.centerX() + "," + db.centerY() + ")");
+                        return true;
+                    }
+                    if (descElement.clickable()) {
+                        var descClickOk = descElement.click();
+                        taskLog("desc 无障碍 click()（bounds 无效时兜底）返回：" + descClickOk);
+                        if (descClickOk) {
+                            return true;
+                        }
+                        taskLog("desc 无障碍点击未生效");
+                    } else {
+                        taskLog("desc 节点 bounds 无效且不可点击");
+                    }
+                }
+            }
+        }
+    }
+    taskLog("未通过 text/desc 找到任何匹配的目标");
+    return false;
+}
+
+// widgetClassName：可选，见 TT_SEARCH_WIDGET_BUTTON_CLASS；不传则与 findTextOrDescByLanguages 第二参一致用法
+function findTextOrDescByLanguagesWithRetry(languageObject, maxRetries, delayMs, failMessage, widgetClassName) {
+    if (widgetClassName) {
+        taskLog("text/desc 匹配已限定 className=" + widgetClassName);
+    } else {
+        taskLog("text/desc 匹配未限定控件类型（仅按文案）");
+    }
+    for (var attempt = 1; attempt <= maxRetries; attempt++) {
+        taskLog("开始第" + attempt + "次检测 text/desc 目标...");
+        if (findTextOrDescByLanguages(languageObject, widgetClassName)) {
+            taskLog("第" + attempt + "次 text/desc 检测成功");
+            return true;
+        }
+        if (attempt < maxRetries) {
+            taskLog("第" + attempt + "次 text/desc 检测失败，等待" + delayMs + "毫秒后重试");
+            sleep(delayMs);
+        }
+    }
+    taskLogError(failMessage || ("连续" + maxRetries + "次 text/desc 检测失败"));
     return false;
 }
 
@@ -419,8 +615,6 @@ if (isAppInstalled(GLOBAL_TikTokPackageName)) {
 
 
     sleep(random(5000, 8000))
-    openAppSettings(GLOBAL_TikTokPackageName)
-    sleep(random(3000, 5000))
 
     forceStop_APP(GLOBAL_TikTokPackageName)
     sleep(3000)
@@ -440,9 +634,6 @@ if (isAppInstalled(GLOBAL_TikTokPackageName)) {
 
 
     sleep(random(5000, 8000))
-    openAppSettings(ASIA_TikTokPackageName)
-    sleep(random(3000, 5000))
-
     forceStop_APP(ASIA_TikTokPackageName)
     sleep(3000)
 
@@ -465,96 +656,137 @@ sleep(random(3000, 5000))
 
 //强制停止TikTok 
 function forceStop_APP(packageName){
-    taskLog("准备强杀:" + packageName + "...")
-    sleep(3000);
-    openAppSettings(packageName)
-    sleep(5000)
+    try {
+        var cmd = "am force-stop " + packageName;
+        taskLog("准备强杀: " + packageName);
+        taskLog("执行命令: " + cmd);
 
-    // 遍历所有可能的强制停止按钮文本
-    for (let lang in FORCE_STOP_TEXT) {
-        let stopText = FORCE_STOP_TEXT[lang];
-        if (text(stopText).exists()) {
-            let forceStopBtn = text(stopText).findOne();
-            if (forceStopBtn && forceStopBtn.clickable()) {
-                forceStopBtn.click();
-                sleep(1000);
-                
-                // 遍历所有可能的确认按钮文本
-                for (let confirmLang in FORCE_STOP_CONFIRM_TEXT) {
-                    let confirmText = FORCE_STOP_CONFIRM_TEXT[confirmLang];
-                    if (text(confirmText).exists()) {
-                        text(confirmText).findOne().click();
-                        taskLog("成功点击'" + stopText + "'按钮并确认");
-                        sleep(3000);
-                        home();
-                        return;
-                    }
-                }
-            } else {
-                taskLog("未找到可点击的'" + stopText + "'按钮");
-            }
-        } else {
-            taskLog("未找到'" + stopText + "'按钮");
+        var result = shell(cmd);
+        var code = result ? result.code : "null";
+        var stdout = result ? result.result : "";
+        var stderr = result ? result.error : "";
+
+        log("force-stop code = " + code);
+        if (stdout) {
+            log("force-stop result = " + stdout);
         }
-        sleep(1000);
-    }
+        if (stderr) {
+            log("force-stop error = " + stderr);
+        }
 
-    // 如果所有语言都尝试失败，返回主页
-    home();
+        if (result && code === 0) {
+            taskLog("强杀成功: " + packageName);
+            return true;
+        } else {
+            taskLogError("强杀失败: " + packageName + (stderr ? "，error=" + stderr : ""));
+            return false;
+        }
+    } catch (e) {
+        taskLogError("强杀异常: " + e);
+        return false;
+    }
 }
 
 
 
 
-   //点击首页的右上角Search按钮
-function click_home_search_btn(){
-    var find_search_btn_count = 0
-    if(find_search_btn_count > 5){
-        console.error("首页寻找'搜索'按钮超过5次，抛出异常")
-        throw new error("首页寻找'搜索'按钮超过5次，抛出异常")
-    }
-    sleep(random(2000, 5000))
-
-    var gz5_img_count = 0
-    var targetGz5 = null;
-    
+/**
+ * 在屏幕「上方条带」内找 ImageView，取水平方向最靠右的一个，作为首页搜索（放大镜）。
+ * 不依赖 resource id（版本间 id 会变）。
+ * @param topRatio 视为「顶部栏」的屏幕高度比例，默认 0.22
+ * @param minRightRatio 中心点至少在此比例右侧，避免点到左侧 Tab 图标，默认 0.72
+ */
+function findHomeTopRightSearchImageView(topRatio, minRightRatio) {
+    topRatio = topRatio == null ? 0.22 : topRatio;
+    minRightRatio = minRightRatio == null ? 0.72 : minRightRatio;
+    var w = device.width;
+    var h = device.height;
     var allImages = className("android.widget.ImageView").find();
-    if (allImages && allImages.size() > 0) {
-        taskLog("找到ImageView的总数量：" + allImages.size());
-        
-        for (var i = 0; i < allImages.size(); i++) {
-            var img = allImages.get(i);
-            if (img) {
-                taskLog("第" + (i+1) + "个Image控件-Text：" + img.text() + ";ID = " + img.id());
-                //fullId("com.zhiliaoapp.musically:id/h0i")
-                //fullId("com.ss.android.ugc.trill:id/h0j")
-                if (img.id() == (GLOBAL_TikTokPackageName+":id/h0i") || img.id() == (ASIA_TikTokPackageName+":id/h0j")) {
-                    targetGz5 = img; // 每次都赋值，最后一次就是最后一个
-                    // 你可以在这里输出调试信息
-                    taskLog("找到一个符合条件的h0i/h0j按钮，已暂存为targetGz5");
-                }
-            }
+    if (!allImages || allImages.size() === 0) return null;
+
+    var best = null;
+    var bestCx = -1;
+    for (var i = 0; i < allImages.size(); i++) {
+        var img = allImages.get(i);
+        if (!img) continue;
+        var b = null;
+        try {
+            b = img.bounds();
+        } catch (e) {
+            continue;
         }
-        
-        // 点击符合要求的gz5按钮
-        if(targetGz5) {
-            taskLog("找到gz5按钮，准备点击");
-            var bounds = targetGz5.bounds();
-            if(targetGz5.clickable()){
-                targetGz5.click();
-            } else {
-                click(bounds.centerX(), bounds.centerY());
-            }
-            return;
+        if (b.left >= b.right || b.top >= b.bottom) continue;
+        var bw = b.right - b.left;
+        var bh = b.bottom - b.top;
+        if (bw < 8 || bh < 8 || bw > w * 0.5) continue;
+
+        // 须在屏幕可见且位于上方区域（状态栏 + 顶栏 + Tab）
+        if (b.top > h * topRatio) continue;
+        var cx = (b.left + b.right) / 2;
+        if (cx < w * minRightRatio) continue;
+
+        if (cx > bestCx) {
+            bestCx = cx;
+            best = img;
         }
     }
-    
-    //如果没找到合适的按钮，尝试滑动
-    taskLog("没有找到gz5按钮，准备滑动屏幕");
-    swipe_to_up();
-    find_search_btn_count++;
-    
-    sleep(random(2000, 5000));
+    if (best) {
+        try {
+            var bb = best.bounds();
+            taskLog(
+                "findHomeTopRightSearchImageView 选中 center=(" +
+                    (bb.left + bb.right) / 2 +
+                    "," +
+                    (bb.top + bb.bottom) / 2 +
+                    ") bounds=[" +
+                    bb.left +
+                    "," +
+                    bb.top +
+                    "," +
+                    bb.right +
+                    "," +
+                    bb.bottom +
+                    "]"
+            );
+        } catch (e2) {}
+    }
+    return best;
+}
+
+//点击首页的右上角Search按钮（不按 id，按「顶部 + 最右」ImageView）
+function click_home_search_btn() {
+    var maxAttempts = 6;
+    for (var attempt = 1; attempt <= maxAttempts; attempt++) {
+        if (attempt > 1) {
+            taskLog("首页寻找搜索按钮 第" + attempt + "次重试");
+        }
+        sleep(random(2000, 5000));
+
+        var target = findHomeTopRightSearchImageView();
+        if (target) {
+            taskLog("准备点击首页搜索 ImageView（顶部最右）");
+            var bounds = null;
+            try {
+                bounds = target.bounds();
+            } catch (eb) {}
+            if (bounds) {
+                try {
+                    click(bounds.centerX(), bounds.centerY());
+                    sleep(200);
+                    return;
+                } catch (e1) {}
+                try {
+                    if (target.clickable && target.clickable() && target.click()) return;
+                } catch (e2) {}
+            }
+        }
+
+        taskLog("未定位到顶部右侧搜索 ImageView，上滑后再试");
+        swipe_to_up();
+        sleep(random(2000, 5000));
+    }
+    taskLogError("首页寻找搜索按钮超过 " + maxAttempts + " 次");
+    throw new Error("首页寻找搜索按钮超过 " + maxAttempts + " 次");
 }
 
 //屏幕上滑
@@ -582,197 +814,472 @@ function swipe_to_up(){
 function click_Second_search_btn(){
 
     sleep(random(2000, 5000))
-    var allButtons = className("android.widget.Button").find();
-    if (allButtons && allButtons.size() > 0) {
-        for (var i = 0; i < allButtons.size(); i++) {
-            var btn = allButtons.get(i);
-            if (btn) {
-                // taskLog("找到Button控件-Text：" + btn.text() + ";ID = " + btn.id());
-                
-                // fullId("com.zhiliaoapp.musically:id/tk1")
-                // fullId("com.ss.android.ugc.trill:id/tk4")
-                if (btn.id() == (GLOBAL_TikTokPackageName +":id/tk1") || btn.id() == (ASIA_TikTokPackageName +":id/tk4")) {
-                    // 正确调用bounds()方法并点击
-                    toast("找到Button控件: 第二个页面的搜索框！" );
+    // 点击发布按钮：通过底部导航结构查找 TikTok 底部中间的 Button
+    if (!findTextOrDescByLanguagesWithRetry(TT_SEARCH_BUTTON,
+        10,
+        5000,
+        "未找到 TikTok 第二页的右上角Search按钮",
+        TT_SEARCH_WIDGET_BUTTON_CLASS)) {
+        throw new Error("未找到 TikTok 第二页的右上角Search按钮");
+    }
+}
 
-                    var bounds = btn.bounds();
-                    click(bounds.centerX(), bounds.centerY());
-                    // 找到并点击后可以跳出循环
-                    break;
+
+// 原「左上角随机点」：改为找 GridView 内第一个 Button，点击其中心（如搜索页标签/筛选项区域）
+function click_left_top_screen() {
+    sleep(random(2000, 5000));
+    var grid = className("android.widget.GridView").findOne(8000);
+    if (!grid) {
+        throw new Error("TikTok搜索关键词之后，影片页面未找到 android.widget.GridView");
+    }
+    var buttons = grid.find(className("android.widget.Button"));
+    if (!buttons || buttons.size() === 0) {
+        throw new Error("TikTok搜索关键词之后，影片GridView页面未找到Button");
+    }
+    var targetBtn = null;
+    var targetIdx = -1;
+    for (var i = 0; i < buttons.size(); i++) {
+        var btn = buttons.get(i);
+        if (!btn) {
+            continue;
+        }
+        var b = btn.bounds();
+        if (b.width() > 0 && b.height() > 0) {
+            targetBtn = btn;
+            targetIdx = i;
+            break;
+        }
+        taskLog("GridView 内第 " + (i + 1) + " 个 Button bounds 无效，尝试下一个");
+    }
+    if (!targetBtn) {
+        throw new Error("GridView 内所有 Button 的 bounds 均无效");
+    }
+    var bb = targetBtn.bounds();
+    click(bb.centerX(), bb.centerY());
+    taskLog("已点击 GridView 内第 " + (targetIdx + 1) + " 个 Button 中心 (" + bb.centerX() + "," + bb.centerY() + ")");
+}
+
+/**
+ * @param coordinateClickFirst 若为 true（如 TikTok 评论外层 Button）：命中后先 click(中心坐标) 再回退 node.click()，避免无障碍 ACTION_CLICK 无响应
+ */
+function clickByUiTextAndClassWithRetry(languageObject, classNameStr, maxRetries, delayMs, failMessage, matchMode, coordinateClickFirst) {
+    maxRetries = maxRetries || 10;
+    delayMs = delayMs || 1000;
+    matchMode = matchMode || "fuzzy_half"; // fuzzy_half | exact | half_prefix | contains
+    coordinateClickFirst = coordinateClickFirst === true;
+
+    var targetTexts = [];
+    for (var lang in languageObject) {
+        if (!languageObject.hasOwnProperty(lang)) continue;
+        var val = languageObject[lang];
+        if (Array.isArray(val)) {
+            for (var i = 0; i < val.length; i++) {
+                if (val[i]) targetTexts.push(String(val[i]));
+            }
+        } else if (val) {
+            targetTexts.push(String(val));
+        }
+    }
+
+    function normalizeText(s) {
+        if (!s) return "";
+        return String(s).toLowerCase().replace(/\s+/g, "").replace(/[.,，。:：!！?？"'\-\(\)\[\]{}]/g, "");
+    }
+
+    // 目标文本在节点文本中的匹配比例（>=0.5 视为命中）
+    function matchRatio(candidate, target) {
+        var c = normalizeText(candidate);
+        var t = normalizeText(target);
+        if (!c || !t) return 0;
+
+        if (c.indexOf(t) >= 0) return 1;
+        if (t.indexOf(c) >= 0) return c.length / t.length;
+
+        var freq = {};
+        for (var i = 0; i < c.length; i++) {
+            var ch = c.charAt(i);
+            freq[ch] = (freq[ch] || 0) + 1;
+        }
+
+        var common = 0;
+        for (var j = 0; j < t.length; j++) {
+            var tch = t.charAt(j);
+            if (freq[tch] > 0) {
+                common++;
+                freq[tch]--;
+            }
+        }
+        return common / t.length;
+    }
+
+    function isMatchedByMode(candidate, target) {
+        var c = normalizeText(candidate);
+        var t = normalizeText(target);
+        if (!c || !t) return false;
+
+        if (matchMode === "exact") {
+            return c === t;
+        }
+
+        if (matchMode === "half_prefix") {
+            var halfLen = Math.max(1, Math.floor(c.length / 2));
+            var firstHalf = c.substring(0, halfLen);
+            return firstHalf.indexOf(t) >= 0 || t.indexOf(firstHalf) >= 0;
+        }
+
+        if (matchMode === "contains") {
+            return c.indexOf(t) >= 0;
+        }
+
+        return matchRatio(c, t) >= 0.5;
+    }
+
+    /** 调试：打印本次 find 到的全部 Button 的 desc/text/bounds（仅 class 含 Button 时，避免 ImageView 刷屏） */
+    function logAllButtonNodesDesc(nodes, attempt) {
+        if (!classNameStr || classNameStr.indexOf("Button") < 0) return;
+        if (!nodes || nodes.size() === 0) {
+            taskLog("[UI调试-Button] 第" + attempt + "次：未找到任何 " + classNameStr);
+            return;
+        }
+        taskLog("[UI调试-Button] 第" + attempt + "次：共 " + nodes.size() + " 个 " + classNameStr);
+        for (var n = 0; n < nodes.size(); n++) {
+            var node = nodes.get(n);
+            if (!node) continue;
+            var t = "";
+            var d = "";
+            try { t = node.text() || ""; } catch (e1) {}
+            try { d = node.desc() || ""; } catch (e2) {}
+            var bstr = "";
+            try {
+                var bb = node.bounds();
+                bstr = "[" + bb.left + "," + bb.top + "," + bb.right + "," + bb.bottom + "]";
+            } catch (e3) {}
+            taskLog("[UI调试-Button] #" + n + " text=" + t + " | desc=" + d + " | bounds=" + bstr);
+        }
+    }
+
+    /** 合法矩形且与屏幕有交集，排除 top>bottom 等异常节点（列表里重复模板、屏外项） */
+    function isBoundsIntersectScreen(b) {
+        if (!b) return false;
+        var l = b.left;
+        var t = b.top;
+        var r = b.right;
+        var bt = b.bottom;
+        if (l >= r || t >= bt) return false;
+        var w = device.width;
+        var h = device.height;
+        var il = Math.max(l, 0);
+        var it = Math.max(t, 0);
+        var ir = Math.min(r, w);
+        var ibt = Math.min(bt, h);
+        return il < ir && it < ibt;
+    }
+
+    function hitAndClickOnNodes(nodes) {
+        if (!nodes) return false;
+        for (var n = 0; n < nodes.size(); n++) {
+            var node = nodes.get(n);
+            if (!node) continue;
+
+            var b0 = null;
+            try {
+                b0 = node.bounds();
+            } catch (eb0) {}
+            if (!isBoundsIntersectScreen(b0)) continue;
+
+            var t = "";
+            var d = "";
+            try { t = node.text() || ""; } catch (e1) {}
+            try { d = node.desc() || ""; } catch (e2) {}
+
+            for (var j = 0; j < targetTexts.length; j++) {
+                var target = targetTexts[j];
+                var textHit = isMatchedByMode(t, target);
+                var descHit = isMatchedByMode(d, target);
+                if (textHit || descHit) {
+                    var hitVia = textHit ? "text" : "desc";
+                    var bstr = "";
+                    var b = null;
+                    try {
+                        b = node.bounds();
+                        bstr = "[" + b.left + "," + b.top + "," + b.right + "," + b.bottom + "]";
+                    } catch (eb) {}
+                    if (!isBoundsIntersectScreen(b)) continue;
+
+                    function logHitDetail(extra) {
+                        taskLog(
+                            "[命中详情] 命中并点击成功：" + classNameStr +
+                            " 节点#" + n +
+                            " 匹配方式=" + hitVia +
+                            " 匹配关键字=" + target +
+                            " 当前text=" + t +
+                            " | desc=" + d +
+                            " bounds=" + bstr +
+                            (extra || "")
+                        );
+                    }
+
+                    if (coordinateClickFirst) {
+                        try {
+                            click(b.centerX(), b.centerY());
+                            sleep(200);
+                            logHitDetail(" (优先坐标点击 center=" + b.centerX() + "," + b.centerY() + ")");
+                            return true;
+                        } catch (eCoord) {}
+                        try {
+                            if (node.click && node.click()) {
+                                logHitDetail(" (坐标失败后无障碍 click)");
+                                return true;
+                            }
+                        } catch (e3) {}
+                    } else {
+                        try {
+                            if (node.click && node.click()) {
+                                logHitDetail(" (无障碍 click)");
+                                return true;
+                            }
+                        } catch (e3) {}
+                        try {
+                            click(b.centerX(), b.centerY());
+                            logHitDetail(" (坐标点击 center=" + b.centerX() + "," + b.centerY() + ")");
+                            return true;
+                        } catch (e4) {}
+                    }
                 }
             }
         }
-    }
-    sleep(random(2000, 5000))
-}
-
-//点击屏幕左上方
-function click_left_top_screen(){
-    // 获取屏幕宽度和高度
-    var width = device.width;
-    var height = device.height;
-
-    // 定义左上角区域的边界
-    var left = 200;
-    var top = 200;
-    var right = width / 2; // 左上区域的右边界
-    var bottom = height / 2; // 左上区域的下边界
-
-    // 生成随机坐标
-    var randomX = Math.random() * (right - left) + left; // 随机 x 坐标
-    var randomY = Math.random() * (bottom - top) + top; // 随机 y 坐标
-
-    // 点击随机坐标
-    click(randomX, randomY);
-
-
-}
-
-
-function clickId(a) {
-    taskLog("开始点击元素ID ：" + a);
-
-    let obj_ID = id(a).boundsInside(5, 5, device.width - 5, device.height - 5);
-    
-    // 检查是否找到元素
-    let elements = obj_ID.find();
-    if (elements.empty()) {
-        taskLog("没有找到元素ID ：" + a);
-        return false;
-    }
-    
-    // 获取第一个匹配的元素
-    let element = elements.get(0);
-    let X = element.bounds().centerX();
-    let Y = element.bounds().centerY();
-    
-    // 验证 X 和 Y 是否为正数
-    if (X < 0 || Y < 0) {
-        taskLog("坐标无效，中心点X或Y为负值: X=" + X + ", Y=" + Y);
         return false;
     }
 
-    // 生成随机偏差
-    let Deviation = random(-2, 2);
-    let X1 = X - Deviation;
-    let Y1 = Y - Deviation;
-
-    // 防止偏差导致负值
-    X1 = Math.max(0, X1);
-    Y1 = Math.max(0, Y1);
-
-    try {
-        device.sdkInt < 24 ? ra.tap(X1, Y1) : click(X1, Y1);
-    } catch (e) {
-        taskLog("点击操作失败：" + e.message);
-    }
-}
-
-
-//点击个人主页
-function click_Author_Page_Btn(){
-    taskLog("开始准备查看个人主页")
-    clickId("qza")
-    sleep(random(5000,8000))
-
-    // 获取屏幕宽高
-    var width = device.width;
-    var height = device.height;
-    
-     // 生成随机起始点
-     var startX = random(width / 3 , width * 2 / 3);
-     var startY = random(height * 2 / 3, height * 3 / 4);
-
-     // 生成随机结束点
-     var endX = random(width / 3 , width * 2 / 3);
-     var endY = random(height * 1 / 3, height * 1 / 4);
-
-    // 随机选择滑动方向：上滑或下滑
-    for (var i = 0; i < 2; i++) {
-        var direction = random(0, 1) === 0 ? 'up' : 'down';
-
-        if (direction === 'up') {
-            // 从下往上滑动
-            swipe(startX, startY, endX, endY, 500);
-        } else {
-            // 从上往下滑动
-            swipe(startX, startY, endX, endY, 500);
+    for (var attempt = 1; attempt <= maxRetries; attempt++) {
+        taskLog("开始第" + attempt + "次查找" + classNameStr + "并按UI_TEXT点击，匹配模式=" + matchMode + "...");
+        var nodes = className(classNameStr).find();
+        logAllButtonNodesDesc(nodes, attempt);
+        if (hitAndClickOnNodes(nodes)) {
+            return true;
         }
-        
-        // 暂停一段时间，避免滑动过快
-        sleep(random(3000,5000));
+        if (attempt < maxRetries) sleep(delayMs);
     }
 
-    taskLog("从视频作者主页返回")
-    sleep(random(3000,5000));
-    back();
+    taskLogError(failMessage || ("连续" + maxRetries + "次点击失败"));
+    return false;
 }
+
+
 
 //点击点赞按钮
 function click_Like_Btn(){
-    taskLog("开始准备点赞视频")
-    //fullId("com.zhiliaoapp.musically:id/e2n") 
-    //fullId("com.ss.android.ugc.trill:id/e2o")
-    if(targetPackageName == GLOBAL_TikTokPackageName){  
-        clickId(GLOBAL_TikTokPackageName + ":id/e2n")
-    }else{
-        clickId(ASIA_TikTokPackageName + ":id/e2o")
+    taskLog("开始准备点赞视频");
+    if (!clickByUiTextAndClassWithRetry(
+        CONFIG.UI_TEXT.TT_LIKE_BUTTON,
+        "android.widget.ImageView",
+        3,
+        1000,
+        "点赞按钮点击失败",
+        "exact"
+    )) {
+        // throw new Error("点赞按钮点击失败");
+        taskLogError("点赞按钮点击失败");
     }
+}
 
+
+//点击收藏按钮
+function click_Save_Btn(){
+    taskLog("开始准备收藏视频");
+    if (!clickByUiTextAndClassWithRetry(
+        CONFIG.UI_TEXT.TT_SAVE_BUTTON,
+        "android.widget.Button",
+        3,
+        1000,
+        "收藏按钮点击失败",
+        "contains"
+    )) {
+        // throw new Error("收藏按钮点击失败");
+        taskLogError("收藏按钮点击失败");
+    }
+}
+
+
+//点击Post评论按钮
+function click_Post_Comment_Btn(){
+    taskLog("开始准备Post评论按钮");
+    if (!clickByUiTextAndClassWithRetry(
+        CONFIG.UI_TEXT.TT_POST_BUTTON,
+        "android.widget.Button",
+        3,
+        1000,
+        "评论按钮点击失败",
+        "exact"
+    )) {
+        // 如果没有通过文本命中发送按钮，则改为“以 EditText 为锚点，找其右侧同一行按钮”
+        // 若计算出的坐标越界（如负数），则本轮直接跳过 Post，避免抛异常中断流程
+        try {
+            var editTexts = className("android.widget.EditText").find();
+            taskLog("find_send_btn editTexts长度 = " + (editTexts ? editTexts.size() : 0));
+            if (editTexts && editTexts.size() > 0) {
+                var input = editTexts.get(editTexts.size() - 1);
+                if (input) {
+                    var inputBounds = input.bounds();
+                    var allButtons = className("android.widget.Button").find();
+                    taskLog("find_send_btn allButtons长度 = " + (allButtons ? allButtons.size() : 0));
+
+                    var targetBtn = null;
+                    var minDx = 999999;
+                    if (allButtons && allButtons.size() > 0) {
+                        for (var i = 0; i < allButtons.size(); i++) {
+                            var btn = allButtons.get(i);
+                            if (!btn) continue;
+                            var b = btn.bounds();
+                            var isRight = b.left >= inputBounds.right - 10;
+                            var overlapY = !(b.bottom < inputBounds.top || b.top > inputBounds.bottom);
+                            if (isRight && overlapY) {
+                                var dx = b.left - inputBounds.right;
+                                if (dx < minDx) {
+                                    minDx = dx;
+                                    targetBtn = btn;
+                                }
+                            }
+                        }
+                    }
+
+                    if (targetBtn) {
+                        var tb = targetBtn.bounds();
+                        var tx = tb.centerX();
+                        var ty = tb.centerY();
+                        if (tx >= 0 && ty >= 0 && tx <= device.width && ty <= device.height) {
+                            taskLog("find_send_btn 命中右侧按钮，点击坐标: " + tx + "," + ty);
+                            click(tx, ty);
+                        } else {
+                            taskLog("find_send_btn 目标按钮坐标越界，跳过本次Post: " + tx + "," + ty);
+                            return;
+                        }
+                    } else {
+                        var x = parseInt(inputBounds.right + 45);
+                        var y = parseInt((inputBounds.top + inputBounds.bottom) / 2);
+                        if (x >= 0 && y >= 0 && x <= device.width && y <= device.height) {
+                            taskLog("find_send_btn 未命中右侧Button，兜底点击坐标: " + x + "," + y);
+                            click(x, y);
+                        } else {
+                            taskLog("find_send_btn 兜底坐标越界，跳过本次Post: " + x + "," + y);
+                            return;
+                        }
+                    }
+                }
+            } else {
+                taskLog("find_send_btn 未找到EditText，无法执行右侧定位");
+            }
+        } catch (e) {
+            taskLog("find_send_btn 发送按钮定位异常，跳过本次Post: " + e);
+            return;
+        }
+    }
+}
+
+
+
+
+
+/**
+ * 新版 TikTok 评论入口 desc 常为 "Read or add comments. 0 comments"；用 descContains 兜底。
+ */
+function tryClickTikTokCommentByDesc() {
+    var patterns = [
+        "Read or add comments",
+        "Read or add comment",
+        "阅读或添加评论",
+        "閱讀或新增評論"
+    ];
+    var threshold = device.width * 0.55;
+    for (var i = 0; i < patterns.length; i++) {
+        try {
+            var nodes = descContains(patterns[i]).clickable(true).find();
+            if (!nodes || nodes.size() === 0) continue;
+
+            var bestNode = null;
+            var bestCx = -1;
+            for (var j = 0; j < nodes.size(); j++) {
+                var node = nodes.get(j);
+                if (!node) continue;
+                var b = node.bounds();
+                if (b.left >= b.right || b.top >= b.bottom) continue;
+                var cx = (b.left + b.right) / 2;
+                if (cx > threshold) {
+                    if (cx > bestCx) {
+                        bestCx = cx;
+                        bestNode = node;
+                    }
+                }
+            }
+            if (bestNode) {
+                var bb = bestNode.bounds();
+                try {
+                    click(bb.centerX(), bb.centerY());
+                    sleep(200);
+                    taskLog("tryClickTikTokCommentByDesc 优先坐标点击: " + patterns[i] + " center=" + bb.centerX() + "," + bb.centerY());
+                    return true;
+                } catch (eTap) {}
+                try {
+                    bestNode.click();
+                    taskLog("tryClickTikTokCommentByDesc 坐标失败改用 click: " + patterns[i]);
+                    return true;
+                } catch (e2) {}
+            }
+            taskLog("tryClickTikTokCommentByDesc pattern=" + patterns[i] + " 有节点但无 centerX>" + threshold + " 的候选");
+        } catch (e) {
+            taskLog("tryClickTikTokCommentByDesc 异常: " + e);
+        }
+    }
+    return false;
 }
 
 //点击评论按钮
 function click_Comment_Btn(commentText){
     taskLog("开始准备评论视频")
-    //fullId("com.zhiliaoapp.musically:id/cxm")
-    //fullId("com.ss.android.ugc.trill:id/cxn")
-    if(targetPackageName == GLOBAL_TikTokPackageName){  
-        clickId(GLOBAL_TikTokPackageName + ":id/cxm")
-    }else{
-        clickId(ASIA_TikTokPackageName + ":id/cxn")
+    var commentOpened = clickByUiTextAndClassWithRetry(
+        CONFIG.UI_TEXT.TT_COMMENT_BUTTON,
+        "android.widget.Button",
+        3,
+        1000,
+        "评论按钮点击失败",
+        "contains",
+        true
+    );
+    if (!commentOpened) {
+        taskLog("Button 文本匹配失败，尝试 descContains 兜底...");
+        commentOpened = tryClickTikTokCommentByDesc();
+    }
+    if (!commentOpened) {
+        taskLog("评论按钮点击失败（>=50%匹配），直接返回");
+        return;
     }
 
-    sleep(5000)
-    var autoCompleteTextViews = className("android.widget.EditText").find();
-    taskLog("autoCompleteTextViews长度 = " + autoCompleteTextViews.size())
-
+    sleep(10000)
+    var autoCompleteTextViews = classNameContains("EditText").find();
+    taskLog("EditText(含子类) 长度 = " + autoCompleteTextViews.size())
 
     //如果某个tiktok视频，0评论，自己是首评，那么界面会有两个"android.widget.EditText"
     if(autoCompleteTextViews.size() >0){
         var textView = autoCompleteTextViews.get(autoCompleteTextViews.size() - 1);
         if(textView) {
             taskLog("找到TextView控件-Text："+ textView.text());
-            // textView.click()
             sleep(3000)
             taskLog("评论控件，设置内容：" +commentText );
             textView.setText(commentText)
             sleep(5000)
     
-    
-            //发送按钮,如果某个tiktok视频，0评论，自己是首评，那么就会找不到fullId("com.zhiliaoapp.musically:id/czk")
-            //所以必须要执行两次clickId(GLOBAL_TikTokPackageName + ":id/czk") ，因为0评论，和有评论的界面不一样
-            // fullId("com.zhiliaoapp.musically:id/czk")
-            // fullId("com.ss.android.ugc.trill:id/czl")
-
-            if(targetPackageName == GLOBAL_TikTokPackageName){  
-                clickId(GLOBAL_TikTokPackageName + ":id/czk")
-            }else{
-                clickId(ASIA_TikTokPackageName + ":id/czl")
-            }
+            click_Post_Comment_Btn()
 
             sleep(random(2000, 3000))
             back()
             sleep(random(2000, 3000))
             
-            if(targetPackageName == GLOBAL_TikTokPackageName){  
-                clickId(GLOBAL_TikTokPackageName + ":id/czk")
-            }else{
-                clickId(ASIA_TikTokPackageName + ":id/czl")
-            }
-    
-    
-            sleep(random(10000, 15000))
-    
+            click_Post_Comment_Btn()
+            sleep(random(2000, 3000))
+
+
+            Nest_ScreenCapture()
+            sleep(random(2000, 3000))
     
             var clickX = device.width  - 100 ; 
             var clickY = device.width /4; 
@@ -781,27 +1288,34 @@ function click_Comment_Btn(commentText){
             click(clickX, clickY);
                 
                 
-            }
-    }
-
-    
-}
-
-
-
-
-//点击收藏按钮
-function click_Save_Btn(){
-    taskLog("开始准备收藏视频")
-    //fullId("com.zhiliaoapp.musically:id/fdf")
-    //fullId("com.ss.android.ugc.trill:id/fdg")
-    if(targetPackageName == GLOBAL_TikTokPackageName){  
-        clickId(GLOBAL_TikTokPackageName + ":id/fdf")   
+        }
     }else{
-        clickId(ASIA_TikTokPackageName + ":id/fdg")
+        //页面没有评论按钮，直接返回
+        taskLog("页面没有评论按钮，直接返回")
+        back()
+        sleep(random(2000, 3000))
     }
-
+   
 }
+
+
+
+
+function find_send_btn() {
+    var allButtons = className("android.widget.Button").find();
+    taskLog("find_send_btn allButtons长度 = " + allButtons.size())
+    if (allButtons && allButtons.size() > 0) {
+
+        // 获取最后一个按钮
+        var lastButton = allButtons.get(allButtons.size() - 1);
+        if (lastButton) {
+            // bounds()是一个方法,需要先调用它
+            var bounds = lastButton.bounds();
+            click(bounds.centerX(), bounds.centerY());
+        }
+    }
+}
+
 
 
 
@@ -1014,12 +1528,6 @@ function watch_TT_video(comments){
               }
         }
 
-        if (Math.random() * 100 < TT_Watch_Author_Page)  {
-            taskLog("开始触发查看作者主页的概率")
-            click_Author_Page_Btn()
-            sleep(random(5000, 8000))
-        }
-
 
         sleep(random(3000, 5000))
         var screenshotPath = Nest_ScreenCapture();
@@ -1103,7 +1611,7 @@ try {
                     var video_text = findTextByLanguages(VIDEO_TEXT)
                     if(video_text){
                         taskLog("找到视频Tab按钮：" + video_text)
-                        sleep(random(5000, 8000))
+                        sleep(random(8000, 10000))
                         click_left_top_screen()//直接观看第一个即可
                         
                         sleep(random(5000, 8000))
