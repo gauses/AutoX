@@ -197,8 +197,13 @@ var CONFIG = {
 
         TT_COMMENT_BUTTON: {
             ZH_CN: "阅读或添加评论",//className("android.widget.Button")  desc("阅读或添加评论。0 条评论")
+            //desc("閱讀或新增評論。32 則評論")
             ZH_TW: "閱讀或新增評論", //className("android.widget.Button") desc("閱讀或新增評論。")
-            EN_US: "Read or add comments" //className("android.widget.Button") desc("Read or add comments. 14K comments")
+            // 英文版 desc 常为 "Read or add comments. 0 comments" —— 多给几条便于 contains 命中；部分机型评论入口是 ImageView
+            EN_US: [
+                "Read or add comments",
+                "Read or add comment"
+            ]
         },
 
         TT_SAVE_BUTTON: {
@@ -511,10 +516,14 @@ function clickId(a) {
 
 
 
-function clickByUiTextAndClassWithRetry(languageObject, classNameStr, maxRetries, delayMs, failMessage, matchMode) {
+/**
+ * @param coordinateClickFirst 若为 true（如 TikTok 评论外层 Button）：命中后先 click(中心坐标) 再回退 node.click()，避免无障碍 ACTION_CLICK 无响应
+ */
+function clickByUiTextAndClassWithRetry(languageObject, classNameStr, maxRetries, delayMs, failMessage, matchMode, coordinateClickFirst) {
     maxRetries = maxRetries || 10;
     delayMs = delayMs || 1000;
     matchMode = matchMode || "fuzzy_half"; // fuzzy_half | exact | half_prefix | contains
+    coordinateClickFirst = coordinateClickFirst === true;
 
     var targetTexts = [];
     for (var lang in languageObject) {
@@ -582,11 +591,58 @@ function clickByUiTextAndClassWithRetry(languageObject, classNameStr, maxRetries
         return matchRatio(c, t) >= 0.5;
     }
 
+    /** 调试：打印本次 find 到的全部 Button 的 desc/text/bounds（仅 class 含 Button 时，避免 ImageView 刷屏） */
+    function logAllButtonNodesDesc(nodes, attempt) {
+        if (!classNameStr || classNameStr.indexOf("Button") < 0) return;
+        if (!nodes || nodes.size() === 0) {
+            taskLog("[UI调试-Button] 第" + attempt + "次：未找到任何 " + classNameStr);
+            return;
+        }
+        taskLog("[UI调试-Button] 第" + attempt + "次：共 " + nodes.size() + " 个 " + classNameStr);
+        for (var n = 0; n < nodes.size(); n++) {
+            var node = nodes.get(n);
+            if (!node) continue;
+            var t = "";
+            var d = "";
+            try { t = node.text() || ""; } catch (e1) {}
+            try { d = node.desc() || ""; } catch (e2) {}
+            var bstr = "";
+            try {
+                var bb = node.bounds();
+                bstr = "[" + bb.left + "," + bb.top + "," + bb.right + "," + bb.bottom + "]";
+            } catch (e3) {}
+            taskLog("[UI调试-Button] #" + n + " text=" + t + " | desc=" + d + " | bounds=" + bstr);
+        }
+    }
+
+    /** 合法矩形且与屏幕有交集，排除 top>bottom 等异常节点（列表里重复模板、屏外项） */
+    function isBoundsIntersectScreen(b) {
+        if (!b) return false;
+        var l = b.left;
+        var t = b.top;
+        var r = b.right;
+        var bt = b.bottom;
+        if (l >= r || t >= bt) return false;
+        var w = device.width;
+        var h = device.height;
+        var il = Math.max(l, 0);
+        var it = Math.max(t, 0);
+        var ir = Math.min(r, w);
+        var ibt = Math.min(bt, h);
+        return il < ir && it < ibt;
+    }
+
     function hitAndClickOnNodes(nodes) {
         if (!nodes) return false;
         for (var n = 0; n < nodes.size(); n++) {
             var node = nodes.get(n);
             if (!node) continue;
+
+            var b0 = null;
+            try {
+                b0 = node.bounds();
+            } catch (eb0) {}
+            if (!isBoundsIntersectScreen(b0)) continue;
 
             var t = "";
             var d = "";
@@ -598,14 +654,54 @@ function clickByUiTextAndClassWithRetry(languageObject, classNameStr, maxRetries
                 var textHit = isMatchedByMode(t, target);
                 var descHit = isMatchedByMode(d, target);
                 if (textHit || descHit) {
+                    var hitVia = textHit ? "text" : "desc";
+                    var bstr = "";
+                    var b = null;
                     try {
-                        if (node.click && node.click()) return true;
-                    } catch (e3) {}
-                    try {
-                        var b = node.bounds();
-                        click(b.centerX(), b.centerY());
-                        return true;
-                    } catch (e4) {}
+                        b = node.bounds();
+                        bstr = "[" + b.left + "," + b.top + "," + b.right + "," + b.bottom + "]";
+                    } catch (eb) {}
+                    if (!isBoundsIntersectScreen(b)) continue;
+
+                    function logHitDetail(extra) {
+                        taskLog(
+                            "[命中详情] 命中并点击成功：" + classNameStr +
+                            " 节点#" + n +
+                            " 匹配方式=" + hitVia +
+                            " 匹配关键字=" + target +
+                            " 当前text=" + t +
+                            " | desc=" + d +
+                            " bounds=" + bstr +
+                            (extra || "")
+                        );
+                    }
+
+                    if (coordinateClickFirst) {
+                        try {
+                            click(b.centerX(), b.centerY());
+                            sleep(200);
+                            logHitDetail(" (优先坐标点击 center=" + b.centerX() + "," + b.centerY() + ")");
+                            return true;
+                        } catch (eCoord) {}
+                        try {
+                            if (node.click && node.click()) {
+                                logHitDetail(" (坐标失败后无障碍 click)");
+                                return true;
+                            }
+                        } catch (e3) {}
+                    } else {
+                        try {
+                            if (node.click && node.click()) {
+                                logHitDetail(" (无障碍 click)");
+                                return true;
+                            }
+                        } catch (e3) {}
+                        try {
+                            click(b.centerX(), b.centerY());
+                            logHitDetail(" (坐标点击 center=" + b.centerX() + "," + b.centerY() + ")");
+                            return true;
+                        } catch (e4) {}
+                    }
                 }
             }
         }
@@ -615,8 +711,8 @@ function clickByUiTextAndClassWithRetry(languageObject, classNameStr, maxRetries
     for (var attempt = 1; attempt <= maxRetries; attempt++) {
         taskLog("开始第" + attempt + "次查找" + classNameStr + "并按UI_TEXT点击，匹配模式=" + matchMode + "...");
         var nodes = className(classNameStr).find();
+        logAllButtonNodesDesc(nodes, attempt);
         if (hitAndClickOnNodes(nodes)) {
-            taskLog("命中并点击成功：" + classNameStr);
             return true;
         }
         if (attempt < maxRetries) sleep(delayMs);
@@ -740,24 +836,83 @@ function click_Post_Comment_Btn(){
 
 
 
+/**
+ * 新版 TikTok 评论入口 desc 常为 "Read or add comments. 0 comments"；用 descContains 兜底。
+ */
+function tryClickTikTokCommentByDesc() {
+    var patterns = [
+        "Read or add comments",
+        "Read or add comment",
+        "阅读或添加评论",
+        "閱讀或新增評論"
+    ];
+    var threshold = device.width * 0.55;
+    for (var i = 0; i < patterns.length; i++) {
+        try {
+            var nodes = descContains(patterns[i]).clickable(true).find();
+            if (!nodes || nodes.size() === 0) continue;
+
+            var bestNode = null;
+            var bestCx = -1;
+            for (var j = 0; j < nodes.size(); j++) {
+                var node = nodes.get(j);
+                if (!node) continue;
+                var b = node.bounds();
+                if (b.left >= b.right || b.top >= b.bottom) continue;
+                var cx = (b.left + b.right) / 2;
+                if (cx > threshold) {
+                    if (cx > bestCx) {
+                        bestCx = cx;
+                        bestNode = node;
+                    }
+                }
+            }
+            if (bestNode) {
+                var bb = bestNode.bounds();
+                try {
+                    click(bb.centerX(), bb.centerY());
+                    sleep(200);
+                    taskLog("tryClickTikTokCommentByDesc 优先坐标点击: " + patterns[i] + " center=" + bb.centerX() + "," + bb.centerY());
+                    return true;
+                } catch (eTap) {}
+                try {
+                    bestNode.click();
+                    taskLog("tryClickTikTokCommentByDesc 坐标失败改用 click: " + patterns[i]);
+                    return true;
+                } catch (e2) {}
+            }
+            taskLog("tryClickTikTokCommentByDesc pattern=" + patterns[i] + " 有节点但无 centerX>" + threshold + " 的候选");
+        } catch (e) {
+            taskLog("tryClickTikTokCommentByDesc 异常: " + e);
+        }
+    }
+    return false;
+}
+
 //点击评论按钮
 function click_Comment_Btn(commentText){
     taskLog("开始准备评论视频")
-    if (!clickByUiTextAndClassWithRetry(
+    var commentOpened = clickByUiTextAndClassWithRetry(
         CONFIG.UI_TEXT.TT_COMMENT_BUTTON,
         "android.widget.Button",
         3,
         1000,
         "评论按钮点击失败",
-        "contains"
-    )) {
-        taskLog("评论按钮点击失败（>=50%匹配），直接返回");
+        "contains",
+        true
+    );
+    if (!commentOpened) {
+        taskLog("Button 文本匹配失败，尝试 descContains 兜底...");
+        commentOpened = tryClickTikTokCommentByDesc();
     }
-    
+    if (!commentOpened) {
+        taskLog("评论按钮点击失败（>=50%匹配），直接返回");
+        return;
+    }
 
-    sleep(5000)
-    var autoCompleteTextViews = className("android.widget.EditText").find();
-    taskLog("autoCompleteTextViews长度 = " + autoCompleteTextViews.size())
+    sleep(10000)
+    var autoCompleteTextViews = classNameContains("EditText").find();
+    taskLog("EditText(含子类) 长度 = " + autoCompleteTextViews.size())
 
     //如果某个tiktok视频，0评论，自己是首评，那么界面会有两个"android.widget.EditText"
     if(autoCompleteTextViews.size() >0){
