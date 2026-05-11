@@ -4,6 +4,157 @@ importClass(java.io.PrintWriter);
 importClass(java.io.FileWriter);
 
 
+
+
+/**
+ * AOSP 系统应用专用：静默开启所有权限
+ */
+/**
+ * 1. 基础权限初始化 (只在脚本启动时运行一次)
+ */
+function initialSystemGrant() {
+    var pkg = "org.autojs.autoxjs";
+    log("正在执行初始化系统授权...");
+    try {
+        // 授权标准权限
+        shell("pm grant " + pkg + " android.permission.READ_EXTERNAL_STORAGE");
+        shell("pm grant " + pkg + " android.permission.WRITE_EXTERNAL_STORAGE");
+        // 授权 AppOps 特权
+        shell("appops set " + pkg + " SYSTEM_ALERT_WINDOW allow");
+        shell("appops set " + pkg + " BACKGROUND_START_ACTIVITY allow");
+        shell("appops set " + pkg + " MANAGE_EXTERNAL_STORAGE allow");
+        //截图:adb shell appops set org.autojs.autoxjs PROJECT_MEDIA allow
+        shell("appops set " + pkg + " PROJECT_MEDIA allow");
+        // 加入白名单
+        shell("dumpsys deviceidle whitelist +" + pkg);
+        toastLog("初始权限配置完成");
+    } catch (e) {
+        log("初始化授权失败: " + e);
+    }
+}
+
+/**
+ * 2. 核心：无障碍服务守护线程 (每 1 秒检查一次)
+ * 主脚本收尾时务必 stopAccessibilityMonitor()，否则子线程 AsyncTask 会一直挂住主 Looper，
+ * Java 层 ScriptExecutionGlobalListener.onSuccess 不会触发。
+ */
+var accessibilityMonitorRunning = true;
+var accessibilityMonitorThread = null;
+
+function stopAccessibilityMonitor() {
+    accessibilityMonitorRunning = false;
+    if (accessibilityMonitorThread != null) {
+        try {
+            accessibilityMonitorThread.interrupt();
+        } catch (e) {
+            log("stopAccessibilityMonitor: " + e);
+        }
+    }
+}
+
+function startAccessibilityMonitor() {
+    var pkg = "org.autojs.autoxjs";
+    var serviceName = pkg + "/com.stardust.autojs.core.accessibility.AccessibilityService";
+
+    accessibilityMonitorThread = threads.start(function () {
+        log("无障碍守护线程已启动...");
+        var resolver = context.getContentResolver();
+        importClass(android.provider.Settings);
+
+        while (accessibilityMonitorRunning) {
+            try {
+                // 读取当前已开启的服务列表
+                var enabledServices = Settings.Secure.getString(resolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES) || "";
+                var isEnabled = Settings.Secure.getInt(resolver, Settings.Secure.ACCESSIBILITY_ENABLED, 0);
+
+                // 如果总开关关了，或者服务不在列表里
+                if (isEnabled == 0 || enabledServices.indexOf(serviceName) === -1) {
+                    taskLog("检测到无障碍服务已关闭，正在尝试重新开启...");
+
+                    // 重新构建服务字符串（保持其他已开启的服务不受影响）
+                    var newServices = enabledServices;
+                    if (enabledServices.indexOf(serviceName) === -1) {
+                        newServices = enabledServices ? enabledServices + ":" + serviceName : serviceName;
+                    }
+
+                    // 静默写入数据库 (系统应用特权)
+                    Settings.Secure.putString(resolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES, newServices);
+                    Settings.Secure.putInt(resolver, Settings.Secure.ACCESSIBILITY_ENABLED, 1);
+
+                    taskLog("无障碍服务已通过守护线程强制拉起");
+                }
+            } catch (err) {
+                log("守护线程执行异常: " + err);
+            }
+            if (!accessibilityMonitorRunning) {
+                break;
+            }
+            try {
+                sleep(500);
+            } catch (ie) {
+                break;
+            }
+        }
+        log("无障碍守护线程已结束");
+    });
+}
+
+function isAccessibilityServiceReady() {
+    try {
+        var service = com.stardust.view.accessibility.AccessibilityService.Companion.getInstance();
+        return service != null;
+    } catch (e) {
+        try {
+            return auto.service != null;
+        } catch (ignored) {
+            return false;
+        }
+    }
+}
+
+function waitAccessibilityReady(timeoutMs) {
+    var start = new Date().getTime();
+    var lastLogTime = 0;
+    while (new Date().getTime() - start < timeoutMs) {
+        if (isAccessibilityServiceReady()) {
+            log("无障碍服务实例已就绪");
+            return true;
+        }
+        var now = new Date().getTime();
+        if (now - lastLogTime >= 1000) {
+            lastLogTime = now;
+            log("等待无障碍服务实例绑定中...");
+        }
+        sleep(300);
+    }
+    return false;
+}
+
+// --- 顺序执行 ---
+initialSystemGrant();     // 初始化一次
+
+// 前台常驻通知，降低被系统杀进程概率
+(function () {
+    importClass(org.autojs.autojs.external.foreground.ForegroundService);
+    try {
+        ForegroundService.start(context);
+        log("已启动前台服务（常驻通知）");
+    } catch (e) {
+        log("启动前台服务失败: " + e);
+    }
+})();
+
+startAccessibilityMonitor(); // 开启后台监听
+
+if (!waitAccessibilityReady(15000)) {
+    throw new Error("无障碍服务开关已开启，但服务实例在15秒内未就绪");
+}
+
+// 你的主脚本逻辑开始
+log("主逻辑运行中...");
+
+
+
 //******************************************************************
 //***********************Tiktok关注*************************
 //******************************************************************
@@ -15,11 +166,59 @@ importClass(java.io.FileWriter);
 var taskLogFileName = "nest_task_log.txt"
 var taskLogImgName = "nest_task_log.png"
 
+// 需要取养号的视频总数
+var total_target = 0;
+// 成功取养号的视频数量
+var total_success = 0;
+// 错误信息
+var fail_msg = "";
+
+
+const USERS_TEXT = {
+    ZH_CN: "账户",    // 简体中文
+    ZH_TW: "帳號",    // 繁体中文
+    EN_US: "Accounts"   // 英文
+};
+
+
+//可以点击关注的按钮文字
+const FOLLOW_TEXT = {
+    ZH_CN: "关注",    // 简体中文
+    ZH_TW: "追蹤",    // 繁体中文
+    EN_US: "Follow"   // 英文
+};
+
+//点击关注的按钮文字是关注中
+const FOLLOWING_TEXT = {
+    ZH_CN: "已关注",    // 简体中文
+    ZH_TW: "追蹤中",    // 繁体中文 text("追蹤中")
+    EN_US: "Following"   // 英文
+};
 
 //用户需要输入的关注用户ID列表
-const TT_Like_User_ID_GROUP = '$${T_輸入用戶ID}';
+const TT_Like_User_ID_GROUP = '$${T_用户ID列表}';
 
 var INSTAGRAM_PACKAGE_NAME = 'com.instagram.android';
+
+//保证Java层和JS代码两边的日志文件一致
+var taskLogFileName = "nest_task_log_" + getSystemDate("df").replace(/:/g, "-").replace(" ", "_") + ".txt"
+var RPAFilePath = "/sdcard/Download/log/";
+// 如果目录存在且有内容就删除
+if (files.exists(RPAFilePath)) {
+    files.removeDir(RPAFilePath);
+}
+//日志文件路径
+var logFilePath = RPAFilePath + taskLogFileName;
+//确保日志目录存在
+files.ensureDir(RPAFilePath);
+
+
+//日志文件路径
+var resultPath = RPAFilePath + "nest_result_rpa.txt";
+//确保日志目录存在
+files.ensureDir(resultPath);
+
+
 
 //1.autox.js侧边栏的打开USB调试先打开
 //2.vscode ctrl+shift+p 输入start all server 确定
@@ -78,6 +277,90 @@ function throw_error_storage_not_enough(){
 }
 
 
+// 通过语言对象查找文本
+function findTextByLanguages(languageObject) {
+    for (let lang in languageObject) {
+        let targetText = languageObject[lang];
+        if (text(targetText).exists()) {
+            taskLog("找到文本：" + targetText);
+            let element = text(targetText).findOne();
+            if (element && element.clickable()) {
+                element.click();
+                return true;
+            } else if (element) {
+                // 如果元素存在但不可点击，尝试点击其坐标
+                let bounds = element.bounds();
+                click(bounds.centerX(), bounds.centerY());
+                return true;
+            }
+        }
+    }
+    taskLog("未找到任何匹配的文本");
+    return false;
+}
+
+// 控件文案是否与多语言表中的某一则完全一致（先 trim）
+function textMatchesLanguageObject(btnText, languageObject) {
+    var t = String(btnText == null ? "" : btnText).trim();
+    for (var lang in languageObject) {
+        if (t === languageObject[lang]) return true;
+    }
+    return false;
+}
+
+//开始录屏截图到本地
+function Nest_ScreenCapture(){
+    var path = RPAFilePath + "/nestshot_" + Date.now() + ".png";
+    files.ensureDir(RPAFilePath);
+
+    try {
+        var cmd = 'screencap -p "' + path + '"';
+        taskLog("开始执行 shell 截图命令: " + cmd);
+        var result = shell(cmd);
+        var code = result ? result.code : "null";
+        var stdout = result ? result.result : "";
+        var stderr = result ? result.error : "";
+
+        taskLog("shell截图返回码 code=" + code);
+        if (stdout) {
+            log("shell截图 stdout: " + stdout);
+        }
+        if (stderr) {
+            log("shell截图 stderr: " + stderr);
+        }
+
+        if (!result || code !== 0) {
+            taskLog("自动化任务-shell截图失败，跳过截图");
+            return null;
+        }
+
+        if (!files.exists(path)) {
+            taskLog("自动化任务-shell截图未生成文件，跳过截图");
+            return null;
+        }
+    } catch (e) {
+        taskLogError("自动化任务-shell截图异常: " + e);
+        return null;
+    }
+
+    taskLog("自动化任务已经完成-已保存截图："+ path);
+
+
+    //刷新媒体库
+    sleep(3000)
+    toast("开始刷新媒体库....");
+    refreshMedia(RPAFilePath)
+    return path
+}
+// 刷新指定路径的媒体库
+function refreshMedia(path) {
+    taskLog("开始刷新媒体库....");
+    // 发送媒体扫描广播
+    media.scanFile(path);
+    // 等待扫描完成
+    sleep(5000);
+    taskLog("媒体库刷新完成.");
+}
 
 
 //显示控制窗：https://github.com/kkevsekk1/AutoX/issues/868
@@ -126,11 +409,16 @@ if (isAppInstalled(INSTAGRAM_PACKAGE_NAME)) {
 }
 
 sleep(random(3000, 5000))
-openAppSetting(targetPackageName)
-sleep(random(3000, 5000))
+// openAppSetting(targetPackageName)
+// sleep(random(3000, 5000))
 
 forceStop_APP(targetPackageName)
 sleep(3000)
+
+sleep(1000);
+auto.waitFor();
+taskLog("无障碍已就绪，准备启动 Instagram");
+
 
 app.startActivity({
     action: "android.intent.action.VIEW",
@@ -144,90 +432,37 @@ sleep(random(3000, 5000))
 
 //强制停止TikTok 
 function forceStop_APP(packageName){
-    taskLog("准备强杀:" + packageName + "...")
-    sleep(1000);
-    app.openAppSetting(packageName)
-    sleep(5000)
+    try {
+        var cmd = "am force-stop " + packageName;
+        taskLog("准备强杀: " + packageName);
+        taskLog("执行命令: " + cmd);
 
-    //繁体
-    if (text("強制停止").exists()) {
-        let forceStopBtn = text("強制停止").findOne();
-        if (forceStopBtn && forceStopBtn.clickable()) {
-            forceStopBtn.click();
-            sleep(1000);
-            // 确认操作
-            if (text("確定").exists()) {
-                taskLog("已经找到可点击的'強制停止'按钮！！！！！！！！！！");
-                text("確定").findOne().click();
-            }
-        } else {
-            taskLog("未找到可点击的'強制停止'按钮");
+        var result = shell(cmd);
+        var code = result ? result.code : "null";
+        var stdout = result ? result.result : "";
+        var stderr = result ? result.error : "";
+
+        log("force-stop code = " + code);
+        if (stdout) {
+            log("force-stop result = " + stdout);
         }
-    } else {
-        taskLog("未找到'強制停止'按钮");
-    }
-    sleep(3000)
-
-    //简体
-    if (text("强行停止").exists()) {
-        let forceStopBtn = text("强行停止").findOne();
-        if (forceStopBtn && forceStopBtn.clickable()) {
-            forceStopBtn.click();
-            sleep(1000);
-            // 确认操作
-            if (text("确定").exists()) {
-                text("确定").findOne().click();
-            }
-        } else {
-            taskLog("未找到可点击的'强行停止'按钮");
+        if (stderr) {
+            log("force-stop error = " + stderr);
         }
-    } else {
-        taskLog("未找到'强行停止'按钮");
-    }
 
-    sleep(3000)
-
-
-    //英语
-    if (text("Force stop").exists()) {
-        let forceStopBtn = text("Force stop").findOne();
-        if (forceStopBtn && forceStopBtn.clickable()) {
-            forceStopBtn.click();
-            sleep(1000);
-            // 确认操作
-            if (text("OK").exists()) {
-                text("OK").findOne().click();
-            }
+        if (result && code === 0) {
+            taskLog("强杀成功: " + packageName);
+            return true;
         } else {
-            taskLog("未找到可点击的'Force stop'按钮");
+            taskLogError("强杀失败: " + packageName + (stderr ? "，error=" + stderr : ""));
+            return false;
         }
-    } else {
-        taskLog("未找到'Force stop'按钮");
+    } catch (e) {
+        taskLogError("强杀异常: " + e);
+        return false;
     }
-    sleep(3000)
-
-    //英语
-    if (text("FORCE STOP").exists()) {
-        let forceStopBtn = text("FORCE STOP").findOne();
-        if (forceStopBtn && forceStopBtn.clickable()) {
-            forceStopBtn.click();
-            sleep(1000);
-            // 确认操作
-            if (text("OK").exists()) {
-                text("OK").findOne().click();
-            }
-        } else {
-            taskLog("未找到可点击的'FORCE STOP'按钮");
-        }
-    } else {
-        taskLog("未找到'FORCE STOP'按钮");
-    }
-    sleep(3000)
-
-
-    home()
-
 }
+
 
 
 
@@ -268,12 +503,15 @@ function swipe_to_up(){
 
 
 //输入需要关注的用户ID之后，找到第一个User的LinearLayout
+//className("android.widget.Button") fullId("com.instagram.android:id/row_search_user_container") clickable("true")
+//头像：(但是不能点头像，因为部分头像，点击之后，会是一个别的页面，不是主页面)
+//var allButton = className("android.widget.Button").id("com.instagram.android:id/row_search_avatar_with_ring").find();
 function click_LinearLayout_GUANZHU(){
 
     var clickSuccess = false
     sleep(random(2000, 5000))
-    var allButton = className("android.widget.Button").id("com.instagram.android:id/row_search_avatar_with_ring").find();
-    taskLog("头像.size() = " + allButton.size());
+    var allButton = className("android.widget.Button").id("com.instagram.android:id/row_search_user_container").find();
+    taskLog("当前页面的用户数量 = " + allButton.size());
 
     if (allButton && allButton.size() > 0) {
         for (var i = 0; i < allButton.size(); i++) {
@@ -390,46 +628,6 @@ function clickId(a) {
 }
 
 
-//点击个人主页
-function click_Author_Page_Btn(){
-    taskLog("开始准备查看个人主页")
-    clickId("qza")
-    sleep(random(5000,8000))
-
-    // 获取屏幕宽高
-    var width = device.width;
-    var height = device.height;
-    
-     // 生成随机起始点
-     var startX = random(width / 3 , width * 2 / 3);
-     var startY = random(height * 2 / 3, height * 3 / 4);
-
-     // 生成随机结束点
-     var endX = random(width / 3 , width * 2 / 3);
-     var endY = random(height * 1 / 3, height * 1 / 4);
-
-    // 随机选择滑动方向：上滑或下滑
-    for (var i = 0; i < 2; i++) {
-        var direction = random(0, 1) === 0 ? 'up' : 'down';
-
-        if (direction === 'up') {
-            // 从下往上滑动
-            swipe(startX, startY, endX, endY, 500);
-        } else {
-            // 从上往下滑动
-            swipe(startX, startY, endX, endY, 500);
-        }
-        
-        // 暂停一段时间，避免滑动过快
-        sleep(random(3000,5000));
-    }
-
-    taskLog("从视频作者主页返回")
-    sleep(random(3000,5000));
-    back();
-}
-
-
 
 //打印日志
 function taskLog(_log){
@@ -440,31 +638,6 @@ function taskLog(_log){
 
 }
 
-
-
-//无论成功或者失败，最后截图一张
-function saveImg(){
-    taskLog("开始截图...");
-
-    var toPath = "/sdcard/Download/" + taskLogImgName ;
-    if (files.exists(toPath) ){
-        taskLog("旧图片文件存在，删除");
-        files.remove(toPath);
-    } else {
-        taskLog("旧图片文件存在");
-    }
-
-
-    if(!requestScreenCapture()){
-        taskLog("请求截图失败...");
-        toast("请求截图失败");
-    }else{
-        toast("请求截图");
-    }
-    //截图并保存
-    taskLog("请求截图开始保存...");
-    images.saveImage(captureScreen(), toPath);
-}
 
 
 function getSystemDate(a) {
@@ -500,7 +673,6 @@ function clickDesc(a) {
 
 //结束当前任务
 function stopCurrentTask(){
-    saveImg()
 
     sleep(3000)
 //    //将task的截图上报
@@ -746,12 +918,10 @@ try{
 
 
             //点击顶部的搜索框
-            //fullId("com.instagram.android:id/action_bar_search_hints_text_layout")
             clickId("com.instagram.android:id/action_bar_search_hints_text_layout")
             sleep(random(3000, 5000))
 
 
-            //className("android.widget.EditText") fullId("com.instagram.android:id/action_bar_search_edit_text")
             var search_edit = className("android.widget.EditText").id("com.instagram.android:id/action_bar_search_edit_text").findOne()
             if(search_edit){
                 taskLog("找到搜索框控件，开始点击搜索框控件")
@@ -782,48 +952,45 @@ try{
                     click(search_profile_image[0].bounds().centerX(), search_profile_image[0].bounds().centerY()) //点击第一个，而且clickable是false
                     sleep(random(3000, 5000))
 
-                    toast("开始点击用户Tab按钮")
-                    var user_tab_btn = find_btn_Text_base("Accounts","帳戶","账户")
-                    sleep(random(3000, 5000))
+                     //用户Tab按钮在不同语言下的文本
+                    taskLog("开始点击用户Tab按钮")                    
+                    var user_tab_btn = findTextByLanguages(USERS_TEXT)
 
                     if(user_tab_btn){
+                        sleep(random(3000, 5000))
+
                         taskLog("找到用户Tab按钮，开始点击用户Tab按钮")
                         sleep(random(3000, 5000))
+
                         var clickHeadSuccess = click_LinearLayout_GUANZHU()
                         if(clickHeadSuccess){
                             taskLog("点击头像成功，开始点击Follow按钮")
-                            sleep(random(3000, 5000))
+                            sleep(random(5000, 8000))
 
-                            //className("android.widget.Button") :fullId("com.instagram.android:id/profile_header_follow_button") desc("追蹤Milka❣️❣️❣️❣️❣️")
-                            var follow_btn_list = className("android.widget.Button").id("com.instagram.android:id/profile_header_follow_button").find()
-                            toastLog("找到Follow按钮， follow_btn.length = " + follow_btn_list.length)
-                            //已经follow：desc("正在追蹤Milka❣️❣️❣️❣️❣️")
-                            //未follow：desc("追蹤Milka❣️❣️❣️❣️❣️")
-                            //text("追蹤中")
-                            //text("追蹤")
-                            if(follow_btn_list.length > 0){
-                                var follow_btn = follow_btn_list[0]
-                                if(follow_btn){
-                                    taskLog("找到Follow按钮，follow_btn = " + follow_btn.desc());
-                                    if(follow_btn.text() == "追蹤中"){
-                                        taskLog("找到Follow按钮，已经关注了，终止本次操作，开始下一个用户的Follow行为！！！");
-
-                                    }else if(follow_btn.text() == "追蹤"){
-                                        follow_btn.click()
-                                        taskLog("找到Follow按钮，开始点击Follow :" + commentText);
-                                    }
-                                    sleep(random(2000, 4000))
-                                    back()
-                                    sleep(random(2000, 4000))
-                                    back()
-                                    sleep(random(2000, 4000))
+                            //页面可能还会有很多个Textview，内容文字是Follow
+                            //所以要加过滤：className("android.widget.TextView") fullId("com.instagram.android:id/profile_header_follow_button") 
+                            var follow_btn = className("android.widget.TextView").id("com.instagram.android:id/profile_header_follow_button").find()
+                            if(follow_btn.length > 0){
+                                taskLog("找到Follow按钮，要先判断Follow按钮是否是关注中")
+                                sleep(random(3000, 5000))
+                                var follow_btn_text = follow_btn[0].text()
+                                if(textMatchesLanguageObject(follow_btn_text, FOLLOW_TEXT)){
+                                    taskLog("Follow按钮是关注，开始点击Follow按钮")
+                                    follow_btn[0].click()
+                                
+                                }else{
+                                    taskLog("Follow按钮是关注中，跳过点击Follow按钮，开始下一个用户的Follow行为！！！");
                                 }
-                                sleep(random(2000, 4000))
+                                    sleep(random(3000, 5000))
+                                    back()
+                                    sleep(random(2000, 4000))
+                                    continue;
+
+
                             }else{
                                 taskLog("没有找到Follow按钮，终止本次操作，开始下一个用户的Follow行为！！！");
+                                continue;
                             }
-
-
                         }else{
                             back()
                             sleep(random(2000, 4000))
@@ -833,13 +1000,21 @@ try{
 
                     }else{
                         taskLog("没有找到用户Tab按钮，终止本次操作，开始下一个用户的Follow行为！！！");
+                        continue;
                     }
+
+                    sleep(random(3000, 5000))
+
 
                 }else{
                     taskLog("没有找到搜索头像控件，终止本次操作，开始下一个用户的Follow行为！！！");
+                    continue;
                 }
 
 
+            }else{
+                taskLog("没有找到搜索框控件，终止本次操作，开始下一个用户的Follow行为！！！");
+                continue;
             }
 
 
@@ -850,6 +1025,30 @@ try{
         throw new error("没有可用的搜索用户ID，无法关注，所以报错")
     }
 
-}catch(e) {
-    handleError(e);
+} catch(e) {
+    if (e.message === "TASK_COMPLETED") {
+        taskLog("任务正常完成");
+    } else {
+        handleError(e);
+    }
+}finally{
+    taskLog("保存统计结果到备用路径..." );
+    try {
+        var result = {
+            total_target: total_target,
+            total_success: total_success,
+            fail_msg: fail_msg
+        };
+        // 打印统计结果
+        taskLog("统计结果：" + JSON.stringify(result, null, 2));
+        // 使用JSON.stringify将对象转换为JSON字符串，第三个参数2是为了美化输出格式
+        files.write(resultPath, JSON.stringify(result, null, 2));
+        taskLog("已保存统计结果到：" + resultPath);
+    } catch(e) {
+        console.error("保存统计结果失败：" + e.message);
+    }
+    // 刷新媒体库
+    refreshMedia(RPAFilePath);
+    sleep(random(3000, 5000))
+    
 }
